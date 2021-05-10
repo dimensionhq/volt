@@ -6,6 +6,7 @@ pub mod init;
 pub mod install;
 pub mod remove;
 
+#[derive(Debug)]
 pub enum AppCommand {
     Add,
     Help,
@@ -31,7 +32,7 @@ impl FromStr for AppCommand {
 
 impl AppCommand {
     pub fn current() -> Option<Self> {
-        match std::env::args().next() {
+        match std::env::args().nth(1) {
             Some(cmd) => Self::from_str(cmd.as_str()).ok(),
             None => None,
         }
