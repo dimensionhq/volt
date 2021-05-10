@@ -1,3 +1,5 @@
+use std::{io, process};
+
 use crate::constants;
 use colored::Colorize;
 use constants::{
@@ -59,7 +61,8 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
 
     for arg in 0..args.len() {
         if arg > 1 {
-            if command == "install" || command == "add" || command == "remove" {
+            if command == "init" || command == "install" || command == "add" || command == "remove"
+            {
                 if args[arg].starts_with("--") {
                     flags.push(args[arg].clone());
                 } else {
@@ -70,6 +73,22 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
     }
 
     (flags, packages)
+}
+
+/// Gets a config key from git using the git cli.
+pub fn get_git_config(key: &str) -> io::Result<Option<String>> {
+    process::Command::new("git")
+        .arg("config")
+        .arg("--get")
+        .arg(key)
+        .output()
+        .map(|output| {
+            if output.status.success() {
+                String::from_utf8(output.stdout[..output.stdout.len() - 1].to_vec()).ok()
+            } else {
+                None
+            }
+        })
 }
 
 // Windows Function
