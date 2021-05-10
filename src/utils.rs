@@ -12,7 +12,7 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
 
     for arg in 0..args.len() {
         if arg > 1 {
-            if args[arg].starts_with("--") {
+            if args[arg].starts_with("--") || args[arg].starts_with("-") {
                 flags.push(args[arg].clone());
             } else {
                 packages.push(args[arg].clone());
