@@ -114,12 +114,18 @@ pub fn init(flags: &Vec<String>) {
             .flatten()
             .unwrap_or_else(|| String::new());
 
+        let git_email = get_git_config("user.email")
+            .ok()
+            .flatten()
+            .map(|email| format!("<{}>", email))
+            .unwrap_or_else(|| String::new());
+
         let author;
 
-        if git_user_name != String::new() {
+        if git_user_name != String::new() && git_email != String::new() {
             let input: Input = Input {
                 message: String::from("author"),
-                default: Some(git_user_name),
+                default: Some(format!("{} {}", git_user_name, git_email)),
                 allow_empty: true,
             };
             author = input.run().unwrap();
