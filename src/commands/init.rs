@@ -7,6 +7,7 @@ use crate::{
     utils::get_git_config,
     __VERSION__,
 };
+
 use colored::Colorize;
 use init_data::InitData;
 use std::fs::File;
