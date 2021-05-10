@@ -1,7 +1,11 @@
 #[path = "../classes/init_data.rs"]
 mod init_data;
 
-use crate::prompt::prompt::{Confirm, Input, Select};
+use crate::{
+    commands::init::init_data::License,
+    prompt::prompt::{Confirm, Input, Select},
+    utils::get_git_config,
+};
 use colored::Colorize;
 use init_data::InitData;
 use std::fs::File;
@@ -9,121 +13,159 @@ use std::io::Write;
 use std::{env, process};
 
 pub fn init(flags: &Vec<String>) {
-    let temp = env::current_dir().unwrap().to_str().unwrap().to_string();
+    let temp = env::current_dir().unwrap().to_string_lossy().to_string();
     let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();
     let cwd: String = split[split.len() - 1].to_string();
 
-    if flags.contains("-y") || flags.contains("--yes") {
+    let data = if flags.iter().any(|flag| flag == "-y" || flag == "--yes") {
+        // Set name to current directory name
+        let name = env::current_dir()
+            .map(|dir| {
+                dir.file_name()
+                    .map(|file_name| file_name.to_string_lossy().to_string())
+            })
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| "app".to_string());
 
-    }
+        let version = "0.1.0".to_string();
 
-    // Get "name"
-    let input: Input = Input {
-        message: String::from("name"),
-        default: Some(cwd),
-        allow_empty: false,
-    };
+        let description = None;
 
-    let name = input.run().unwrap();
+        let main = "index.js".to_string();
 
-    // Get "version"
-    let input: Input = Input {
-        message: String::from("version"),
-        default: Some(String::from("1.0.0")),
-        allow_empty: false,
-    };
+        let author = {
+            let git_user_name = get_git_config("user.name")
+                .ok()
+                .flatten()
+                .unwrap_or_else(|| String::new());
+            let git_email = get_git_config("user.email")
+                .ok()
+                .flatten()
+                .map(|email| format!("<{}>", email))
+                .unwrap_or_else(|| String::new());
 
-    let version = input.run().unwrap();
+            if git_user_name.is_empty() && git_email.is_empty() {
+                None
+            } else {
+                Some([git_user_name, git_email].join(" "))
+            }
+        };
 
-    // Get "description"
-    let input: Input = Input {
-        message: String::from("description"),
-        default: None,
-        allow_empty: true,
-    };
+        let repository = get_git_config("remote.origin.url").ok().flatten();
 
-    let description = input.run().unwrap_or_else(|error| {
-        // Handle Error
-        eprintln!("{}", error);
-        process::exit(1);
-    });
+        let license = License::default();
 
-    // Get "main"
-    let input: Input = Input {
-        message: String::from("main"),
-        default: Some(String::from("index.js")),
-        allow_empty: false,
-    };
+        InitData {
+            name: name,
+            version: version,
+            description: description,
+            main: main,
+            repository: repository,
+            author: author,
+            license: license,
+            private: None,
+        }
+    } else {
+        // Get "name"
+        let input: Input = Input {
+            message: String::from("name"),
+            default: Some(cwd),
+            allow_empty: false,
+        };
 
-    let main = input.run().unwrap();
+        let name = input.run().unwrap();
 
-    // Get "author"
-    let input: Input = Input {
-        message: String::from("author"),
-        default: None,
-        allow_empty: true,
-    };
+        // Get "version"
+        let input: Input = Input {
+            message: String::from("version"),
+            default: Some(String::from("1.0.0")),
+            allow_empty: false,
+        };
 
-    let author = input.run().unwrap();
+        let version = input.run().unwrap();
 
-    // Get "repository"
-    let input: Input = Input {
-        message: String::from("repository"),
-        default: None,
-        allow_empty: true,
-    };
+        // Get "description"
+        let input: Input = Input {
+            message: String::from("description"),
+            default: None,
+            allow_empty: true,
+        };
 
-    let repository = input.run().unwrap();
+        let description = input.run().unwrap_or_else(|error| {
+            // Handle Error
+            eprintln!("{}", error);
+            process::exit(1);
+        });
 
-    let licenses: Vec<String> = vec![
-        String::from("MIT License"),
-        String::from("Apache License 2.0"),
-        String::from("BSD 3-Clause \"New\" or \"Revised\" License"),
-        String::from("BSD 2-Clause \"Simplified\" or \"FreeBSD\" License"),
-        String::from("GNU General Public License (GPL)"),
-        String::from("GNU Library or \"Lesser\" General Public License (LGPL)"),
-        String::from("Mozilla Public License 2.0"),
-        String::from("Common Development and Distribution License"),
-        String::from("The Unlicense"),
-        String::from("Other"),
-    ];
+        // Get "main"
+        let input: Input = Input {
+            message: String::from("main"),
+            default: Some(String::from("index.js")),
+            allow_empty: false,
+        };
 
-    let select = Select {
-        message: String::from("License"),
-        paged: true,
-        selected: Some(1),
-        items: licenses.clone(),
-    };
+        let main = input.run().unwrap();
 
-    select.run().unwrap();
+        // Get "author"
+        let input: Input = Input {
+            message: String::from("author"),
+            default: None,
+            allow_empty: true,
+        };
 
-    let license = &licenses[select.selected.unwrap()];
+        let author = input.run().unwrap();
 
-    let input = Confirm {
-        message: String::from("private"),
-        default: false,
-    };
+        // Get "repository"
+        let input: Input = Input {
+            message: String::from("repository"),
+            default: None,
+            allow_empty: true,
+        };
 
-    let private = input.run().unwrap();
+        let repository = input.run().unwrap();
 
-    let data = InitData {
-        name: name,
-        version: version,
-        description: description,
-        main: main,
-        repository: repository,
-        author: author,
-        license: license.clone(),
-        private: private,
+        let licenses: Vec<String> = License::options();
+
+        let select = Select {
+            message: String::from("License"),
+            paged: true,
+            selected: Some(1),
+            items: licenses.clone(),
+        };
+
+        select.run().unwrap();
+
+        let license = License::from_index(select.selected.unwrap()).unwrap();
+
+        let input = Confirm {
+            message: String::from("private"),
+            default: false,
+        };
+
+        let private = input.run().unwrap();
+
+        InitData {
+            name: name,
+            version: version,
+            description: Some(description),
+            main: main,
+            repository: Some(repository),
+            author: Some(author),
+            license: license,
+            private: Some(private),
+        }
     };
 
     let mut file = File::create(r"package.json").unwrap();
-    file.write(data.dump().as_bytes()).unwrap_or_else(|error| {
+    if let Err(error) = file.write(data.dump().as_bytes()) {
         eprintln!(
             "{} : {}",
             "Failed To Create package.json".bright_red(),
             error.to_string().bright_yellow().bold()
         );
         process::exit(1);
-    });
+    }
+
+    println!("Initialized directory! Hooray!")
 }
