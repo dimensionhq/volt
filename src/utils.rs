@@ -1,73 +1,21 @@
 use std::{io, process};
 
-use crate::constants;
-use colored::Colorize;
-use constants::{
-    about, add_error, add_help, help, init_help, install_help, remove_error, remove_help,
-};
-
-const __VERSION__: &str = "v1.0.0";
-
 pub fn initialize() -> Vec<String> {
     // Initialize And Get Args
     enable_ansi_support().unwrap();
     std::env::args().collect()
 }
 
-pub fn display_help(args: &Vec<String>) -> &String {
-    if args.len() == 1 {
-        about();
-    } else if args.len() == 2 {
-        let command: &str = args[1].as_str();
-        match command {
-            "--version" => println!("{}", format!("volt {}", __VERSION__.bright_green().bold())),
-            "init" => {}
-            "install" => {}
-            "add" => add_error(),
-            "remove" => remove_error(),
-            "--help" => help(),
-            &_ => {}
-        }
-    } else if args.len() == 3 {
-        let command: &str = args[1].as_str();
-        if args[2].as_str().starts_with("--") {
-            let flag: &str = args[2].as_str();
-            if flag == "--help" {
-                match command {
-                    "init" => init_help(),
-                    "install" => install_help(),
-                    "add" => add_help(),
-                    "remove" => remove_help(),
-                    &_ => {}
-                }
-            }
-        }
-    }
-
-    &args[1]
-}
-
-pub fn handle_invalid_command(command: &str) {
-    println!(
-        "{}",
-        format!("{} Is Not A Valid Command!", command.bright_red())
-    );
-}
-
 pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
-    let command: &str = &args[1];
     let mut flags: Vec<String> = vec![];
     let mut packages: Vec<String> = vec![];
 
     for arg in 0..args.len() {
         if arg > 1 {
-            if command == "init" || command == "install" || command == "add" || command == "remove"
-            {
-                if args[arg].starts_with("--") {
-                    flags.push(args[arg].clone());
-                } else {
-                    packages.push(args[arg].clone());
-                }
+            if args[arg].starts_with("--") {
+                flags.push(args[arg].clone());
+            } else {
+                packages.push(args[arg].clone());
             }
         }
     }

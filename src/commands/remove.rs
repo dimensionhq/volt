@@ -1,5 +1,39 @@
-pub fn remove(flags: &Vec<String>, packages: &Vec<String>) {
-    println!("Removing packages");
-    println!("Packages: {:?}", packages);
-    println!("Flags: {:?}", flags);
+use colored::Colorize;
+
+use crate::__VERSION__;
+
+use super::Command;
+
+pub struct Remove;
+
+impl Command for Remove {
+    fn help(&self) -> String {
+        format!(
+            r#"volt {}
+    
+    Removes a package from your direct dependencies.
+    
+    Usage: {} {} {} {}
+    
+    Options: 
+    
+      {} {} Output the version number.
+      {} {} Output verbose messages on internal operations."#,
+            __VERSION__.bright_green().bold(),
+            "volt".bright_green().bold(),
+            "remove".bright_purple(),
+            "[packages]".white(),
+            "[flags]".white(),
+            "--version".blue(),
+            "(-ver)".yellow(),
+            "--verbose".blue(),
+            "(-v)".yellow()
+        )
+    }
+
+    fn exec(&self, args: &Vec<String>, flags: &Vec<String>) {
+        println!("Removing packages");
+        println!("Packages: {:?}", args);
+        println!("Flags: {:?}", flags);
+    }
 }

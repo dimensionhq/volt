@@ -1,30 +1,27 @@
 // Modules
 mod commands;
-mod constants;
 mod prompt;
 mod utils;
 
+use commands::AppCommand;
 // Imports
-use utils::{display_help, get_arguments, handle_invalid_command, initialize};
+use utils::{get_arguments, initialize};
 
 // Constants
 const __VERSION__: &str = "v1.0.0";
 
 fn main() {
-    // Initialize And Display Help Menu
     let args: Vec<String> = initialize();
 
-    let command = display_help(&args);
+    let (flags, args) = get_arguments(&args);
 
-    let (flags, packages) = get_arguments(&args);
+    let app_cmd = AppCommand::current().unwrap_or(AppCommand::Help);
+    let cmd = app_cmd.command();
 
-    match command.as_str() {
-        "init" => commands::init::init(&flags),
-        "install" => commands::install::install(&flags),
-        "remove" => commands::remove::remove(&flags, &packages),
-        "add" => commands::add::add(&flags, &packages),
-        &_ => {
-            handle_invalid_command(command.as_str());
-        }
+    if flags.iter().any(|flag| flag == "--help") {
+        println!("{}", cmd.help());
+        std::process::exit(0);
     }
+
+    cmd.exec(&args, &flags)
 }
