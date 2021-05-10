@@ -68,6 +68,7 @@ impl Command for Init {
                     .ok()
                     .flatten()
                     .unwrap_or_else(|| String::new());
+
                 let git_email = get_git_config("user.email")
                     .ok()
                     .flatten()
@@ -103,7 +104,10 @@ impl Command for Init {
                 allow_empty: false,
             };
 
-            let name = input.run().unwrap();
+            let name = input.run().unwrap_or_else(|err| {
+                eprintln!("{}", err);
+                process::exit(1);
+            });
 
             // Get "version"
             let input: Input = Input {
@@ -112,7 +116,14 @@ impl Command for Init {
                 allow_empty: false,
             };
 
-            let version = input.run().unwrap();
+            let version = input.run().unwrap_or_else(|err| {
+                eprintln!(
+                    "{}: {}",
+                    "error".bright_red().bold(),
+                    err.to_string().bright_yellow()
+                );
+                process::exit(1);
+            });
 
             // Get "description"
             let input: Input = Input {
@@ -121,9 +132,12 @@ impl Command for Init {
                 allow_empty: true,
             };
 
-            let description = input.run().unwrap_or_else(|error| {
-                // Handle Error
-                eprintln!("{}", error);
+            let description = input.run().unwrap_or_else(|err| {
+                eprintln!(
+                    "{}: {}",
+                    "error".bright_red().bold(),
+                    err.to_string().bright_yellow()
+                );
                 process::exit(1);
             });
 
@@ -134,16 +148,58 @@ impl Command for Init {
                 allow_empty: false,
             };
 
-            let main = input.run().unwrap();
+            let main = input.run().unwrap_or_else(|err| {
+                eprintln!(
+                    "{}: {}",
+                    "error".bright_red().bold(),
+                    err.to_string().bright_yellow()
+                );
+                process::exit(1);
+            });
 
             // Get "author"
-            let input: Input = Input {
-                message: String::from("author"),
-                default: None,
-                allow_empty: true,
-            };
+            let git_user_name = get_git_config("user.name")
+                .ok()
+                .flatten()
+                .unwrap_or_else(|| String::new());
 
-            let author = input.run().unwrap();
+            let git_email = get_git_config("user.email")
+                .ok()
+                .flatten()
+                .map(|email| format!("<{}>", email))
+                .unwrap_or_else(|| String::new());
+
+            let author;
+
+            if git_user_name != String::new() && git_email != String::new() {
+                let input: Input = Input {
+                    message: String::from("author"),
+                    default: Some(format!("{} {}", git_user_name, git_email)),
+                    allow_empty: true,
+                };
+                author = input.run().unwrap_or_else(|err| {
+                    eprintln!(
+                        "{}: {}",
+                        "error".bright_red().bold(),
+                        err.to_string().bright_yellow()
+                    );
+                    process::exit(1);
+                });
+            } else {
+                let input: Input = Input {
+                    message: String::from("author"),
+                    default: None,
+                    allow_empty: true,
+                };
+                author = input.run().unwrap_or_else(|err| {
+                    eprintln!(
+                        "{}: {}",
+                        "error".bright_red().bold(),
+                        err.to_string().bright_yellow()
+                    );
+                    process::exit(1);
+                });
+            }
 
             // Get "repository"
             let input: Input = Input {
@@ -152,7 +208,14 @@ impl Command for Init {
                 allow_empty: true,
             };
 
-            let repository = input.run().unwrap();
+            let repository = input.run().unwrap_or_else(|err| {
+                eprintln!(
+                    "{}: {}",
+                    "error".bright_red().bold(),
+                    err.to_string().bright_yellow()
+                );
+                process::exit(1);
+            });
 
             let licenses: Vec<String> = License::options();
 
@@ -163,7 +226,14 @@ impl Command for Init {
                 items: licenses.clone(),
             };
 
-            select.run().unwrap();
+            select.run().unwrap_or_else(|err| {
+                eprintln!(
+                    "{}: {}",
+                    "error".bright_red().bold(),
+                    err.to_string().bright_yellow()
+                );
+                process::exit(1);
+            });
 
             let license = License::from_index(select.selected.unwrap()).unwrap();
 
@@ -172,7 +242,14 @@ impl Command for Init {
                 default: false,
             };
 
-            let private = input.run().unwrap();
+            let private = input.run().unwrap_or_else(|err| {
+                eprintln!(
+                    "{}: {}",
+                    "error".bright_red().bold(),
+                    err.to_string().bright_yellow()
+                );
+                process::exit(1);
+            });
 
             InitData {
                 name: name,
@@ -189,13 +266,14 @@ impl Command for Init {
         let mut file = File::create(r"package.json").unwrap();
         if let Err(error) = file.write(data.dump().as_bytes()) {
             eprintln!(
-                "{} : {}",
-                "Failed To Create package.json".bright_red(),
+                "{} : {} {}",
+                "error:".bright_red().bold(),
+                "Failed To Create package.json -".bright_red(),
                 error.to_string().bright_yellow().bold()
             );
             process::exit(1);
         }
 
-        println!("Initialized directory! Hooray!");
+        println!("{}", "Successfully Initialized package.json".bright_green());
     }
 }
