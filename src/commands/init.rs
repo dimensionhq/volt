@@ -6,6 +6,7 @@ use crate::{
     prompt::prompt::{Confirm, Input, Select},
     utils::get_git_config,
 };
+
 use colored::Colorize;
 use init_data::InitData;
 use std::fs::File;
