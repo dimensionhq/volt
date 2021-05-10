@@ -1,0 +1,21 @@
+[package]
+name = "volt"
+version = "0.1.0"
+authors = ["XtremeDevX <xtremedevx@gmail.com>"]
+description = "A fast, memory-safe package manager for the web."
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde_json = "1.0.64"
+serde = { version = "1.0.125", features = ["derive"] }
+minreq = "2.3.1"
+sha1 = "0.6.0"
+colored = "2.0.0"
+dialoguer = "0.8.0"
+structopt = "0.3.21"
+console  = "0.14.1"
+
+[target.'cfg(windows)'.dependencies]
+winapi = "0.3.9"
