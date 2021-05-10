@@ -39,6 +39,7 @@ pub fn init(flags: &Vec<String>) {
                 .ok()
                 .flatten()
                 .unwrap_or_else(|| String::new());
+
             let git_email = get_git_config("user.email")
                 .ok()
                 .flatten()
@@ -108,13 +109,28 @@ pub fn init(flags: &Vec<String>) {
         let main = input.run().unwrap();
 
         // Get "author"
-        let input: Input = Input {
-            message: String::from("author"),
-            default: None,
-            allow_empty: true,
-        };
+        let git_user_name = get_git_config("user.name")
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| String::new());
 
-        let author = input.run().unwrap();
+        let author;
+
+        if git_user_name != String::new() {
+            let input: Input = Input {
+                message: String::from("author"),
+                default: Some(git_user_name),
+                allow_empty: true,
+            };
+            author = input.run().unwrap();
+        } else {
+            let input: Input = Input {
+                message: String::from("author"),
+                default: None,
+                allow_empty: true,
+            };
+            author = input.run().unwrap();
+        }
 
         // Get "repository"
         let input: Input = Input {
@@ -167,5 +183,5 @@ pub fn init(flags: &Vec<String>) {
         process::exit(1);
     }
 
-    println!("Initialized directory! Hooray!")
+    println!("{}", "Successfully Initialized package.json".bright_green())
 }
