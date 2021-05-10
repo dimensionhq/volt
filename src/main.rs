@@ -1,5 +1,7 @@
 // Modules
+mod classes;
 mod commands;
+mod model;
 mod prompt;
 mod utils;
 
