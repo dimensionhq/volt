@@ -41,6 +41,7 @@ impl Default for License {
 }
 
 impl License {
+    #[allow(dead_code)]
     pub fn options() -> Vec<String> {
         vec![
             Self::MIT.to_string(),
@@ -56,6 +57,7 @@ impl License {
         ]
     }
 
+    #[allow(dead_code)]
     pub fn from_index(index: usize) -> Option<Self> {
         match index {
             0 => Some(Self::MIT),
@@ -94,6 +96,7 @@ impl InitData {
 
     // }
 
+    #[allow(dead_code)]
     pub fn dump(&self) -> String {
         to_string_pretty(&self).unwrap()
     }

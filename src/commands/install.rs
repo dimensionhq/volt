@@ -1,4 +1,4 @@
-use crate::classes::package::Package;
+use crate::classes::package::{Package, Version};
 use crate::model::http_manager;
 use colored::Colorize;
 use std::process;
@@ -33,7 +33,7 @@ impl Command for Install {
         )
     }
 
-    fn exec(&self, packages: &Vec<String>, flags: &Vec<String>) {
+    fn exec(&self, packages: &Vec<String>, _flags: &Vec<String>) {
         for package_name in packages {
             let response = match http_manager::get_package(package_name) {
                 Ok(text) => text,
@@ -48,7 +48,12 @@ impl Command for Install {
                 }
             };
             let package: Package = serde_json::from_str(&response).unwrap();
-            println!("{:?}", package);
+            let version: Version = package
+                .versions
+                .get_key_value(&package.dist_tags.latest)
+                .unwrap()
+                .1
+                .clone();
         }
     }
 }
