@@ -1,6 +1,7 @@
 use crate::classes::package::{Package, Version};
 use crate::model::http_manager;
 use colored::Colorize;
+use sha1;
 use std::process;
 
 use crate::__VERSION__;
@@ -48,12 +49,24 @@ impl Command for Install {
                 }
             };
             let package: Package = serde_json::from_str(&response).unwrap();
+            
             let version: Version = package
                 .versions
                 .get_key_value(&package.dist_tags.latest)
                 .unwrap()
                 .1
                 .clone();
+
+            // TODO: Handle Dependencies
+
+            // TODO: Download File
+
+            // TODO: Verify Checksum
+            let dl = sha1::Sha1::from("").digest(); // TODO: Change this to a real checksum
+
+            if dl.to_string() == version.dist.shasum {
+                // Verified Checksum
+            }
         }
     }
 }
