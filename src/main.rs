@@ -3,6 +3,7 @@ mod classes;
 mod commands;
 mod model;
 mod prompt;
+mod traits;
 mod utils;
 
 // Imports
