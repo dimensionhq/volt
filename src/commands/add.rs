@@ -6,6 +6,11 @@ use std::process;
 
 use crate::__VERSION__;
 
+#[path = "../utils.rs"]
+mod utils;
+
+use utils::download_tarbal;
+
 use super::Command;
 
 pub struct Add;
@@ -52,7 +57,10 @@ impl Command for Add {
                     process::exit(1);
                 }
             };
+
             let package: Package = serde_json::from_str(&response).unwrap();
+
+            // println!("package: {:?}", package);
 
             let version: Version = package
                 .versions
@@ -64,6 +72,7 @@ impl Command for Add {
             // TODO: Handle Dependencies
 
             // TODO: Download File
+            download_tarbal(package);
 
             // TODO: Verify Checksum
             let dl = sha1::Sha1::from("").digest(); // TODO: Change this to a real checksum
