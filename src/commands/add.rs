@@ -1,12 +1,8 @@
-use crate::model::http_manager;
-use crate::{
-    classes::package::{Package, Version},
-    utils::download_tarbal,
-};
+use crate::{classes::package::Version, utils::download_tarbal};
+use crate::{model::http_manager, traits::UnwrapGraceful};
 use async_trait::async_trait;
 use colored::Colorize;
 use sha1;
-use std::process;
 
 use crate::__VERSION__;
 
@@ -45,20 +41,16 @@ impl Command for Add {
 
     async fn exec(&self, packages: &Vec<String>, _flags: &Vec<String>) {
         for package_name in packages {
-            let response = match http_manager::get_package(package_name) {
-                Ok(text) => text,
-                Err(e) => {
-                    eprintln!(
+            let package = http_manager::get_package(package_name)
+                .await
+                .unwrap_graceful(|err| {
+                    format!(
                         "{}: An Error Occured While Requesting {}.json - {}",
                         "error".bright_red().bold(),
                         package_name,
-                        e.to_string().bright_yellow()
-                    );
-                    process::exit(1);
-                }
-            };
-
-            let package: Package = serde_json::from_str(&response).unwrap();
+                        err.to_string().bright_yellow()
+                    )
+                });
 
             // println!("package: {:?}", package);
 
