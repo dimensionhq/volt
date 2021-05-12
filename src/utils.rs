@@ -34,14 +34,15 @@ pub async fn download_tarbal(package: Package) {
     let latest_version = package.dist_tags.latest;
     let name = package.name;
     let tarball = &package.versions[&latest_version].dist.tarball;
-    println!("{:?}", tarball);
 
     let mut response = reqwest::get(tarball).await.unwrap();
     let total_length = response.content_length().unwrap();
     let progress_bar = ProgressBar::new(total_length);
-    progress_bar.set_style(ProgressStyle::default_bar()
-    .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-    .progress_chars("#>-"));
+    progress_bar.set_style(
+        ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+            .progress_chars("=>-"),
+    );
 
     let loc = format!(
         "{}\\.volt\\{}-{}.tgz",
@@ -49,7 +50,6 @@ pub async fn download_tarbal(package: Package) {
         name,
         latest_version
     );
-    println!("loc: {}", loc);
 
     // Placeholder buffer
     let mut file = std::fs::File::create(loc).unwrap();
