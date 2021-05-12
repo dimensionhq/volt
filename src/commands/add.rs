@@ -20,15 +20,15 @@ impl Command for Add {
         format!(
             r#"volt {}
     
-    Add a package to your dependencies for your project.
+Add a package to your dependencies for your project.
+
+Usage: {} {} {} {}
+
+Options: 
     
-    Usage: {} {} {} {}
-    
-    Options: 
-        
-      {} {} Output the version number.
-      {} {} Output verbose messages on internal operations.
-      {} {} Disable progress bar."#,
+  {} {} Output the version number.
+  {} {} Output verbose messages on internal operations.
+  {} {} Disable progress bar."#,
             __VERSION__.bright_green().bold(),
             "volt".bright_green().bold(),
             "add".bright_purple(),
@@ -70,7 +70,7 @@ impl Command for Add {
                 .clone();
 
             // TODO: Handle Dependencies
-
+            println!("{:?}", version.dependencies);
             // TODO: Download File
             download_tarbal(package);
 

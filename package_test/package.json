@@ -4,5 +4,9 @@
   "main": "index.js",
   "repository": "https://github.com/voltpkg/volt.git",
   "author": "XtremeDevX <xtremedevx@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "ctx-provider": "^1.0.4",
+    "react": "^17.0.2"
+  }
 }

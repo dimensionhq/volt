@@ -11,14 +11,14 @@ impl Command for Remove {
         format!(
             r#"volt {}
     
-    Removes a package from your direct dependencies.
-    
-    Usage: {} {} {} {}
-    
-    Options: 
-    
-      {} {} Output the version number.
-      {} {} Output verbose messages on internal operations."#,
+Removes a package from your direct dependencies.
+
+Usage: {} {} {} {}
+
+Options: 
+
+  {} {} Output the version number.
+  {} {} Output verbose messages on internal operations."#,
             __VERSION__.bright_green().bold(),
             "volt".bright_green().bold(),
             "remove".bright_purple(),

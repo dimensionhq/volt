@@ -23,14 +23,14 @@ impl Command for Init {
         format!(
             r#"volt {}
     
-    Interactively create or update a package.json file for a project
+Interactively create or update a package.json file for a project
+
+Usage: {} {} {}
     
-    Usage: {} {} {}
-        
-    Options:
-        
-      {} {} Initialize a package.json file without any prompts.  
-      {} {} Output verbose messages on internal operations."#,
+Options:
+    
+  {} {} Initialize a package.json file without any prompts.  
+  {} {} Output verbose messages on internal operations."#,
             __VERSION__.bright_green().bold(),
             "volt".bright_green().bold(),
             "init".bright_purple(),
