@@ -1,6 +1,10 @@
-use minreq::{get, Error};
+use reqwest::Error;
 
-pub fn get_package(name: &str) -> Result<String, Error> {
-    let response = get(format!("http://registry.yarnpkg.com/{}", name)).send()?;
-    Ok(response.as_str()?.to_string())
+use crate::classes::package::Package;
+
+pub async fn get_package(name: &str) -> Result<Package, Error> {
+    reqwest::get(format!("https://registry.yarnpkg.com/{}", name))
+        .await?
+        .json()
+        .await
 }
