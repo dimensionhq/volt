@@ -1,11 +1,16 @@
-use std::{io, process};
+use crate::classes::package::Package;
 
+use indicatif::{ProgressBar, ProgressStyle};
+use std::{io, io::Write, process, u64};
+
+#[allow(unused)]
 pub fn initialize() -> Vec<String> {
     // Initialize And Get Args
     enable_ansi_support().unwrap();
     std::env::args().collect()
 }
 
+#[allow(unused)]
 pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
     let mut flags: Vec<String> = vec![];
     let mut packages: Vec<String> = vec![];
@@ -23,7 +28,42 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
     (flags, packages)
 }
 
+/// downloads tarbal file from package
+#[tokio::main]
+pub async fn download_tarbal(package: Package) {
+    let latest_version = package.dist_tags.latest;
+    let name = package.name;
+    let tarball = &package.versions[&latest_version].dist.tarball;
+    println!("{:?}", tarball);
+
+    let mut response = reqwest::get(tarball).await.unwrap();
+    let total_length = response.content_length().unwrap();
+    let progress_bar = ProgressBar::new(total_length);
+    progress_bar.set_style(ProgressStyle::default_bar()
+    .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+    .progress_chars("#>-"));
+
+    let loc = format!(
+        "{}\\.volt\\{}-{}.tgz",
+        std::env::var("USERPROFILE").unwrap(),
+        name,
+        latest_version
+    );
+    println!("loc: {}", loc);
+
+    // Placeholder buffer
+    let mut file = std::fs::File::create(loc).unwrap();
+
+    while let Some(chunk) = response.chunk().await.unwrap() {
+        progress_bar.inc(chunk.len() as u64);
+        let _ = file.write(&*chunk);
+    }
+
+    progress_bar.finish();
+}
+
 /// Gets a config key from git using the git cli.
+#[allow(unused)]
 pub fn get_git_config(key: &str) -> io::Result<Option<String>> {
     process::Command::new("git")
         .arg("config")

@@ -11,11 +11,15 @@ edition = "2018"
 serde_json = "1.0.64"
 serde = { version = "1.0.125", features = ["derive"] }
 minreq = "2.3.1"
+reqwest = { version = "0.11.3", features = ["stream", "blocking"] }
 sha1 = "0.6.0"
 colored = "2.0.0"
 dialoguer = "0.8.0"
 structopt = "0.3.21"
 console  = "0.14.1"
+indicatif = "0.16.0"
+tokio = { version = "1.5.0", features = ["full"] }
+futures-util = "0.3.14"
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3.9"
