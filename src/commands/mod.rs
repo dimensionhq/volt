@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use std::str::FromStr;
 
 pub mod add;
@@ -49,8 +50,9 @@ impl AppCommand {
     }
 }
 
+#[async_trait]
 pub trait Command {
     fn help(&self) -> String;
 
-    fn exec(&self, args: &Vec<String>, flags: &Vec<String>);
+    async fn exec(&self, args: &Vec<String>, flags: &Vec<String>);
 }
