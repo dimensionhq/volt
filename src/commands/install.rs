@@ -1,8 +1,4 @@
-use crate::classes::package::{Package, Version};
-use crate::model::http_manager;
 use colored::Colorize;
-use sha1;
-use std::process;
 
 use crate::__VERSION__;
 
@@ -34,39 +30,5 @@ impl Command for Install {
         )
     }
 
-    fn exec(&self, packages: &Vec<String>, _flags: &Vec<String>) {
-        for package_name in packages {
-            let response = match http_manager::get_package(package_name) {
-                Ok(text) => text,
-                Err(e) => {
-                    eprintln!(
-                        "{}: An Error Occured While Requesting {}.json - {}",
-                        "error".bright_red().bold(),
-                        package_name,
-                        e.to_string().bright_yellow()
-                    );
-                    process::exit(1);
-                }
-            };
-            let package: Package = serde_json::from_str(&response).unwrap();
-            
-            let version: Version = package
-                .versions
-                .get_key_value(&package.dist_tags.latest)
-                .unwrap()
-                .1
-                .clone();
-
-            // TODO: Handle Dependencies
-
-            // TODO: Download File
-
-            // TODO: Verify Checksum
-            let dl = sha1::Sha1::from("").digest(); // TODO: Change this to a real checksum
-
-            if dl.to_string() == version.dist.shasum {
-                // Verified Checksum
-            }
-        }
-    }
+    fn exec(&self, _packages: &Vec<String>, _flags: &Vec<String>) {}
 }
