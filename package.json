@@ -1,0 +1,10 @@
+{
+  "name": "volt",
+  "version": "1.0.0",
+  "description": "a package manager",
+  "main": "index.js",
+  "repository": "",
+  "author": "Shadow7258 <pranav.rdoshi@gmail.com>",
+  "license": "Apache2",
+  "private": false
+}
