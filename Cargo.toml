@@ -1,11 +1,9 @@
 [package]
 name = "volt"
 version = "0.1.0"
-authors = ["XtremeDevX <xtremedevx@gmail.com>"]
+authors = ["XtremeDevX <xtremedevx@gmail.com>", "Ari Seyhun <ariseyhun@live.com.au> (https://ariseyhun.com)"]
 description = "A fast, memory-safe package manager for the web."
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 serde_json = "1.0.64"
