@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use colored::Colorize;
 
 use crate::__VERSION__;
@@ -6,6 +7,7 @@ use super::Command;
 
 pub struct Remove;
 
+#[async_trait]
 impl Command for Remove {
     fn help(&self) -> String {
         format!(
@@ -31,7 +33,7 @@ impl Command for Remove {
         )
     }
 
-    fn exec(&self, args: &Vec<String>, flags: &Vec<String>) {
+    async fn exec(&self, args: &Vec<String>, flags: &Vec<String>) {
         println!("Removing packages");
         println!("Packages: {:?}", args);
         println!("Flags: {:?}", flags);

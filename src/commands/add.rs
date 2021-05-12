@@ -1,20 +1,20 @@
-use crate::classes::package::{Package, Version};
 use crate::model::http_manager;
+use crate::{
+    classes::package::{Package, Version},
+    utils::download_tarbal,
+};
+use async_trait::async_trait;
 use colored::Colorize;
 use sha1;
 use std::process;
 
 use crate::__VERSION__;
 
-#[path = "../utils.rs"]
-mod utils;
-
-use utils::download_tarbal;
-
 use super::Command;
 
 pub struct Add;
 
+#[async_trait]
 impl Command for Add {
     fn help(&self) -> String {
         format!(
@@ -43,7 +43,7 @@ impl Command for Add {
         )
     }
 
-    fn exec(&self, packages: &Vec<String>, flags: &Vec<String>) {
+    async fn exec(&self, packages: &Vec<String>, _flags: &Vec<String>) {
         for package_name in packages {
             let response = match http_manager::get_package(package_name) {
                 Ok(text) => text,
@@ -72,7 +72,7 @@ impl Command for Add {
             // TODO: Handle Dependencies
 
             // TODO: Download File
-            download_tarbal(package);
+            download_tarbal(package).await;
 
             // TODO: Verify Checksum
             let dl = sha1::Sha1::from("").digest(); // TODO: Change this to a real checksum

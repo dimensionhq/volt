@@ -8,6 +8,7 @@ use crate::{
     __VERSION__,
 };
 
+use async_trait::async_trait;
 use colored::Colorize;
 use init_data::InitData;
 use std::fs::File;
@@ -18,6 +19,7 @@ use super::Command;
 
 pub struct Init;
 
+#[async_trait]
 impl Command for Init {
     fn help(&self) -> String {
         format!(
@@ -42,7 +44,7 @@ impl Command for Init {
         )
     }
 
-    fn exec(&self, _args: &Vec<String>, flags: &Vec<String>) {
+    async fn exec(&self, _args: &Vec<String>, flags: &Vec<String>) {
         let temp = env::current_dir().unwrap().to_string_lossy().to_string();
         let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();
