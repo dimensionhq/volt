@@ -5,14 +5,15 @@ mod model;
 mod prompt;
 mod utils;
 
-use commands::AppCommand;
 // Imports
+use commands::AppCommand;
 use utils::{get_arguments, initialize};
 
 // Constants
 const __VERSION__: &str = "v1.0.0";
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = initialize();
 
     let (flags, args) = get_arguments(&args);
@@ -25,5 +26,5 @@ fn main() {
         std::process::exit(0);
     }
 
-    cmd.exec(&args, &flags)
+    cmd.exec(&args, &flags).await
 }

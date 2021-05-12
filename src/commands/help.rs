@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use colored::Colorize;
 
 use crate::__VERSION__;
@@ -6,6 +7,7 @@ use super::Command;
 
 pub struct Help;
 
+#[async_trait]
 impl Command for Help {
     fn help(&self) -> String {
         format!(
@@ -36,7 +38,7 @@ Commands:
         )
     }
 
-    fn exec(&self, _args: &Vec<String>, _flags: &Vec<String>) {
+    async fn exec(&self, _args: &Vec<String>, _flags: &Vec<String>) {
         println!("{}", self.help());
     }
 }

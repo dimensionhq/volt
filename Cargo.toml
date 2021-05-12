@@ -1,25 +1,24 @@
 [package]
 name = "volt"
 version = "0.1.0"
-authors = ["XtremeDevX <xtremedevx@gmail.com>"]
+authors = ["XtremeDevX <xtremedevx@gmail.com>", "Ari Seyhun <ariseyhun@live.com.au> (https://ariseyhun.com)"]
 description = "A fast, memory-safe package manager for the web."
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-serde_json = "1.0.64"
-serde = { version = "1.0.125", features = ["derive"] }
+async-trait = "0.1.50"
+colored = "2.0.0"
+console  = "0.14.1"
+dialoguer = "0.8.0"
+futures-util = "0.3.14"
+indicatif = "0.16.0"
 minreq = "2.3.1"
 reqwest = { version = "0.11.3", features = ["stream", "blocking"] }
 sha1 = "0.6.0"
-colored = "2.0.0"
-dialoguer = "0.8.0"
+serde = { version = "1.0.125", features = ["derive"] }
+serde_json = "1.0.64"
 structopt = "0.3.21"
-console  = "0.14.1"
-indicatif = "0.16.0"
 tokio = { version = "1.5.0", features = ["full"] }
-futures-util = "0.3.14"
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3.9"

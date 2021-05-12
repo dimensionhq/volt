@@ -29,7 +29,6 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
 }
 
 /// downloads tarbal file from package
-#[tokio::main]
 pub async fn download_tarbal(package: Package) {
     let latest_version = package.dist_tags.latest;
     let name = package.name;
