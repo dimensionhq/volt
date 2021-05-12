@@ -29,10 +29,10 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
 }
 
 /// downloads tarbal file from package
-pub async fn download_tarbal(package: Package) {
-    let latest_version = package.dist_tags.latest;
-    let name = package.name;
-    let tarball = &package.versions[&latest_version].dist.tarball;
+pub async fn download_tarbal(package: &Package) {
+    let latest_version = &package.dist_tags.latest;
+    let name = &package.name;
+    let tarball = &package.versions[latest_version].dist.tarball;
     println!("{:?}", tarball);
 
     let mut response = reqwest::get(tarball).await.unwrap();

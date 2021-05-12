@@ -72,7 +72,7 @@ impl Command for Add {
             // TODO: Handle Dependencies
 
             // TODO: Download File
-            download_tarbal(package).await;
+            download_tarbal(&package).await;
 
             // TODO: Verify Checksum
             let dl = sha1::Sha1::from("").digest(); // TODO: Change this to a real checksum
