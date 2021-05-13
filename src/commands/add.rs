@@ -1,8 +1,4 @@
-use crate::model::lock::LockFile;
-use crate::model::{http_manager, lock::DependencyLock};
-use crate::traits::UnwrapGraceful;
-use crate::utils::{download_tarball, extract_tarball};
-use crate::{classes::package::Version, utils::App};
+use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
 use sha1::{Digest, Sha1};
@@ -10,7 +6,11 @@ use std::io;
 use std::{fs::File, sync::Arc};
 use tokio::{self, task::JoinHandle};
 
+use crate::model::lock::LockFile;
+use crate::model::{http_manager, lock::DependencyLock};
+use crate::utils::{download_tarball, extract_tarball};
 use crate::__VERSION__;
+use crate::{classes::package::Version, utils::App};
 
 use super::Command;
 
@@ -45,20 +45,20 @@ Options:
         )
     }
 
-    async fn exec(&self, app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) {
+    async fn exec(&self, app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) -> Result<()> {
         let mut lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
         for package_name in packages {
             let package = http_manager::get_package(&package_name)
                 .await
-                .unwrap_graceful(|err| {
-                    format!(
-                        "An Error Occured While Requesting {}.json - {}",
-                        package_name,
-                        format!("{:?}", err).bright_yellow()
+                .with_context(|| format!("Failed to fetch package '{}'", package_name))?
+                .ok_or_else(|| {
+                    anyhow!(
+                        "Package '{}' was not found or is not available",
+                        package_name
                     )
-                });
+                })?;
 
             let version: Version = package
                 .versions
@@ -74,7 +74,8 @@ Options:
                 sha1: version.clone().dist.shasum,
             });
 
-            let mut handles: Vec<JoinHandle<()>> = Vec::with_capacity(version.dependencies.len());
+            let mut handles: Vec<JoinHandle<Result<()>>> =
+                Vec::with_capacity(version.dependencies.len());
 
             // for dependency in version.dependencies.iter() {
             //     let app = app.clone();
@@ -92,9 +93,9 @@ Options:
             handles.push(tokio::spawn(async move {
                 let path = download_tarball(&app, &package).await;
 
-                extract_tarball(&path, &package)
-                    .await
-                    .unwrap_graceful(|err| err);
+                extract_tarball(&path, &package).await.with_context(|| {
+                    format!("Unable to extract tarbal for package '{}'", &package.name)
+                })?;
 
                 let mut file = File::open(path).unwrap();
                 let mut hasher = Sha1::new();
@@ -107,14 +108,16 @@ Options:
                 } else {
                     println!("Failed To Verify")
                 }
+
+                Result::<_>::Ok(())
             }));
 
             futures::future::join_all(handles).await;
         }
 
         // Write to lock file
-        lock_file
-            .save()
-            .unwrap_graceful(|err| format!("Could not save lock file {:?}", err))
+        lock_file.save().context("Failed to save lock file")?;
+
+        Ok(())
     }
 }
