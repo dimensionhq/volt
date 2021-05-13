@@ -53,7 +53,7 @@ Options:
                         "{}: An Error Occured While Requesting {}.json - {}",
                         "error".bright_red().bold(),
                         package_name,
-                        err.to_string().bright_yellow()
+                        format!("{:?}", err).bright_yellow()
                     )
                 });
 
@@ -81,7 +81,7 @@ Options:
             handles.push(tokio::spawn(async move {
                 let path = download_tarball(&app, &package).await;
 
-                extract_tarball(path.as_str(), &package).unwrap_graceful(|err| err);
+                extract_tarball(&path, &package).unwrap_graceful(|err| err);
 
                 let mut file = File::open(path).unwrap();
                 let mut hasher = Sha1::new();
