@@ -56,5 +56,5 @@ impl AppCommand {
 pub trait Command {
     fn help(&self) -> String;
 
-    async fn exec(&self, app: Arc<App>, args: &Vec<String>, flags: &Vec<String>);
+    async fn exec(&self, app: Arc<App>, args: Vec<String>, flags: Vec<String>);
 }

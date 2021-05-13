@@ -44,9 +44,9 @@ Options:
         )
     }
 
-    async fn exec(&self, app: Arc<App>, packages: &Vec<String>, flags: &Vec<String>) {
+    async fn exec(&self, app: Arc<App>, packages: Vec<String>, flags: Vec<String>) {
         for package_name in packages {
-            let package = http_manager::get_package(package_name)
+            let package = http_manager::get_package(&package_name)
                 .await
                 .unwrap_graceful(|err| {
                     format!(
@@ -68,10 +68,10 @@ Options:
             for dependency in version.dependencies.iter() {
                 let app = app.clone();
                 let dependency = dependency.0.clone();
-                let flags = (*flags).clone();
+                let flags = flags.clone();
                 let handle = tokio::spawn(async move {
                     println!("Getting dep: {}", &dependency);
-                    Add.exec(app, &vec![dependency.clone()], &flags).await;
+                    Add.exec(app, vec![dependency.clone()], flags).await;
                     println!("Done dep: {}", dependency);
                 });
                 handles.push(handle);

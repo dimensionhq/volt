@@ -28,5 +28,5 @@ async fn main() {
         std::process::exit(0);
     }
 
-    cmd.exec(Arc::new(app), &args, &flags).await
+    cmd.exec(Arc::new(app), args, flags).await
 }
