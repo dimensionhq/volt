@@ -1,11 +1,11 @@
+use crate::classes::package::{Package, Version};
 use crate::model::http_manager;
-use crate::{
-    classes::package::{Package, Version},
-    utils::download_tarbal,
-};
+use crate::utils::{download_tarball, extract_tarball};
 use async_trait::async_trait;
 use colored::Colorize;
-use sha1;
+use sha1::{Digest, Sha1};
+use std::fs::File;
+use std::io;
 use std::process;
 
 use crate::__VERSION__;
@@ -60,8 +60,6 @@ Options:
 
             let package: Package = serde_json::from_str(&response).unwrap();
 
-            // println!("package: {:?}", package);
-
             let version: Version = package
                 .versions
                 .get_key_value(&package.dist_tags.latest)
@@ -70,15 +68,27 @@ Options:
                 .clone();
 
             // TODO: Handle Dependencies
-            println!("{:?}", version.dependencies);
-            // TODO: Download File
-            download_tarbal(package).await;
+            // for dependency in version.dependencies.iter() {
+            //     self.exec(vec![dependency], flags);
+            // }
 
-            // TODO: Verify Checksum
-            let dl = sha1::Sha1::from("").digest(); // TODO: Change this to a real checksum
+            let path = download_tarball(&package).await;
 
-            if dl.to_string() == version.dist.shasum {
+            match extract_tarball(path.as_str(), &package) {
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("{}", err);
+                }
+            };
+
+            let mut file = File::open(path).unwrap();
+            let mut hasher = Sha1::new();
+            io::copy(&mut file, &mut hasher).unwrap();
+            let hash = format!("{:x}", hasher.finalize());
+
+            if hash == version.dist.shasum {
                 // Verified Checksum
+                println!("{}", "Successfully Verified Hash".bright_green());
             }
         }
     }

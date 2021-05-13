@@ -1,7 +1,8 @@
 use crate::classes::package::Package;
-
+use flate2::read::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{io, io::Write, process, u64};
+use std::{fs::File, io, io::Write, process, u64};
+use tar::Archive;
 
 #[allow(unused)]
 pub fn initialize() -> Vec<String> {
@@ -28,11 +29,11 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
     (flags, packages)
 }
 
-/// downloads tarbal file from package
-pub async fn download_tarbal(package: Package) {
-    let latest_version = package.dist_tags.latest;
-    let name = package.name;
-    let tarball = &package.versions[&latest_version].dist.tarball;
+/// downloads tarball file from package
+pub async fn download_tarball(package: &Package) -> String {
+    let latest_version = &package.dist_tags.latest;
+    let name = &package.name;
+    let tarball = &package.versions[latest_version].dist.tarball;
 
     let mut response = reqwest::get(tarball).await.unwrap();
     let total_length = response.content_length().unwrap();
@@ -51,7 +52,7 @@ pub async fn download_tarbal(package: Package) {
     );
 
     // Placeholder buffer
-    let mut file = std::fs::File::create(loc).unwrap();
+    let mut file = std::fs::File::create(&loc).unwrap();
 
     while let Some(chunk) = response.chunk().await.unwrap() {
         progress_bar.inc(chunk.len() as u64);
@@ -59,6 +60,20 @@ pub async fn download_tarbal(package: Package) {
     }
 
     progress_bar.finish();
+
+    loc
+}
+
+pub fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io::Error> {
+    let tar_gz = File::open(file_path)?;
+    let tar = GzDecoder::new(tar_gz);
+    let mut archive = Archive::new(tar);
+    archive.unpack("node_modules")?;
+    std::fs::rename(
+        r"node_modules\package",
+        format!(r"node_modules\{}", package.name),
+    )?;
+    Ok(())
 }
 
 /// Gets a config key from git using the git cli.
