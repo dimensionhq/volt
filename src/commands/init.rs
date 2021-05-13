@@ -1,6 +1,7 @@
 #[path = "../classes/init_data.rs"]
 mod init_data;
-
+#[path = "../utils.rs"]
+mod utilities;
 use crate::{
     commands::init::init_data::License,
     prompt::prompt::{Confirm, Input, Select},
@@ -45,7 +46,8 @@ Options:
     }
 
     async fn exec(&self, _app: Arc<App>, _args: Vec<String>, flags: Vec<String>) {
-        let temp = env::current_dir().unwrap().to_string_lossy().to_string();
+        let temp =
+            utilities::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
         let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();
 
