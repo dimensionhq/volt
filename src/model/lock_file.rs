@@ -90,7 +90,33 @@ pub struct DependencyLock {
     pub sha1: String,
 }
 
+/// The lock file is responsible for locking/pinning dependency versions in a given project.
+/// It stores a list of dependencies along with their resolved version, registry url, and sha1 checksum.
+///
+/// # Example
+///
+/// ```
+/// // Load the lock file for the current project or create new lock file
+/// let mut lock_file = LockFile::load(lock_file_path)
+///     .unwrap_or_else(|| LockFile::new(lock_file_path));
+///
+/// // Add dependency
+/// lock_file.add(
+///     ("react".to_string(), "^1.0.0".to_string()),
+///     DependencyLock {
+///         name: "react".to_string(),
+///         version: "1.2.6".to_string(),
+///         tarbal: String::new(),
+///         sha1: String::new(),
+///     }
+/// );
+///
+/// // Save changes to disk
+/// lock_file.save().expect("Unable to save lock file");
+/// ```
 impl LockFile {
+    /// Creates a new instance of a lock file with a path it should be saved at.
+    /// It can be saved to the file by calling [`Self::save()`].
     pub fn new(path: PathBuf) -> Self {
         Self {
             path,
@@ -98,6 +124,7 @@ impl LockFile {
         }
     }
 
+    /// Loads a lock file from the given path.
     pub fn load(path: PathBuf) -> Result<Self, LockFileError> {
         let lock_file = File::open(&path).map_err(LockFileError::IO)?;
         let reader = BufReader::new(lock_file);
@@ -108,6 +135,7 @@ impl LockFile {
         })
     }
 
+    /// Saves a lock file to the same path it was opened from.
     pub fn save(&self) -> Result<(), LockFileError> {
         let lock_file = File::create(&self.path).map_err(LockFileError::IO)?;
         let writer = BufWriter::new(lock_file);
@@ -115,6 +143,7 @@ impl LockFile {
         serde_json::to_writer_pretty(writer, &self.dependencies).map_err(LockFileError::Encode)
     }
 
+    /// Add a dependency to the lock file.
     pub fn add<T: Into<DependencyID>>(&mut self, id: T, dep: DependencyLock) {
         self.dependencies.0.insert(id.into(), dep);
     }

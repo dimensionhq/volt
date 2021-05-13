@@ -284,7 +284,7 @@ where
 
     /// Disables or enables the default value display.
     ///
-    /// The default behaviour is to append [`default`] to the prompt to tell the
+    /// The default behaviour is to append [`Self::default`] to the prompt to tell the
     /// user what is the default value.
     ///
     /// This method does not affect existance of default value, only its display in the prompt!
