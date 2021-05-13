@@ -87,7 +87,7 @@ pub async fn download_tarball(app: &App, package: &Package) -> String {
     path_str
 }
 
-pub fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io::Error> {
+pub async fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io::Error> {
     let path = Path::new(file_path);
     let tar_gz = File::open(path)?;
     let tar = GzDecoder::new(tar_gz);
