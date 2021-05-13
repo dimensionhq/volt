@@ -1,7 +1,7 @@
 [Lines Of Code](https://img.shields.io/tokei/lines/github/voltpkg/volt)
 
 <p align="center">
-  <!-- <img src="https://github.com/voltpkg/volt/assets/ /> -->
+  <img src="https://github.com/voltpkg/volt/blob/master/assets/volt-transparent-bg.png?raw=true">
 </p>
 
 <h1 align="center">Volt</h1>
