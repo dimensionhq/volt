@@ -1,17 +1,25 @@
 use crate::classes::package::Package;
 use flate2::read::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{fs::File, io, io::Write, process, u64};
+use std::fs::{create_dir, File};
+use std::io::Write;
+use std::path::Path;
+use std::{io, process};
 use tar::Archive;
 
-#[allow(unused)]
 pub fn initialize() -> Vec<String> {
     // Initialize And Get Args
     enable_ansi_support().unwrap();
+    let home = format!(r"{}\.volt", std::env::var("USERPROFILE").unwrap());
+    let volt_dir = Path::new(home.as_str());
+
+    if !volt_dir.exists() {
+        create_dir(volt_dir).unwrap();
+    }
+
     std::env::args().collect()
 }
 
-#[allow(unused)]
 pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
     let mut flags: Vec<String> = vec![];
     let mut packages: Vec<String> = vec![];
@@ -77,7 +85,6 @@ pub fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io
 }
 
 /// Gets a config key from git using the git cli.
-#[allow(unused)]
 pub fn get_git_config(key: &str) -> io::Result<Option<String>> {
     process::Command::new("git")
         .arg("config")
