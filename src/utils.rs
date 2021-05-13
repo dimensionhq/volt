@@ -11,6 +11,7 @@ pub fn initialize() -> Vec<String> {
     // Initialize And Get Args
     enable_ansi_support().unwrap();
     let home = format!(r"{}\.volt", std::env::var("USERPROFILE").unwrap());
+
     let volt_dir = Path::new(home.as_str());
 
     if !volt_dir.exists() {
@@ -59,8 +60,10 @@ pub async fn download_tarball(package: &Package) -> String {
         latest_version
     );
 
+    let path = Path::new(&loc);
+
     // Placeholder buffer
-    let mut file = std::fs::File::create(&loc).unwrap();
+    let mut file = File::create(&path).unwrap();
 
     while let Some(chunk) = response.chunk().await.unwrap() {
         progress_bar.inc(chunk.len() as u64);
@@ -73,14 +76,25 @@ pub async fn download_tarball(package: &Package) -> String {
 }
 
 pub fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io::Error> {
-    let tar_gz = File::open(file_path)?;
+    let path = Path::new(file_path);
+    let tar_gz = File::open(path)?;
     let tar = GzDecoder::new(tar_gz);
     let mut archive = Archive::new(tar);
     archive.unpack("node_modules")?;
-    std::fs::rename(
-        r"node_modules\package",
-        format!(r"node_modules\{}", package.name),
-    )?;
+    if !Path::new(&format!(r"node_modules\{}", package.name)).exists() {
+        std::fs::rename(
+            r"node_modules\package",
+            format!(r"node_modules\{}", package.name),
+        )?;
+    } else {
+        let loc = format!(r"node_modules\ctx-provider\package.json");
+        let file_contents = std::fs::read_to_string(loc).unwrap();
+        let json_file: serde_json::Value = serde_json::from_str(file_contents.as_str()).unwrap();
+        let version = json_file["version"].as_str().unwrap();
+        if version != package.dist_tags.latest {
+            // Update dependencies
+        }
+    }
     Ok(())
 }
 
