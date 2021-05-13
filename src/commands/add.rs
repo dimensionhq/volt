@@ -6,8 +6,8 @@ use std::io;
 use std::{fs::File, sync::Arc};
 use tokio::{self, task::JoinHandle};
 
-use crate::model::lock::LockFile;
-use crate::model::{http_manager, lock::DependencyLock};
+use crate::model::lock_file::LockFile;
+use crate::model::{http_manager, lock_file::DependencyLock};
 use crate::utils::{download_tarball, extract_tarball};
 use crate::__VERSION__;
 use crate::{classes::package::Version, utils::App};
@@ -67,12 +67,18 @@ Options:
                 .1
                 .clone();
 
-            lock_file.dependencies.push(DependencyLock {
-                name: package_name.clone(),
-                version: package.clone().dist_tags.latest,
-                tarball: version.clone().dist.tarball,
-                sha1: version.clone().dist.shasum,
-            });
+            lock_file.add(
+                (
+                    package_name.clone(),
+                    format!("^{}", package.dist_tags.latest),
+                ),
+                DependencyLock {
+                    name: package_name.clone(),
+                    version: package.dist_tags.latest.clone(),
+                    tarball: version.dist.tarball.clone(),
+                    sha1: version.dist.shasum.clone(),
+                },
+            );
 
             let mut handles: Vec<JoinHandle<Result<()>>> =
                 Vec::with_capacity(version.dependencies.len());
