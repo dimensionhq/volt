@@ -81,12 +81,7 @@ Options:
             handles.push(tokio::spawn(async move {
                 let path = download_tarball(&app, &package).await;
 
-                match extract_tarball(path.as_str(), &package) {
-                    Ok(_) => {}
-                    Err(err) => {
-                        eprintln!("{}", err);
-                    }
-                };
+                extract_tarball(path.as_str(), &package).unwrap_graceful(|err| err);
 
                 let mut file = File::open(path).unwrap();
                 let mut hasher = Sha1::new();
