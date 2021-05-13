@@ -1,4 +1,5 @@
 use crate::classes::package::Package;
+use anyhow::{anyhow, Result};
 use dirs::home_dir;
 use flate2::read::GzDecoder;
 use std::{
@@ -102,7 +103,7 @@ pub fn get_basename<'a>(path: &'a str) -> Cow<'a, str> {
     }
 }
 
-pub async fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io::Error> {
+pub async fn extract_tarball(file_path: &str, package: &Package) -> Result<()> {
     let path = Path::new(file_path);
     let tar_gz = File::open(path)?;
     let tar = GzDecoder::new(tar_gz);
@@ -115,9 +116,11 @@ pub async fn extract_tarball(file_path: &str, package: &Package) -> Result<(), s
         )?;
     } else {
         let loc = format!(r"node_modules/{}/package.json", package.name);
-        let file_contents = std::fs::read_to_string(loc).unwrap();
-        let json_file: serde_json::Value = serde_json::from_str(file_contents.as_str()).unwrap();
-        let version = json_file["version"].as_str().unwrap();
+        let file_contents = std::fs::read_to_string(loc)?;
+        let json_file: serde_json::Value = serde_json::from_str(file_contents.as_str())?;
+        let version = json_file["version"]
+            .as_str()
+            .ok_or_else(|| anyhow!("version not found in package.json"))?;
         if version != package.dist_tags.latest {
             // Update dependencies
         }

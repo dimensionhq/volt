@@ -5,6 +5,7 @@ use crate::{
     __VERSION__,
 };
 
+use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use std::io::Write;
@@ -40,7 +41,7 @@ Options:
         )
     }
 
-    async fn exec(&self, _app: Arc<App>, _args: Vec<String>, flags: Vec<String>) {
+    async fn exec(&self, _app: Arc<App>, _args: Vec<String>, flags: Vec<String>) -> Result<()> {
         let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
         let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();
@@ -274,5 +275,6 @@ Options:
         }
 
         println!("{}", "Successfully Initialized package.json".bright_green());
+        Ok(())
     }
 }
