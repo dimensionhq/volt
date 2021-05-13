@@ -1,3 +1,4 @@
+use anyhow::Result;
 use async_trait::async_trait;
 use std::{str::FromStr, sync::Arc};
 
@@ -56,5 +57,5 @@ impl AppCommand {
 pub trait Command {
     fn help(&self) -> String;
 
-    async fn exec(&self, app: Arc<App>, args: Vec<String>, flags: Vec<String>);
+    async fn exec(&self, app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()>;
 }

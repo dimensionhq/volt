@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 
@@ -40,7 +41,8 @@ Commands:
         )
     }
 
-    async fn exec(&self, _app: Arc<App>, _args: Vec<String>, _flags: Vec<String>) {
+    async fn exec(&self, _app: Arc<App>, _args: Vec<String>, _flags: Vec<String>) -> Result<()> {
         println!("{}", self.help());
+        Ok(())
     }
 }

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct Package {
     #[serde(rename = "_id")]
     pub id: String,
@@ -15,12 +15,12 @@ pub struct Package {
     pub versions: HashMap<String, Version>,
     pub time: HashMap<String, String>,
     pub maintainers: Vec<Maintainer>,
-    pub description: String,
-    pub homepage: String,
-    pub repository: Repository,
-    pub author: Author,
-    pub bugs: Bugs,
-    pub license: String,
+    pub description: Option<String>,
+    pub homepage: Option<String>,
+    pub repository: Option<Repository>,
+    pub author: Option<Author>,
+    pub bugs: Option<Bugs>,
+    pub license: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

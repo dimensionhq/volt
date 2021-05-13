@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 
@@ -35,9 +36,10 @@ Options:
         )
     }
 
-    async fn exec(&self, _app: Arc<App>, args: Vec<String>, flags: Vec<String>) {
+    async fn exec(&self, _app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()> {
         println!("Removing packages");
         println!("Packages: {:?}", args);
         println!("Flags: {:?}", flags);
+        Ok(())
     }
 }

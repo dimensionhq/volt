@@ -1,21 +1,32 @@
 use std::io;
 
+use thiserror::Error;
+
 use crate::classes::package::Package;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum GetPackageError {
-    RequestError(chttp::Error),
-    IOError(io::Error),
-    JSONError(serde_json::Error),
+    #[error("network request failed with registry")]
+    Request(chttp::Error),
+    #[error("unable to read network response")]
+    IO(io::Error),
+    #[error("unable to deserialize network response: {0:?}")]
+    JSON(serde_json::Error),
 }
 
-pub async fn get_package(name: &str) -> Result<Package, GetPackageError> {
-    let mut body = chttp::get_async(format!("http://registry.yarnpkg.com/{}", name))
+pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError> {
+    let resp = chttp::get_async(format!("http://registry.yarnpkg.com/{}", name))
         .await
-        .map_err(GetPackageError::RequestError)?
-        .into_body();
+        .map_err(GetPackageError::Request)?;
 
-    let body_string = body.text().map_err(GetPackageError::IOError)?;
+    if resp.status().is_client_error() {
+        return Ok(None);
+    }
 
-    serde_json::from_str(&body_string).map_err(GetPackageError::JSONError)
+    let mut body = resp.into_body();
+    let body_string = body.text().map_err(GetPackageError::IO)?;
+
+    let package: Package = serde_json::from_str(&body_string).map_err(GetPackageError::JSON)?;
+
+    Ok(Some(package))
 }
