@@ -1,13 +1,10 @@
 {
   "name": "volt",
   "version": "1.0.0",
-  "description": "a package manager",
+  "description": "",
   "main": "index.js",
   "repository": "",
-  "author": "Shadow7258 <pranav.rdoshi@gmail.com>",
+  "author": "VarunPotti <potti.varun07@gmail.com>",
   "license": "Apache2",
-  "private": false,
-  "dependencies": {
-    "react": "^17.0.2"
-  }
+  "private": false
 }

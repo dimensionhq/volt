@@ -3,6 +3,7 @@ use dirs::home_dir;
 use flate2::read::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::{
+    borrow::Cow,
     env,
     fs::File,
     io::{self, Write},
@@ -25,9 +26,8 @@ pub fn initialize() -> (App, Vec<String>) {
     let home_dir = home_dir()
         .map(|dir| dir.into_boxed_path())
         .unwrap_or_else(|| current_dir.clone());
-
     let volt_dir = home_dir.join(".volt").into_boxed_path();
-
+    let dir = std::fs::create_dir_all(&volt_dir);
     let app = App {
         current_dir,
         home_dir,
@@ -85,6 +85,20 @@ pub async fn download_tarball(app: &App, package: &Package) -> String {
     progress_bar.finish();
 
     path_str
+}
+pub fn get_basename<'a>(path: &'a str) -> Cow<'a, str> {
+    let sep: char;
+    if cfg!(windows) {
+        sep = '\\';
+    } else {
+        sep = '/';
+    }
+    let mut pieces = path.rsplit(sep);
+
+    match pieces.next() {
+        Some(p) => p.into(),
+        None => path.into(),
+    }
 }
 
 pub async fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io::Error> {
