@@ -93,13 +93,13 @@ pub fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io
     let tar = GzDecoder::new(tar_gz);
     let mut archive = Archive::new(tar);
     archive.unpack("node_modules")?;
-    if !Path::new(&format!(r"node_modules\{}", package.name)).exists() {
+    if !Path::new(&format!(r"node_modules/{}", package.name)).exists() {
         std::fs::rename(
-            r"node_modules\package",
-            format!(r"node_modules\{}", package.name),
+            r"node_modules/package",
+            format!(r"node_modules/{}", package.name),
         )?;
     } else {
-        let loc = format!(r"node_modules\{}\package.json", package.name);
+        let loc = format!(r"node_modules/{}/package.json", package.name);
         let file_contents = std::fs::read_to_string(loc).unwrap();
         let json_file: serde_json::Value = serde_json::from_str(file_contents.as_str()).unwrap();
         let version = json_file["version"].as_str().unwrap();
