@@ -1,8 +1,8 @@
+use colored::Colorize;
 use std::{
     fmt::{Debug, Display},
     process,
 };
-use colored::Colorize;
 
 pub trait UnwrapGraceful<V, E>
 where
