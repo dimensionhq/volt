@@ -76,28 +76,30 @@ Options:
                 handles.push(handle);
             }
 
-            futures::future::join_all(handles).await;
+            handles.push(tokio::spawn(async move {
+                let path = download_tarball(&package).await;
 
-            let path = download_tarball(&package).await;
+                match extract_tarball(path.as_str(), &package) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        eprintln!("{}", err);
+                    }
+                };
 
-            match extract_tarball(path.as_str(), &package) {
-                Ok(_) => {}
-                Err(err) => {
-                    eprintln!("{}", err);
+                let mut file = File::open(path).unwrap();
+                let mut hasher = Sha1::new();
+                io::copy(&mut file, &mut hasher).unwrap();
+                let hash = format!("{:x}", hasher.finalize());
+
+                if hash == version.dist.shasum {
+                    // Verified Checksum
+                    println!("{}", "Successfully Verified Hash".bright_green());
+                } else {
+                    println!("Failed To Verify")
                 }
-            };
+            }));
 
-            let mut file = File::open(path).unwrap();
-            let mut hasher = Sha1::new();
-            io::copy(&mut file, &mut hasher).unwrap();
-            let hash = format!("{:x}", hasher.finalize());
-
-            if hash == version.dist.shasum {
-                // Verified Checksum
-                println!("{}", "Successfully Verified Hash".bright_green());
-            } else {
-                println!("Failed To Verify")
-            }
+            futures::future::join_all(handles).await;
         }
     }
 }
