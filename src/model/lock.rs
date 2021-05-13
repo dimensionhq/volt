@@ -3,13 +3,17 @@ use std::{
     io::{self, BufReader, BufWriter},
     path::PathBuf,
 };
+use thiserror::Error;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum LockFileError {
+    #[error("unable to read lock file")]
     IO(io::Error),
+    #[error("unable to deserialize lock file")]
     Decode(serde_json::Error),
+    #[error("unable to serialize lock file")]
     Encode(serde_json::Error),
 }
 
