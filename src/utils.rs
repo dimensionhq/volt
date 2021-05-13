@@ -1,7 +1,6 @@
 use crate::classes::package::Package;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
-use indicatif::{ProgressBar, ProgressStyle};
 use std::{
     env,
     fs::File,
@@ -61,13 +60,13 @@ pub async fn download_tarball(app: &App, package: &Package) -> String {
     let tarball = &package.versions[latest_version].dist.tarball;
 
     let mut response = reqwest::get(tarball).await.unwrap();
-    let total_length = response.content_length().unwrap();
-    let progress_bar = ProgressBar::new(total_length);
-    progress_bar.set_style(
-        ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-            .progress_chars("=>-"),
-    );
+
+    // let progress_bar = ProgressBar::new(total_length);
+    // progress_bar.set_style(
+    //     ProgressStyle::default_bar()
+    //         .template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+    //         .progress_chars("=>-"),
+    // );
 
     let file_name = format!("{}-{}.tgz", name, latest_version);
 
@@ -78,11 +77,8 @@ pub async fn download_tarball(app: &App, package: &Package) -> String {
     let mut file = File::create(path).unwrap();
 
     while let Some(chunk) = response.chunk().await.unwrap() {
-        progress_bar.inc(chunk.len() as u64);
         let _ = file.write(&*chunk);
     }
-
-    progress_bar.finish();
 
     path_str
 }
