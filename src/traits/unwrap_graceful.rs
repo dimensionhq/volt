@@ -2,6 +2,7 @@ use std::{
     fmt::{Debug, Display},
     process,
 };
+use colored::Colorize;
 
 pub trait UnwrapGraceful<V, E>
 where
@@ -23,7 +24,7 @@ where
         match self {
             Ok(val) => val,
             Err(err) => {
-                eprintln!("{}", f(err));
+                eprintln!("{} {}", "error:".bright_red(), f(err));
                 process::exit(1);
             }
         }
