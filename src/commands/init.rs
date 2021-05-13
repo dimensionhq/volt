@@ -4,16 +4,16 @@ mod init_data;
 use crate::{
     commands::init::init_data::License,
     prompt::prompt::{Confirm, Input, Select},
-    utils::get_git_config,
+    utils::{get_git_config, App},
     __VERSION__,
 };
 
 use async_trait::async_trait;
 use colored::Colorize;
 use init_data::InitData;
-use std::fs::File;
 use std::io::Write;
 use std::{env, process};
+use std::{fs::File, sync::Arc};
 
 use super::Command;
 
@@ -44,7 +44,7 @@ Options:
         )
     }
 
-    async fn exec(&self, _args: &Vec<String>, flags: &Vec<String>) {
+    async fn exec(&self, _app: Arc<App>, _args: &Vec<String>, flags: &Vec<String>) {
         let temp = env::current_dir().unwrap().to_string_lossy().to_string();
         let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();

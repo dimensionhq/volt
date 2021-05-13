@@ -1,7 +1,9 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::__VERSION__;
+use crate::{utils::App, __VERSION__};
 
 use super::Command;
 
@@ -33,7 +35,7 @@ Options:
         )
     }
 
-    async fn exec(&self, args: &Vec<String>, flags: &Vec<String>) {
+    async fn exec(&self, _app: Arc<App>, args: &Vec<String>, flags: &Vec<String>) {
         println!("Removing packages");
         println!("Packages: {:?}", args);
         println!("Flags: {:?}", flags);
