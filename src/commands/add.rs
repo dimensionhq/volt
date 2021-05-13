@@ -7,6 +7,7 @@ use colored::Colorize;
 use sha1::{Digest, Sha1};
 use std::fs::File;
 use std::io;
+use tokio::{self, task::JoinHandle};
 
 use crate::__VERSION__;
 
@@ -45,9 +46,6 @@ Options:
 
     async fn exec(&self, packages: &Vec<String>, flags: &Vec<String>) {
         for package_name in packages {
-            use std::time::Instant;
-            let now = Instant::now();
-
             let package = http_manager::get_package(package_name)
                 .await
                 .unwrap_graceful(|err| {
@@ -59,8 +57,6 @@ Options:
                     )
                 });
 
-            println!("{}", now.elapsed().as_secs_f64());
-
             let version: Version = package
                 .versions
                 .get_key_value(&package.dist_tags.latest)
@@ -68,12 +64,19 @@ Options:
                 .1
                 .clone();
 
-            // TODO: Handle Dependencies
+            let mut handles: Vec<JoinHandle<()>> = Vec::with_capacity(version.dependencies.len());
             for dependency in version.dependencies.iter() {
                 let dependency = dependency.0.clone();
-                #[allow(unused_must_use)]
-                Add::exec(&self, &vec![dependency], flags).await;
+                let flags = (*flags).clone();
+                let handle = tokio::spawn(async move {
+                    println!("Getting dep: {}", &dependency);
+                    Add.exec(&vec![dependency.clone()], &flags).await;
+                    println!("Done dep: {}", dependency);
+                });
+                handles.push(handle);
             }
+
+            futures::future::join_all(handles).await;
 
             let path = download_tarball(&package).await;
 
@@ -92,6 +95,8 @@ Options:
             if hash == version.dist.shasum {
                 // Verified Checksum
                 println!("{}", "Successfully Verified Hash".bright_green());
+            } else {
+                println!("Failed To Verify")
             }
         }
     }
