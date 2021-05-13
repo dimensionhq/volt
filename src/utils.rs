@@ -87,7 +87,7 @@ pub fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io
             format!(r"node_modules\{}", package.name),
         )?;
     } else {
-        let loc = format!(r"node_modules\ctx-provider\package.json");
+        let loc = format!(r"node_modules\{}\package.json", package.name);
         let file_contents = std::fs::read_to_string(loc).unwrap();
         let json_file: serde_json::Value = serde_json::from_str(file_contents.as_str()).unwrap();
         let version = json_file["version"].as_str().unwrap();
