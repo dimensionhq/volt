@@ -1,7 +1,9 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::__VERSION__;
+use crate::{utils::App, __VERSION__};
 
 use super::Command;
 
@@ -32,5 +34,5 @@ Options:
         )
     }
 
-    async fn exec(&self, _packages: &Vec<String>, _flags: &Vec<String>) {}
+    async fn exec(&self, _app: Arc<App>, _packages: &Vec<String>, _flags: &Vec<String>) {}
 }

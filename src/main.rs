@@ -8,6 +8,7 @@ mod utils;
 
 // Imports
 use commands::AppCommand;
+use std::sync::Arc;
 use utils::{get_arguments, initialize};
 
 // Constants
@@ -15,7 +16,7 @@ const __VERSION__: &str = "v1.0.0";
 
 #[tokio::main]
 async fn main() {
-    let args: Vec<String> = initialize();
+    let (app, args) = initialize();
 
     let (flags, args) = get_arguments(&args);
 
@@ -27,5 +28,5 @@ async fn main() {
         std::process::exit(0);
     }
 
-    cmd.exec(&args, &flags).await
+    cmd.exec(Arc::new(app), &args, &flags).await
 }

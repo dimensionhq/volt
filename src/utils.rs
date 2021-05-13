@@ -1,24 +1,39 @@
 use crate::classes::package::Package;
+use dirs::home_dir;
 use flate2::read::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::fs::{create_dir, File};
-use std::io::Write;
-use std::path::Path;
-use std::{io, process};
+use std::{
+    env,
+    fs::File,
+    io::{self, Write},
+    path::Path,
+    process,
+};
 use tar::Archive;
 
-pub fn initialize() -> Vec<String> {
+pub struct App {
+    pub current_dir: Box<Path>,
+    pub home_dir: Box<Path>,
+    pub volt_dir: Box<Path>,
+}
+
+pub fn initialize() -> (App, Vec<String>) {
     // Initialize And Get Args
     enable_ansi_support().unwrap();
-    let home = format!(r"{}\.volt", std::env::var("USERPROFILE").unwrap());
 
-    let volt_dir = Path::new(home.as_str());
+    let current_dir = env::current_dir().unwrap().into_boxed_path();
+    let home_dir = home_dir()
+        .map(|dir| dir.into_boxed_path())
+        .unwrap_or_else(|| current_dir.clone());
+    let volt_dir = home_dir.join(".volt").into_boxed_path();
 
-    if !volt_dir.exists() {
-        create_dir(volt_dir).unwrap();
-    }
+    let app = App {
+        current_dir,
+        home_dir,
+        volt_dir,
+    };
 
-    std::env::args().collect()
+    (app, std::env::args().collect())
 }
 
 pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
