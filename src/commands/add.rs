@@ -77,8 +77,9 @@ Options:
                 handles.push(handle);
             }
 
+            let app = app.clone();
             handles.push(tokio::spawn(async move {
-                let path = download_tarball(&package).await;
+                let path = download_tarball(&app, &package).await;
 
                 match extract_tarball(path.as_str(), &package) {
                     Ok(_) => {}
