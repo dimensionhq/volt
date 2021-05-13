@@ -1,18 +1,13 @@
 use crate::model::lock::LockFile;
-use crate::model::{http_manager, lock::Lock};
+use crate::model::{http_manager, lock::DependencyLock};
 use crate::traits::UnwrapGraceful;
 use crate::utils::{download_tarball, extract_tarball};
 use crate::{classes::package::Version, utils::App};
 use async_trait::async_trait;
 use colored::Colorize;
-use serde_json;
 use sha1::{Digest, Sha1};
-use std::io::Write;
-use std::{
-    fs::{read_to_string, File},
-    sync::Arc,
-};
-use std::{io, path::Path};
+use std::io;
+use std::{fs::File, sync::Arc};
 use tokio::{self, task::JoinHandle};
 
 use crate::__VERSION__;
@@ -50,22 +45,16 @@ Options:
         )
     }
 
-    async fn exec(&self, app: Arc<App>, packages: Vec<String>, flags: Vec<String>) {
-        let mut lock = LockFile::new();
-        let lock_path = Path::new("volt.lock");
-        let mut lock_data = String::new();
-
-        if lock_path.exists() {
-            lock_data = read_to_string("volt.lock").unwrap();
-        }
+    async fn exec(&self, app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) {
+        let mut lock_file = LockFile::load(app.lock_file_path.to_path_buf())
+            .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
         for package_name in packages {
             let package = http_manager::get_package(&package_name)
                 .await
                 .unwrap_graceful(|err| {
                     format!(
-                        "{}: An Error Occured While Requesting {}.json - {}",
-                        "error".bright_red().bold(),
+                        "An Error Occured While Requesting {}.json - {}",
                         package_name,
                         format!("{:?}", err).bright_yellow()
                     )
@@ -78,18 +67,12 @@ Options:
                 .1
                 .clone();
 
-            if lock_data == String::new() {
-                lock.freeze.as_mut().map(|value| {
-                    value.push(Lock {
-                        name: package_name.clone(),
-                        version: package.clone().dist_tags.latest,
-                        tarball: version.clone().dist.tarball,
-                        sha1: version.clone().dist.shasum,
-                    })
-                });
-            } else {
-                // Handle Lock Cache
-            }
+            lock_file.dependencies.push(DependencyLock {
+                name: package_name.clone(),
+                version: package.clone().dist_tags.latest,
+                tarball: version.clone().dist.tarball,
+                sha1: version.clone().dist.shasum,
+            });
 
             let mut handles: Vec<JoinHandle<()>> = Vec::with_capacity(version.dependencies.len());
 
@@ -130,8 +113,8 @@ Options:
         }
 
         // Write to lock file
-        let mut file = File::create("volt.lock").unwrap();
-        file.write_all(serde_json::to_string_pretty(&lock).unwrap().as_bytes())
-            .unwrap();
+        lock_file
+            .save()
+            .unwrap_graceful(|err| format!("Could not save lock file {:?}", err))
     }
 }

@@ -24,7 +24,7 @@ where
         match self {
             Ok(val) => val,
             Err(err) => {
-                eprintln!("{} {}", "error:".bright_red(), f(err));
+                eprintln!("{} {}", "error:".bright_red().bold(), f(err));
                 process::exit(1);
             }
         }
