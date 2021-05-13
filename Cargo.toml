@@ -22,6 +22,8 @@ structopt = "0.3.21"
 tokio = { version = "1.5.0", features = ["full"] }
 flate2 = "1.0.20"
 tar = "0.4.33"
+reqwest = { version = "0.11.3", features = ["json"] }
+
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3.9"
