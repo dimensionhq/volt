@@ -55,7 +55,7 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
 }
 
 /// downloads tarball file from package
-pub async fn download_tarball(package: &Package) -> String {
+pub async fn download_tarball(app: &App, package: &Package) -> String {
     let latest_version = &package.dist_tags.latest;
     let name = &package.name;
     let tarball = &package.versions[latest_version].dist.tarball;
@@ -69,17 +69,13 @@ pub async fn download_tarball(package: &Package) -> String {
             .progress_chars("=>-"),
     );
 
-    let loc = format!(
-        "{}\\.volt\\{}-{}.tgz",
-        std::env::var("USERPROFILE").unwrap(),
-        name,
-        latest_version
-    );
+    let file_name = format!("{}-{}.tgz", name, latest_version);
 
-    let path = Path::new(&loc);
+    let path = app.volt_dir.join(file_name);
+    let path_str = path.to_string_lossy().to_string();
 
     // Placeholder buffer
-    let mut file = File::create(&path).unwrap();
+    let mut file = File::create(path).unwrap();
 
     while let Some(chunk) = response.chunk().await.unwrap() {
         progress_bar.inc(chunk.len() as u64);
@@ -88,7 +84,7 @@ pub async fn download_tarball(package: &Package) -> String {
 
     progress_bar.finish();
 
-    loc
+    path_str
 }
 
 pub fn extract_tarball(file_path: &str, package: &Package) -> Result<(), std::io::Error> {
