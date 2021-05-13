@@ -44,7 +44,7 @@ Options:
         )
     }
 
-    async fn exec(&self, _app: Arc<App>, _args: &Vec<String>, flags: &Vec<String>) {
+    async fn exec(&self, _app: Arc<App>, _args: Vec<String>, flags: Vec<String>) {
         let temp = env::current_dir().unwrap().to_string_lossy().to_string();
         let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();
