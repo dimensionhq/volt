@@ -5,7 +5,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::{
     env,
     fs::File,
-    io::{self, Read, Write},
+    io::{self, Write},
     path::Path,
     process,
 };
@@ -60,15 +60,8 @@ pub async fn download_tarball(app: &App, package: &Package) -> String {
     let name = &package.name;
     let tarball = &package.versions[latest_version].dist.tarball;
 
-    let response = chttp::get_async(tarball).await.unwrap();
-    let total_length = response
-        .headers()
-        .get("content-length")
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .parse()
-        .unwrap();
+    let mut response = reqwest::get(tarball).await.unwrap();
+    let total_length = response.content_length().unwrap();
     let progress_bar = ProgressBar::new(total_length);
     progress_bar.set_style(
         ProgressStyle::default_bar()
@@ -84,9 +77,9 @@ pub async fn download_tarball(app: &App, package: &Package) -> String {
     // Placeholder buffer
     let mut file = File::create(path).unwrap();
 
-    for byte in response.into_body().bytes() {
-        progress_bar.inc(1);
-        let _ = file.write(&[byte.unwrap()]);
+    while let Some(chunk) = response.chunk().await.unwrap() {
+        progress_bar.inc(chunk.len() as u64);
+        let _ = file.write(&*chunk);
     }
 
     progress_bar.finish();
