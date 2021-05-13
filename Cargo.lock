@@ -270,12 +270,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0402f765d8a89a26043b889b26ce3c4679d268fa6bb22cd7c6aad98340e179d1"
 
 [[package]]
-name = "futures-io"
-version = "0.3.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acc499defb3b348f8d8f3f66415835a9131856ff7714bf10dadfc4ec4bdb29a1"
-
-[[package]]
 name = "futures-macro"
 version = "0.3.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -308,10 +302,8 @@ checksum = "feb5c238d27e2bf94ffdfd27b2c29e3df4a68c4193bb6427384259e2bf191967"
 dependencies = [
  "autocfg",
  "futures-core",
- "futures-io",
  "futures-macro",
  "futures-task",
- "memchr",
  "pin-project-lite",
  "pin-utils",
  "proc-macro-hack",
@@ -574,12 +566,6 @@ dependencies = [
  "adler",
  "autocfg",
 ]
-
-[[package]]
-name = "minreq"
-version = "2.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "781e56f7d29192378f0a04948b1e6aec67ce561273b2dd26ac510bbe88d7be70"
 
 [[package]]
 name = "mio"
@@ -917,6 +903,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "serde",
+ "serde_json",
  "serde_urlencoded",
  "tokio",
  "tokio-native-tls",
@@ -1329,7 +1316,6 @@ dependencies = [
  "flate2",
  "futures-util",
  "indicatif",
- "minreq",
  "reqwest",
  "serde",
  "serde_json",
