@@ -34,5 +34,5 @@ Options:
         )
     }
 
-    async fn exec(&self, _app: Arc<App>, _packages: &Vec<String>, _flags: &Vec<String>) {}
+    async fn exec(&self, _app: Arc<App>, _packages: Vec<String>, _flags: Vec<String>) {}
 }
