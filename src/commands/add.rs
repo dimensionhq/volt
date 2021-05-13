@@ -59,8 +59,7 @@ Options:
                     )
                 });
 
-            let end = Instant::now();
-            println!("{}", (end - now).as_secs_f64());
+            println!("{}", now.elapsed().as_secs_f64());
 
             let version: Version = package
                 .versions

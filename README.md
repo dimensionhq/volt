@@ -5,7 +5,7 @@
 </p>
 
 <h1 align="center">Volt</h1>
-<h4 align="center">A powerful, fast and memory safe package manager for the web.</h1>
+<h3 align="center">A powerful, fast and memory safe package manager for the web.</h3>
 <br>
 
 <p align="center">
