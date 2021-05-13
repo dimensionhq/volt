@@ -14,6 +14,7 @@ pub struct App {
     pub current_dir: Box<Path>,
     pub home_dir: Box<Path>,
     pub volt_dir: Box<Path>,
+    pub lock_file_path: Box<Path>,
 }
 
 pub fn initialize() -> (App, Vec<String>) {
@@ -27,10 +28,13 @@ pub fn initialize() -> (App, Vec<String>) {
 
     let volt_dir = home_dir.join(".volt").into_boxed_path();
 
+    let lock_file_path = current_dir.join("volt.lock").into_boxed_path();
+
     let app = App {
         current_dir,
         home_dir,
         volt_dir,
+        lock_file_path,
     };
 
     (app, std::env::args().collect())
