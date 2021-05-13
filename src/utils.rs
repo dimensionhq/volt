@@ -25,6 +25,7 @@ pub fn initialize() -> (App, Vec<String>) {
     let home_dir = home_dir()
         .map(|dir| dir.into_boxed_path())
         .unwrap_or_else(|| current_dir.clone());
+
     let volt_dir = home_dir.join(".volt").into_boxed_path();
 
     let app = App {
