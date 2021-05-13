@@ -43,8 +43,11 @@ Options:
         )
     }
 
-    async fn exec(&self, packages: &Vec<String>, _flags: &Vec<String>) {
+    async fn exec(&self, packages: &Vec<String>, flags: &Vec<String>) {
         for package_name in packages {
+            use std::time::Instant;
+            let now = Instant::now();
+
             let package = http_manager::get_package(package_name)
                 .await
                 .unwrap_graceful(|err| {
@@ -56,6 +59,9 @@ Options:
                     )
                 });
 
+            let end = Instant::now();
+            println!("{}", (end - now).as_secs_f64());
+
             let version: Version = package
                 .versions
                 .get_key_value(&package.dist_tags.latest)
@@ -64,9 +70,11 @@ Options:
                 .clone();
 
             // TODO: Handle Dependencies
-            // for dependency in version.dependencies.iter() {
-            //     self.exec(vec![dependency], flags);
-            // }
+            for dependency in version.dependencies.iter() {
+                let dependency = dependency.0.clone();
+                #[allow(unused_must_use)]
+                Add::exec(&self, &vec![dependency], flags).await;
+            }
 
             let path = download_tarball(&package).await;
 
