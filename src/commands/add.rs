@@ -17,10 +17,10 @@ limitations under the License.
 //! Add a package to your dependencies for your project.
 
 // Std Imports
-use std::fs::File;
 use std::io;
 use std::sync::Arc;
 use std::time::Instant;
+use std::{fs::File, str::FromStr};
 
 // Library Imports
 use anyhow::{anyhow, Context, Result};
@@ -31,7 +31,7 @@ use sha1::{Digest, Sha1};
 use tokio::{self, task::JoinHandle};
 
 // Crate Level Imports
-use crate::classes::package::Version;
+use crate::classes::package::{Package, Version};
 use crate::model::http_manager;
 use crate::model::lock_file::{DependencyLock, LockFile};
 use crate::utils::App;
@@ -95,24 +95,15 @@ Options:
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
         for package_name in packages {
-            let package = http_manager::get_package(&package_name)
-                .await
-                .with_context(|| format!("Failed to fetch package '{}'", package_name))?
-                .ok_or_else(|| {
-                    anyhow!(
-                        "Package '{}' was not found or is not available",
-                        package_name
-                    )
-                })?;
-            let version: Version = package
-                .versions
-                .get_key_value(&package.dist_tags.latest)
-                .unwrap()
-                .1
-                .clone();
+            let (package, version) = Self::fetch_package(
+                &package_name,
+                Some(semver::VersionReq::from_str("17").unwrap()),
+            )
+            .await?;
 
-            let dependencies: std::collections::HashMap<String, String> =
-                version.dependencies.clone();
+            println!("{}", version.version);
+
+            let dependencies = version.dependencies.clone();
 
             lock_file.add(
                 (
@@ -204,5 +195,55 @@ Options:
         let end = Instant::now();
         println!("Execution Completed In: {}", (end - start).as_secs_f32());
         Ok(())
+    }
+}
+
+impl Add {
+    async fn fetch_package(
+        package_name: &str,
+        version_req: Option<semver::VersionReq>,
+    ) -> Result<(Package, Version)> {
+        let package = http_manager::get_package(&package_name)
+            .await
+            .with_context(|| format!("Failed to fetch package '{}'", package_name))?
+            .ok_or_else(|| {
+                anyhow!(
+                    "Package '{}' was not found or is not available",
+                    package_name
+                )
+            })?;
+
+        let version: Version = match &version_req {
+            Some(req) => {
+                let mut available_versions: Vec<semver::Version> = package
+                    .versions
+                    .iter()
+                    .filter_map(|(k, _)| k.parse().ok())
+                    .collect();
+                available_versions.sort();
+                available_versions.reverse();
+
+                available_versions
+                    .into_iter()
+                    .find(|v| req.matches(v))
+                    .map(|v| package.versions.get(&v.to_string()))
+                    .flatten()
+            }
+            None => package.versions.get(&package.dist_tags.latest),
+        }
+        .ok_or_else(|| {
+            if let Some(req) = version_req {
+                anyhow!(
+                    "Version {} for '{}' is not found",
+                    req.to_string(),
+                    &package_name
+                )
+            } else {
+                anyhow!("Unable to find latest version for '{}'", &package_name)
+            }
+        })?
+        .clone();
+
+        Ok((package, version))
     }
 }
