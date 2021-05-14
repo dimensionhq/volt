@@ -142,9 +142,9 @@ Options:
             //     });
             //     handles.push(handle);
             // }
+
             let progress_bar = ProgressBar::new(9999999);
             let text = format!("{}", "Installing Packages".bright_cyan());
-            // progress_bar.set_draw_rate(100);
 
             progress_bar.clone().set_style(
                 ProgressStyle::default_spinner()
@@ -162,11 +162,9 @@ Options:
 
             let handle = tokio::spawn(async move {
                 while !completed_clone.load(Ordering::Relaxed) {
-                    // println!("inc");
                     progress_bar.inc(5);
                     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                 }
-                // println!("\n\nbreaking\n");
                 progress_bar.finish_and_clear();
             });
 
@@ -189,7 +187,7 @@ Options:
                     // Verified Checksum
                     pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
                 } else {
-                    pb.println("Failed To Verify");
+                    pb.println(format!("{}", "Failed To Verify".bright_red()));
                 }
 
                 Result::<_>::Ok(())
