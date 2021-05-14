@@ -1,3 +1,5 @@
 /target
 package_test/node_modules
 /node_modules
+package_test/volt.lock
+package.json
