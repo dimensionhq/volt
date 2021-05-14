@@ -174,9 +174,11 @@ Options:
             handles.push(tokio::spawn(async move {
                 let path = download_tarball(&app, &package).await;
 
-                extract_tarball(&path, &package).await.with_context(|| {
-                    format!("Unable to extract tarbal for package '{}'", &package.name)
-                })?;
+                extract_tarball(&path, &package, pb.clone())
+                    .await
+                    .with_context(|| {
+                        format!("Unable to extract tarbal for package '{}'", &package.name)
+                    })?;
 
                 let mut file = File::open(path).unwrap();
                 let mut hasher = Sha1::new();
