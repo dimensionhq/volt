@@ -16,21 +16,27 @@ limitations under the License.
 
 //! Add a package to your dependencies for your project.
 
+// Std Imports
+use std::fs::File;
+use std::io;
+use std::sync::Arc;
+
+// Library Imports
 use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
 use sha1::{Digest, Sha1};
-use std::fs::File;
-use std::io;
-use std::sync::Arc;
 use tokio::{self, task::JoinHandle};
 
+// Crate Level Imports
+use crate::classes::package::Version;
 use crate::model::http_manager;
 use crate::model::lock_file::{DependencyLock, LockFile};
+use crate::utils::App;
 use crate::utils::{download_tarball, extract_tarball};
 use crate::VERSION;
-use crate::{classes::package::Version, utils::App};
 
+// Super Imports
 use super::Command;
 
 /// Struct implementation for the `Add` command.

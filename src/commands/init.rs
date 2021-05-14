@@ -14,20 +14,24 @@
     limitations under the License.
 */
 
-use crate::{
-    classes::init_data::{InitData, License},
-    prompt::prompt::{Confirm, Input, Select},
-    utils::{self, get_git_config, App},
-    VERSION,
-};
+// Std Imports
+use std::fs::File;
+use std::io::Write;
+use std::sync::Arc;
+use std::{env, process};
 
+// Crate Level Imports
+use crate::classes::init_data::{InitData, License};
+use crate::prompt::prompt::{Confirm, Input, Select};
+use crate::utils::{self, get_git_config, App};
+use crate::VERSION;
+
+// Library Imports
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use std::io::Write;
-use std::{env, process};
-use std::{fs::File, sync::Arc};
 
+// Super Imports
 use super::Command;
 
 /// Struct implementation for the `Init` command.
