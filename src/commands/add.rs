@@ -102,10 +102,6 @@ Options:
             )
             .await?;
 
-            println!("{}", version.version);
-
-            let dependencies = version.dependencies.clone();
-
             lock_file.add(
                 (
                     package_name.clone(),
@@ -116,11 +112,12 @@ Options:
                     version: package.dist_tags.latest.clone(),
                     tarball: version.dist.tarball.clone(),
                     sha1: version.dist.shasum.clone(),
-                    dependencies: dependencies.clone(),
+                    dependencies: version.dependencies.clone(),
                 },
             );
 
-            let mut handles: Vec<JoinHandle<Result<()>>> = Vec::with_capacity(dependencies.len());
+            let mut handles: Vec<JoinHandle<Result<()>>> =
+                Vec::with_capacity(version.dependencies.len());
 
             // for dependency in version.dependencies.iter() {
             //     let app = app.clone();
