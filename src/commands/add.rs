@@ -37,6 +37,7 @@ use crate::model::lock_file::{DependencyLock, LockFile};
 use crate::utils::App;
 use crate::utils::{download_tarball, extract_tarball};
 use crate::VERSION;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 // Super Imports
 use super::Command;
@@ -153,19 +154,20 @@ Options:
                     .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
             );
 
+            let pb = progress_bar.clone();
+
+            let completed = Arc::new(AtomicBool::new(false));
+
+            let completed_clone = completed.clone();
+
             let handle = tokio::spawn(async move {
-                struct Guard(ProgressBar);
-                impl Drop for Guard {
-                    fn drop(&mut self) {
-                        self.0.finish_and_clear();
-                    }
-                }
-                let progress_bar = Guard(progress_bar);
-                loop {
-                    progress_bar.0.inc(5);
-                    // progress_bar.0.tick();
+                while !completed_clone.load(Ordering::Relaxed) {
+                    // println!("inc");
+                    progress_bar.inc(5);
                     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                 }
+                // println!("\n\nbreaking\n");
+                progress_bar.finish_and_clear();
             });
 
             let app = app.clone();
@@ -183,9 +185,9 @@ Options:
 
                 if hash == version.dist.shasum {
                     // Verified Checksum
-                    println!("{}", "Successfully Verified Hash".bright_green());
+                    pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
                 } else {
-                    println!("Failed To Verify")
+                    pb.println("Failed To Verify");
                 }
 
                 Result::<_>::Ok(())
@@ -194,7 +196,7 @@ Options:
             for handle in handles {
                 let _ = handle.await;
             }
-            handle.abort();
+            completed.store(true, Ordering::Relaxed);
             let _ = handle.await;
         }
 
