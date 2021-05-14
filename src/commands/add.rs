@@ -25,6 +25,7 @@ use std::sync::Arc;
 use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
+use indicatif::{ProgressBar, ProgressStyle};
 use sha1::{Digest, Sha1};
 use tokio::{self, task::JoinHandle};
 
@@ -108,6 +109,9 @@ Options:
                 .1
                 .clone();
 
+            let dependencies: std::collections::HashMap<String, String> =
+                version.dependencies.clone();
+
             lock_file.add(
                 (
                     package_name.clone(),
@@ -118,11 +122,11 @@ Options:
                     version: package.dist_tags.latest.clone(),
                     tarball: version.dist.tarball.clone(),
                     sha1: version.dist.shasum.clone(),
+                    dependencies: dependencies.clone(),
                 },
             );
 
-            let mut handles: Vec<JoinHandle<Result<()>>> =
-                Vec::with_capacity(version.dependencies.len());
+            let mut handles: Vec<JoinHandle<Result<()>>> = Vec::with_capacity(dependencies.len());
 
             // for dependency in version.dependencies.iter() {
             //     let app = app.clone();
@@ -135,6 +139,41 @@ Options:
             //     });
             //     handles.push(handle);
             // }
+            let progress_bar = ProgressBar::new(9999999);
+            let text = format!("{}", "Installing Packages".bright_cyan());
+            progress_bar.clone().set_style(
+                ProgressStyle::default_spinner()
+                    .template(
+                        ("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str(),
+                    )
+                    .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
+            );
+
+            let handle = tokio::spawn(async move {
+                struct Guard(ProgressBar);
+                impl Drop for Guard {
+                    fn drop(&mut self) {
+                        self.0.finish_and_clear();
+                    }
+                }
+                let progress_bar = Guard(progress_bar);
+                loop {
+                    progress_bar.0.inc(5);
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                }
+            });
+
+            // std::thread::spawn(move || loop {
+            //     progress_bar.inc(5);
+            //     thread::sleep(Duration::from_millis(100));
+            //     match complete {
+            //         Ok(_) => {
+            //             println!("Terminating.");
+            //             break;
+            //         }
+            //         Err() => {}
+            //     }
+            // });
 
             let app = app.clone();
             handles.push(tokio::spawn(async move {
@@ -159,7 +198,11 @@ Options:
                 Result::<_>::Ok(())
             }));
 
-            futures::future::join_all(handles).await;
+            for handle in handles {
+                let _ = handle.await;
+            }
+            handle.abort();
+            let _ = handle.await;
         }
 
         // Write to lock file
