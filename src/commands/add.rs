@@ -107,6 +107,8 @@ Options:
                 .1
                 .clone();
 
+            let dependencies: std::collections::HashMap<String, String> = version.dependencies.clone();
+
             lock_file.add(
                 (
                     package_name.clone(),
@@ -117,11 +119,12 @@ Options:
                     version: package.dist_tags.latest.clone(),
                     tarball: version.dist.tarball.clone(),
                     sha1: version.dist.shasum.clone(),
+                    dependencies: dependencies.clone(),
                 },
             );
 
             let mut handles: Vec<JoinHandle<Result<()>>> =
-                Vec::with_capacity(version.dependencies.len());
+                Vec::with_capacity(dependencies.len());
 
             // for dependency in version.dependencies.iter() {
             //     let app = app.clone();
