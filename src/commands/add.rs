@@ -17,17 +17,17 @@ limitations under the License.
 //! Add a package to your dependencies for your project.
 
 // Std Imports
-use std::io;
-use std::sync::Arc;
 use std::{fs::File, str::FromStr};
+use std::{io, sync::Arc};
 
 // Library Imports
 use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
+use futures::{future::BoxFuture, stream::FuturesUnordered, FutureExt, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use sha1::{Digest, Sha1};
-use tokio::{self, task::JoinHandle};
+use tokio::{self, sync::Mutex, task::JoinHandle};
 
 // Crate Level Imports
 use crate::classes::package::{Package, Version};
@@ -42,7 +42,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use super::Command;
 
 /// Struct implementation for the `Add` command.
-pub struct Add;
+#[derive(Clone)]
+pub struct Add {
+    lock_file: LockFile,
+    dependencies: Arc<Mutex<Vec<(Package, Version)>>>,
+}
 
 #[async_trait]
 impl Command for Add {
@@ -94,11 +98,7 @@ Options:
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
         for package_name in packages {
-            let (package, version) = Self::fetch_package(
-                &package_name,
-                Some(semver::VersionReq::from_str("17").unwrap()),
-            )
-            .await?;
+            let (package, version) = Self::fetch_package(&package_name, None).await?;
 
             lock_file.add(
                 (
@@ -240,5 +240,56 @@ impl Add {
         .clone();
 
         Ok((package, version))
+    }
+
+    fn get_dependency_tree(
+        &mut self,
+        package_name: String,
+        version_req: Option<semver::VersionReq>,
+    ) -> BoxFuture<'_, Result<()>> {
+        async move {
+            let pkg = Self::fetch_package(&package_name, version_req).await?;
+            let pkg_deps = pkg.1.dependencies.clone();
+
+            self.dependencies
+                .lock()
+                .map(|mut deps| {
+                    if !deps.iter().any(|(package, version)| {
+                        package.name == pkg.0.name && pkg.1.version == version.version
+                    }) {
+                        deps.push(pkg);
+                    }
+                })
+                .await;
+
+            let mut workers = FuturesUnordered::new();
+
+            for (name, version) in pkg_deps {
+                let pkg_name = name.clone();
+                let mut self_copy = self.clone();
+                workers.push(tokio::spawn(async move {
+                    self_copy
+                        .get_dependency_tree(
+                            pkg_name,
+                            Some(
+                                version
+                                    .parse()
+                                    .map_err(|_| anyhow!("Could not parse dependency version"))?,
+                            ),
+                        )
+                        .await
+                }));
+            }
+
+            loop {
+                match workers.next().await {
+                    Some(result) => result??,
+                    None => break,
+                }
+            }
+
+            Ok(())
+        }
+        .boxed()
     }
 }
