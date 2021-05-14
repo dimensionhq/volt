@@ -58,13 +58,12 @@ async fn try_main() -> Result<()> {
 
     let (flags, args) = get_arguments(&args);
 
-    let app_cmd = AppCommand::current().unwrap_or(AppCommand::Help); // Default command is help
-    let cmd = app_cmd.command();
+    let cmd = AppCommand::current().unwrap_or(AppCommand::Help); // Default command is help
 
     if flags.iter().any(|flag| flag == "--help") {
         println!("{}", cmd.help());
         return Ok(());
     }
 
-    cmd.exec(Arc::new(app), args, flags).await
+    cmd.run(Arc::new(app), args, flags).await
 }

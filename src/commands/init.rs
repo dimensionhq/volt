@@ -40,7 +40,7 @@ pub struct Init;
 #[async_trait]
 impl Command for Init {
     /// Display a help menu for the `volt init` command.
-    fn help(&self) -> String {
+    fn help() -> String {
         format!(
             r#"volt {}
     
@@ -78,7 +78,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(&self, _app: Arc<App>, _args: Vec<String>, flags: Vec<String>) -> Result<()> {
+    async fn exec(_app: Arc<App>, _args: Vec<String>, flags: Vec<String>) -> Result<()> {
         let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
         let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();

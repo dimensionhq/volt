@@ -37,7 +37,7 @@ pub struct Install;
 #[async_trait]
 impl Command for Install {
     /// Display a help menu for the `volt install` command.
-    fn help(&self) -> String {
+    fn help() -> String {
         format!(
             r#"volt {}
         
@@ -75,12 +75,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(
-        &self,
-        _app: Arc<App>,
-        _packages: Vec<String>,
-        _flags: Vec<String>,
-    ) -> Result<()> {
+    async fn exec(_app: Arc<App>, _packages: Vec<String>, _flags: Vec<String>) -> Result<()> {
         Ok(())
     }
 }

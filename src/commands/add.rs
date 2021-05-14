@@ -48,7 +48,7 @@ pub struct Add;
 #[async_trait]
 impl Command for Add {
     /// Display a help menu for the `volt add` command.
-    fn help(&self) -> String {
+    fn help() -> String {
         format!(
             r#"volt {}
     
@@ -90,7 +90,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(&self, app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) -> Result<()> {
+    async fn exec(app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) -> Result<()> {
         let start = Instant::now();
         let mut lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
