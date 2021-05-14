@@ -1,0 +1,17 @@
+#cursor {
+  animation: 1s blinker linear infinite;
+  -webkit-animation: 1s blinker linear infinite;
+  -moz-animation: 1s blinker linear infinite;
+}
+
+@keyframes blinker {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
