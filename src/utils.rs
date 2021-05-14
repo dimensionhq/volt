@@ -90,13 +90,6 @@ pub async fn download_tarball(app: &App, package: &Package) -> String {
 
     let mut response = reqwest::get(tarball).await.unwrap();
 
-    // let progress_bar = ProgressBar::new(total_length);
-    // progress_bar.set_style(
-    //     ProgressStyle::default_bar()
-    //         .template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-    //         .progress_chars("=>-"),
-    // );
-
     let file_name = format!("{}-{}.tgz", name, latest_version);
 
     let path = app.volt_dir.join(file_name);
