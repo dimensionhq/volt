@@ -8,23 +8,23 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.40"
 async-trait = "0.1.50"
+chttp = "0.5.5"
 colored = "2.0.0"
 console  = "0.14.1"
 dialoguer = "0.8.0"
 dirs = "3.0.2"
+flate2 = "1.0.20"
 futures = "0.3.15"
 futures-util = "0.3.14"
 indicatif = "0.16.0"
-chttp = "0.5.5"
+reqwest = { version = "0.11.3", features = ["json"] }
 sha-1 = "0.9.6"
 serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"
 structopt = "0.3.21"
 thiserror = "1.0"
 tokio = { version = "1.5.0", features = ["full"] }
-flate2 = "1.0.20"
 tar = "0.4.33"
-reqwest = { version = "0.11.3", features = ["json"] }
 
 
 [target.'cfg(windows)'.dependencies]

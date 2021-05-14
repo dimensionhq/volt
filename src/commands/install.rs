@@ -14,14 +14,21 @@
     limitations under the License.
 */
 
+//! Installs dependencies for a project.
+
+// Std Imports
 use std::sync::Arc;
 
+// Library Imports
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::{utils::App, VERSION};
+// Crate Level Imports
+use crate::utils::App;
+use crate::VERSION;
 
+// Super Imports
 use super::Command;
 
 /// Struct implementation for the `Install` command.

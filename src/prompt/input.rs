@@ -15,13 +15,16 @@
 */
 
 #![allow(dead_code)]
+
+// Std Imports
+use std::fmt::{self, Debug, Display};
+use std::io;
+use std::iter;
+use std::str::FromStr;
+
+// Library Imports
 use console::{Key, Term};
 use dialoguer::theme::{SimpleTheme, Theme};
-use std::{
-    fmt::{self, Debug, Display},
-    io, iter,
-    str::FromStr,
-};
 
 pub(crate) struct TermThemeRenderer<'a> {
     term: &'a Term,

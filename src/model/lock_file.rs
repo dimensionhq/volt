@@ -14,16 +14,16 @@
     limitations under the License.
 */
 
-use std::{
-    collections::{BTreeMap, HashMap},
-    fs::File,
-    hash::{Hash, Hasher},
-    io::{self, BufReader, BufWriter},
-    path::PathBuf,
-};
-use thiserror::Error;
+// Std Imports
+use std::collections::{BTreeMap, HashMap};
+use std::fs::File;
+use std::hash::{Hash, Hasher};
+use std::io::{self, BufReader, BufWriter};
+use std::path::PathBuf;
 
+// Library Imports
 use serde::{de, ser, Deserialize, Deserializer, Serialize, Serializer};
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum LockFileError {

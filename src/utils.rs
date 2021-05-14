@@ -14,19 +14,22 @@
     limitations under the License.
 */
 
-use crate::classes::package::Package;
+// Std Imports
+use std::borrow::Cow;
+use std::env;
+use std::fs::File;
+use std::io::{self, Write};
+use std::path::Path;
+use std::process;
+
+// Library Imports
 use anyhow::{anyhow, Result};
 use dirs::home_dir;
 use flate2::read::GzDecoder;
-use std::{
-    borrow::Cow,
-    env,
-    fs::File,
-    io::{self, Write},
-    path::Path,
-    process,
-};
 use tar::Archive;
+
+// Crate Level Imports
+use crate::classes::package::Package;
 
 pub struct App {
     pub current_dir: Box<Path>,

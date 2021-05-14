@@ -21,11 +21,15 @@ mod model;
 mod prompt;
 mod utils;
 
-// Imports
+// Std Imports
+use std::sync::Arc;
+
+// Library Imports
 use anyhow::Result;
 use colored::Colorize;
+
+// Crate Level Imports
 use commands::AppCommand;
-use std::sync::Arc;
 use utils::{get_arguments, initialize};
 
 // Constants

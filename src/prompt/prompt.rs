@@ -14,10 +14,15 @@
     limitations under the License.
 */
 
-use crate::prompt::input;
-use dialoguer::theme::ColorfulTheme;
+// Std Imports
 use std::io::Result;
+
+// Library Imports
+use dialoguer::theme::ColorfulTheme;
 use structopt::StructOpt;
+
+// Crate Level Imports
+use crate::prompt::input;
 
 /// Prompt that returns `true` or `false` (as strings)
 #[derive(Debug, StructOpt)]
