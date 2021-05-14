@@ -126,14 +126,18 @@ pub fn get_basename<'a>(path: &'a str) -> Cow<'a, str> {
     }
 }
 
-pub async fn extract_tarball(file_path: &str, package: &Package) -> Result<()> {
+pub async fn extract_tarball(
+    file_path: &str,
+    package: &Package,
+    pb: indicatif::ProgressBar,
+) -> Result<()> {
     let path = Path::new(file_path);
     let tar_gz = File::open(path)?;
     let tar = GzDecoder::new(tar_gz);
     let mut archive = Archive::new(tar);
     if !Path::new(&format!(r"node_modules/{}", package.name)).exists() {
         archive.unpack("node_modules")?;
-        println!("{}", "Generating package".bright_blue());
+        pb.println(format!("{}", "Generating package".bright_blue()));
         std::fs::rename(
             r"node_modules/package",
             format!(r"node_modules/{}", package.name),
@@ -148,7 +152,7 @@ pub async fn extract_tarball(file_path: &str, package: &Package) -> Result<()> {
         if version != package.dist_tags.latest {
             // Update dependencies
 
-            println!("{}", "Updating dependencies".bright_blue());
+            pb.println(format!("{}", "Updating dependencies".bright_blue()));
 
             let _ = std::fs::remove_dir_all(r"node_modules/react");
             archive.unpack("node_modules")?;
