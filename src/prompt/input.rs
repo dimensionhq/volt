@@ -14,6 +14,7 @@
     limitations under the License.
 */
 
+#![allow(dead_code)]
 use console::{Key, Term};
 use dialoguer::theme::{SimpleTheme, Theme};
 use std::{
