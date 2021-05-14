@@ -19,7 +19,6 @@ limitations under the License.
 // Std Imports
 use std::io;
 use std::sync::Arc;
-use std::time::Instant;
 use std::{fs::File, str::FromStr};
 
 // Library Imports
@@ -91,7 +90,6 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) -> Result<()> {
-        let start = Instant::now();
         let mut lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
@@ -191,8 +189,6 @@ Options:
         // Write to lock file
         lock_file.save().context("Failed to save lock file")?;
 
-        let end = Instant::now();
-        println!("Execution Completed In: {}", (end - start).as_secs_f32());
         Ok(())
     }
 }
