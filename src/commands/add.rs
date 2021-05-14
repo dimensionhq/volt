@@ -145,7 +145,7 @@ Options:
                     .template(
                         ("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str(),
                     )
-                    .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
+                    .tick_chars("-\\|/"),
             );
 
             let handle = tokio::spawn(async move {
