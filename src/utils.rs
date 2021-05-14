@@ -24,10 +24,10 @@ use std::process;
 
 // Library Imports
 use anyhow::{anyhow, Result};
+use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
 use tar::Archive;
-use colored::Colorize;
 
 // Crate Level Imports
 use crate::classes::package::Package;
@@ -83,7 +83,10 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
 pub async fn download_tarball(app: &App, package: &Package) -> String {
     let latest_version = &package.dist_tags.latest;
     let name = &package.name;
-    let tarball = &package.versions[latest_version].dist.tarball;
+    let tarball = &package.versions[latest_version]
+        .dist
+        .tarball
+        .replace("https", "http");
 
     let mut response = reqwest::get(tarball).await.unwrap();
 
@@ -123,11 +126,11 @@ pub fn get_basename<'a>(path: &'a str) -> Cow<'a, str> {
     }
 }
 
-pub async fn extract_tarball(file_path: &str, package: &Package) -> Result<()> {    
+pub async fn extract_tarball(file_path: &str, package: &Package) -> Result<()> {
     let path = Path::new(file_path);
     let tar_gz = File::open(path)?;
     let tar = GzDecoder::new(tar_gz);
-    let mut archive = Archive::new(tar);    
+    let mut archive = Archive::new(tar);
     if !Path::new(&format!(r"node_modules/{}", package.name)).exists() {
         archive.unpack("node_modules")?;
         println!("{}", "Generating package".bright_blue());
