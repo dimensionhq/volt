@@ -61,6 +61,7 @@ Options:
     }
 
     /// Execute the `volt install` command
+    ///
     /// Install dependencies for a project.
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)

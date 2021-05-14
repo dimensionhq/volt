@@ -64,6 +64,7 @@ Options:
     }
 
     /// Execute the `volt init` command
+    ///
     /// Interactively create or update a package.json file for a project.
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)
