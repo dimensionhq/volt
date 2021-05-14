@@ -30,6 +30,7 @@ use colored::Colorize;
 
 // Crate Level Imports
 use commands::AppCommand;
+use tokio::time::Instant;
 use utils::{get_arguments, initialize};
 
 // Constants
@@ -65,5 +66,10 @@ async fn try_main() -> Result<()> {
         return Ok(());
     }
 
-    cmd.run(Arc::new(app), args, flags).await
+    let start = Instant::now();
+    cmd.run(Arc::new(app), args, flags).await?;
+    let end = Instant::now();
+    println!("Finished in {:.2}s", (end - start).as_secs_f32());
+
+    Ok(())
 }
