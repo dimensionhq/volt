@@ -1,8 +1,11 @@
 {
-  "react@^17.0.2": {
-    "name": "react",
-    "version": "17.0.2",
-    "tarball": "https://registry.npmjs.org/react/-/react-17.0.2.tgz",
-    "sha1": "d0b5cc516d29eb3eee383f75b62864cfb6800037"
+  "jquery-typewriter@^1.2.3": {
+    "name": "jquery-typewriter",
+    "version": "1.2.3",
+    "tarball": "https://registry.npmjs.org/jquery-typewriter/-/jquery-typewriter-1.2.3.tgz",
+    "sha1": "e588dd6aee26f45e4140bdc36cfcb883b7dcb0bd",
+    "dependencies": {
+      "jquery-typewriter": "^1.2.1"
+    }
   }
 }
