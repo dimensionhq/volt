@@ -128,6 +128,7 @@ pub struct DependencyLock {
     pub version: String,
     pub tarball: String,
     pub sha1: String,
+    pub dependencies: HashMap<String, String>
 }
 
 impl LockFile {
