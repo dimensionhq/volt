@@ -35,6 +35,30 @@ pub enum LockFileError {
     Encode(serde_json::Error),
 }
 
+/// The lock file is responsible for locking/pinning dependency versions in a given project.
+/// It stores a list of dependencies along with their resolved version, registry url, and sha1 checksum.
+///
+/// ## Examples
+///
+/// ```
+/// // Load the lock file for the current project or create new lock file
+/// let mut lock_file = LockFile::load(lock_file_path)
+///     .unwrap_or_else(|| LockFile::new(lock_file_path));
+///
+/// // Add dependency
+/// lock_file.add(
+///     ("react".to_string(), "^1.0.0".to_string()),
+///     DependencyLock {
+///         name: "react".to_string(),
+///         version: "1.2.6".to_string(),
+///         tarbal: String::new(),
+///         sha1: String::new(),
+///     }
+/// );
+///
+/// // Save changes to disk
+/// lock_file.save().expect("Unable to save lock file");
+/// ```
 #[derive(Debug)]
 pub struct LockFile {
     pub path: PathBuf,
@@ -106,30 +130,6 @@ pub struct DependencyLock {
     pub sha1: String,
 }
 
-/// The lock file is responsible for locking/pinning dependency versions in a given project.
-/// It stores a list of dependencies along with their resolved version, registry url, and sha1 checksum.
-///
-/// # Example
-///
-/// ```
-/// // Load the lock file for the current project or create new lock file
-/// let mut lock_file = LockFile::load(lock_file_path)
-///     .unwrap_or_else(|| LockFile::new(lock_file_path));
-///
-/// // Add dependency
-/// lock_file.add(
-///     ("react".to_string(), "^1.0.0".to_string()),
-///     DependencyLock {
-///         name: "react".to_string(),
-///         version: "1.2.6".to_string(),
-///         tarbal: String::new(),
-///         sha1: String::new(),
-///     }
-/// );
-///
-/// // Save changes to disk
-/// lock_file.save().expect("Unable to save lock file");
-/// ```
 impl LockFile {
     /// Creates a new instance of a lock file with a path it should be saved at.
     /// It can be saved to the file by calling [`Self::save()`].

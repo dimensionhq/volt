@@ -20,14 +20,16 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::{utils::App, __VERSION__};
+use crate::{utils::App, VERSION};
 
 use super::Command;
 
+/// Struct implementation for the `Remove` command.
 pub struct Remove;
 
 #[async_trait]
 impl Command for Remove {
+    /// Display a help menu for the `volt remove` command.
     fn help(&self) -> String {
         format!(
             r#"volt {}
@@ -40,7 +42,7 @@ Options:
 
   {} {} Output the version number.
   {} {} Output verbose messages on internal operations."#,
-            __VERSION__.bright_green().bold(),
+            VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
             "remove".bright_purple(),
             "[packages]".white(),
@@ -52,6 +54,20 @@ Options:
         )
     }
 
+    /// Execute the `volt remove` command
+    /// Removes a package from your direct dependencies.
+    /// ## Arguments
+    /// * `app` - Instance of the command (`Arc<App>`)
+    /// * `packages` - List of packages to add (`Vec<String>`)
+    /// * `flags` - List of flags passed in through the CLI (`Vec<String>`)
+    /// ## Examples
+    /// ```
+    /// // Remove a package from your direct dependencies with logging level verbose
+    /// // .exec() is an async call so you need to await it
+    /// Remove.exec(app, vec![], vec!["--verbose"]).await;
+    /// ```
+    /// ## Returns
+    /// * `Result<()>`
     async fn exec(&self, _app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()> {
         println!("Removing packages");
         println!("Packages: {:?}", args);
