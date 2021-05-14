@@ -141,12 +141,41 @@ Options:
             // }
             let progress_bar = ProgressBar::new(9999999);
             let text = format!("{}", "Installing Packages".bright_cyan());
+            // progress_bar.set_draw_rate(100);
+
             progress_bar.clone().set_style(
                 ProgressStyle::default_spinner()
                     .template(
                         ("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str(),
                     )
-                    .tick_chars("-\\|/"),
+                    .tick_strings(&[
+                        "▐|\\____________▌",
+                        "▐_|\\___________▌",
+                        "▐__|\\__________▌",
+                        "▐___|\\_________▌",
+                        "▐____|\\________▌",
+                        "▐_____|\\_______▌",
+                        "▐______|\\______▌",
+                        "▐_______|\\_____▌",
+                        "▐________|\\____▌",
+                        "▐_________|\\___▌",
+                        "▐__________|\\__▌",
+                        "▐___________|\\_▌",
+                        "▐____________|\\▌",
+                        "▐____________/|▌",
+                        "▐___________/|_▌",
+                        "▐__________/|__▌",
+                        "▐_________/|___▌",
+                        "▐________/|____▌",
+                        "▐_______/|_____▌",
+                        "▐______/|______▌",
+                        "▐_____/|_______▌",
+                        "▐____/|________▌",
+                        "▐___/|_________▌",
+                        "▐__/|__________▌",
+                        "▐_/|___________▌",
+                        "▐/|____________▌",
+                    ]),
             );
 
             let handle = tokio::spawn(async move {
@@ -159,6 +188,7 @@ Options:
                 let progress_bar = Guard(progress_bar);
                 loop {
                     progress_bar.0.inc(5);
+                    // progress_bar.0.tick();
                     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                 }
             });
