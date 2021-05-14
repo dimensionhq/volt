@@ -59,18 +59,18 @@ pub enum LockFileError {
 /// // Save changes to disk
 /// lock_file.save().expect("Unable to save lock file");
 /// ```
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct LockFile {
     pub path: PathBuf,
     pub dependencies: DependenciesMap,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct DependenciesMap(
     #[serde(serialize_with = "sorted_dependencies")] HashMap<DependencyID, DependencyLock>,
 );
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DependencyID(String, String);
 
 impl From<(String, String)> for DependencyID {
@@ -122,13 +122,13 @@ impl Hash for DependencyID {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct DependencyLock {
     pub name: String,
     pub version: String,
     pub tarball: String,
     pub sha1: String,
-    pub dependencies: HashMap<String, String>
+    pub dependencies: HashMap<String, String>,
 }
 
 impl LockFile {
