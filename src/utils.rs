@@ -137,7 +137,7 @@ pub async fn extract_tarball(
     let mut archive = Archive::new(tar);
     if !Path::new(&format!(r"node_modules/{}", package.name)).exists() {
         archive.unpack("node_modules")?;
-        // pb.println(format!("{}", "Generating package".bright_blue()));
+        pb.println(format!("{}", "Generating package".bright_blue()));
         std::fs::rename(
             r"node_modules/package",
             format!(r"node_modules/{}", package.name),
@@ -152,7 +152,7 @@ pub async fn extract_tarball(
         if version != package.dist_tags.latest {
             // Update dependencies
 
-            // pb.println(format!("{}", "Updating dependencies".bright_blue()));
+            pb.println(format!("{}", "Updating dependencies".bright_blue()));
 
             let _ = std::fs::remove_dir_all(r"node_modules/react");
             archive.unpack("node_modules")?;
