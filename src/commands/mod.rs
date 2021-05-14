@@ -64,20 +64,30 @@ impl AppCommand {
         }
     }
 
-    pub fn command(&self) -> Box<dyn Command> {
+    pub fn help(&self) -> String {
         match self {
-            Self::Add => Box::new(add::Add),
-            Self::Help => Box::new(help::Help),
-            Self::Init => Box::new(init::Init),
-            Self::Install => Box::new(install::Install),
-            Self::Remove => Box::new(remove::Remove),
+            Self::Add => add::Add::help(),
+            Self::Help => help::Help::help(),
+            Self::Init => init::Init::help(),
+            Self::Install => install::Install::help(),
+            Self::Remove => remove::Remove::help(),
+        }
+    }
+
+    pub async fn run(&self, app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()> {
+        match self {
+            Self::Add => add::Add::exec(app, args, flags).await,
+            Self::Help => help::Help::exec(app, args, flags).await,
+            Self::Init => init::Init::exec(app, args, flags).await,
+            Self::Install => install::Install::exec(app, args, flags).await,
+            Self::Remove => remove::Remove::exec(app, args, flags).await,
         }
     }
 }
 
 #[async_trait]
 pub trait Command {
-    fn help(&self) -> String;
+    fn help() -> String;
 
-    async fn exec(&self, app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()>;
+    async fn exec(app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()>;
 }

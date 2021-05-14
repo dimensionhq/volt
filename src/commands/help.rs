@@ -37,7 +37,7 @@ pub struct Help;
 #[async_trait]
 impl Command for Help {
     /// Display a help menu for the `volt help` command.
-    fn help(&self) -> String {
+    fn help() -> String {
         format!(
             r#"volt {}
     
@@ -81,8 +81,8 @@ Commands:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(&self, _app: Arc<App>, _args: Vec<String>, _flags: Vec<String>) -> Result<()> {
-        println!("{}", self.help());
+    async fn exec(_app: Arc<App>, _args: Vec<String>, _flags: Vec<String>) -> Result<()> {
+        println!("{}", Self::help());
         Ok(())
     }
 }

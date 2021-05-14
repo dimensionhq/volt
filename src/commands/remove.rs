@@ -37,7 +37,7 @@ pub struct Remove;
 #[async_trait]
 impl Command for Remove {
     /// Display a help menu for the `volt remove` command.
-    fn help(&self) -> String {
+    fn help() -> String {
         format!(
             r#"volt {}
     
@@ -76,7 +76,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(&self, _app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()> {
+    async fn exec(_app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()> {
         println!("Removing packages");
         println!("Packages: {:?}", args);
         println!("Flags: {:?}", flags);
