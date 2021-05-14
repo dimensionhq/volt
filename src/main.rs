@@ -29,7 +29,7 @@ use std::sync::Arc;
 use utils::{get_arguments, initialize};
 
 // Constants
-const __VERSION__: &str = "v1.0.0";
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() {

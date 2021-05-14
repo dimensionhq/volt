@@ -18,7 +18,7 @@ use crate::{
     classes::init_data::{InitData, License},
     prompt::prompt::{Confirm, Input, Select},
     utils::{self, get_git_config, App},
-    __VERSION__,
+    VERSION,
 };
 
 use anyhow::Result;
@@ -30,10 +30,12 @@ use std::{fs::File, sync::Arc};
 
 use super::Command;
 
+/// Struct implementation for the `Init` command.
 pub struct Init;
 
 #[async_trait]
 impl Command for Init {
+    /// Display a help menu for the `volt init` command.
     fn help(&self) -> String {
         format!(
             r#"volt {}
@@ -46,7 +48,7 @@ Options:
     
   {} {} Initialize a package.json file without any prompts.  
   {} {} Output verbose messages on internal operations."#,
-            __VERSION__.bright_green().bold(),
+            VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
             "init".bright_purple(),
             "[flags]".white(),
@@ -57,6 +59,20 @@ Options:
         )
     }
 
+    /// Execute the `volt init` command
+    /// Interactively create or update a package.json file for a project.
+    /// ## Arguments
+    /// * `app` - Instance of the command (`Arc<App>`)
+    /// * `packages` - List of packages to add (`Vec<String>`)
+    /// * `flags` - List of flags passed in through the CLI (`Vec<String>`)
+    /// ## Examples
+    /// ```
+    /// // Initialize a new package.json file without any prompts
+    /// // .exec() is an async call so you need to await it
+    /// Init.exec(app, vec![], vec!["--yes"]).await;
+    /// ```
+    /// ## Returns
+    /// * `Result<()>`
     async fn exec(&self, _app: Arc<App>, _args: Vec<String>, flags: Vec<String>) -> Result<()> {
         let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
         let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();

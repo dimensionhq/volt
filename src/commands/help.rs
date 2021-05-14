@@ -20,14 +20,16 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::{utils::App, __VERSION__};
+use crate::{utils::App, VERSION};
 
 use super::Command;
 
+/// Struct implementation for the `Help` command.
 pub struct Help;
 
 #[async_trait]
 impl Command for Help {
+    /// Display a help menu for the `volt help` command.
     fn help(&self) -> String {
         format!(
             r#"volt {}
@@ -42,7 +44,7 @@ Commands:
   {} {} - Interactively create or update a package.json file for a project.
   {} {} - Add a dependency to a project.
   {} {} - Remove a dependency from the package.json file for a project."#,
-            __VERSION__.bright_green().bold(),
+            VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
             "[commands]".bright_purple(),
             "[flags]".bright_purple(),
@@ -57,6 +59,20 @@ Commands:
         )
     }
 
+    /// Execute the `volt help` command
+    /// Displays help information.
+    /// ## Arguments
+    /// * `app` - Instance of the command (`Arc<App>`)
+    /// * `packages` - List of packages to add (`Vec<String>`)
+    /// * `flags` - List of flags passed in through the CLI (`Vec<String>`)
+    /// ## Examples
+    /// ```
+    /// // Display a help menu.
+    /// // .exec() is an async call so you need to await it
+    /// Help.exec(app, vec![], vec![]).await;
+    /// ```
+    /// ## Returns
+    /// * `Result<()>`
     async fn exec(&self, _app: Arc<App>, _args: Vec<String>, _flags: Vec<String>) -> Result<()> {
         println!("{}", self.help());
         Ok(())

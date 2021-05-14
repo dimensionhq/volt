@@ -20,14 +20,16 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::{utils::App, __VERSION__};
+use crate::{utils::App, VERSION};
 
 use super::Command;
 
+/// Struct implementation for the `Install` command.
 pub struct Install;
 
 #[async_trait]
 impl Command for Install {
+    /// Display a help menu for the `volt install` command.
     fn help(&self) -> String {
         format!(
             r#"volt {}
@@ -40,7 +42,7 @@ Options:
     
   {} {} Accept all prompts while installing dependencies.  
   {} {} Output verbose messages on internal operations."#,
-            __VERSION__.bright_green().bold(),
+            VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
             "install".bright_purple(),
             "[flags]".white(),
@@ -51,6 +53,20 @@ Options:
         )
     }
 
+    /// Execute the `volt install` command
+    /// Install dependencies for a project.
+    /// ## Arguments
+    /// * `app` - Instance of the command (`Arc<App>`)
+    /// * `packages` - List of packages to add (`Vec<String>`)
+    /// * `flags` - List of flags passed in through the CLI (`Vec<String>`)
+    /// ## Examples
+    /// ```
+    /// // Install dependencies for a project with logging level verbose
+    /// // .exec() is an async call so you need to await it
+    /// Install.exec(app, vec![], vec!["--verbose"]).await;
+    /// ```
+    /// ## Returns
+    /// * `Result<()>`
     async fn exec(
         &self,
         _app: Arc<App>,

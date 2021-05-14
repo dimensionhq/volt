@@ -1,6 +1,6 @@
 [package]
 name = "volt"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["XtremeDevX <xtremedevx@gmail.com> (https://xtremedevx.com)", "Ari Seyhun <ariseyhun@live.com.au> (https://ariseyhun.com)"]
 description = "A fast, memory-safe package manager for the web."
 edition = "2018"

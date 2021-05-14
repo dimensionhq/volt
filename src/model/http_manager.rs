@@ -30,10 +30,18 @@ pub enum GetPackageError {
     JSON(serde_json::Error),
 }
 
+/// Request a package from `registry.yarnpkg.com`
+/// Uses `chttp` async implementation to send a `get` request for the package
+/// ## Arguments
+/// * `name` - Name of the package to request from `registry.yarnpkg.com`
+/// ## Examples
+/// ```
+/// // Await an async response
+/// get_package("react").await;
+/// ```
+/// ## Returns
+/// * `Result<Option<Package>, GetPackageError>`
 pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError> {
-    /*
-
-    */
     let resp = chttp::get_async(format!("http://registry.yarnpkg.com/{}", name))
         .await
         .map_err(GetPackageError::Request)?;

@@ -1,39 +1,44 @@
 /*
-    Copyright 2021 Volt Contributors
+Copyright 2021 Volt Contributors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
+
+//! Add a package to your dependencies for your project.
 
 use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
 use sha1::{Digest, Sha1};
+use std::fs::File;
 use std::io;
-use std::{fs::File, sync::Arc};
+use std::sync::Arc;
 use tokio::{self, task::JoinHandle};
 
-use crate::model::lock_file::LockFile;
-use crate::model::{http_manager, lock_file::DependencyLock};
+use crate::model::http_manager;
+use crate::model::lock_file::{DependencyLock, LockFile};
 use crate::utils::{download_tarball, extract_tarball};
-use crate::__VERSION__;
+use crate::VERSION;
 use crate::{classes::package::Version, utils::App};
 
 use super::Command;
 
+/// Struct implementation for the `Add` command.
 pub struct Add;
 
 #[async_trait]
 impl Command for Add {
+    /// Display a help menu for the `volt add` command.
     fn help(&self) -> String {
         format!(
             r#"volt {}
@@ -47,7 +52,7 @@ Options:
   {} {} Output the version number.
   {} {} Output verbose messages on internal operations.
   {} {} Disable progress bar."#,
-            __VERSION__.bright_green().bold(),
+            VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
             "add".bright_purple(),
             "[packages]".white(),
@@ -61,6 +66,20 @@ Options:
         )
     }
 
+    /// Execute the `volt add` command
+    /// Adds a package to dependencies for your project.
+    /// ## Arguments
+    /// * `app` - Instance of the command (`Arc<App>`)
+    /// * `packages` - List of packages to add (`Vec<String>`)
+    /// * `flags` - List of flags passed in through the CLI (`Vec<String>`)
+    /// ## Examples
+    /// ```
+    /// // Add react to your dependencies with logging level verbose
+    /// // .exec() is an async call so you need to await it
+    /// Add.exec(app, vec!["react"], vec!["--verbose"]).await;
+    /// ```
+    /// ## Returns
+    /// * `Result<()>`
     async fn exec(&self, app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) -> Result<()> {
         let mut lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
@@ -75,7 +94,6 @@ Options:
                         package_name
                     )
                 })?;
-
             let version: Version = package
                 .versions
                 .get_key_value(&package.dist_tags.latest)
