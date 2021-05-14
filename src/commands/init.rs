@@ -178,7 +178,6 @@ Options:
                 default: Some(String::from("1.0.0")),
                 allow_empty: false,
             };
-            let re_version = Regex::new("\\d.\\d.\\d").unwrap();
             let version = input.run().unwrap_or_else(|err| {
                 eprintln!(
                     "{}: {}",
@@ -188,33 +187,6 @@ Options:
                 process::exit(1);
             });
 
-            if re_version.is_match(&version) { // returns bool
-                 // Do nothing
-            } else {
-                println!(
-                    "{}",
-                    "Version should be in the format of {int}.{int}.{int}".red()
-                );
-                loop {
-                    let input: Input = Input {
-                        message: String::from("version"),
-                        default: Some(String::from("1.0.0")), 
-                        allow_empty: false,
-                    };
-                    name = input.run().unwrap_or_else(|err| {
-                        eprintln!("{}", err);
-                        process::exit(1);
-                    });
-                    if re_name.is_match(&name) {
-                        break;
-                    } else {
-                        println!(
-                            "{}",
-                            "Version should be in the format of {int}.{int}.{int}".red()
-                        );
-                    }
-                }
-            }
             // Get "description"
             let input: Input = Input {
                 message: String::from("description"),
