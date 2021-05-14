@@ -187,9 +187,9 @@ Options:
 
                 if hash == version.dist.shasum {
                     // Verified Checksum
-                    // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
+                    pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
                 } else {
-                    // pb.println("Failed To Verify");
+                    pb.println("Failed To Verify");
                 }
 
                 Result::<_>::Ok(())
