@@ -30,6 +30,7 @@ use crate::VERSION;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use regex::Regex;
 
 // Super Imports
 use super::Command;
@@ -140,11 +141,36 @@ Options:
                 default: Some(cwd),
                 allow_empty: false,
             };
-
-            let name = input.run().unwrap_or_else(|err| {
+            let mut name;
+            name = input.run().unwrap_or_else(|err| {
                 eprintln!("{}", err);
                 process::exit(1);
             });
+            let re_name =
+                Regex::new("^(?:@[a-z0-9-*~][a-z0-9-*._~]*/)?[a-z0-9-~][a-z0-9-._~]*$").unwrap();
+            if re_name.is_match(&name) { // returns bool
+                 // Do nothing
+                 // It passes and everyone is happy
+                 // it continues with the other code
+            } else {
+                println!("{}", "Name cannot contain special characters".red());
+                loop {
+                    let input: Input = Input {
+                        message: String::from("name"),
+                        default: Some(split[split.len() - 1].to_string()), // Cwd does not impl Copy trait hence wrote it like this
+                        allow_empty: false,
+                    };
+                    name = input.run().unwrap_or_else(|err| {
+                        eprintln!("{}", err);
+                        process::exit(1);
+                    });
+                    if re_name.is_match(&name) {
+                        break;
+                    } else {
+                        println!("{}", "Name cannot contain special characters".red());
+                    }
+                }
+            }
 
             // Get "version"
             let input: Input = Input {
@@ -152,7 +178,7 @@ Options:
                 default: Some(String::from("1.0.0")),
                 allow_empty: false,
             };
-
+            let re_version = Regex::new("\\d.\\d.\\d").unwrap();
             let version = input.run().unwrap_or_else(|err| {
                 eprintln!(
                     "{}: {}",
@@ -162,6 +188,33 @@ Options:
                 process::exit(1);
             });
 
+            if re_version.is_match(&version) { // returns bool
+                 // Do nothing
+            } else {
+                println!(
+                    "{}",
+                    "Version should be in the format of {int}.{int}.{int}".red()
+                );
+                loop {
+                    let input: Input = Input {
+                        message: String::from("version"),
+                        default: Some(String::from("1.0.0")), 
+                        allow_empty: false,
+                    };
+                    name = input.run().unwrap_or_else(|err| {
+                        eprintln!("{}", err);
+                        process::exit(1);
+                    });
+                    if re_name.is_match(&name) {
+                        break;
+                    } else {
+                        println!(
+                            "{}",
+                            "Version should be in the format of {int}.{int}.{int}".red()
+                        );
+                    }
+                }
+            }
             // Get "description"
             let input: Input = Input {
                 message: String::from("description"),
