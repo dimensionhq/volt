@@ -62,6 +62,7 @@ Options:
     }
 
     /// Execute the `volt remove` command
+    ///
     /// Removes a package from your direct dependencies.
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)

@@ -74,6 +74,7 @@ Options:
     }
 
     /// Execute the `volt add` command
+    ///
     /// Adds a package to dependencies for your project.
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)

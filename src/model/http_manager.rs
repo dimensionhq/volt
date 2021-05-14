@@ -34,6 +34,7 @@ pub enum GetPackageError {
 }
 
 /// Request a package from `registry.yarnpkg.com`
+///
 /// Uses `chttp` async implementation to send a `get` request for the package
 /// ## Arguments
 /// * `name` - Name of the package to request from `registry.yarnpkg.com`
