@@ -67,6 +67,7 @@ Commands:
     }
 
     /// Execute the `volt help` command
+    ///
     /// Displays help information.
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)
