@@ -158,24 +158,23 @@ Options:
             });
         }
 
-        let progress_bar = ProgressBar::new(0);
-        let text = format!("{}", "Installing Packages".bright_cyan());
+        let progress_bar = ProgressBar::new(workers.len() as u64);
 
-        progress_bar.clone().set_style(
-            ProgressStyle::default_spinner()
-                .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
-                .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
-        );
-        progress_bar.enable_steady_tick(100);
+        progress_bar.set_style(ProgressStyle::default_bar().progress_chars("=> ").template(
+            &format!(
+                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                "Installing packages".bright_blue()
+            ),
+        ));
 
         loop {
             match workers.next().await {
-                Some(_) => (),
+                Some(_) => progress_bar.inc(1),
                 None => break,
             }
         }
 
-        progress_bar.finish_and_clear();
+        progress_bar.finish();
 
         // Write to lock file
         lock_file.save().context("Failed to save lock file")?;
