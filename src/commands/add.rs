@@ -162,7 +162,7 @@ Options:
 
         progress_bar.set_style(ProgressStyle::default_bar().progress_chars("=> ").template(
             &format!(
-                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
                 "Installing packages".bright_blue()
             ),
         ));
