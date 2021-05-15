@@ -29,7 +29,7 @@ use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
 use tar::Archive;
-use tokio::fs::remove_dir_all;
+use tokio::fs::{remove_dir, remove_dir_all};
 
 // Crate Level Imports
 use crate::classes::package::Package;
@@ -96,6 +96,7 @@ impl App {
     }
 
     pub async fn extract_tarball(&self, file_path: &str, package: &Package) -> Result<()> {
+        let home_dir = home_dir().unwrap();
         // Open tar file
         let tar_file = File::open(file_path).context("Unable to open tar file")?;
         create_dir_all(&self.node_modules_dir).ok();
@@ -105,7 +106,7 @@ impl App {
         if node_modules_dep_path.exists() {
             remove_dir_all(&node_modules_dep_path).await.ok();
         }
-        let home_dir_file_path = self.volt_dir.join(&package.name);
+        let home_dir_file_path = home_dir.join(".volt").join(package.name.clone());
 
         // Extract tar file
         let gz_decoder = GzDecoder::new(tar_file);
@@ -115,12 +116,15 @@ impl App {
             .context("Unable to unpack dependency")?;
 
         if home_dir_file_path.exists() {
-            // do nothing
+            // remove_dir(home_dir_file_path);
         } else {
-            std::fs::rename(self.volt_dir.join("package"), home_dir_file_path)
-                .context("Unable to rename package in .volt")?;
+            std::fs::rename(home_dir.join("package"), home_dir_file_path).context(format!(
+                "Unable to rename package in .volt {:?}",
+                home_dir.join("package"),
+            ))?;
         }
         let f_path = self.volt_dir.join(&package.name);
+
         create_symlink(f_path, node_modules_dep_path)?;
 
         Ok(())
