@@ -24,9 +24,6 @@ mod model;
 mod prompt;
 mod utils;
 
-// Std Imports
-use std::sync::Arc;
-
 // Library Imports
 use anyhow::Result;
 use colored::Colorize;
@@ -34,7 +31,9 @@ use colored::Colorize;
 // Crate Level Imports
 use commands::AppCommand;
 use tokio::time::Instant;
-use utils::{get_arguments, initialize, ERROR_TAG};
+use utils::ERROR_TAG;
+
+use crate::utils::App;
 
 // Constants
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -58,19 +57,17 @@ async fn main() {
 }
 
 async fn try_main() -> Result<()> {
-    let (app, args) = initialize();
-
-    let (flags, args) = get_arguments(&args);
+    let app = App::initialize();
 
     let cmd = AppCommand::current().unwrap_or(AppCommand::Help); // Default command is help
 
-    if flags.iter().any(|flag| flag == "--help") {
+    if app.has_flag(&["--help", "-h"]) {
         println!("{}", cmd.help());
         return Ok(());
     }
 
     let start = Instant::now();
-    cmd.run(Arc::new(app), args, flags).await?;
+    cmd.run(app).await?;
     let end = Instant::now();
     println!("Finished in {:.2}s", (end - start).as_secs_f32());
 

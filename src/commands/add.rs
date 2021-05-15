@@ -96,7 +96,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
@@ -105,7 +105,7 @@ Options:
 
         {
             let mut add = add.clone();
-            let packages = packages.clone();
+            let packages = app.args.clone();
             tokio::spawn(async move {
                 for package_name in packages {
                     add.get_dependency_tree(package_name.clone(), None)

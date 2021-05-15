@@ -76,10 +76,8 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         println!("Removing packages");
-        println!("Packages: {:?}", args);
-        println!("Flags: {:?}", flags);
         Ok(())
     }
 }

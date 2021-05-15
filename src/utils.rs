@@ -49,46 +49,50 @@ pub struct App {
     pub node_modules_dir: PathBuf,
     pub volt_dir: PathBuf,
     pub lock_file_path: PathBuf,
+    pub args: Vec<String>,
+    pub flags: Vec<String>,
 }
 
-pub fn initialize() -> (App, Vec<String>) {
-    // Initialize And Get Args
-    enable_ansi_support().unwrap();
+impl App {
+    pub fn initialize() -> Self {
+        enable_ansi_support().unwrap();
 
-    let current_dir = env::current_dir().unwrap();
-    let home_dir = home_dir().unwrap_or_else(|| current_dir.clone());
-    let node_modules_dir = current_dir.join("node_modules");
-    let volt_dir = home_dir.join(".volt");
-    std::fs::create_dir_all(&volt_dir).ok();
+        let current_dir = env::current_dir().unwrap();
+        let home_dir = home_dir().unwrap_or_else(|| current_dir.clone());
+        let node_modules_dir = current_dir.join("node_modules");
+        let volt_dir = home_dir.join(".volt");
+        std::fs::create_dir_all(&volt_dir).ok();
 
-    let lock_file_path = current_dir.join("volt.lock");
+        let lock_file_path = current_dir.join("volt.lock");
 
-    let app = App {
-        current_dir,
-        home_dir,
-        node_modules_dir,
-        volt_dir,
-        lock_file_path,
-    };
+        let cli_args: Vec<_> = std::env::args().collect();
+        let mut args: Vec<String> = Vec::new();
+        let mut flags: Vec<String> = Vec::new();
 
-    (app, std::env::args().collect())
-}
-
-pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
-    let mut flags: Vec<String> = vec![];
-    let mut packages: Vec<String> = vec![];
-
-    for arg in 0..args.len() {
-        if arg > 1 {
-            if args[arg].starts_with("--") || args[arg].starts_with("-") {
-                flags.push(args[arg].clone());
+        for arg in cli_args.into_iter().skip(2) {
+            if arg.starts_with("--") || arg.starts_with("-") {
+                flags.push(arg);
             } else {
-                packages.push(args[arg].clone());
+                args.push(arg);
             }
+        }
+
+        App {
+            args,
+            flags,
+            current_dir,
+            home_dir,
+            node_modules_dir,
+            volt_dir,
+            lock_file_path,
         }
     }
 
-    (flags, packages)
+    pub fn has_flag(&self, flags: &[&str]) -> bool {
+        self.flags
+            .iter()
+            .any(|flag| flags.iter().any(|search_flag| flag == search_flag))
+    }
 }
 
 /// downloads tarball file from package
@@ -149,9 +153,7 @@ pub async fn extract_tarball(
     // Delete package from node_modules
     let node_modules_dep_path = node_modules_dir.join(&package.name);
     if node_modules_dep_path.exists() {
-        remove_dir_all(&node_modules_dep_path)
-            .await
-            .context("Unable to delete dependency from node_modules")?;
+        remove_dir_all(&node_modules_dep_path).await.ok();
     }
 
     // Extract tar file
