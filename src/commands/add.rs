@@ -17,7 +17,7 @@ limitations under the License.
 //! Add a package to your dependencies for your project.
 
 // Std Imports
-use std::{fs::File, str::FromStr};
+use std::{fs::File, sync::atomic::AtomicI16};
 use std::{io, sync::Arc};
 
 // Library Imports
@@ -27,12 +27,16 @@ use colored::Colorize;
 use futures::{future::BoxFuture, stream::FuturesUnordered, FutureExt, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use sha1::{Digest, Sha1};
-use tokio::{self, sync::Mutex, task::JoinHandle};
+use tokio::{
+    self,
+    sync::{mpsc, Mutex},
+    task::JoinHandle,
+};
 
 // Crate Level Imports
 use crate::classes::package::{Package, Version};
 use crate::model::http_manager;
-use crate::model::lock_file::{DependencyLock, LockFile};
+use crate::model::lock_file::LockFile;
 use crate::utils::App;
 use crate::utils::{download_tarball, extract_tarball};
 use crate::VERSION;
@@ -46,6 +50,8 @@ use super::Command;
 pub struct Add {
     lock_file: LockFile,
     dependencies: Arc<Mutex<Vec<(Package, Version)>>>,
+    total_dependencies: Arc<AtomicI16>,
+    progress_sender: mpsc::Sender<()>,
 }
 
 #[async_trait]
@@ -94,26 +100,61 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) -> Result<()> {
-        let mut lock_file = LockFile::load(app.lock_file_path.to_path_buf())
+        let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
-        for package_name in packages {
-            let (package, version) = Self::fetch_package(&package_name, None).await?;
+        let (tx, mut rx) = mpsc::channel(100);
+        let add = Add::new(lock_file.clone(), tx);
 
-            lock_file.add(
-                (
-                    package_name.clone(),
-                    format!("^{}", package.dist_tags.latest),
-                ),
-                DependencyLock {
-                    name: package_name.clone(),
-                    version: package.dist_tags.latest.clone(),
-                    tarball: version.dist.tarball.clone(),
-                    sha1: version.dist.shasum.clone(),
-                    dependencies: version.dependencies.clone(),
-                },
-            );
+        {
+            let mut add = add.clone();
+            let packages = packages.clone();
+            tokio::spawn(async move {
+                for package_name in packages {
+                    add.get_dependency_tree(package_name.clone(), None)
+                        .await
+                        .ok();
+                }
+            });
+        }
 
+        let progress_bar = ProgressBar::new(1);
+
+        progress_bar.set_style(ProgressStyle::default_bar().progress_chars("=> ").template(
+            &format!(
+                "{} [{{bar:40.cyan/blue}}] {{len}} {{msg:.green}}",
+                "Fetching dependencies".bright_cyan()
+            ),
+        ));
+
+        let mut done: i16 = 0;
+        while let Some(_) = rx.recv().await {
+            done += 1;
+            let total = add.total_dependencies.load(Ordering::Relaxed);
+            if done == total {
+                break;
+            }
+            progress_bar.set_length(total as u64);
+            progress_bar.set_position(done as u64);
+        }
+        progress_bar.finish_with_message("[DONE]");
+
+        println!(
+            "Loaded {} dependencies.",
+            add.dependencies
+                .lock()
+                .map(|deps| deps
+                    .iter()
+                    .map(|(dep, ver)| format!("{}: {}", dep.name, ver.version))
+                    .collect::<Vec<_>>()
+                    .len())
+                .await
+        );
+
+        let dependencies = Arc::try_unwrap(add.dependencies)
+            .map_err(|_| anyhow!("Unable to read dependencies"))?
+            .into_inner();
+        for (package, version) in dependencies {
             let mut handles: Vec<JoinHandle<Result<()>>> =
                 Vec::with_capacity(version.dependencies.len());
 
@@ -194,6 +235,15 @@ Options:
 }
 
 impl Add {
+    fn new(lock_file: LockFile, progress_sender: mpsc::Sender<()>) -> Self {
+        Self {
+            lock_file,
+            dependencies: Arc::new(Mutex::new(Vec::with_capacity(1))),
+            total_dependencies: Arc::new(AtomicI16::new(0)),
+            progress_sender,
+        }
+    }
+
     async fn fetch_package(
         package_name: &str,
         version_req: Option<semver::VersionReq>,
@@ -251,24 +301,43 @@ impl Add {
             let pkg = Self::fetch_package(&package_name, version_req).await?;
             let pkg_deps = pkg.1.dependencies.clone();
 
-            self.dependencies
+            let should_download = self
+                .dependencies
                 .lock()
                 .map(|mut deps| {
                     if !deps.iter().any(|(package, version)| {
                         package.name == pkg.0.name && pkg.1.version == version.version
                     }) {
                         deps.push(pkg);
+                        true
+                    } else {
+                        false
                     }
                 })
                 .await;
 
+            if !should_download {
+                return Ok(());
+            }
+
             let mut workers = FuturesUnordered::new();
 
+            self.total_dependencies.store(
+                self.total_dependencies.load(Ordering::Relaxed) + 1,
+                Ordering::Relaxed,
+            );
+
             for (name, version) in pkg_deps {
+                // Increase total
+                self.total_dependencies.store(
+                    self.total_dependencies.load(Ordering::Relaxed) + 1,
+                    Ordering::Relaxed,
+                );
+
                 let pkg_name = name.clone();
                 let mut self_copy = self.clone();
                 workers.push(tokio::spawn(async move {
-                    self_copy
+                    let res = self_copy
                         .get_dependency_tree(
                             pkg_name,
                             Some(
@@ -277,7 +346,12 @@ impl Add {
                                     .map_err(|_| anyhow!("Could not parse dependency version"))?,
                             ),
                         )
-                        .await
+                        .await;
+
+                    // Increase completed
+                    self_copy.progress_sender.send(()).await.ok();
+
+                    res
                 }));
             }
 
@@ -287,6 +361,8 @@ impl Add {
                     None => break,
                 }
             }
+
+            self.progress_sender.send(()).await.ok();
 
             Ok(())
         }
