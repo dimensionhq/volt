@@ -27,7 +27,6 @@ use sha1::{Digest, Sha1};
 use tokio::{
     self,
     sync::{mpsc, Mutex},
-    task::JoinHandle,
 };
 
 // Crate Level Imports
@@ -37,7 +36,7 @@ use crate::model::lock_file::LockFile;
 use crate::utils::App;
 use crate::utils::{download_tarball, extract_tarball};
 use crate::VERSION;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::Ordering;
 
 // Super Imports
 use super::Command;
@@ -168,43 +167,7 @@ Options:
                 .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
                 .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
         );
-
-        let completed = Arc::new(AtomicBool::new(false));
-
-        let completed_clone = completed.clone();
-
-        let handle = tokio::spawn(async move {
-            while !completed_clone.load(Ordering::Relaxed) {
-                progress_bar.inc(5);
-                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-            }
-            progress_bar.finish_and_clear();
-        });
-
-        // let app = app.clone();
-        // handles.push(tokio::spawn(async move {
-        //     let path = download_tarball(&app, &package).await;
-
-        //     extract_tarball(&path, &package, pb.clone())
-        //         .await
-        //         .with_context(|| {
-        //             format!("Unable to extract tarball for package '{}'", &package.name)
-        //         })?;
-
-        //     let mut file = File::open(path).unwrap();
-        //     let mut hasher = Sha1::new();
-        //     io::copy(&mut file, &mut hasher).unwrap();
-        //     let hash = format!("{:x}", hasher.finalize());
-
-        //     if hash == version.dist.shasum {
-        //         // Verified Checksum
-        //         // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
-        //     } else {
-        //         pb.println(format!("{}", "Failed To Verify".bright_red()));
-        //     }
-
-        //     Result::<_>::Ok(())
-        // }));
+        progress_bar.enable_steady_tick(100);
 
         loop {
             match workers.next().await {
@@ -213,8 +176,7 @@ Options:
             }
         }
 
-        completed.store(true, Ordering::Relaxed);
-        let _ = handle.await;
+        progress_bar.finish_and_clear();
 
         // Write to lock file
         lock_file.save().context("Failed to save lock file")?;
