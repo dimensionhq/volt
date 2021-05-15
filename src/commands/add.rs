@@ -139,7 +139,7 @@ Options:
                             let handle = tokio::spawn(async move {
                                 // println!("Getting dep: {}", &dependency);
                                 Add::add_package(app, Arc::new(d_clone), Arc::new(version)).await;
-                                // println!("Done dep: {}", &dependency);
+                                // println!("Completed: {}", &dependency);
                                 Result::<_>::Ok(())
                             });
                             handles.push(handle);
@@ -236,7 +236,7 @@ impl Add {
             // Verified Checksum
             // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
         } else {
-            pb.println(format!("{} {}", "Failed To Verify Checksum For".bright_red(), &package.name));
+            pb.println(format!("{} {}", "Failed To Verify Checksum For".bright_red(), &package.name.bright_red()));
         }
     }
     async fn fetch_package(
