@@ -133,12 +133,10 @@ Options:
                     deps.iter()
                         .map(|(dep, ver)| {
                             let app = app.clone();
-                            let d_clone = dep.clone();
-                            let version = ver.clone();
-                            // let dependency = dep.name.clone();
+                            let dependency = dep.name.clone();
                             let handle = tokio::spawn(async move {
                                 // println!("Getting dep: {}", &dependency);
-                                Add::add_package(app, Arc::new(d_clone), Arc::new(version)).await;
+                                Add::add_package(app, &dependency).await;
                                 // println!("Done dep: {}", &dependency);
                                 Result::<_>::Ok(())
                             });
@@ -213,7 +211,7 @@ Options:
 }
 
 impl Add {
-    async fn add_package(app: Arc<App>, package: Arc<Package>, version: Arc<Version>) {
+    async fn add_package(app: Arc<App>, package_name: &str) {
         let pb = ProgressBar::new(9999999);
         let text = format!("{}", "Installing Packages".bright_cyan());
 
@@ -223,8 +221,9 @@ impl Add {
                 .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
         );
 
-        let tarball_path = download_tarball(&app, &package).await;
+        let (package, version) = Self::fetch_package(package_name, None).await.unwrap();
 
+        let tarball_path = download_tarball(&app, &package).await;
         let _ = extract_tarball(&tarball_path, &package, pb.clone())
             .await
             .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name));
@@ -236,7 +235,11 @@ impl Add {
             // Verified Checksum
             // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
         } else {
-            pb.println(format!("{} {}", "Failed To Verify Checksum For".bright_red(), &package.name));
+            pb.println(format!(
+                "{} {}",
+                "Failed To Verify Checksum For".bright_red(),
+                &package.name
+            ));
         }
     }
     async fn fetch_package(
