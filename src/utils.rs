@@ -15,6 +15,7 @@
 */
 
 // Std Imports
+use std::process::Command;
 use std::{borrow::Cow, env, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 use std::{
@@ -265,7 +266,14 @@ fn enable_ansi_support() -> Result<(), u32> {
 /// Create a symlink to a directory
 #[cfg(windows)]
 pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> Result<()> {
-    std::os::windows::fs::symlink_dir(original, link).context("Unable to symlink directory")
+    let exit_code = Command::new("cmd.exe")
+        .arg(format!("/C mklink /J \"{}\" \"{}\"", link, original).as_str())
+        .status()
+        .unwrap()
+        .code()
+        .unwrap();
+
+    Ok(())
 }
 
 // Unix sunctions
