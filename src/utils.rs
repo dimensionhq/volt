@@ -32,6 +32,12 @@ use tar::Archive;
 // Crate Level Imports
 use crate::classes::package::Package;
 
+#[cfg(windows)]
+pub static PROGRESS_CHARS: &str = "=> ";
+
+#[cfg(unix)]
+pub static PROGRESS_CHARS: &str = "▰▰▱";
+
 pub struct App {
     pub current_dir: Box<Path>,
     pub home_dir: Box<Path>,
