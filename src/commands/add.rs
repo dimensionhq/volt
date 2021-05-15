@@ -14,9 +14,9 @@ limitations under the License.
 //! Add a package to your dependencies for your project.
 
 // Std Imports
+use std::sync::atomic::AtomicI16;
 use std::sync::atomic::Ordering;
-use std::{fs::File, sync::atomic::AtomicI16};
-use std::{io, sync::Arc};
+use std::sync::Arc;
 
 // Library Imports
 use anyhow::{anyhow, Context, Result};
@@ -24,7 +24,6 @@ use async_trait::async_trait;
 use colored::Colorize;
 use futures::{future::BoxFuture, stream::FuturesUnordered, FutureExt, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
-use sha1::{Digest, Sha1};
 use tokio::{
     self,
     sync::{mpsc, Mutex},
@@ -217,32 +216,13 @@ impl Add {
                 .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
         );
 
-        let tarball_path = download_tarball(&app, &package, &version.version).await;
+        let tarball_path = download_tarball(&app, &package, &version).await?;
 
         app.extract_tarball(&tarball_path, &package)
             .await
             .with_context(|| {
                 format!("Unable to extract tarball for package '{}'", &package.name)
             })?;
-
-        let mut file = File::open(tarball_path).context("Unable to open tar file")?;
-        let mut hasher = Sha1::new();
-        io::copy(&mut file, &mut hasher).context("Unable to read tar file")?;
-        let hash = format!("{:x}", hasher.finalize());
-        if hash == version.dist.shasum {
-            // Verified Checksum
-            // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
-        } else {
-            println!(
-                "Got hash: {} but it should've been {}",
-                hash, version.dist.shasum
-            );
-            pb.println(format!(
-                "{} {}",
-                "Failed to verify checksum for".bright_red(),
-                &package.name.bright_red()
-            ));
-        }
 
         Ok(())
     }
