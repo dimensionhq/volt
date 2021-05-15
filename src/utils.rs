@@ -15,11 +15,14 @@
 */
 
 // Std Imports
-use std::fs::File;
-use std::io::{self, Write};
-use std::process;
 use std::{borrow::Cow, path::PathBuf};
 use std::{env, fs::create_dir};
+use std::{env::temp_dir, fs::File};
+use std::{
+    fs::create_dir_all,
+    io::{self, Write},
+};
+use std::{path::Path, process};
 
 // Library Imports
 use anyhow::{Context, Result};
@@ -96,14 +99,15 @@ impl App {
 }
 
 /// downloads tarball file from package
-pub async fn download_tarball(app: &App, package: &Package, version: &str) -> String {
+pub async fn download_tarball(_app: &App, package: &Package, version: &str) -> String {
     let name = &package
         .name
         .replace("/", "__")
         .replace("@", "")
         .replace(".", "_");
     let file_name = format!("{}@{}.tgz", name, version);
-    let path = app.volt_dir.join(file_name);
+    let temp_dir = temp_dir();
+    let path = temp_dir.join(file_name);
     let path_str = path.to_string_lossy().to_string();
 
     if path.exists() {
@@ -149,24 +153,41 @@ pub async fn extract_tarball(
 ) -> Result<()> {
     // Open tar file
     let tar_file = File::open(file_path).context("Unable to open tar file")?;
-
+    let _ = create_dir_all(node_modules_dir.clone()); // not being created for me
+    let home_dir_path = home_dir().unwrap();
     // Delete package from node_modules
     let node_modules_dep_path = node_modules_dir.join(&package.name);
     if node_modules_dep_path.exists() {
         remove_dir_all(&node_modules_dep_path).await.ok();
     }
-
+    let home_dir_file_path = home_dir_path.join(".volt").join(package.name.clone());
     // Extract tar file
     let gz_decoder = GzDecoder::new(tar_file);
     let mut archive = Archive::new(gz_decoder);
-    // oh okay lemme see where I can impl
     archive
-        .unpack(format!("{}{}", home_dir()))
+        .unpack(format!("{}", home_dir_path.join(".volt").to_str().unwrap()))
         .context("Unable to unpack dependency")?;
 
-    // dude we have to extract it to .volt insteade of node_modules
-    println!("Debug {}", node_modules_dep_path.to_str().unwrap());
-    create_symlink(file_path, node_modules_dep_path.to_str().unwrap());
+    if home_dir_file_path.exists() {
+        // do nothing
+    } else {
+        match std::fs::rename(
+            format!(
+                "{}",
+                home_dir_path
+                    .join(".volt")
+                    .join("package")
+                    .to_str()
+                    .unwrap()
+            ),
+            format!("{}", home_dir_file_path.to_str().unwrap()),
+        ) {
+            Ok(_) => {}
+            Err(err) => println!("error: {}", err.to_string().red().bold()),
+        };
+    }
+    let f_path = home_dir_path.join(".volt").join(package.name.clone());
+    create_symlink(f_path, node_modules_dep_path);
     Ok(())
 }
 
@@ -249,11 +270,8 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 }
 
 /// Create a symlink to a directory
-pub fn create_symlink(ppath: &str, dest_path: &str) {
-    let destination = std::path::Path::new(dest_path);
-    let path = std::path::Path::new(ppath);
-    if destination.exists() {
-        create_dir(path).unwrap();
+pub fn create_symlink(path: PathBuf, destination: PathBuf) {
+    if path.exists() {
         match symlink_dir(path, destination) {
             Ok(_) => {}
             Err(e) => {
