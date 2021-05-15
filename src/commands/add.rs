@@ -131,7 +131,7 @@ Options:
             progress_bar.set_length(total as u64);
             progress_bar.set_position(done as u64);
         }
-        progress_bar.finish_with_message("[DONE]".bright_green().to_string());
+        progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
         println!(
             "Loaded {} dependencies.",
