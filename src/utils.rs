@@ -15,17 +15,18 @@
 */
 
 // Std Imports
-use std::env;
 use std::fs::File;
 use std::io::{self, Write};
 use std::process;
 use std::{borrow::Cow, path::PathBuf};
+use std::{env, fs::create_dir};
 
 // Library Imports
 use anyhow::{Context, Result};
 use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
+use symlink::symlink_dir;
 use tar::Archive;
 use tokio::fs::remove_dir_all;
 
@@ -156,10 +157,14 @@ pub async fn extract_tarball(
     // Extract tar file
     let gz_decoder = GzDecoder::new(tar_file);
     let mut archive = Archive::new(gz_decoder);
+    // oh okay lemme see where I can impl
     archive
-        .unpack(node_modules_dep_path)
+        .unpack(format!("{}{}", home_dir()))
         .context("Unable to unpack dependency")?;
 
+    // dude we have to extract it to .volt insteade of node_modules
+    println!("Debug {}", node_modules_dep_path.to_str().unwrap());
+    create_symlink(file_path, node_modules_dep_path.to_str().unwrap());
     Ok(())
 }
 
@@ -239,4 +244,19 @@ fn enable_ansi_support() -> Result<(), u32> {
 #[cfg(unix)]
 pub fn enable_ansi_support() -> Result<(), u32> {
     Ok(())
+}
+
+/// Create a symlink to a directory
+pub fn create_symlink(ppath: &str, dest_path: &str) {
+    let destination = std::path::Path::new(dest_path);
+    let path = std::path::Path::new(ppath);
+    if destination.exists() {
+        create_dir(path).unwrap();
+        match symlink_dir(path, destination) {
+            Ok(_) => {}
+            Err(e) => {
+                println!("{}: {}", "error".red().bold(), e.to_string().yellow());
+            }
+        };
+    }
 }
