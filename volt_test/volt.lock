@@ -1,40 +1,12 @@
 {
-  "express@^4.17.1": {
-    "name": "express",
-    "version": "4.17.1",
-    "tarball": "https://registry.npmjs.org/express/-/express-4.17.1.tgz",
-    "sha1": "4491fc38605cf51f8629d39c2b5d026f98a4c134",
+  "react@^17.0.2": {
+    "name": "react",
+    "version": "17.0.2",
+    "tarball": "https://registry.npmjs.org/react/-/react-17.0.2.tgz",
+    "sha1": "d0b5cc516d29eb3eee383f75b62864cfb6800037",
     "dependencies": {
-      "utils-merge": "1.0.1",
-      "setprototypeof": "1.1.1",
-      "merge-descriptors": "1.0.1",
-      "safe-buffer": "5.1.2",
-      "type-is": "~1.6.18",
-      "content-type": "~1.0.4",
-      "cookie-signature": "1.0.6",
-      "escape-html": "~1.0.3",
-      "send": "0.17.1",
-      "content-disposition": "0.5.3",
-      "qs": "6.7.0",
-      "statuses": "~1.5.0",
-      "serve-static": "1.14.1",
-      "parseurl": "~1.3.3",
-      "vary": "~1.1.2",
-      "body-parser": "1.19.0",
-      "accepts": "~1.3.7",
-      "depd": "~1.1.2",
-      "range-parser": "~1.2.1",
-      "cookie": "0.4.0",
-      "finalhandler": "~1.1.2",
-      "encodeurl": "~1.0.2",
-      "proxy-addr": "~2.0.5",
-      "array-flatten": "1.1.1",
-      "on-finished": "~2.3.0",
-      "etag": "~1.8.1",
-      "path-to-regexp": "0.1.7",
-      "fresh": "0.5.2",
-      "methods": "~1.1.2",
-      "debug": "2.6.9"
+      "object-assign": "^4.1.1",
+      "loose-envify": "^1.1.0"
     }
   }
 }
