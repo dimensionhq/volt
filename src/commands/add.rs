@@ -14,7 +14,7 @@ limitations under the License.
 //! Add a package to your dependencies for your project.
 
 // Std Imports
-use std::{fs::File, process::exit, sync::atomic::AtomicI16};
+use std::{fs::File, sync::atomic::AtomicI16};
 use std::{io, sync::Arc};
 
 // Library Imports
@@ -94,101 +94,93 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>, packages: Vec<String>, _flags: Vec<String>) -> Result<()> {
-        if packages.is_empty() {
-            println!("{}", "You need to specify an app(s) to add".red().bold());
-            exit(1);
-        } else {
-            let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
-                .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
+        let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
+            .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
-            let (tx, mut rx) = mpsc::channel(100);
-            let add = Add::new(lock_file.clone(), tx);
+        let (tx, mut rx) = mpsc::channel(100);
+        let add = Add::new(lock_file.clone(), tx);
 
-            {
-                let mut add = add.clone();
-                let packages = packages.clone();
-                tokio::spawn(async move {
-                    for package_name in packages {
-                        add.get_dependency_tree(package_name.clone(), None)
-                            .await
-                            .ok();
-                    }
-                });
-            }
-
-            let progress_bar = ProgressBar::new(1);
-
-            progress_bar.set_style(ProgressStyle::default_bar().progress_chars("=> ").template(
-                &format!(
-                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
-                    "Fetching dependencies".bright_blue()
-                ),
-            ));
-
-            let mut done: i16 = 0;
-            while let Some(_) = rx.recv().await {
-                done += 1;
-                let total = add.total_dependencies.load(Ordering::Relaxed);
-                if done == total {
-                    break;
+        {
+            let mut add = add.clone();
+            let packages = packages.clone();
+            tokio::spawn(async move {
+                for package_name in packages {
+                    add.get_dependency_tree(package_name.clone(), None)
+                        .await
+                        .ok();
                 }
-                progress_bar.set_length(total as u64);
-                progress_bar.set_position(done as u64);
-            }
-            progress_bar.finish_with_message("[DONE]");
-
-            println!(
-                "Loaded {} dependencies.",
-                add.dependencies
-                    .lock()
-                    .map(|deps| deps
-                        .iter()
-                        .map(|(dep, ver)| format!("{}: {}", dep.name, ver.version))
-                        .collect::<Vec<_>>()
-                        .len())
-                    .await
-            );
-
-            let dependencies = Arc::try_unwrap(add.dependencies)
-                .map_err(|_| anyhow!("Unable to read dependencies"))?
-                .into_inner();
-
-            let mut workers = FuturesUnordered::new();
-
-            for (dep, ver) in dependencies {
-                let app = app.clone();
-                workers.push(async move {
-                    Add::add_package(app, (dep, ver)).await;
-                });
-            }
-
-            let progress_bar = ProgressBar::new(0);
-            let text = format!("{}", "Installing Packages".bright_cyan());
-
-            progress_bar.clone().set_style(
-                ProgressStyle::default_spinner()
-                    .template(
-                        ("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str(),
-                    )
-                    .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
-            );
-            progress_bar.enable_steady_tick(100);
-
-            loop {
-                match workers.next().await {
-                    Some(_) => (),
-                    None => break,
-                }
-            }
-
-            // Clearing Progress Bar
-            progress_bar.finish_and_clear();
-
-            // Write to lock file
-            lock_file.save().context("Failed to save lock file")?;
-
-            Ok(())
+            });
         }
+
+        let progress_bar = ProgressBar::new(1);
+
+        progress_bar.set_style(ProgressStyle::default_bar().progress_chars("=> ").template(
+            &format!(
+                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                "Fetching dependencies".bright_blue()
+            ),
+        ));
+
+        let mut done: i16 = 0;
+        while let Some(_) = rx.recv().await {
+            done += 1;
+            let total = add.total_dependencies.load(Ordering::Relaxed);
+            if done == total {
+                break;
+            }
+            progress_bar.set_length(total as u64);
+            progress_bar.set_position(done as u64);
+        }
+        progress_bar.finish_with_message("[OK]".bright_green().to_string());
+
+        println!(
+            "Loaded {} dependencies.",
+            add.dependencies
+                .lock()
+                .map(|deps| deps
+                    .iter()
+                    .map(|(dep, ver)| format!("{}: {}", dep.name, ver.version))
+                    .collect::<Vec<_>>()
+                    .len())
+                .await
+        );
+
+        let dependencies = Arc::try_unwrap(add.dependencies)
+            .map_err(|_| anyhow!("Unable to read dependencies"))?
+            .into_inner();
+
+        let mut workers = FuturesUnordered::new();
+
+        for (dep, ver) in dependencies {
+            let app = app.clone();
+            workers.push(async move {
+                Add::add_package(app, (dep, ver)).await;
+            });
+        }
+
+        let progress_bar = ProgressBar::new(0);
+        let text = format!("{}", "Installing Packages".bright_cyan());
+
+        progress_bar.clone().set_style(
+            ProgressStyle::default_spinner()
+                .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
+                .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
+        );
+        progress_bar.enable_steady_tick(100);
+
+        loop {
+            match workers.next().await {
+                Some(_) => (),
+                None => break,
+            }
+        }
+
+        progress_bar.finish_and_clear();
+
+        // Write to lock file
+        lock_file.save().context("Failed to save lock file")?;
+
+        Ok(())
     }
 }
 
@@ -233,8 +225,6 @@ impl Add {
             ));
         }
     }
-
-    // Fetch Package
     async fn fetch_package(
         package_name: &str,
         version_req: Option<semver::VersionReq>,
@@ -283,7 +273,6 @@ impl Add {
         Ok((package, version))
     }
 
-    // Get the dependency tree
     fn get_dependency_tree(
         &mut self,
         package_name: String,
