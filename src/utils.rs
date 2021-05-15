@@ -92,7 +92,7 @@ pub async fn download_tarball(app: &App, package: &Package) -> String {
 
     let file_name = format!("{}-{}.tgz", name, latest_version);
 
-    let path = app.volt_dir.join(file_name);
+    let path = app.volt_dir.join(file_name.replace("/", "__"));
     let path_str = path.to_string_lossy().to_string();
 
     // Placeholder buffer
