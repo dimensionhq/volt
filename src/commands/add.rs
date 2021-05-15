@@ -219,7 +219,7 @@ impl Add {
         } else {
             pb.println(format!(
                 "{} {}",
-                "Failed To Verify Checksum For".bright_red(),
+                "Failed to verify checksum for".bright_red(),
                 &package.name.bright_red()
             ));
         }
