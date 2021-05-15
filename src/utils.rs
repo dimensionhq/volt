@@ -96,6 +96,37 @@ impl App {
             .iter()
             .any(|flag| flags.iter().any(|search_flag| flag == search_flag))
     }
+
+    pub async fn extract_tarball(&self, file_path: &str, package: &Package) -> Result<()> {
+        // Open tar file
+        let tar_file = File::open(file_path).context("Unable to open tar file")?;
+        create_dir_all(&self.node_modules_dir);
+
+        // Delete package from node_modules
+        let node_modules_dep_path = self.node_modules_dir.join(&package.name);
+        if node_modules_dep_path.exists() {
+            remove_dir_all(&node_modules_dep_path).await.ok();
+        }
+        let home_dir_file_path = self.volt_dir.join(&package.name);
+
+        // Extract tar file
+        let gz_decoder = GzDecoder::new(tar_file);
+        let mut archive = Archive::new(gz_decoder);
+        archive
+            .unpack(&self.home_dir)
+            .context("Unable to unpack dependency")?;
+
+        if home_dir_file_path.exists() {
+            // do nothing
+        } else {
+            std::fs::rename(self.volt_dir.join("package"), home_dir_file_path)
+                .context("Unable to rename package in .volt")?;
+        }
+        let f_path = self.volt_dir.join(&package.name);
+        create_symlink(f_path, node_modules_dep_path);
+
+        Ok(())
+    }
 }
 
 /// downloads tarball file from package
@@ -144,51 +175,6 @@ pub fn get_basename<'a>(path: &'a str) -> Cow<'a, str> {
         Some(p) => p.into(),
         None => path.into(),
     }
-}
-
-pub async fn extract_tarball(
-    file_path: &str,
-    node_modules_dir: PathBuf,
-    package: &Package,
-) -> Result<()> {
-    // Open tar file
-    let tar_file = File::open(file_path).context("Unable to open tar file")?;
-    let _ = create_dir_all(node_modules_dir.clone()); // not being created for me
-    let home_dir_path = home_dir().unwrap();
-    // Delete package from node_modules
-    let node_modules_dep_path = node_modules_dir.join(&package.name);
-    if node_modules_dep_path.exists() {
-        remove_dir_all(&node_modules_dep_path).await.ok();
-    }
-    let home_dir_file_path = home_dir_path.join(".volt").join(package.name.clone());
-    // Extract tar file
-    let gz_decoder = GzDecoder::new(tar_file);
-    let mut archive = Archive::new(gz_decoder);
-    archive
-        .unpack(format!("{}", home_dir_path.join(".volt").to_str().unwrap()))
-        .context("Unable to unpack dependency")?;
-
-    if home_dir_file_path.exists() {
-        // do nothing
-    } else {
-        match std::fs::rename(
-            format!(
-                "{}",
-                home_dir_path
-                    .join(".volt")
-                    .join("package")
-                    .to_str()
-                    .unwrap()
-            ),
-            format!("{}", home_dir_file_path.to_str().unwrap()),
-        ) {
-            Ok(_) => {}
-            Err(err) => println!("error: {}", err.to_string().red().bold()),
-        };
-    }
-    let f_path = home_dir_path.join(".volt").join(package.name.clone());
-    create_symlink(f_path, node_modules_dep_path);
-    Ok(())
 }
 
 /// Gets a config key from git using the git cli.

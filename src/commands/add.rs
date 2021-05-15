@@ -33,8 +33,8 @@ use tokio::{
 // Crate Level Imports
 use crate::model::http_manager;
 use crate::model::lock_file::LockFile;
+use crate::utils::download_tarball;
 use crate::utils::App;
-use crate::utils::{download_tarball, extract_tarball};
 use crate::VERSION;
 use crate::{
     classes::package::{Package, Version},
@@ -219,7 +219,7 @@ impl Add {
 
         let tarball_path = download_tarball(&app, &package, &version.version).await;
 
-        extract_tarball(&tarball_path, app.node_modules_dir.clone(), &package)
+        app.extract_tarball(&tarball_path, &package)
             .await
             .with_context(|| {
                 format!("Unable to extract tarball for package '{}'", &package.name)
