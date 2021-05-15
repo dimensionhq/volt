@@ -114,7 +114,7 @@ Options:
 
         let progress_bar = ProgressBar::new(1);
 
-        progress_bar.set_style(ProgressStyle::default_bar().progress_chars("=> ").template(
+        progress_bar.set_style(ProgressStyle::default_bar().progress_chars("▰▰▱").template(
             &format!(
                 "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
                 "Fetching dependencies".bright_blue()
@@ -160,7 +160,7 @@ Options:
 
         let progress_bar = ProgressBar::new(workers.len() as u64);
 
-        progress_bar.set_style(ProgressStyle::default_bar().progress_chars("=> ").template(
+        progress_bar.set_style(ProgressStyle::default_bar().progress_chars("▰▰▱").template(
             &format!(
                 "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
                 "Installing packages".bright_blue()
