@@ -159,7 +159,7 @@ Options:
             });
         }
 
-        let progress_bar = ProgressBar::new(9999999);
+        let progress_bar = ProgressBar::new(0);
         let text = format!("{}", "Installing Packages".bright_cyan());
 
         progress_bar.clone().set_style(
