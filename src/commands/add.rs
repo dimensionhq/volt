@@ -114,7 +114,7 @@ Options:
 
         let progress_bar = ProgressBar::new(1);
 
-        let mut progress_chars = "";
+        let progress_chars;
 
         if cfg!(windows) {
             progress_chars = "=> "
