@@ -161,6 +161,7 @@ impl LockFile {
     }
 
     /// Add a dependency to the lock file.
+    #[allow(dead_code)]
     pub fn add<T: Into<DependencyID>>(&mut self, id: T, dep: DependencyLock) {
         self.dependencies.0.insert(id.into(), dep);
     }
