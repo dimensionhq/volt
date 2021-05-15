@@ -150,21 +150,14 @@ Options:
             .map_err(|_| anyhow!("Unable to read dependencies"))?
             .into_inner();
 
-        let mut handles: Vec<JoinHandle<std::result::Result<(), anyhow::Error>>> =
-            Vec::with_capacity(dependencies.len());
+        let mut workers = FuturesUnordered::new();
 
-        for (dep, ver) in dependencies {
+        for (dep, _ver) in dependencies {
             let app = app.clone();
-            // let d_clone = dep.clone();
-            let version = ver.clone();
-            let dependency = dep.name.clone();
-            let handle = tokio::spawn(async move {
-                // println!("Getting dep: {}", &dependency);
-                Add::add_package(app, &dependency).await;
-                // println!("Completed: {}", &dependency);
-                Result::<_>::Ok(())
+            let dep_name = dep.name;
+            workers.push(async move {
+                Add::add_package(app, &dep_name).await;
             });
-            handles.push(handle);
         }
 
         let progress_bar = ProgressBar::new(9999999);
@@ -213,9 +206,13 @@ Options:
         //     Result::<_>::Ok(())
         // }));
 
-        for handle in handles {
-            let _ = handle.await;
+        loop {
+            match workers.next().await {
+                Some(_) => (),
+                None => break,
+            }
         }
+
         completed.store(true, Ordering::Relaxed);
         let _ = handle.await;
 
