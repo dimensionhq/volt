@@ -81,7 +81,7 @@ Commands:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>, _args: Vec<String>, _flags: Vec<String>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         println!("{}", Self::help());
         Ok(())
     }

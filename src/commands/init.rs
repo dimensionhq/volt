@@ -79,12 +79,12 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>, _args: Vec<String>, flags: Vec<String>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
         let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();
 
-        let data = if flags.iter().any(|flag| flag == "-y" || flag == "--yes") {
+        let data = if app.has_flag(&["-y", "--yes"]) {
             // Set name to current directory name
             let name = env::current_dir()
                 .map(|dir| {
