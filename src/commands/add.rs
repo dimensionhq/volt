@@ -159,14 +159,18 @@ Options:
             });
         }
 
+        // Creating progress spinner
         let progress_bar = ProgressBar::new(0);
         let text = format!("{}", "Installing Packages".bright_cyan());
 
+        // Setting Progress Style
         progress_bar.clone().set_style(
             ProgressStyle::default_spinner()
                 .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
                 .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
         );
+
+        // Setting tick rate
         progress_bar.enable_steady_tick(100);
 
         loop {
@@ -176,6 +180,7 @@ Options:
             }
         }
 
+        // Clearing Progress Bar
         progress_bar.finish_and_clear();
 
         // Write to lock file
@@ -195,6 +200,7 @@ impl Add {
         }
     }
 
+    // Add new package
     async fn add_package(app: Arc<App>, package_name: &str) {
         let pb = ProgressBar::new(9999999);
         let text = format!("{}", "Installing Packages".bright_cyan());
@@ -225,6 +231,8 @@ impl Add {
             ));
         }
     }
+
+    // Fetch Package
     async fn fetch_package(
         package_name: &str,
         version_req: Option<semver::VersionReq>,
@@ -273,6 +281,7 @@ impl Add {
         Ok((package, version))
     }
 
+    // Get the dependency tree
     fn get_dependency_tree(
         &mut self,
         package_name: String,
