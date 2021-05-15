@@ -135,7 +135,7 @@ Options:
                             let app = app.clone();
                             let d_clone = dep.clone();
                             let version = ver.clone();
-                            let dependency = dep.name.clone();
+                            // let dependency = dep.name.clone();
                             let handle = tokio::spawn(async move {
                                 // println!("Getting dep: {}", &dependency);
                                 Add::add_package(app, Arc::new(d_clone), Arc::new(version)).await;
