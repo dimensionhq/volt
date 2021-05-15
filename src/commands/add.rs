@@ -106,16 +106,7 @@ Options:
             add.get_dependency_tree(package_name.clone(), None).await?;
         }
 
-        // println!(
-        //     "Dep tree:\n{:#?}",
-        //     add.dependencies
-        //         .lock()
-        //         .map(|deps| deps
-        //             .iter()
-        //             .map(|(dep, ver)| format!("{}: {}", dep.name, ver.version))
-        //             .collect::<Vec<_>>())
-        //         .await
-        // );
+        println!("{}", "Generating packages".bright_blue());
 
         for package_name in packages {
             let (package, version) = Self::fetch_package(&package_name, None).await?;
@@ -146,9 +137,9 @@ Options:
                             let version = ver.clone();
                             let dependency = dep.name.clone();
                             let handle = tokio::spawn(async move {
-                                println!("Getting dep: {}", &dependency);
+                                // println!("Getting dep: {}", &dependency);
                                 Add::add_package(app, Arc::new(d_clone), Arc::new(version)).await;
-                                println!("Done dep: {}", &dependency);
+                                // println!("Done dep: {}", &dependency);
                                 Result::<_>::Ok(())
                             });
                             handles.push(handle);
@@ -156,17 +147,6 @@ Options:
                         .collect::<Vec<_>>()
                 })
                 .await;
-            // for dependency in add.dependencies.lock().mat {
-            //     let app = app.clone();
-            //     let dependency = dependency.0.clone();
-            //     let handle = tokio::spawn(async move {
-            //         println!("Getting dep: {}", &dependency);
-            //         Add::add_package((app), &dependency).await;
-            //         println!("Done dep: {}", dependency);
-            //         Result::<_>::Ok(())
-            //     });
-            //     handles.push(handle);
-            // }
 
             let progress_bar = ProgressBar::new(9999999);
             let text = format!("{}", "Installing Packages".bright_cyan());
@@ -210,7 +190,7 @@ Options:
 
                 if hash == version.dist.shasum {
                     // Verified Checksum
-                    pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
+                    // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
                 } else {
                     pb.println(format!("{}", "Failed To Verify".bright_red()));
                 }
@@ -254,9 +234,9 @@ impl Add {
         let hash = format!("{:x}", hasher.finalize());
         if hash == version.dist.shasum {
             // Verified Checksum
-            pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
+            // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
         } else {
-            pb.println(format!("{}", "Failed To Verify".bright_red()));
+            pb.println(format!("{} {}", "Failed To Verify Checksum For".bright_red(), &package.name));
         }
     }
     async fn fetch_package(
