@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "express": "^4.17.1",
     "jquery-typewriter": "^1.2.3",
     "react": "^17.0.2"
   }

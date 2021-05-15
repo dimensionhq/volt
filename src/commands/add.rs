@@ -154,78 +154,75 @@ Options:
         let dependencies = Arc::try_unwrap(add.dependencies)
             .map_err(|_| anyhow!("Unable to read dependencies"))?
             .into_inner();
-        for (package, version) in dependencies {
-            let mut handles: Vec<JoinHandle<Result<()>>> =
-                Vec::with_capacity(version.dependencies.len());
 
-            // for dependency in version.dependencies.iter() {
-            //     let app = app.clone();
-            //     let dependency = dependency.0.clone();
-            //     let flags = flags.clone();
-            //     let handle = tokio::spawn(async move {
-            //         println!("Getting dep: {}", &dependency);
-            //         Add.exec(app, vec![dependency.clone()], flags).await;
-            //         println!("Done dep: {}", dependency);
-            //     });
-            //     handles.push(handle);
-            // }
+        let mut handles: Vec<JoinHandle<std::result::Result<(), anyhow::Error>>> =
+            Vec::with_capacity(dependencies.len());
 
-            let progress_bar = ProgressBar::new(9999999);
-            let text = format!("{}", "Installing Packages".bright_cyan());
-
-            progress_bar.clone().set_style(
-                ProgressStyle::default_spinner()
-                    .template(
-                        ("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str(),
-                    )
-                    .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
-            );
-
-            let pb = progress_bar.clone();
-
-            let completed = Arc::new(AtomicBool::new(false));
-
-            let completed_clone = completed.clone();
-
-            let handle = tokio::spawn(async move {
-                while !completed_clone.load(Ordering::Relaxed) {
-                    progress_bar.inc(5);
-                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-                }
-                progress_bar.finish_and_clear();
-            });
-
+        for (dep, ver) in dependencies {
             let app = app.clone();
-            handles.push(tokio::spawn(async move {
-                let path = download_tarball(&app, &package).await;
-
-                extract_tarball(&path, &package, pb.clone())
-                    .await
-                    .with_context(|| {
-                        format!("Unable to extract tarbal for package '{}'", &package.name)
-                    })?;
-
-                let mut file = File::open(path).unwrap();
-                let mut hasher = Sha1::new();
-                io::copy(&mut file, &mut hasher).unwrap();
-                let hash = format!("{:x}", hasher.finalize());
-
-                if hash == version.dist.shasum {
-                    // Verified Checksum
-                    pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
-                } else {
-                    pb.println(format!("{}", "Failed To Verify".bright_red()));
-                }
-
+            let d_clone = dep.clone();
+            let version = ver.clone();
+            // let dependency = dep.name.clone();
+            let handle = tokio::spawn(async move {
+                // println!("Getting dep: {}", &dependency);
+                Add::add_package(app, Arc::new(d_clone), Arc::new(version)).await;
+                // println!("Completed: {}", &dependency);
                 Result::<_>::Ok(())
-            }));
+            });
+            handles.push(handle);
+        }
 
-            for handle in handles {
-                let _ = handle.await;
+        let progress_bar = ProgressBar::new(9999999);
+        let text = format!("{}", "Installing Packages".bright_cyan());
+
+        progress_bar.clone().set_style(
+            ProgressStyle::default_spinner()
+                .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
+                .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
+        );
+
+        let completed = Arc::new(AtomicBool::new(false));
+
+        let completed_clone = completed.clone();
+
+        let handle = tokio::spawn(async move {
+            while !completed_clone.load(Ordering::Relaxed) {
+                progress_bar.inc(5);
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
             }
-            completed.store(true, Ordering::Relaxed);
+            progress_bar.finish_and_clear();
+        });
+
+        // let app = app.clone();
+        // handles.push(tokio::spawn(async move {
+        //     let path = download_tarball(&app, &package).await;
+
+        //     extract_tarball(&path, &package, pb.clone())
+        //         .await
+        //         .with_context(|| {
+        //             format!("Unable to extract tarball for package '{}'", &package.name)
+        //         })?;
+
+        //     let mut file = File::open(path).unwrap();
+        //     let mut hasher = Sha1::new();
+        //     io::copy(&mut file, &mut hasher).unwrap();
+        //     let hash = format!("{:x}", hasher.finalize());
+
+        //     if hash == version.dist.shasum {
+        //         // Verified Checksum
+        //         // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
+        //     } else {
+        //         pb.println(format!("{}", "Failed To Verify".bright_red()));
+        //     }
+
+        //     Result::<_>::Ok(())
+        // }));
+
+        for handle in handles {
             let _ = handle.await;
         }
+        completed.store(true, Ordering::Relaxed);
+        let _ = handle.await;
 
         // Write to lock file
         lock_file.save().context("Failed to save lock file")?;
@@ -244,6 +241,36 @@ impl Add {
         }
     }
 
+    async fn add_package(app: Arc<App>, package: Arc<Package>, version: Arc<Version>) {
+        let pb = ProgressBar::new(9999999);
+        let text = format!("{}", "Installing Packages".bright_cyan());
+
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
+                .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
+        );
+
+        let tarball_path = download_tarball(&app, &package).await;
+
+        let _ = extract_tarball(&tarball_path, &package, pb.clone())
+            .await
+            .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name));
+        let mut file = File::open(tarball_path).unwrap();
+        let mut hasher = Sha1::new();
+        io::copy(&mut file, &mut hasher).unwrap();
+        let hash = format!("{:x}", hasher.finalize());
+        if hash == version.dist.shasum {
+            // Verified Checksum
+            // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
+        } else {
+            pb.println(format!(
+                "{} {}",
+                "Failed To Verify Checksum For".bright_red(),
+                &package.name.bright_red()
+            ));
+        }
+    }
     async fn fetch_package(
         package_name: &str,
         version_req: Option<semver::VersionReq>,
