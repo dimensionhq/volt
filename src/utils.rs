@@ -15,7 +15,6 @@
 */
 
 // Std Imports
-use std::process::Command;
 use std::{borrow::Cow, env, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 use std::{
@@ -29,11 +28,12 @@ use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
+use sha1::{Digest, Sha1};
 use tar::Archive;
 use tokio::fs::remove_dir_all;
 
 // Crate Level Imports
-use crate::classes::package::Package;
+use crate::classes::package::{Package, Version};
 
 #[cfg(windows)]
 pub static PROGRESS_CHARS: &str = "=> ";
@@ -103,6 +103,7 @@ impl App {
 
         // Delete package from node_modules
         let node_modules_dep_path = self.node_modules_dir.join(&package.name);
+
         if node_modules_dep_path.exists() {
             remove_dir_all(&node_modules_dep_path).await?;
         }
@@ -140,40 +141,51 @@ impl App {
 
         Ok(())
     }
+
+    pub fn calc_hash<P: AsRef<Path>>(path: P) -> Result<String> {
+        let mut file = File::open(path)?;
+
+        let mut hasher = Sha1::new();
+        io::copy(&mut file, &mut hasher)?;
+
+        Ok(format!("{:x}", hasher.finalize()))
+    }
 }
 
 /// downloads tarball file from package
-pub async fn download_tarball(_app: &App, package: &Package, version: &str) -> String {
+pub async fn download_tarball(_app: &App, package: &Package, version: &Version) -> Result<String> {
     let name = &package
         .name
         .replace("/", "__")
         .replace("@", "")
         .replace(".", "_");
-    let file_name = format!("{}@{}.tgz", name, version);
+    let file_name = format!("{}@{}.tgz", name, version.version);
     let temp_dir = temp_dir();
     let path = temp_dir.join(file_name);
     let path_str = path.to_string_lossy().to_string();
 
     // Corrupt tar files may cause issues
-    // if path.exists() {
-    //     return path_str;
-    // }
-
-    let tarball = &package.versions[version]
-        .dist
-        .tarball
-        .replace("https", "http");
-
-    let mut response = reqwest::get(tarball).await.unwrap();
-
-    // Placeholder buffer
-    let mut file = File::create(path).unwrap();
-
-    while let Some(chunk) = response.chunk().await.unwrap() {
-        let _ = file.write(&*chunk);
+    if let Ok(hash) = App::calc_hash(&path) {
+        // File exists, make sure it's not corrupted
+        if hash == version.dist.shasum {
+            return Ok(path_str);
+        }
     }
 
-    path_str
+    let tarball = version.dist.tarball.replace("https", "http");
+
+    let mut response = reqwest::get(tarball).await?;
+
+    // Placeholder buffer
+    let mut file = File::create(&path)?;
+
+    while let Some(chunk) = response.chunk().await? {
+        file.write(&*chunk)?;
+    }
+
+    App::calc_hash(&path)?;
+
+    Ok(path_str)
 }
 
 pub fn get_basename<'a>(path: &'a str) -> Cow<'a, str> {
@@ -267,7 +279,7 @@ fn enable_ansi_support() -> Result<(), u32> {
 #[cfg(windows)]
 pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> Result<()> {
     let exit_code = Command::new("cmd.exe")
-        .arg(format!("/C mklink /J \"{}\" \"{}\"", link, original).as_str())
+        .arg(&format!("/C mklink /J \"{}\" \"{}\"", link, original))
         .status()
         .unwrap()
         .code()
