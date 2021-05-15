@@ -174,7 +174,7 @@ Options:
             }
         }
 
-        progress_bar.finish();
+        progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
         // Write to lock file
         lock_file.save().context("Failed to save lock file")?;
