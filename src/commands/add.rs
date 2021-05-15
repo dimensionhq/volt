@@ -181,31 +181,6 @@ Options:
             progress_bar.finish_and_clear();
         });
 
-        // let app = app.clone();
-        // handles.push(tokio::spawn(async move {
-        //     let path = download_tarball(&app, &package).await;
-
-        //     extract_tarball(&path, &package, pb.clone())
-        //         .await
-        //         .with_context(|| {
-        //             format!("Unable to extract tarball for package '{}'", &package.name)
-        //         })?;
-
-        //     let mut file = File::open(path).unwrap();
-        //     let mut hasher = Sha1::new();
-        //     io::copy(&mut file, &mut hasher).unwrap();
-        //     let hash = format!("{:x}", hasher.finalize());
-
-        //     if hash == version.dist.shasum {
-        //         // Verified Checksum
-        //         // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
-        //     } else {
-        //         pb.println(format!("{}", "Failed To Verify".bright_red()));
-        //     }
-
-        //     Result::<_>::Ok(())
-        // }));
-
         loop {
             match workers.next().await {
                 Some(_) => (),
