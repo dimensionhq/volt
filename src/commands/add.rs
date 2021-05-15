@@ -206,9 +206,11 @@ impl Add {
 
         let tarball_path = download_tarball(&app, &package).await;
 
-        let _ = extract_tarball(&tarball_path, &package, pb.clone())
+        extract_tarball(&tarball_path, &package, pb.clone())
             .await
-            .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name));
+            .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name))
+            .unwrap();
+
         let mut file = File::open(tarball_path).unwrap();
         let mut hasher = Sha1::new();
         io::copy(&mut file, &mut hasher).unwrap();
