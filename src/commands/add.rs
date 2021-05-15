@@ -196,7 +196,7 @@ impl Add {
     }
 
     async fn add_package(app: Arc<App>, package_name: &str) {
-        let pb = ProgressBar::new(9999999);
+        let pb = ProgressBar::new(0);
         let text = format!("{}", "Installing Packages".bright_cyan());
 
         pb.set_style(
