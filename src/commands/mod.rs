@@ -74,13 +74,14 @@ impl AppCommand {
         }
     }
 
-    pub async fn run(&self, app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()> {
+    pub async fn run(&self, app: App) -> Result<()> {
+        let app = Arc::new(app);
         match self {
-            Self::Add => add::Add::exec(app, args, flags).await,
-            Self::Help => help::Help::exec(app, args, flags).await,
-            Self::Init => init::Init::exec(app, args, flags).await,
-            Self::Install => install::Install::exec(app, args, flags).await,
-            Self::Remove => remove::Remove::exec(app, args, flags).await,
+            Self::Add => add::Add::exec(app).await,
+            Self::Help => help::Help::exec(app).await,
+            Self::Init => init::Init::exec(app).await,
+            Self::Install => install::Install::exec(app).await,
+            Self::Remove => remove::Remove::exec(app).await,
         }
     }
 }
@@ -89,5 +90,5 @@ impl AppCommand {
 pub trait Command {
     fn help() -> String;
 
-    async fn exec(app: Arc<App>, args: Vec<String>, flags: Vec<String>) -> Result<()>;
+    async fn exec(app: Arc<App>) -> Result<()>;
 }
