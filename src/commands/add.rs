@@ -154,7 +154,7 @@ Options:
         for (dep, ver) in dependencies {
             let app = app.clone();
             workers.push(async move {
-                Add::add_package(app, (dep, ver)).await;
+                Add::add_package(app, &dep, &ver).await;
             });
         }
 
@@ -195,7 +195,7 @@ impl Add {
     }
 
     // Add new package
-    async fn add_package(app: Arc<App>, (package, version): (Package, Version)) {
+    async fn add_package(app: Arc<App>, package: &Package, version: &Version) {
         let pb = ProgressBar::new(9999999);
         let text = format!("{}", "Installing Packages".bright_cyan());
 
