@@ -151,11 +151,10 @@ Options:
 
         let mut workers = FuturesUnordered::new();
 
-        for (dep, _ver) in dependencies {
+        for (dep, ver) in dependencies {
             let app = app.clone();
-            let dep_name = dep.name;
             workers.push(async move {
-                Add::add_package(app, &dep_name).await;
+                Add::add_package(app, (dep, ver)).await;
             });
         }
 
@@ -204,7 +203,7 @@ impl Add {
                 .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
                 .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
         );
-        let (package, version) = Self::fetch_package(package_name, None).await.unwrap();
+
         let tarball_path = download_tarball(&app, &package).await;
 
         let _ = extract_tarball(&tarball_path, &package, pb.clone())
