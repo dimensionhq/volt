@@ -1,7 +1,4 @@
 /target
-volt_test/node_modules
-yarn_test/node_modules
-/node_modules
-package_test/volt.lock
+**/node_modules
+volt.lock
 package.json
-volt_test/volt.lock
