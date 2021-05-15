@@ -1678,6 +1678,7 @@ dependencies = [
  "futures",
  "futures-util",
  "indicatif",
+ "lazy_static",
  "regex",
  "reqwest",
  "semver",

@@ -15,19 +15,19 @@
 */
 
 // Std Imports
-use std::borrow::Cow;
 use std::env;
 use std::fs::File;
 use std::io::{self, Write};
-use std::path::Path;
 use std::process;
+use std::{borrow::Cow, path::PathBuf};
 
 // Library Imports
-use anyhow::{anyhow, Result};
+use anyhow::{Context, Result};
 use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
 use tar::Archive;
+use tokio::fs::remove_dir_all;
 
 // Crate Level Imports
 use crate::classes::package::Package;
@@ -38,29 +38,34 @@ pub static PROGRESS_CHARS: &str = "=> ";
 #[cfg(unix)]
 pub static PROGRESS_CHARS: &str = "▰▰▱";
 
+lazy_static! {
+    pub static ref ERROR_TAG: String = "error".red().bold().to_string();
+}
+
 pub struct App {
-    pub current_dir: Box<Path>,
-    pub home_dir: Box<Path>,
-    pub volt_dir: Box<Path>,
-    pub lock_file_path: Box<Path>,
+    pub current_dir: PathBuf,
+    pub home_dir: PathBuf,
+    pub node_modules_dir: PathBuf,
+    pub volt_dir: PathBuf,
+    pub lock_file_path: PathBuf,
 }
 
 pub fn initialize() -> (App, Vec<String>) {
     // Initialize And Get Args
     enable_ansi_support().unwrap();
 
-    let current_dir = env::current_dir().unwrap().into_boxed_path();
-    let home_dir = home_dir()
-        .map(|dir| dir.into_boxed_path())
-        .unwrap_or_else(|| current_dir.clone());
-    let volt_dir = home_dir.join(".volt").into_boxed_path();
+    let current_dir = env::current_dir().unwrap();
+    let home_dir = home_dir().unwrap_or_else(|| current_dir.clone());
+    let node_modules_dir = current_dir.join("node_modules");
+    let volt_dir = home_dir.join(".volt");
     std::fs::create_dir_all(&volt_dir).ok();
 
-    let lock_file_path = current_dir.join("volt.lock").into_boxed_path();
+    let lock_file_path = current_dir.join("volt.lock");
 
     let app = App {
         current_dir,
         home_dir,
+        node_modules_dir,
         volt_dir,
         lock_file_path,
     };
@@ -86,19 +91,22 @@ pub fn get_arguments(args: &Vec<String>) -> (Vec<String>, Vec<String>) {
 }
 
 /// downloads tarball file from package
-pub async fn download_tarball(app: &App, package: &Package) -> String {
-    let latest_version = &package.dist_tags.latest;
-    let name = &package.name;
-    let tarball = &package.versions[latest_version]
+pub async fn download_tarball(app: &App, package: &Package, version: &str) -> String {
+    let name = &package
+        .name
+        .replace("/", "__")
+        .replace("@", "")
+        .replace(".", "_");
+    let tarball = &package.versions[version]
         .dist
         .tarball
         .replace("https", "http");
 
     let mut response = reqwest::get(tarball).await.unwrap();
 
-    let file_name = format!("{}-{}.tgz", name, latest_version);
+    let file_name = format!("{}@{}.tgz", name, version);
 
-    let path = app.volt_dir.join(file_name.replace("/", "__"));
+    let path = app.volt_dir.join(file_name);
     let path_str = path.to_string_lossy().to_string();
 
     // Placeholder buffer
@@ -127,39 +135,27 @@ pub fn get_basename<'a>(path: &'a str) -> Cow<'a, str> {
 
 pub async fn extract_tarball(
     file_path: &str,
+    node_modules_dir: PathBuf,
     package: &Package,
-    pb: indicatif::ProgressBar,
 ) -> Result<()> {
-    let path = Path::new(file_path);
-    let tar_gz = File::open(path)?;
-    let tar = GzDecoder::new(tar_gz);
-    let mut archive = Archive::new(tar);
-    if !Path::new(&format!(r"node_modules/{}", package.name)).exists() {
-        archive.unpack("node_modules")?;
-        std::fs::rename(
-            r"node_modules/package",
-            format!(r"node_modules/{}", package.name),
-        )?;
-    } else {
-        let loc = format!(r"node_modules/{}/package.json", package.name);
-        let file_contents = std::fs::read_to_string(loc)?;
-        let json_file: serde_json::Value = serde_json::from_str(file_contents.as_str())?;
-        let version = json_file["version"]
-            .as_str()
-            .ok_or_else(|| anyhow!("version not found in package.json"))?;
-        if version != package.dist_tags.latest {
-            // Update dependencies
+    // Open tar file
+    let tar_file = File::open(file_path).context("Unable to open tar file")?;
 
-            pb.println(format!("{}", "Updating dependencies".bright_blue()));
-
-            let _ = std::fs::remove_dir_all(r"node_modules/react");
-            archive.unpack("node_modules")?;
-            std::fs::rename(
-                r"node_modules/package",
-                format!(r"node_modules/{}", package.name),
-            )?;
-        }
+    // Delete package from node_modules
+    let node_modules_dep_path = node_modules_dir.join(&package.name);
+    if node_modules_dep_path.exists() {
+        remove_dir_all(&node_modules_dep_path)
+            .await
+            .context("Unable to delete dependency from node_modules")?;
     }
+
+    // Extract tar file
+    let gz_decoder = GzDecoder::new(tar_file);
+    let mut archive = Archive::new(gz_decoder);
+    archive
+        .unpack(node_modules_dep_path)
+        .context("Unable to unpack dependency")?;
+
     Ok(())
 }
 

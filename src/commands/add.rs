@@ -158,9 +158,7 @@ Options:
 
         for (dep, ver) in dependencies {
             let app = app.clone();
-            workers.push(async move {
-                Add::add_package(app, &dep, &ver).await;
-            });
+            workers.push(async move { Add::install_extract_package(app, &dep, &ver).await });
         }
 
         let progress_bar = ProgressBar::new(workers.len() as u64);
@@ -176,7 +174,11 @@ Options:
 
         loop {
             match workers.next().await {
-                Some(_) => progress_bar.inc(1),
+                Some(result) => {
+                    result?;
+                    progress_bar.inc(1)
+                }
+
                 None => break,
             }
         }
@@ -201,7 +203,11 @@ impl Add {
     }
 
     // Add new package
-    async fn add_package(app: Arc<App>, package: &Package, version: &Version) {
+    async fn install_extract_package(
+        app: Arc<App>,
+        package: &Package,
+        version: &Version,
+    ) -> Result<()> {
         let pb = ProgressBar::new(0);
         let text = format!("{}", "Installing Packages".bright_cyan());
 
@@ -211,27 +217,34 @@ impl Add {
                 .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
         );
 
-        let tarball_path = download_tarball(&app, &package).await;
+        let tarball_path = download_tarball(&app, &package, &version.version).await;
 
-        extract_tarball(&tarball_path, &package, pb.clone())
+        extract_tarball(&tarball_path, app.node_modules_dir.clone(), &package)
             .await
-            .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name))
-            .unwrap();
+            .with_context(|| {
+                format!("Unable to extract tarball for package '{}'", &package.name)
+            })?;
 
-        let mut file = File::open(tarball_path).unwrap();
+        let mut file = File::open(tarball_path).context("Unable to open tar file")?;
         let mut hasher = Sha1::new();
-        io::copy(&mut file, &mut hasher).unwrap();
+        io::copy(&mut file, &mut hasher).context("Unable to read tar file")?;
         let hash = format!("{:x}", hasher.finalize());
         if hash == version.dist.shasum {
             // Verified Checksum
             // pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
         } else {
+            println!(
+                "Got hash: {} but it should've been {}",
+                hash, version.dist.shasum
+            );
             pb.println(format!(
                 "{} {}",
                 "Failed to verify checksum for".bright_red(),
                 &package.name.bright_red()
             ));
         }
+
+        Ok(())
     }
     async fn fetch_package(
         package_name: &str,
