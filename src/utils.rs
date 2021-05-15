@@ -15,8 +15,7 @@
 */
 
 // Std Imports
-use std::{borrow::Cow, path::PathBuf};
-use std::{env, fs::create_dir};
+use std::{borrow::Cow, env, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 use std::{
     fs::create_dir_all,
@@ -29,7 +28,6 @@ use anyhow::{Context, Result};
 use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
-use symlink::symlink_dir;
 use tar::Archive;
 use tokio::fs::remove_dir_all;
 
@@ -123,7 +121,7 @@ impl App {
                 .context("Unable to rename package in .volt")?;
         }
         let f_path = self.volt_dir.join(&package.name);
-        create_symlink(f_path, node_modules_dep_path);
+        create_symlink(f_path, node_modules_dep_path)?;
 
         Ok(())
     }
@@ -249,20 +247,20 @@ fn enable_ansi_support() -> Result<(), u32> {
     return Ok(());
 }
 
-// Unix Function
+/// Create a symlink to a directory
+#[cfg(windows)]
+pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(path: P, destination: Q) -> Result<()> {
+    std::os::windows::fs::symlink_dir(path, destination).context("Unable to symlink directory")
+}
+
+// Unix sunctions
 #[cfg(unix)]
 pub fn enable_ansi_support() -> Result<(), u32> {
     Ok(())
 }
 
 /// Create a symlink to a directory
-pub fn create_symlink(path: PathBuf, destination: PathBuf) {
-    if path.exists() {
-        match symlink_dir(path, destination) {
-            Ok(_) => {}
-            Err(e) => {
-                println!("{}: {}", "error".red().bold(), e.to_string().yellow());
-            }
-        };
-    }
+#[cfg(unix)]
+pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(path: P, destination: Q) -> Result<()> {
+    std::os::unix::fs::symlink(path, destination).context("Unable to symlink directory")
 }
