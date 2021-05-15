@@ -153,21 +153,6 @@ Options:
                 .map_err(|_| anyhow!("Unable to read dependencies"))?
                 .into_inner();
 
-<<<<<<< HEAD
-        // Creating progress spinner
-        let progress_bar = ProgressBar::new(0);
-        let text = format!("{}", "Installing Packages".bright_cyan());
-
-        // Setting Progress Style
-        progress_bar.clone().set_style(
-            ProgressStyle::default_spinner()
-                .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
-                .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
-        );
-
-        // Setting tick rate
-        progress_bar.enable_steady_tick(100);
-=======
             let mut workers = FuturesUnordered::new();
 
             for (dep, _ver) in dependencies {
@@ -189,7 +174,6 @@ Options:
                     .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
             );
             progress_bar.enable_steady_tick(100);
->>>>>>> 90c673644761f53eaa0ac2bf192e9c3020f0b515
 
             loop {
                 match workers.next().await {
@@ -198,12 +182,8 @@ Options:
                 }
             }
 
-<<<<<<< HEAD
-        // Clearing Progress Bar
-        progress_bar.finish_and_clear();
-=======
+            // Clearing Progress Bar
             progress_bar.finish_and_clear();
->>>>>>> 90c673644761f53eaa0ac2bf192e9c3020f0b515
 
             // Write to lock file
             lock_file.save().context("Failed to save lock file")?;
