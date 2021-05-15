@@ -17,7 +17,7 @@ limitations under the License.
 //! Add a package to your dependencies for your project.
 
 // Std Imports
-use std::{fs::File, str::FromStr};
+use std::fs::File;
 use std::{io, sync::Arc};
 
 // Library Imports
@@ -27,7 +27,7 @@ use colored::Colorize;
 use futures::{future::BoxFuture, stream::FuturesUnordered, FutureExt, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use sha1::{Digest, Sha1};
-use tokio::{self, sync::Mutex, task::JoinHandle};
+use tokio::{self, sync::Mutex};
 
 // Crate Level Imports
 use crate::classes::package::{Package, Version};
@@ -97,6 +97,26 @@ Options:
         let mut lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
+        let mut add = Add {
+            lock_file: lock_file.clone(),
+            dependencies: Arc::new(Mutex::new(Vec::with_capacity(1))),
+        };
+
+        for package_name in &packages {
+            add.get_dependency_tree(package_name.clone(), None).await?;
+        }
+
+        // println!(
+        //     "Dep tree:\n{:#?}",
+        //     add.dependencies
+        //         .lock()
+        //         .map(|deps| deps
+        //             .iter()
+        //             .map(|(dep, ver)| format!("{}: {}", dep.name, ver.version))
+        //             .collect::<Vec<_>>())
+        //         .await
+        // );
+
         for package_name in packages {
             let (package, version) = Self::fetch_package(&package_name, None).await?;
 
@@ -114,17 +134,36 @@ Options:
                 },
             );
 
-            let mut handles: Vec<JoinHandle<Result<()>>> =
+            let mut handles: Vec<tokio::task::JoinHandle<std::result::Result<(), anyhow::Error>>> =
                 Vec::with_capacity(version.dependencies.len());
-
-            // for dependency in version.dependencies.iter() {
+            add.dependencies
+                .lock()
+                .map(|deps| {
+                    deps.iter()
+                        .map(|(dep, ver)| {
+                            let app = app.clone();
+                            let d_clone = dep.clone();
+                            let version = ver.clone();
+                            let dependency = dep.name.clone();
+                            let handle = tokio::spawn(async move {
+                                println!("Getting dep: {}", &dependency);
+                                Add::add_package(app, Arc::new(d_clone), Arc::new(version)).await;
+                                println!("Done dep: {}", &dependency);
+                                Result::<_>::Ok(())
+                            });
+                            handles.push(handle);
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .await;
+            // for dependency in add.dependencies.lock().mat {
             //     let app = app.clone();
             //     let dependency = dependency.0.clone();
-            //     let flags = flags.clone();
             //     let handle = tokio::spawn(async move {
             //         println!("Getting dep: {}", &dependency);
-            //         Add.exec(app, vec![dependency.clone()], flags).await;
+            //         Add::add_package((app), &dependency).await;
             //         println!("Done dep: {}", dependency);
+            //         Result::<_>::Ok(())
             //     });
             //     handles.push(handle);
             // }
@@ -161,7 +200,7 @@ Options:
                 extract_tarball(&path, &package, pb.clone())
                     .await
                     .with_context(|| {
-                        format!("Unable to extract tarbal for package '{}'", &package.name)
+                        format!("Unable to extract tarball for package '{}'", &package.name)
                     })?;
 
                 let mut file = File::open(path).unwrap();
@@ -194,6 +233,32 @@ Options:
 }
 
 impl Add {
+    async fn add_package(app: Arc<App>, package: Arc<Package>, version: Arc<Version>) {
+        let pb = ProgressBar::new(9999999);
+        let text = format!("{}", "Installing Packages".bright_cyan());
+
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
+                .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
+        );
+
+        let tarball_path = download_tarball(&app, &package).await;
+
+        let _ = extract_tarball(&tarball_path, &package, pb.clone())
+            .await
+            .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name));
+        let mut file = File::open(tarball_path).unwrap();
+        let mut hasher = Sha1::new();
+        io::copy(&mut file, &mut hasher).unwrap();
+        let hash = format!("{:x}", hasher.finalize());
+        if hash == version.dist.shasum {
+            // Verified Checksum
+            pb.println(format!("{}", "Successfully Verified Hash".bright_green()));
+        } else {
+            pb.println(format!("{}", "Failed To Verify".bright_red()));
+        }
+    }
     async fn fetch_package(
         package_name: &str,
         version_req: Option<semver::VersionReq>,
