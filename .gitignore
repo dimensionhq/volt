@@ -3,3 +3,4 @@
 package.json
 volt_test/volt.lock
 volt.lock
+.DS_Store
