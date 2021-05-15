@@ -1,3 +1,5 @@
 /target
 **/node_modules
 package.json
+volt_test/
+yarn_test/
