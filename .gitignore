@@ -1,6 +1,4 @@
 /target
 **/node_modules
 package.json
-volt_test/
-yarn_test/
-pnpm_test/
+volt_test/volt.lock
