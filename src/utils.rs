@@ -130,7 +130,6 @@ pub async fn extract_tarball(
     let mut archive = Archive::new(tar);
     if !Path::new(&format!(r"node_modules/{}", package.name)).exists() {
         archive.unpack("node_modules")?;
-        pb.println(format!("{}", "Generating package".bright_blue()));
         std::fs::rename(
             r"node_modules/package",
             format!(r"node_modules/{}", package.name),
