@@ -30,12 +30,15 @@ use tokio::{
 };
 
 // Crate Level Imports
-use crate::classes::package::{Package, Version};
 use crate::model::http_manager;
 use crate::model::lock_file::LockFile;
 use crate::utils::App;
 use crate::utils::{download_tarball, extract_tarball};
 use crate::VERSION;
+use crate::{
+    classes::package::{Package, Version},
+    utils::PROGRESS_CHARS,
+};
 use std::sync::atomic::Ordering;
 
 // Super Imports
@@ -114,12 +117,14 @@ Options:
 
         let progress_bar = ProgressBar::new(1);
 
-        progress_bar.set_style(ProgressStyle::default_bar().progress_chars("▰▰▱").template(
-            &format!(
-                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
-                "Fetching dependencies".bright_blue()
-            ),
-        ));
+        progress_bar.set_style(
+            ProgressStyle::default_bar()
+                .progress_chars(PROGRESS_CHARS)
+                .template(&format!(
+                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                    "Fetching dependencies".bright_blue()
+                )),
+        );
 
         let mut done: i16 = 0;
         while let Some(_) = rx.recv().await {
@@ -160,12 +165,14 @@ Options:
 
         let progress_bar = ProgressBar::new(workers.len() as u64);
 
-        progress_bar.set_style(ProgressStyle::default_bar().progress_chars("▰▰▱").template(
-            &format!(
-                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
-                "Installing packages".bright_blue()
-            ),
-        ));
+        progress_bar.set_style(
+            ProgressStyle::default_bar()
+                .progress_chars(PROGRESS_CHARS)
+                .template(&format!(
+                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
+                    "Installing packages".bright_blue()
+                )),
+        );
 
         loop {
             match workers.next().await {
@@ -206,9 +213,11 @@ impl Add {
 
         let tarball_path = download_tarball(&app, &package).await;
 
-        let _ = extract_tarball(&tarball_path, &package, pb.clone())
+        extract_tarball(&tarball_path, &package, pb.clone())
             .await
-            .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name));
+            .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name))
+            .unwrap();
+
         let mut file = File::open(tarball_path).unwrap();
         let mut hasher = Sha1::new();
         io::copy(&mut file, &mut hasher).unwrap();
