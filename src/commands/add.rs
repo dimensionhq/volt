@@ -14,6 +14,7 @@ limitations under the License.
 //! Add a package to your dependencies for your project.
 
 // Std Imports
+use std::sync::atomic::Ordering;
 use std::{fs::File, sync::atomic::AtomicI16};
 use std::{io, sync::Arc};
 
@@ -39,7 +40,6 @@ use crate::{
     classes::package::{Package, Version},
     utils::PROGRESS_CHARS,
 };
-use std::sync::atomic::Ordering;
 
 // Super Imports
 use super::Command;
