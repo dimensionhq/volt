@@ -117,8 +117,8 @@ Options:
 
         progress_bar.set_style(ProgressStyle::default_bar().progress_chars("=> ").template(
             &format!(
-                "{} [{{bar:40.cyan/blue}}] {{msg:.green}}",
-                "Fetching dependencies".bright_cyan()
+                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                "Fetching dependencies".bright_blue()
             ),
         ));
 
