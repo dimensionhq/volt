@@ -100,7 +100,7 @@ impl App {
     pub async fn extract_tarball(&self, file_path: &str, package: &Package) -> Result<()> {
         // Open tar file
         let tar_file = File::open(file_path).context("Unable to open tar file")?;
-        create_dir_all(&self.node_modules_dir);
+        create_dir_all(&self.node_modules_dir).ok();
 
         // Delete package from node_modules
         let node_modules_dep_path = self.node_modules_dir.join(&package.name);
