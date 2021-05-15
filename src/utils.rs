@@ -24,12 +24,12 @@ use std::{
 use std::{path::Path, process};
 
 // Library Imports
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
 use tar::Archive;
-use tokio::fs::{remove_dir, remove_dir_all};
+use tokio::fs::remove_dir_all;
 
 // Crate Level Imports
 use crate::classes::package::Package;
@@ -96,36 +96,46 @@ impl App {
     }
 
     pub async fn extract_tarball(&self, file_path: &str, package: &Package) -> Result<()> {
-        let home_dir = home_dir().unwrap();
         // Open tar file
         let tar_file = File::open(file_path).context("Unable to open tar file")?;
-        create_dir_all(&self.node_modules_dir).ok();
+        create_dir_all(&self.node_modules_dir)?;
 
         // Delete package from node_modules
         let node_modules_dep_path = self.node_modules_dir.join(&package.name);
         if node_modules_dep_path.exists() {
-            remove_dir_all(&node_modules_dep_path).await.ok();
+            remove_dir_all(&node_modules_dep_path).await?;
         }
-        let home_dir_file_path = home_dir.join(".volt").join(package.name.clone());
+        let volt_dir_file_path = self.volt_dir.join(
+            package
+                .name
+                .replace("/", "__")
+                .replace("@", "")
+                .replace(".", "_"),
+        );
 
         // Extract tar file
         let gz_decoder = GzDecoder::new(tar_file);
         let mut archive = Archive::new(gz_decoder);
         archive
-            .unpack(&self.home_dir)
+            .unpack(&volt_dir_file_path)
             .context("Unable to unpack dependency")?;
+        let host_dep_path = {
+            let child = volt_dir_file_path
+                .read_dir()
+                .context("Unable to read unpacked dependency directory")?
+                .next()
+                .ok_or_else(|| anyhow!("No directories found in unpacked dependency"))?
+                .context("Cannot read directory in unpacked dependency")?;
+            child.path()
+        };
 
-        if home_dir_file_path.exists() {
-            // remove_dir(home_dir_file_path);
-        } else {
-            std::fs::rename(home_dir.join("package"), home_dir_file_path).context(format!(
-                "Unable to rename package in .volt {:?}",
-                home_dir.join("package"),
-            ))?;
+        if let Some(parent) = node_modules_dep_path.parent() {
+            if !parent.exists() {
+                create_dir_all(&parent)?;
+            }
         }
-        let f_path = self.volt_dir.join(&package.name);
 
-        create_symlink(f_path, node_modules_dep_path)?;
+        create_symlink(host_dep_path, node_modules_dep_path)?;
 
         Ok(())
     }
@@ -143,9 +153,10 @@ pub async fn download_tarball(_app: &App, package: &Package, version: &str) -> S
     let path = temp_dir.join(file_name);
     let path_str = path.to_string_lossy().to_string();
 
-    if path.exists() {
-        return path_str;
-    }
+    // Corrupt tar files may cause issues
+    // if path.exists() {
+    //     return path_str;
+    // }
 
     let tarball = &package.versions[version]
         .dist
@@ -253,8 +264,8 @@ fn enable_ansi_support() -> Result<(), u32> {
 
 /// Create a symlink to a directory
 #[cfg(windows)]
-pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(path: P, destination: Q) -> Result<()> {
-    std::os::windows::fs::symlink_dir(path, destination).context("Unable to symlink directory")
+pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> Result<()> {
+    std::os::windows::fs::symlink_dir(original, link).context("Unable to symlink directory")
 }
 
 // Unix sunctions
@@ -265,6 +276,6 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 
 /// Create a symlink to a directory
 #[cfg(unix)]
-pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(path: P, destination: Q) -> Result<()> {
-    std::os::unix::fs::symlink(path, destination).context("Unable to symlink directory")
+pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> Result<()> {
+    std::os::unix::fs::symlink(original, link).context("Unable to symlink directory")
 }
