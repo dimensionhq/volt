@@ -14,6 +14,9 @@
     limitations under the License.
 */
 
+#[macro_use]
+extern crate lazy_static;
+
 // Modules
 mod classes;
 mod commands;
@@ -31,7 +34,7 @@ use colored::Colorize;
 // Crate Level Imports
 use commands::AppCommand;
 use tokio::time::Instant;
-use utils::{get_arguments, initialize};
+use utils::{get_arguments, initialize, ERROR_TAG};
 
 // Constants
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -39,7 +42,7 @@ const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 #[tokio::main]
 async fn main() {
     if let Err(err) = try_main().await {
-        eprintln!("{} {}", "error".red().bold(), err);
+        eprintln!("{} {}", ERROR_TAG.clone(), err);
         let err_chain = err.chain().skip(1);
         if err_chain.clone().next().is_some() {
             eprintln!("{}", "\nCaused by:".italic().truecolor(190, 190, 190));
