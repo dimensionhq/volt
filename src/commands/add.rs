@@ -27,7 +27,6 @@ use sha1::{Digest, Sha1};
 use tokio::{
     self,
     sync::{mpsc, Mutex},
-    task::JoinHandle,
 };
 
 // Crate Level Imports
