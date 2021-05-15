@@ -97,17 +97,20 @@ pub async fn download_tarball(app: &App, package: &Package, version: &str) -> St
         .replace("/", "__")
         .replace("@", "")
         .replace(".", "_");
+    let file_name = format!("{}@{}.tgz", name, version);
+    let path = app.volt_dir.join(file_name);
+    let path_str = path.to_string_lossy().to_string();
+
+    if path.exists() {
+        return path_str;
+    }
+
     let tarball = &package.versions[version]
         .dist
         .tarball
         .replace("https", "http");
 
     let mut response = reqwest::get(tarball).await.unwrap();
-
-    let file_name = format!("{}@{}.tgz", name, version);
-
-    let path = app.volt_dir.join(file_name);
-    let path_str = path.to_string_lossy().to_string();
 
     // Placeholder buffer
     let mut file = File::create(path).unwrap();
@@ -118,6 +121,7 @@ pub async fn download_tarball(app: &App, package: &Package, version: &str) -> St
 
     path_str
 }
+
 pub fn get_basename<'a>(path: &'a str) -> Cow<'a, str> {
     let sep: char;
     if cfg!(windows) {
