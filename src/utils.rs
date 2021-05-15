@@ -15,14 +15,14 @@
 */
 
 // Std Imports
-use std::process::Command;
+use crate::junction::lib as junction;
+use std::process;
 use std::{borrow::Cow, env, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 use std::{
     fs::create_dir_all,
     io::{self, Write},
 };
-use std::{path::Path, process};
 
 // Library Imports
 use anyhow::{anyhow, Context, Result};
@@ -136,7 +136,14 @@ impl App {
             }
         }
 
-        create_symlink(host_dep_path, node_modules_dep_path)?;
+        create_symlink(
+            host_dep_path.as_os_str().to_str().unwrap().to_string(),
+            node_modules_dep_path
+                .as_os_str()
+                .to_str()
+                .unwrap()
+                .to_string(),
+        )?;
 
         Ok(())
     }
@@ -263,20 +270,15 @@ fn enable_ansi_support() -> Result<(), u32> {
     return Ok(());
 }
 
-/// Create a symlink to a directory
+/// Create a junction / hard symlink to a directory
 #[cfg(windows)]
-pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> Result<()> {
-    let exit_code = Command::new("cmd.exe")
-        .arg(format!("/C mklink /J \"{}\" \"{}\"", link, original).as_str())
-        .status()
-        .unwrap()
-        .code()
-        .unwrap();
+pub fn create_symlink(original: String, link: String) -> Result<()> {
+    junction::create(original, link)?;
 
     Ok(())
 }
 
-// Unix sunctions
+// Unix functions
 #[cfg(unix)]
 pub fn enable_ansi_support() -> Result<(), u32> {
     Ok(())
