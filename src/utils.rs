@@ -148,9 +148,7 @@ pub async fn extract_tarball(
     // Delete package from node_modules
     let node_modules_dep_path = node_modules_dir.join(&package.name);
     if node_modules_dep_path.exists() {
-        remove_dir_all(&node_modules_dep_path)
-            .await
-            .context("Unable to delete dependency from node_modules")?;
+        remove_dir_all(&node_modules_dep_path).await.ok();
     }
 
     // Extract tar file
