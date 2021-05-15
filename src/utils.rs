@@ -15,11 +15,9 @@
 */
 
 // Std Imports
-<<<<<<< HEAD
 use crate::junction::lib as junction;
+use std::path::Path;
 use std::process;
-=======
->>>>>>> 56e553efddd6bcf40c0ff5490236a65e7f2b83d0
 use std::{borrow::Cow, env, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 use std::{
@@ -288,18 +286,8 @@ fn enable_ansi_support() -> Result<(), u32> {
 
 /// Create a junction / hard symlink to a directory
 #[cfg(windows)]
-<<<<<<< HEAD
 pub fn create_symlink(original: String, link: String) -> Result<()> {
     junction::create(original, link)?;
-=======
-pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> Result<()> {
-    let exit_code = Command::new("cmd.exe")
-        .arg(&format!("/C mklink /J \"{}\" \"{}\"", link, original))
-        .status()
-        .unwrap()
-        .code()
-        .unwrap();
->>>>>>> 56e553efddd6bcf40c0ff5490236a65e7f2b83d0
 
     Ok(())
 }
