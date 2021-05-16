@@ -15,7 +15,6 @@
 */
 
 // Std Imports
-use crate::junction::lib as junction;
 use std::path::Path;
 use std::process;
 use std::{borrow::Cow, env, path::PathBuf};
@@ -287,8 +286,8 @@ fn enable_ansi_support() -> Result<(), u32> {
 /// Create a junction / hard symlink to a directory
 #[cfg(windows)]
 pub fn create_symlink(original: String, link: String) -> Result<()> {
+    use crate::junction::lib as junction;
     junction::create(original, link)?;
-
     Ok(())
 }
 
