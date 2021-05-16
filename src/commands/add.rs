@@ -137,17 +137,22 @@ Options:
         }
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
-        println!(
-            "Loaded {} dependencies.",
-            add.dependencies
-                .lock()
-                .map(|deps| deps
-                    .iter()
+        let length = add
+            .dependencies
+            .lock()
+            .map(|deps| {
+                deps.iter()
                     .map(|(dep, ver)| format!("{}: {}", dep.name, ver.version))
                     .collect::<Vec<_>>()
-                    .len())
-                .await
-        );
+                    .len()
+            })
+            .await;
+
+        if length == 1 {
+            println!("Loaded 1 dependency");
+        } else {
+            println!("Loaded {} dependencies.", length);
+        }
 
         let dependencies = Arc::try_unwrap(add.dependencies)
             .map_err(|_| anyhow!("Unable to read dependencies"))?
@@ -329,7 +334,6 @@ impl Add {
                             ),
                         )
                         .await;
-
                     // Increase completed
                     self_copy.progress_sender.send(()).await.ok();
 
