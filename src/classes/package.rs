@@ -161,3 +161,8 @@ pub struct NpmOperationalInternal {
     pub host: String,
     pub tmp: String,
 }
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DependencyInfo {
+    
+}

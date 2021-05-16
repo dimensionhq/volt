@@ -22,8 +22,9 @@ use std::sync::Arc;
 use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
-use futures::{future::BoxFuture, stream::FuturesUnordered, FutureExt, StreamExt};
+use futures::{stream::FuturesUnordered, FutureExt, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
+use serde_json::Value;
 use tokio::{
     self,
     sync::{mpsc, Mutex},
@@ -103,13 +104,11 @@ Options:
         let add = Add::new(lock_file.clone(), tx);
 
         {
-            let mut add = add.clone();
+            let add = add.clone();
             let packages = app.args.clone();
             tokio::spawn(async move {
                 for package_name in packages {
-                    add.get_dependency_tree(package_name.clone(), None)
-                        .await
-                        .ok();
+                    add.get_dependency_tree(package_name.clone(), None).await;
                 }
             });
         }
@@ -231,127 +230,159 @@ impl Add {
 
         Ok(())
     }
-    async fn fetch_package(
-        package_name: &str,
-        version_req: Option<semver::VersionReq>,
-    ) -> Result<(Package, Version)> {
-        let package = http_manager::get_package(&package_name)
-            .await
-            .with_context(|| format!("Failed to fetch package '{}'", package_name))?
-            .ok_or_else(|| {
-                anyhow!(
-                    "Package '{}' was not found or is not available",
-                    package_name
-                )
-            })?;
 
-        let version: Version = match &version_req {
-            Some(req) => {
-                let mut available_versions: Vec<semver::Version> = package
-                    .versions
-                    .iter()
-                    .filter_map(|(k, _)| k.parse().ok())
-                    .collect();
-                available_versions.sort();
-                available_versions.reverse();
+    // async fn fetch_package(
+    //     package_name: &str,
+    //     version_req: Option<semver::VersionReq>,
+    // ) -> Result<(Package, Version)> {
+    //     let package = http_manager::get_package(&package_name)
+    //         .await
+    //         .with_context(|| format!("Failed to fetch package '{}'", package_name))?
+    //         .ok_or_else(|| {
+    //             anyhow!(
+    //                 "Package '{}' was not found or is not available",
+    //                 package_name
+    //             )
+    //         })?;
 
-                available_versions
-                    .into_iter()
-                    .find(|v| req.matches(v))
-                    .map(|v| package.versions.get(&v.to_string()))
-                    .flatten()
-            }
-            None => package.versions.get(&package.dist_tags.latest),
-        }
-        .ok_or_else(|| {
-            if let Some(req) = version_req {
-                anyhow!(
-                    "Version {} for '{}' is not found",
-                    req.to_string(),
-                    &package_name
-                )
-            } else {
-                anyhow!("Unable to find latest version for '{}'", &package_name)
-            }
-        })?
-        .clone();
+    //     let version: Version = match &version_req {
+    //         Some(req) => {
+    //             let mut available_versions: Vec<semver::Version> = package
+    //                 .versions
+    //                 .iter()
+    //                 .filter_map(|(k, _)| k.parse().ok())
+    //                 .collect();
+    //             available_versions.sort();
+    //             available_versions.reverse();
 
-        Ok((package, version))
-    }
+    //             available_versions
+    //                 .into_iter()
+    //                 .find(|v| req.matches(v))
+    //                 .map(|v| package.versions.get(&v.to_string()))
+    //                 .flatten()
+    //         }
+    //         None => package.versions.get(&package.dist_tags.latest),
+    //     }
+    //     .ok_or_else(|| {
+    //         if let Some(req) = version_req {
+    //             anyhow!(
+    //                 "Version {} for '{}' is not found",
+    //                 req.to_string(),
+    //                 &package_name
+    //             )
+    //         } else {
+    //             anyhow!("Unable to find latest version for '{}'", &package_name)
+    //         }
+    //     })?
+    //     .clone();
 
-    fn get_dependency_tree(
-        &mut self,
+    //     Ok((package, version))
+    // }
+
+    // fn get_dependency_tree(
+    //     &mut self,
+    // package_name: String,
+    // version_req: Option<semver::VersionReq>,
+    // ) -> BoxFuture<'_, Result<()>> {
+    //     async move {
+    //         let pkg = Self::fetch_package(&package_name, version_req).await?;
+    //         let pkg_deps = pkg.1.dependencies.clone();
+
+    //         let should_download = self
+    //             .dependencies
+    //             .lock()
+    //             .map(|mut deps| {
+    //                 if !deps.iter().any(|(package, version)| {
+    //                     package.name == pkg.0.name && pkg.1.version == version.version
+    //                 }) {
+    //                     deps.push(pkg);
+    //                     true
+    //                 } else {
+    //                     false
+    //                 }
+    //             })
+    //             .await;
+
+    //         if !should_download {
+    //             return Ok(());
+    //         }
+
+    //         let mut workers = FuturesUnordered::new();
+
+    //         self.total_dependencies.store(
+    //             self.total_dependencies.load(Ordering::Relaxed) + 1,
+    //             Ordering::Relaxed,
+    //         );
+
+    //         for (name, version) in pkg_deps {
+    //             // Increase total
+    //             self.total_dependencies.store(
+    //                 self.total_dependencies.load(Ordering::Relaxed) + 1,
+    //                 Ordering::Relaxed,
+    //             );
+
+    //             let pkg_name = name.clone();
+    //             let mut self_copy = self.clone();
+    //             workers.push(tokio::spawn(async move {
+    //                 let res = self_copy
+    //                     .get_dependency_tree(
+    //                         pkg_name,
+    //                         Some(
+    //                             version
+    //                                 .parse()
+    //                                 .map_err(|_| anyhow!("Could not parse dependency version"))?,
+    //                         ),
+    //                     )
+    //                     .await;
+    //                 // Increase completed
+    //                 self_copy.progress_sender.send(()).await.ok();
+
+    //                 res
+    //             }));
+    //         }
+
+    //         loop {
+    //             match workers.next().await {
+    //                 Some(result) => result??,
+    //                 None => break,
+    //             }
+    //         }
+
+    //         self.progress_sender.send(()).await.ok();
+
+    //         Ok(())
+    //     }
+    //     .boxed()
+    // }
+
+    async fn get_dependency_tree(
+        &self,
         package_name: String,
         version_req: Option<semver::VersionReq>,
-    ) -> BoxFuture<'_, Result<()>> {
-        async move {
-            let pkg = Self::fetch_package(&package_name, version_req).await?;
-            let pkg_deps = pkg.1.dependencies.clone();
-
-            let should_download = self
-                .dependencies
-                .lock()
-                .map(|mut deps| {
-                    if !deps.iter().any(|(package, version)| {
-                        package.name == pkg.0.name && pkg.1.version == version.version
-                    }) {
-                        deps.push(pkg);
-                        true
-                    } else {
-                        false
-                    }
-                })
-                .await;
-
-            if !should_download {
-                return Ok(());
-            }
-
-            let mut workers = FuturesUnordered::new();
-
-            self.total_dependencies.store(
-                self.total_dependencies.load(Ordering::Relaxed) + 1,
-                Ordering::Relaxed,
-            );
-
-            for (name, version) in pkg_deps {
-                // Increase total
-                self.total_dependencies.store(
-                    self.total_dependencies.load(Ordering::Relaxed) + 1,
-                    Ordering::Relaxed,
-                );
-
-                let pkg_name = name.clone();
-                let mut self_copy = self.clone();
-                workers.push(tokio::spawn(async move {
-                    let res = self_copy
-                        .get_dependency_tree(
-                            pkg_name,
-                            Some(
-                                version
-                                    .parse()
-                                    .map_err(|_| anyhow!("Could not parse dependency version"))?,
-                            ),
-                        )
-                        .await;
-                    // Increase completed
-                    self_copy.progress_sender.send(()).await.ok();
-
-                    res
-                }));
-            }
-
-            loop {
-                match workers.next().await {
-                    Some(result) => result??,
-                    None => break,
-                }
-            }
-
-            self.progress_sender.send(()).await.ok();
-
-            Ok(())
+    ) {
+        let response = http_manager::get_dependencies(package_name.as_str()).await;
+        let data: Value = serde_json::from_str(response.as_str()).unwrap();
+        if version_req.is_some() {
+            self.dependencies = data["dependencies"][version_req.unwrap().to_string()]
+                .as_array()
+                .unwrap()
+                .into_iter()
+                .map(|value| value.to_string())
+                .collect();
+        } else {
+            // Get latest version
+            self.dependencies = data["dependencies"][&data["dependencies"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .into_iter()
+                .map(|value| value.to_string())
+                .collect::<Vec<String>>()[0]]
+                .as_array()
+                .unwrap()
+                .into_iter()
+                .map(|value| value.to_string())
+                .collect();
         }
-        .boxed()
     }
 }
