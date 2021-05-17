@@ -179,11 +179,11 @@ impl PackageJson {
         serde_json::from_str(data.as_str()).unwrap()
     }
 
-    pub fn add_dependency(&mut self, name: String, version: String) {
-        self.dependencies.unwrap().insert(name, version);
-    }
+    // pub fn add_dependency(&mut self, name: String, version: String) {
+    //     self.dependencies.unwrap().insert(name, version);
+    // }
 
-    pub fn remove_dependency(&mut self, name: String, version: String) {
-        self.dependencies.unwrap().remove(&name);
-    }
+    // pub fn remove_dependency(&mut self, name: String, version: String) {
+    //     self.dependencies.unwrap().remove(&name);
+    // }
 }
