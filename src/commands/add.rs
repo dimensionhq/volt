@@ -15,7 +15,7 @@ limitations under the License.
 
 // Std Imports
 use std::sync::atomic::AtomicI16;
-use std::sync::atomic::Ordering;
+// use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 // Library Imports
@@ -102,20 +102,12 @@ Options:
         let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
-        let (tx, mut rx) = mpsc::channel(100);
+        let (tx, _) = mpsc::channel(100);
         let add = Add::new(lock_file.clone(), tx);
 
-        {
-            let mut add = add.clone();
-            let packages = app.args.clone();
-            tokio::spawn(async move {
-                for package_name in packages {
-                    add.get_dependency_tree(package_name.clone(), None).await;
-                }
-            });
-        }
+        let packages = app.args.clone();
 
-        let progress_bar = ProgressBar::new(1);
+        let progress_bar: ProgressBar = ProgressBar::new(packages.len() as u64);
 
         progress_bar.set_style(
             ProgressStyle::default_bar()
@@ -126,19 +118,30 @@ Options:
                 )),
         );
 
-        let mut done: i16 = 0;
-        while let Some(_) = rx.recv().await {
-            done += 1;
-            let total = add.total_dependencies.load(Ordering::Relaxed);
-            if done == total {
-                break;
-            }
-            progress_bar.set_length(total as u64);
-            progress_bar.set_position(done as u64);
+        let mut workers = FuturesUnordered::new();
+
+        let progress_bar = &progress_bar;
+
+        for package_name in packages {
+            let mut add = add.clone();
+            workers.push(async move {
+                add.get_dependencies(package_name.clone(), None)
+                    .await
+                    .map(|_| progress_bar.inc(1))
+            });
         }
+
+        loop {
+            match workers.next().await {
+                Some(result) => result?,
+                None => break,
+            }
+        }
+
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
         let length = add
+            .clone()
             .dependencies
             .lock()
             .map(|deps| {
@@ -155,7 +158,7 @@ Options:
             println!("Loaded {} dependencies.", length);
         }
 
-        let dependencies = Arc::try_unwrap(add.dependencies)
+        let dependencies = Arc::try_unwrap(add.clone().dependencies)
             .map_err(|_| anyhow!("Unable to read dependencies"))?
             .into_inner();
 
@@ -364,57 +367,62 @@ impl Add {
     //     .boxed()
     // }
 
-    async fn get_dependency_tree(
+    async fn get_dependencies(
         &mut self,
         package_name: String,
         version_req: Option<semver::VersionReq>,
-    ) {
+    ) -> Result<()> {
         let response = http_manager::get_dependencies(package_name.as_str()).await;
         let data: Value = serde_json::from_str(response.as_str()).unwrap();
+
         let mut dependencies = vec![];
 
         if version_req.is_some() {
             let deps: Vec<String> = data["dependencies"][version_req.unwrap().to_string()]
                 .as_array()
-                .unwrap()
+                .ok_or_else(|| {
+                    anyhow::Error::msg("Failed to parse dependencies from server response.")
+                })?
                 .into_iter()
                 .map(|value| value.to_string())
                 .collect();
 
             for dep in deps.iter() {
-                let data = Add::fetch_package(dep.as_str(), None).await.unwrap();
+                let data = Add::fetch_package(dep.as_str(), None).await?;
                 dependencies.push(data);
             }
 
             self.dependencies = Arc::new(Mutex::new(dependencies));
+            Ok(())
         } else {
             // Get latest version
             let latest_version = &data["dependencies"]
                 .as_object()
-                .unwrap()
+                .ok_or_else(|| {
+                    anyhow::Error::msg("Failed to parse dependencies from server response.")
+                })?
                 .keys()
                 .into_iter()
                 .map(|value| value.to_string())
                 .collect::<Vec<String>>()[0];
 
-            println!(
-                "{:?}",
-                data["dependencies"][latest_version.to_owned()].as_array()
-            );
             let deps: Vec<String> = data["dependencies"][latest_version.to_owned()]
                 .as_object()
-                .unwrap()
+                .ok_or_else(|| {
+                    anyhow::Error::msg("Failed to parse dependencies from server response.")
+                })?
                 .keys()
                 .into_iter()
                 .map(|value| value.to_string())
                 .collect();
 
             for dep in deps.iter() {
-                let data = Add::fetch_package(dep.as_str(), None).await.unwrap();
+                let data = Add::fetch_package(dep.as_str(), None).await?;
                 dependencies.push(data);
             }
 
             self.dependencies = Arc::new(Mutex::new(dependencies));
+            Ok(())
         }
     }
 }
