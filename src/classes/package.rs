@@ -16,6 +16,7 @@
 
 // Std Imports
 use std::{collections::HashMap, fs::read_to_string};
+use colored::Colorize;
 
 // Library Imports
 use serde::{Deserialize, Serialize};
@@ -175,8 +176,14 @@ pub struct PackageJson {
 
 impl PackageJson {
     pub fn from(path: &str) -> Self {
-        let data = read_to_string(path).unwrap();
-        serde_json::from_str(data.as_str()).unwrap()
+        if std::path::Path::new(path).exists() {
+            let data = read_to_string(path).unwrap();
+            serde_json::from_str(data.as_str()).unwrap()
+        }
+        else {
+            println!("{} {}", "error".bright_red(), "No package.json found");
+            std::process::exit(1);
+        }
     }
 
     // pub fn add_dependency(&mut self, name: String, version: String) {
