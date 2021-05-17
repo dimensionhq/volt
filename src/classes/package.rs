@@ -15,7 +15,7 @@
 */
 
 // Std Imports
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::read_to_string};
 
 // Library Imports
 use serde::{Deserialize, Serialize};
@@ -162,7 +162,28 @@ pub struct NpmOperationalInternal {
     pub tmp: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct DependencyInfo {
-    
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PackageJson {
+    pub name: String,
+    pub version: String,
+    pub main: Option<String>,
+    pub repository: Option<String>,
+    pub author: Option<String>,
+    pub license: Option<String>,
+    pub dependencies: Option<HashMap<String, String>>,
+}
+
+impl PackageJson {
+    pub fn from(path: &str) -> Self {
+        let data = read_to_string(path).unwrap();
+        serde_json::from_str(data.as_str()).unwrap()
+    }
+
+    pub fn add_dependency(&mut self, name: String, version: String) {
+        self.dependencies.unwrap().insert(name, version);
+    }
+
+    pub fn remove_dependency(&mut self, name: String, version: String) {
+        self.dependencies.unwrap().remove(&name);
+    }
 }
