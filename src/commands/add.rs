@@ -31,11 +31,11 @@ use tokio::{
 };
 
 // Crate Level Imports
+use crate::model::http_manager;
 use crate::model::lock_file::LockFile;
 use crate::utils::download_tarball;
 use crate::utils::App;
 use crate::VERSION;
-use crate::{classes::package::PackageJson, model::http_manager};
 use crate::{
     classes::package::{Package, Version},
     utils::PROGRESS_CHARS,
@@ -97,7 +97,7 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        let mut package_file = PackageJson::from("package.json");
+        // let package_file = PackageJson::from("package.json");
 
         let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
@@ -106,7 +106,7 @@ Options:
         let add = Add::new(lock_file.clone(), tx);
 
         {
-            let add = add.clone();
+            let mut add = add.clone();
             let packages = app.args.clone();
             tokio::spawn(async move {
                 for package_name in packages {
@@ -191,9 +191,9 @@ Options:
         progress_bar.finish();
 
         // Change package.json
-        for value in dependencies.iter() {
-            package_file.add_dependency(value.0.name, value.1.version);
-        }
+        // for value in &dependencies.to_owned().iter() {
+        //     package_file.add_dependency(value.0.name, value.1.version);
+        // }
 
         // Write to lock file
         lock_file.save().context("Failed to save lock file")?;
@@ -238,53 +238,55 @@ impl Add {
         Ok(())
     }
 
-    // async fn fetch_package(
-    //     package_name: &str,
-    //     version_req: Option<semver::VersionReq>,
-    // ) -> Result<(Package, Version)> {
-    //     let package = http_manager::get_package(&package_name)
-    //         .await
-    //         .with_context(|| format!("Failed to fetch package '{}'", package_name))?
-    //         .ok_or_else(|| {
-    //             anyhow!(
-    //                 "Package '{}' was not found or is not available",
-    //                 package_name
-    //             )
-    //         })?;
+    async fn fetch_package(
+        package_name: &str,
+        version_req: Option<semver::VersionReq>,
+    ) -> Result<(Package, Version)> {
+        let package_name = package_name.replace("\"", "");
 
-    //     let version: Version = match &version_req {
-    //         Some(req) => {
-    //             let mut available_versions: Vec<semver::Version> = package
-    //                 .versions
-    //                 .iter()
-    //                 .filter_map(|(k, _)| k.parse().ok())
-    //                 .collect();
-    //             available_versions.sort();
-    //             available_versions.reverse();
+        let package = http_manager::get_package(&package_name)
+            .await
+            .with_context(|| format!("Failed to fetch package '{}'", package_name))?
+            .ok_or_else(|| {
+                anyhow!(
+                    "Package '{}' was not found or is not available",
+                    package_name
+                )
+            })?;
 
-    //             available_versions
-    //                 .into_iter()
-    //                 .find(|v| req.matches(v))
-    //                 .map(|v| package.versions.get(&v.to_string()))
-    //                 .flatten()
-    //         }
-    //         None => package.versions.get(&package.dist_tags.latest),
-    //     }
-    //     .ok_or_else(|| {
-    //         if let Some(req) = version_req {
-    //             anyhow!(
-    //                 "Version {} for '{}' is not found",
-    //                 req.to_string(),
-    //                 &package_name
-    //             )
-    //         } else {
-    //             anyhow!("Unable to find latest version for '{}'", &package_name)
-    //         }
-    //     })?
-    //     .clone();
+        let version: Version = match &version_req {
+            Some(req) => {
+                let mut available_versions: Vec<semver::Version> = package
+                    .versions
+                    .iter()
+                    .filter_map(|(k, _)| k.parse().ok())
+                    .collect();
+                available_versions.sort();
+                available_versions.reverse();
 
-    //     Ok((package, version))
-    // }
+                available_versions
+                    .into_iter()
+                    .find(|v| req.matches(v))
+                    .map(|v| package.versions.get(&v.to_string()))
+                    .flatten()
+            }
+            None => package.versions.get(&package.dist_tags.latest),
+        }
+        .ok_or_else(|| {
+            if let Some(req) = version_req {
+                anyhow!(
+                    "Version {} for '{}' is not found",
+                    req.to_string(),
+                    &package_name
+                )
+            } else {
+                anyhow!("Unable to find latest version for '{}'", &package_name)
+            }
+        })?
+        .clone();
+
+        Ok((package, version))
+    }
 
     // fn get_dependency_tree(
     //     &mut self,
@@ -363,33 +365,56 @@ impl Add {
     // }
 
     async fn get_dependency_tree(
-        &self,
+        &mut self,
         package_name: String,
         version_req: Option<semver::VersionReq>,
     ) {
         let response = http_manager::get_dependencies(package_name.as_str()).await;
         let data: Value = serde_json::from_str(response.as_str()).unwrap();
+        let mut dependencies = vec![];
+
         if version_req.is_some() {
-            self.dependencies = data["dependencies"][version_req.unwrap().to_string()]
+            let deps: Vec<String> = data["dependencies"][version_req.unwrap().to_string()]
                 .as_array()
                 .unwrap()
                 .into_iter()
                 .map(|value| value.to_string())
                 .collect();
+
+            for dep in deps.iter() {
+                let data = Add::fetch_package(dep.as_str(), None).await.unwrap();
+                dependencies.push(data);
+            }
+
+            self.dependencies = Arc::new(Mutex::new(dependencies));
         } else {
             // Get latest version
-            self.dependencies = data["dependencies"][&data["dependencies"]
+            let latest_version = &data["dependencies"]
                 .as_object()
                 .unwrap()
                 .keys()
                 .into_iter()
                 .map(|value| value.to_string())
-                .collect::<Vec<String>>()[0]]
-                .as_array()
+                .collect::<Vec<String>>()[0];
+
+            println!(
+                "{:?}",
+                data["dependencies"][latest_version.to_owned()].as_array()
+            );
+            let deps: Vec<String> = data["dependencies"][latest_version.to_owned()]
+                .as_object()
                 .unwrap()
+                .keys()
                 .into_iter()
                 .map(|value| value.to_string())
                 .collect();
+
+            for dep in deps.iter() {
+                let data = Add::fetch_package(dep.as_str(), None).await.unwrap();
+                dependencies.push(data);
+            }
+
+            self.dependencies = Arc::new(Mutex::new(dependencies));
         }
     }
 }

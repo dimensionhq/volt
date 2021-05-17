@@ -87,7 +87,7 @@ Options:
             .map(|value| value.0)
             .collect();
 
-        Add::exec(Arc::new(app));
+        let _ = Add::exec(Arc::new(app));
 
         Ok(())
     }
