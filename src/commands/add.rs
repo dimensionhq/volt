@@ -123,7 +123,7 @@ Options:
         let progress_bar = &progress_bar;
 
         for package_name in packages {
-            let mut add = add.clone();
+            let add = add.clone();
             workers.push(async move {
                 add.get_dependencies(package_name.clone(), None)
                     .await
@@ -368,7 +368,7 @@ impl Add {
     // }
 
     async fn get_dependencies(
-        &mut self,
+        &self,
         package_name: String,
         version_req: Option<semver::VersionReq>,
     ) -> Result<()> {
@@ -391,9 +391,6 @@ impl Add {
                 let data = Add::fetch_package(dep.as_str(), None).await?;
                 dependencies.push(data);
             }
-
-            self.dependencies = Arc::new(Mutex::new(dependencies));
-            Ok(())
         } else {
             // Get latest version
             let latest_version = &data["dependencies"]
@@ -420,9 +417,15 @@ impl Add {
                 let data = Add::fetch_package(dep.as_str(), None).await?;
                 dependencies.push(data);
             }
-
-            self.dependencies = Arc::new(Mutex::new(dependencies));
-            Ok(())
         }
+
+        self.dependencies
+            .lock()
+            .map(|mut deps| {
+                deps.append(&mut dependencies);
+            })
+            .await;
+
+        Ok(())
     }
 }
