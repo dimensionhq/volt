@@ -25,11 +25,11 @@ use async_trait::async_trait;
 use colored::Colorize;
 
 // Crate Level Imports
-use crate::utils::App;
 use crate::VERSION;
+use crate::{classes::package::PackageJson, utils::App};
 
 // Super Imports
-use super::Command;
+use super::{add::Add, Command};
 
 /// Struct implementation for the `Install` command.
 pub struct Install;
@@ -76,6 +76,19 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(_app: Arc<App>) -> Result<()> {
+        let package_file = PackageJson::from("package.json");
+        let dependencies = package_file.dependencies;
+
+        let mut app = App::initialize();
+
+        app.args = dependencies
+            .unwrap()
+            .into_iter()
+            .map(|value| value.0)
+            .collect();
+
+        Add::exec(Arc::new(app));
+
         Ok(())
     }
 }
