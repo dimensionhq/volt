@@ -31,11 +31,11 @@ use tokio::{
 };
 
 // Crate Level Imports
-use crate::model::http_manager;
 use crate::model::lock_file::LockFile;
 use crate::utils::download_tarball;
 use crate::utils::App;
 use crate::VERSION;
+use crate::{classes::package::PackageJson, model::http_manager};
 use crate::{
     classes::package::{Package, Version},
     utils::PROGRESS_CHARS,
@@ -97,6 +97,8 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
+        let mut package_file = PackageJson::from("package.json");
+
         let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
@@ -187,6 +189,11 @@ Options:
         }
 
         progress_bar.finish();
+
+        // Change package.json
+        for value in dependencies.iter() {
+            package_file.add_dependency(value.0.name, value.1.version);
+        }
 
         // Write to lock file
         lock_file.save().context("Failed to save lock file")?;
