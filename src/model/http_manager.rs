@@ -72,5 +72,6 @@ pub async fn get_dependencies(package_name: &str) -> String {
         .unwrap();
 
     let mut body = resp.into_body();
-    body.text().unwrap()
+    // println!("{}", body.text_async().await.unwrap());
+    body.text_async().await.unwrap()
 }
