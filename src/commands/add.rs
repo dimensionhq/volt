@@ -436,11 +436,11 @@ impl Add {
 
             for dep in deps.iter() {
                 workers.push(async move {
-                    println!("Getting: {}", dep);
+                    // println!("Getting: {}", dep);
                     let data = Add::fetch_package(dep.as_str(), None)
                         .await
                         .context("Failed to fetch a package from the registry.")?;
-                    println!("Got: {}", dep);
+                    // println!("Got: {}", dep);
                     Result::<(Package, Version), anyhow::Error>::Ok(data)
                 });
             }
