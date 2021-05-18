@@ -102,7 +102,7 @@ Options:
             exit(1);
         }
         let verbose = app.has_flag(&["-v", "--verbose"]);
-        let pballowed = app.has_flag(&["--no-progress", "-np"]);
+        let pballowed = !app.has_flag(&["--no-progress", "-np"]);
 
         let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
@@ -125,7 +125,12 @@ Options:
 
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
-        let length = &response.versions.len();
+        let length = &response
+            .versions
+            .get(&response.version)
+            .unwrap()
+            .packages
+            .len();
 
         if length.to_owned() == 1 {
             println!("Loaded 1 dependency");
@@ -147,7 +152,8 @@ Options:
             let app = app.clone();
             workers.push(async move { Add::install_extract_package(app, &dep).await });
         }
-        if !pballowed {
+
+        if pballowed {
             let progress_bar = ProgressBar::new(workers.len() as u64);
 
             progress_bar.set_style(
