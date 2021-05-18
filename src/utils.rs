@@ -163,7 +163,7 @@ impl App {
 
 
 // Gets response from volt CDN
-pub async fn get_volt_response(package_name: String) {
+pub async fn get_volt_response(package_name: String) -> VoltResponse {
     let response = reqwest::get(format!("http://volt-api.b-cdn.net/{}.json", package_name))
         .await
         .unwrap_or_else(|e| {
@@ -182,6 +182,8 @@ pub async fn get_volt_response(package_name: String) {
         std::process::exit(1);
     });
     println!("data: {:?}", data);
+
+    data
 }
 
 /// downloads tarball file from package
