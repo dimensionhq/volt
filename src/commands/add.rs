@@ -14,7 +14,7 @@ limitations under the License.
 //! Add a package to your dependencies for your project.
 
 // Std Imports
-use std::sync::atomic::AtomicI16;
+use std::{process::exit, sync::atomic::AtomicI16};
 // use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
@@ -31,7 +31,6 @@ use tokio::{
 };
 
 // Crate Level Imports
-use crate::model::http_manager;
 use crate::model::lock_file::LockFile;
 use crate::utils::download_tarball;
 use crate::utils::App;
@@ -40,6 +39,7 @@ use crate::{
     classes::package::{Package, Version},
     utils::PROGRESS_CHARS,
 };
+use crate::{model::http_manager, utils::get_basename};
 
 // Super Imports
 use super::Command;
@@ -97,49 +97,66 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        // let package_file = PackageJson::from("package.json");                
+        // let package_file = PackageJson::from("package.json");
+        if app.args.len() == 0 {
+            println!("{}", Self::help());
+            exit(1);
+        }
+        let mut verbose = app.has_flag(&["-v", "--verbose"]);
+        let pballowed = app.has_flag(&["--no-progress", "-np"]);
 
         let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
 
         let (tx, _) = mpsc::channel(100);
         let add = Add::new(lock_file.clone(), tx);
-
+        if pballowed {
+            println!(
+                "{} {} {}",
+                "Setting verbose to".blue(),
+                "true".green(),
+                "as progressbar is disabled".blue()
+            );
+        }
         let packages = app.args.clone();
+        if !pballowed {
+            let progress_bar: ProgressBar = ProgressBar::new(packages.len() as u64);
+            progress_bar.set_style(
+                ProgressStyle::default_bar()
+                    .progress_chars(PROGRESS_CHARS)
+                    .template(&format!(
+                        "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                        "Fetching dependencies".bright_blue()
+                    )),
+            );
+            let progress_bar = &progress_bar;
+            // This will improve add times too
+            // for package_name in packages {
+            //     let mut add = add.clone();
+            //     workers.push(async move {
+            //         add.get_dependencies(package_name.clone(), None)
+            //             .await
+            //             .map(|_| progress_bar.inc(1))
+            //     });
+            // }
 
-        let progress_bar: ProgressBar = ProgressBar::new(packages.len() as u64);
+            // loop {
+            //     match workers.next().await {
+            //         Some(result) => result?,
+            //         None => break,
+            //     }
+            // }
 
-        progress_bar.set_style(
-            ProgressStyle::default_bar()
-                .progress_chars(PROGRESS_CHARS)
-                .template(&format!(
-                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
-                    "Fetching dependencies".bright_blue()
-                )),
-        );
+            progress_bar.finish_with_message("[OK]".bright_green().to_string());
+        } else {
+            // progressbar disabled hence verbose= true
+            verbose = true
+        }
 
+        if verbose {
+            println!("info: {}", "Fetching Dependency tree".yellow())
+        }
         // let mut workers = FuturesUnordered::new();
-
-        let progress_bar = &progress_bar;
-
-        // This will improve add times too
-        // for package_name in packages {
-        //     let mut add = add.clone();
-        //     workers.push(async move {
-        //         add.get_dependencies(package_name.clone(), None)
-        //             .await
-        //             .map(|_| progress_bar.inc(1))
-        //     });
-        // }
-
-        // loop {
-        //     match workers.next().await {
-        //         Some(result) => result?,
-        //         None => break,
-        //     }
-        // }
-
-        progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
         let length = add
             .clone()
@@ -158,7 +175,13 @@ Options:
         } else {
             println!("Loaded {} dependencies.", length);
         }
-
+        if verbose {
+            println!(
+                "info {} {}",
+                "Got dependency tree adding them to project".yellow(),
+                String::from(get_basename(app.current_dir.to_owned().to_str().unwrap())).yellow()
+            );
+        }
         let dependencies = Arc::try_unwrap(add.clone().dependencies)
             .map_err(|_| anyhow!("Unable to read dependencies"))?
             .into_inner();
@@ -169,30 +192,40 @@ Options:
             let app = app.clone();
             workers.push(async move { Add::install_extract_package(app, &dep, &ver).await });
         }
+        if !pballowed {
+            let progress_bar = ProgressBar::new(workers.len() as u64);
 
-        let progress_bar = ProgressBar::new(workers.len() as u64);
+            progress_bar.set_style(
+                ProgressStyle::default_bar()
+                    .progress_chars(PROGRESS_CHARS)
+                    .template(&format!(
+                        "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
+                        "Installing packages".bright_blue()
+                    )),
+            );
 
-        progress_bar.set_style(
-            ProgressStyle::default_bar()
-                .progress_chars(PROGRESS_CHARS)
-                .template(&format!(
-                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
-                    "Installing packages".bright_blue()
-                )),
-        );
+            loop {
+                match workers.next().await {
+                    Some(result) => {
+                        result?;
+                        progress_bar.inc(1)
+                    }
 
-        loop {
-            match workers.next().await {
-                Some(result) => {
-                    result?;
-                    progress_bar.inc(1)
+                    None => break,
                 }
+            }
+            progress_bar.finish();
+        } else {
+            loop {
+                match workers.next().await {
+                    Some(result) => {
+                        result?;
+                    }
 
-                None => break,
+                    None => break,
+                }
             }
         }
-
-        progress_bar.finish();
 
         // Change package.json
         // for value in &dependencies.to_owned().iter() {
@@ -200,6 +233,9 @@ Options:
         // }
 
         // Write to lock file
+        if verbose {
+            println!("info {}", "Writing to lock file".yellow());
+        }
         lock_file.save().context("Failed to save lock file")?;
 
         Ok(())

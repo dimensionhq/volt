@@ -1,0 +1,12 @@
+{
+    "version": "3.6.0",
+    "3.6.0": {
+        "packages": {
+            "jquery": {
+                "version": "3.6.0",
+                "tarball": "https://registry.npmjs.org/jquery/-/jquery-3.6.0.tgz",
+                "sha1": "c72a09f15c1bdce142f49dbf1170bdf8adac2470"
+            }
+        }
+    }
+}
