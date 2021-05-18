@@ -36,6 +36,7 @@ use crate::model::lock_file::LockFile;
 use crate::utils::download_tarball;
 use crate::utils::App;
 use crate::VERSION;
+use crate::classes::voltapi::VoltResponse;
 use crate::{
     classes::package::{Package, Version},
     utils::PROGRESS_CHARS,
@@ -98,6 +99,13 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         // let package_file = PackageJson::from("package.json");
+
+        // Deserializing volt api into struct (temporary)
+        let file_contents = reqwest::get("http://volt-api.b-cdn.net/react.json").await.unwrap().text().await.unwrap();
+        // let file_contents = std::fs::read_to_string(loc).unwrap().text();
+        let data = serde_json::from_str::<VoltResponse>(&file_contents).unwrap();
+
+        println!("data: {:?}", data);
 
         let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
@@ -415,7 +423,7 @@ impl Add {
             let latest_version = &data["dependencies"]
                 .as_object()
                 .ok_or_else(|| {
-                    anyhow::Error::msg("Failed to parse dependencies from server response.")
+                    anyhow::Error::msg("Failed to parse dependencies from server response. [latest_version]")
                 })?
                 .keys()
                 .into_iter()
@@ -425,7 +433,7 @@ impl Add {
             let deps: Vec<String> = data["dependencies"][latest_version.to_owned()]
                 .as_object()
                 .ok_or_else(|| {
-                    anyhow::Error::msg("Failed to parse dependencies from server response.")
+                    anyhow::Error::msg("Failed to parse dependencies from server response. [deps]")
                 })?
                 .keys()
                 .into_iter()
