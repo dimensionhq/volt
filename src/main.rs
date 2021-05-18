@@ -68,6 +68,10 @@ async fn try_main() -> Result<()> {
         return Ok(());
     }
 
+    if app.has_flag(&["--version"]) {
+        println!("volt version::{}", VERSION.bright_green().bold());
+    }
+
     let start = Instant::now();
     cmd.run(app).await?;
     let end = Instant::now();
