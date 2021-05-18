@@ -35,6 +35,7 @@ use tokio::fs::remove_dir_all;
 
 // Crate Level Imports
 use crate::classes::package::{Package, Version};
+use crate::classes::voltapi::VoltResponse;
 
 #[cfg(windows)]
 pub static PROGRESS_CHARS: &str = "=> ";
@@ -89,7 +90,7 @@ impl App {
             volt_dir,
             lock_file_path,
         }
-    }
+    }    
 
     pub fn has_flag(&self, flags: &[&str]) -> bool {
         self.flags
@@ -158,6 +159,29 @@ impl App {
 
         Ok(format!("{:x}", hasher.finalize()))
     }
+}
+
+
+// Gets response from volt CDN
+pub async fn get_volt_response(package_name: String) {
+    let response = reqwest::get(format!("http://volt-api.b-cdn.net/{}.json", package_name))
+        .await
+        .unwrap_or_else(|e| {
+            println!("{} {}", "error".bright_red(), e);
+            std::process::exit(1);
+        })
+        .text()
+        .await
+        .unwrap_or_else(|e| {
+            println!("{} {}", "error".bright_red(), e);
+            std::process::exit(1);
+        });
+
+    let data = serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|e| {
+        println!("{} {}", "error".bright_red(), e);
+        std::process::exit(1);
+    });
+    println!("data: {:?}", data);
 }
 
 /// downloads tarball file from package
