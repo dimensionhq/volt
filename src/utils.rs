@@ -179,7 +179,6 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
         println!("{} {}", "error".bright_red(), e);
         std::process::exit(1);
     });
-    println!("data: {:?}", data);
 
     data
 }
