@@ -122,6 +122,7 @@ Options:
 
         let progress_bar = &progress_bar;
 
+        // This will improve add times too
         for package_name in packages {
             let mut add = add.clone();
             workers.push(async move {
@@ -158,7 +159,6 @@ Options:
             println!("Loaded {} dependencies.", length);
         }
 
-        println!("{:?}", add.total_dependencies);
         let dependencies = Arc::try_unwrap(add.clone().dependencies)
             .map_err(|_| anyhow!("Unable to read dependencies"))?
             .into_inner();
@@ -373,87 +373,100 @@ impl Add {
         package_name: String,
         version_req: Option<semver::VersionReq>,
     ) -> Result<()> {
-        let response = http_manager::get_dependencies(package_name.as_str()).await;
-        let data: Value = serde_json::from_str(response.as_str()).unwrap();
+        let (package, version) = Add::fetch_package(package_name.as_str(), None).await?;
 
-        let mut dependencies = vec![];
+        let dependencies = &package
+            .versions
+            .get(package.dist_tags.latest.as_str())
+            .unwrap()
+            .dependencies;
 
-        if version_req.is_some() {
-            let deps: Vec<String> = data["dependencies"][version_req.unwrap().to_string()]
-                .as_array()
-                .ok_or_else(|| {
-                    anyhow::Error::msg("Failed to parse dependencies from server response.")
-                })?
-                .into_iter()
-                .map(|value| value.to_string())
-                .collect();
+        if dependencies.len() > 0 {
+            let response = http_manager::get_dependencies(package_name.as_str()).await;
+            let data: Value = serde_json::from_str(response.as_str()).unwrap();
 
-            let mut workers = FuturesUnordered::new();
+            let mut dependencies = vec![];
 
-            for dep in deps.iter() {
-                workers.push(async move {
-                    let data = Add::fetch_package(dep.as_str(), None)
-                        .await
-                        .context("Failed to fetch a package from the registry.")?;
+            if version_req.is_some() {
+                let deps: Vec<String> = data["dependencies"][version_req.unwrap().to_string()]
+                    .as_array()
+                    .ok_or_else(|| {
+                        anyhow::Error::msg("Failed to parse dependencies from server response.")
+                    })?
+                    .into_iter()
+                    .map(|value| value.to_string())
+                    .collect();
 
-                    Result::<(Package, Version), anyhow::Error>::Ok(data)
-                });
-            }
+                let mut workers = FuturesUnordered::new();
 
-            loop {
-                match workers.next().await {
-                    Some(result) => dependencies.push(result?),
-                    None => break,
+                for dep in deps.iter() {
+                    workers.push(async move {
+                        let data = Add::fetch_package(dep.as_str(), None)
+                            .await
+                            .context("Failed to fetch a package from the registry.")?;
+
+                        Result::<(Package, Version), anyhow::Error>::Ok(data)
+                    });
                 }
+
+                loop {
+                    match workers.next().await {
+                        Some(result) => dependencies.push(result?),
+                        None => break,
+                    }
+                }
+
+                self.dependencies = Arc::new(Mutex::new(dependencies));
+
+                Ok(())
+            } else {
+                // Get latest version
+                let latest_version = &data["dependencies"]
+                    .as_object()
+                    .ok_or_else(|| {
+                        anyhow::Error::msg("Failed to parse dependencies from server response.")
+                    })?
+                    .keys()
+                    .into_iter()
+                    .map(|value| value.to_string())
+                    .collect::<Vec<String>>()[0];
+
+                let deps: Vec<String> = data["dependencies"][latest_version.to_owned()]
+                    .as_object()
+                    .ok_or_else(|| {
+                        anyhow::Error::msg("Failed to parse dependencies from server response.")
+                    })?
+                    .keys()
+                    .into_iter()
+                    .map(|value| value.to_string())
+                    .collect();
+
+                let mut workers = FuturesUnordered::new();
+
+                for dep in deps.iter() {
+                    workers.push(async move {
+                        let data = Add::fetch_package(dep.as_str(), None)
+                            .await
+                            .context("Failed to fetch a package from the registry.")?;
+                        Result::<(Package, Version), anyhow::Error>::Ok(data)
+                    });
+                }
+
+                loop {
+                    match workers.next().await {
+                        Some(result) => dependencies.push(result?),
+                        None => break,
+                    }
+                }
+
+                dependencies.push((package, version));
+
+                self.dependencies = Arc::new(Mutex::new(dependencies));
+
+                Ok(())
             }
-
-            self.dependencies = Arc::new(Mutex::new(dependencies));
-
-            Ok(())
         } else {
-            // Get latest version
-            let latest_version = &data["dependencies"]
-                .as_object()
-                .ok_or_else(|| {
-                    anyhow::Error::msg("Failed to parse dependencies from server response.")
-                })?
-                .keys()
-                .into_iter()
-                .map(|value| value.to_string())
-                .collect::<Vec<String>>()[0];
-
-            let deps: Vec<String> = data["dependencies"][latest_version.to_owned()]
-                .as_object()
-                .ok_or_else(|| {
-                    anyhow::Error::msg("Failed to parse dependencies from server response.")
-                })?
-                .keys()
-                .into_iter()
-                .map(|value| value.to_string())
-                .collect();
-
-            let mut workers = FuturesUnordered::new();
-
-            for dep in deps.iter() {
-                workers.push(async move {
-                    println!("Getting: {}", dep);
-                    let data = Add::fetch_package(dep.as_str(), None)
-                        .await
-                        .context("Failed to fetch a package from the registry.")?;
-                    println!("Got: {}", dep);
-                    Result::<(Package, Version), anyhow::Error>::Ok(data)
-                });
-            }
-
-            loop {
-                match workers.next().await {
-                    Some(result) => dependencies.push(result?),
-                    None => break,
-                }
-            }
-
-            self.dependencies = Arc::new(Mutex::new(dependencies));
-
+            self.dependencies = Arc::new(Mutex::new(vec![(package, version)]));
             Ok(())
         }
     }

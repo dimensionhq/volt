@@ -1,1 +1,485 @@
-{"dependencies": {"10.2.0": ["@babel/runtime@7.12.5", "regenerator-runtime@^0.13.4", "@hapi/accept@5.0.1", "@hapi/boom@9.x.x", "@hapi/hoek@9.x.x", "@next/env@10.2.0", "@next/polyfill-module@10.2.0", "@next/react-dev-overlay@10.2.0", "@babel/code-frame@7.12.11", "@babel/highlight@^7.12.13", "@babel/helper-validator-identifier@^7.14.0", "chalk@^2.0.0", "ansi-styles@^4.1.0", "supports-color@^7.1.0", "has-flag@^5.0.0", "js-tokens@^4.0.0", "anser@1.4.9", "chalk@4.0.0", "classnames@2.2.6", "css.escape@1.5.1", "data-uri-to-buffer@3.0.1", "platform@1.3.6", "shell-quote@1.7.2", "source-map@0.8.0-beta.0", "stacktrace-parser@0.1.10", "type-fest@^0.7.1", "strip-ansi@6.0.0", "ansi-regex@^6.0.0", "@next/react-refresh-utils@10.2.0", "@opentelemetry/api@0.14.0", "assert@2.0.0", "es6-object-assign@^1.1.0", "is-nan@^1.2.1", "call-bind@^1.0.0", "function-bind@^1.1.1", "get-intrinsic@^1.0.2", "has@^1.0.3", "has-symbols@^1.0.1", "define-properties@^1.1.3", "object-keys@^1.0.12", "object-is@^1.0.1", "call-bind@^1.0.2", "util@^0.12.0", "inherits@^2.0.3", "is-arguments@^1.0.4", "is-generator-function@^1.0.7", "is-typed-array@^1.1.3", "available-typed-arrays@^1.0.2", "array-filter@^1.0.0", "es-abstract@^1.18.0-next.2", "es-to-primitive@^1.2.1", "is-callable@^1.1.4", "is-date-object@^1.0.1", "is-symbol@^1.0.2", "has-symbols@^1.0.2", "get-intrinsic@^1.1.1", "is-callable@^1.2.3", "is-negative-zero@^2.0.1", "is-regex@^1.1.2", "is-string@^1.0.5", "object-inspect@^1.9.0", "object-keys@^1.1.1", "object.assign@^4.1.2", "string.prototype.trimend@^1.0.4", "string.prototype.trimstart@^1.0.4", "unbox-primitive@^1.0.0", "has-bigints@^1.0.1", "which-boxed-primitive@^1.0.2", "is-bigint@^1.0.1", "is-boolean-object@^1.1.0", "is-number-object@^1.0.4", "is-symbol@^1.0.3", "foreach@^2.0.5", "safe-buffer@^5.1.2", "which-typed-array@^1.1.2", "es-abstract@^1.18.0-next.1", "ast-types@0.13.2", "tslib@^2.0.1", "browserify-zlib@0.2.0", "pako@~1.0.5", "browserslist@4.16.1", "caniuse-lite@^1.0.30001219", "colorette@^1.2.2", "electron-to-chromium@^1.3.723", "escalade@^3.1.1", "node-releases@^1.1.71", "buffer@5.6.0", "base64-js@^1.3.1", "ieee754@^1.2.1", "caniuse-lite@^1.0.30001179", "chalk@2.4.2", "chokidar@3.5.1", "anymatch@~3.1.1", "normalize-path@^3.0.0", "picomatch@^2.0.4", "braces@~3.0.2", "fill-range@^7.0.1", "to-regex-range@^5.0.1", "is-number@^7.0.0", "glob-parent@~5.1.0", "is-glob@^4.0.1", "is-extglob@^2.1.1", "is-binary-path@~2.1.0", "binary-extensions@^2.0.0", "is-glob@~4.0.1", "normalize-path@~3.0.0", "readdirp@~3.5.0", "picomatch@^2.2.1", "fsevents@~2.3.1", "constants-browserify@1.0.0", "crypto-browserify@3.12.0", "browserify-cipher@^1.0.0", "browserify-aes@^1.0.4", "buffer-xor@^1.0.3", "safe-buffer@^5.1.1", "cipher-base@^1.0.0", "inherits@^2.0.1", "safe-buffer@^5.0.1", "create-hash@^1.1.0", "cipher-base@^1.0.1", "md5.js@^1.3.4", "hash-base@^3.0.0", "inherits@^2.0.4", "readable-stream@^3.6.0", "string_decoder@^1.1.1", "safe-buffer@~5.2.0", "util-deprecate@^1.0.1", "safe-buffer@^5.2.0", "ripemd160@^2.0.1", "sha.js@^2.4.0", "evp_bytestokey@^1.0.3", "browserify-des@^1.0.0", "des.js@^1.0.0", "minimalistic-assert@^1.0.0", "evp_bytestokey@^1.0.0", "browserify-sign@^4.0.0", "bn.js@^5.1.1", "browserify-rsa@^4.0.1", "bn.js@^5.0.0", "randombytes@^2.0.1", "safe-buffer@^5.1.0", "create-hash@^1.2.0", "create-hmac@^1.1.7", "cipher-base@^1.0.3", "ripemd160@^2.0.0", "sha.js@^2.4.8", "elliptic@^6.5.3", "bn.js@^4.11.9", "brorand@^1.1.0", "hash.js@^1.0.0", "minimalistic-assert@^1.0.1", "hmac-drbg@^1.0.1", "hash.js@^1.0.3", "minimalistic-crypto-utils@^1.0.1", "parse-asn1@^5.1.5", "asn1.js@^5.2.0", "bn.js@^4.0.0", "safer-buffer@^2.1.0", "browserify-aes@^1.0.0", "pbkdf2@^3.0.3", "create-hash@^1.1.2", "create-hmac@^1.1.4", "create-ecdh@^4.0.0", "bn.js@^4.1.0", "create-hmac@^1.1.0", "diffie-hellman@^5.0.0", "miller-rabin@^4.0.0", "brorand@^1.0.1", "randombytes@^2.0.0", "public-encrypt@^4.0.0", "browserify-rsa@^4.0.0", "parse-asn1@^5.0.0", "randomfill@^1.0.3", "randombytes@^2.0.5", "cssnano-simple@2.0.0", "cssnano-preset-simple@^2.0.0", "caniuse-lite@^1.0.30001202", "domain-browser@4.19.0", "encoding@0.1.13", "iconv-lite@^0.6.2", "safer-buffer@>= 2.1.2 < 3.0.0", "etag@1.8.1", "find-cache-dir@3.3.1", "commondir@^1.0.1", "make-dir@^3.0.2", "semver@^6.0.0", "lru-cache@^6.0.0", "yallist@^4.0.0", "pkg-dir@^4.1.0", "find-up@^5.0.0", "locate-path@^6.0.0", "p-locate@^5.0.0", "p-limit@^3.0.2", "yocto-queue@^0.1.0", "path-exists@^4.0.0", "get-orientation@1.1.2", "stream-parser@^0.3.1", "debug@2", "ms@2.1.2", "https-browserify@1.0.0", "jest-worker@27.0.0-next.5", "@types/node@*", "merge-stream@^2.0.0", "supports-color@^7.0.0", "native-url@0.3.4", "querystring@^0.2.0", "node-fetch@2.6.1", "node-html-parser@1.4.9", "css-select@^3.1.2", "boolbase@^1.0.0", "css-what@^5.0.0", "domhandler@^4.2.0", "domelementtype@^2.2.0", "domutils@^2.6.0", "dom-serializer@^1.0.1", "domelementtype@^2.0.1", "domhandler@^4.0.0", "entities@^2.0.0", "nth-check@^2.0.0", "he@1.2.0", "node-libs-browser@^2.2.1", "assert@^1.1.1", "browserify-zlib@^0.2.0", "buffer@^4.3.0", "console-browserify@^1.1.0", "constants-browserify@^1.0.0", "crypto-browserify@^3.11.0", "domain-browser@^1.1.1", "events@^3.0.0", "https-browserify@^1.0.0", "os-browserify@^0.3.0", "path-browserify@0.0.1", "process@^0.11.10", "punycode@^1.2.4", "querystring-es3@^0.2.0", "readable-stream@^2.3.3", "stream-browserify@^2.0.1", "inherits@~2.0.4", "readable-stream@^3.5.0", "stream-http@^2.7.2", "builtin-status-codes@^3.0.0", "xtend@^4.0.2", "string_decoder@^1.0.0", "timers-browserify@^2.0.4", "setimmediate@^1.0.4", "tty-browserify@0.0.0", "url@^0.11.0", "punycode@1.3.2", "querystring@0.2.0", "util@^0.11.0", "vm-browserify@^1.0.1", "os-browserify@0.3.0", "p-limit@3.1.0", "path-browserify@1.0.1", "pnp-webpack-plugin@1.6.4", "ts-pnp@^1.1.6", "postcss@8.2.13", "nanoid@^3.1.23", "source-map@^0.6.1", "process@0.11.10", "prop-types@15.7.2", "loose-envify@^1.4.0", "js-tokens@^3.0.0 || ^4.0.0", "object-assign@^4.1.1", "react-is@^16.8.1", "querystring-es3@0.2.1", "raw-body@2.4.1", "bytes@3.1.0", "http-errors@1.7.3", "depd@~1.1.2", "inherits@2.0.4", "setprototypeof@1.2.0", "statuses@>= 1.5.0 < 2", "toidentifier@1.0.0", "iconv-lite@0.4.24", "unpipe@1.0.0", "react-is@16.13.1", "react-refresh@0.8.3", "stream-browserify@3.0.0", "stream-http@3.1.1", "string_decoder@1.3.0", "styled-jsx@3.3.2", "@babel/helper-module-imports@7.12.5", "@babel/types@^7.13.12", "to-fast-properties@^2.0.0", "@babel/types@7.8.3", "babel-plugin-syntax-jsx@6.18.0", "convert-source-map@1.7.0", "safe-buffer@~5.1.1", "loader-utils@1.2.3", "big.js@^5.2.2", "emojis-list@^3.0.0", "json5@^2.1.2", "minimist@^1.2.5", "source-map@0.7.3", "string-hash@1.1.3", "stylis@3.5.4", "stylis-rule-sheet@0.0.10", "timers-browserify@2.0.12", "tty-browserify@0.0.1", "use-subscription@1.5.1", "util@0.12.3", "vm-browserify@1.1.2", "watchpack@2.1.1", "glob-to-regexp@^0.4.1", "graceful-fs@^4.1.2"]}}
+{
+    "version": "10.2.0",
+    "10.2.0": {
+        "packages": {
+            "next": {
+                "version": "10.2.0",
+                "tarball": "https://registry.npmjs.org/next/-/next-10.2.0.tgz",
+                "sha1": "6654cc925d8abcb15474fa062fc6b3ee527dd6dc"
+            },
+            "@babel/runtime": {
+                "version": "7.12.5",
+                "tarball": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.12.5.tgz",
+                "sha1": "410e7e487441e1b360c29be715d870d9b985882e"
+            },
+            "regenerator-runtime": {
+                "version": "0.13.7",
+                "tarball": "https://registry.npmjs.org/regenerator-runtime/-/regenerator-runtime-0.13.7.tgz",
+                "sha1": "cac2dacc8a1ea675feaabaeb8ae833898ae46f55"
+            },
+            "@hapi/accept": {
+                "version": "5.0.1",
+                "tarball": "https://registry.npmjs.org/@hapi/accept/-/accept-5.0.1.tgz",
+                "sha1": "068553e867f0f63225a506ed74e899441af53e10"
+            },
+            "@hapi/boom": {
+                "version": "9.x.x"
+            },
+            "@next/env": {
+                "version": "10.2.0",
+                "tarball": "https://registry.npmjs.org/@next/env/-/env-10.2.0.tgz",
+                "sha1": "154dbce2efa3ad067ebd20b7d0aa9aed775e7c97"
+            },
+            "@next/polyfill-module": {
+                "version": "10.2.0",
+                "tarball": "https://registry.npmjs.org/@next/polyfill-module/-/polyfill-module-10.2.0.tgz",
+                "sha1": "61f41110c4b465cc26d113e2054e205df61c3594"
+            },
+            "@next/react-dev-overlay": {
+                "version": "10.2.0",
+                "tarball": "https://registry.npmjs.org/@next/react-dev-overlay/-/react-dev-overlay-10.2.0.tgz",
+                "sha1": "4220121abac7e3404cbaf467784aeecca8be46cf"
+            },
+            "@babel/code-frame": {
+                "version": "7.12.11",
+                "tarball": "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.12.11.tgz",
+                "sha1": "f4ad435aa263db935b8f10f2c552d23fb716a63f"
+            },
+            "@babel/highlight": {
+                "version": "7.14.0",
+                "tarball": "https://registry.npmjs.org/@babel/highlight/-/highlight-7.14.0.tgz",
+                "sha1": "3197e375711ef6bf834e67d0daec88e4f46113cf"
+            },
+            "@babel/helper-validator-identifier": {
+                "version": "7.14.0",
+                "tarball": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.14.0.tgz",
+                "sha1": "d26cad8a47c65286b15df1547319a5d0bcf27288"
+            },
+            "@next/react-refresh-utils": {
+                "version": "10.2.0",
+                "tarball": "https://registry.npmjs.org/@next/react-refresh-utils/-/react-refresh-utils-10.2.0.tgz",
+                "sha1": "55953b697769c6647f371bc6bcd865a24e1a22e9"
+            },
+            "@opentelemetry/api": {
+                "version": "0.14.0",
+                "tarball": "https://registry.npmjs.org/@opentelemetry/api/-/api-0.14.0.tgz",
+                "sha1": "4e17d8d2f1da72b19374efa7b6526aa001267cae"
+            },
+            "@opentelemetry/context-base": {
+                "version": "0.17.0",
+                "tarball": "https://registry.npmjs.org/@opentelemetry/context-base/-/context-base-0.17.0.tgz",
+                "sha1": "03b72c54b5be5f40d6d88806de01d88e8ab196c4"
+            },
+            "assert": {
+                "version": "2.0.0",
+                "tarball": "https://registry.npmjs.org/assert/-/assert-2.0.0.tgz",
+                "sha1": "95fc1c616d48713510680f2eaf2d10dd22e02d32"
+            },
+            "es6-object-assign": {
+                "version": "1.1.0",
+                "tarball": "https://registry.npmjs.org/es6-object-assign/-/es6-object-assign-1.1.0.tgz",
+                "sha1": "c2c3582656247c39ea107cb1e6652b6f9f24523c"
+            },
+            "ast-types": {
+                "version": "0.13.2",
+                "tarball": "https://registry.npmjs.org/ast-types/-/ast-types-0.13.2.tgz",
+                "sha1": "df39b677a911a83f3a049644fb74fdded23cea48"
+            },
+            "browserify-zlib": {
+                "version": "0.2.0",
+                "tarball": "https://registry.npmjs.org/browserify-zlib/-/browserify-zlib-0.2.0.tgz",
+                "sha1": "2869459d9aa3be245fe8fe2ca1f46e2e7f54d73f"
+            },
+            "pako": {
+                "version": "~1.0.5"
+            },
+            "browserslist": {
+                "version": "4.16.1",
+                "tarball": "https://registry.npmjs.org/browserslist/-/browserslist-4.16.1.tgz",
+                "sha1": "bf757a2da376b3447b800a16f0f1c96358138766",
+                "bin": {
+                    "browserslist": "cli.js"
+                }
+            },
+            "caniuse-lite": {
+                "version": "1.0.30001228",
+                "tarball": "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001228.tgz",
+                "sha1": "bfdc5942cd3326fa51ee0b42fbef4da9d492a7fa"
+            },
+            "buffer": {
+                "version": "5.6.0",
+                "tarball": "https://registry.npmjs.org/buffer/-/buffer-5.6.0.tgz",
+                "sha1": "a31749dc7d81d84db08abf937b6b8c4033f62786"
+            },
+            "base64-js": {
+                "version": "1.5.1",
+                "tarball": "https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz",
+                "sha1": "1b1b440160a5bf7ad40b650f095963481903930a"
+            },
+            "chalk": {
+                "version": "2.4.2",
+                "tarball": "https://registry.npmjs.org/chalk/-/chalk-2.4.2.tgz",
+                "sha1": "cd42541677a54333cf541a49108c1432b44c9424"
+            },
+            "ansi-styles": {
+                "version": "6.1.0",
+                "tarball": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-6.1.0.tgz",
+                "sha1": "87313c102b8118abd57371afab34618bf7350ed3"
+            },
+            "chokidar": {
+                "version": "3.5.1",
+                "tarball": "https://registry.npmjs.org/chokidar/-/chokidar-3.5.1.tgz",
+                "sha1": "ee9ce7bbebd2b79f49f304799d5468e31e14e68a"
+            },
+            "anymatch": {
+                "version": "~3.1.1"
+            },
+            "constants-browserify": {
+                "version": "1.0.0",
+                "tarball": "https://registry.npmjs.org/constants-browserify/-/constants-browserify-1.0.0.tgz",
+                "sha1": "c20b96d8c617748aaf1c16021760cd27fcb8cb75"
+            },
+            "crypto-browserify": {
+                "version": "3.12.0",
+                "tarball": "https://registry.npmjs.org/crypto-browserify/-/crypto-browserify-3.12.0.tgz",
+                "sha1": "396cf9f3137f03e4b8e532c58f698254e00f80ec"
+            },
+            "browserify-cipher": {
+                "version": "1.0.1",
+                "tarball": "https://registry.npmjs.org/browserify-cipher/-/browserify-cipher-1.0.1.tgz",
+                "sha1": "8d6474c1b870bfdabcd3bcfcc1934a10e94f15f0"
+            },
+            "browserify-aes": {
+                "version": "1.2.0",
+                "tarball": "https://registry.npmjs.org/browserify-aes/-/browserify-aes-1.2.0.tgz",
+                "sha1": "326734642f403dabc3003209853bb70ad428ef48"
+            },
+            "buffer-xor": {
+                "version": "2.0.2",
+                "tarball": "https://registry.npmjs.org/buffer-xor/-/buffer-xor-2.0.2.tgz",
+                "sha1": "34f7c64f04c777a1f8aac5e661273bb9dd320289"
+            },
+            "safe-buffer": {
+                "version": "~5.2.0"
+            },
+            "cssnano-simple": {
+                "version": "2.0.0",
+                "tarball": "https://registry.npmjs.org/cssnano-simple/-/cssnano-simple-2.0.0.tgz",
+                "sha1": "930d9dcd8ba105c5a62ce719cb00854da58b5c05"
+            },
+            "cssnano-preset-simple": {
+                "version": "2.0.0",
+                "tarball": "https://registry.npmjs.org/cssnano-preset-simple/-/cssnano-preset-simple-2.0.0.tgz",
+                "sha1": "b55e72cb970713f425560a0e141b0335249e2f96"
+            },
+            "domain-browser": {
+                "version": "4.19.0",
+                "tarball": "https://registry.npmjs.org/domain-browser/-/domain-browser-4.19.0.tgz",
+                "sha1": "1093e17c0a17dbd521182fe90d49ac1370054af1"
+            },
+            "encoding": {
+                "version": "0.1.13",
+                "tarball": "https://registry.npmjs.org/encoding/-/encoding-0.1.13.tgz",
+                "sha1": "56574afdd791f54a8e9b2785c0582a2d26210fa9"
+            },
+            "iconv-lite": {
+                "version": "0.6.2",
+                "tarball": "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.6.2.tgz",
+                "sha1": "ce13d1875b0c3a674bd6a04b7f76b01b1b6ded01"
+            },
+            "safer-buffer": {
+                "version": ">= 2.1.2 < 3.0.0"
+            },
+            "etag": {
+                "version": "1.8.1",
+                "tarball": "https://registry.npmjs.org/etag/-/etag-1.8.1.tgz",
+                "sha1": "41ae2eeb65efa62268aebfea83ac7d79299b0887"
+            },
+            "find-cache-dir": {
+                "version": "3.3.1",
+                "tarball": "https://registry.npmjs.org/find-cache-dir/-/find-cache-dir-3.3.1.tgz",
+                "sha1": "89b33fad4a4670daa94f855f7fbe31d6d84fe880"
+            },
+            "commondir": {
+                "version": "1.0.1",
+                "tarball": "https://registry.npmjs.org/commondir/-/commondir-1.0.1.tgz",
+                "sha1": "ddd800da0c66127393cca5950ea968a3aaf1253b"
+            },
+            "make-dir": {
+                "version": "3.1.0",
+                "tarball": "https://registry.npmjs.org/make-dir/-/make-dir-3.1.0.tgz",
+                "sha1": "415e967046b3a7f1d185277d84aa58203726a13f"
+            },
+            "semver": {
+                "version": "7.3.5",
+                "tarball": "https://registry.npmjs.org/semver/-/semver-7.3.5.tgz",
+                "sha1": "0b621c879348d8998e4b0e4be94b3f12e6018ef7",
+                "bin": {
+                    "semver": "bin/semver.js"
+                }
+            },
+            "lru-cache": {
+                "version": "6.0.0",
+                "tarball": "https://registry.npmjs.org/lru-cache/-/lru-cache-6.0.0.tgz",
+                "sha1": "6d6fe6570ebd96aaf90fcad1dafa3b2566db3a94"
+            },
+            "yallist": {
+                "version": "4.0.0",
+                "tarball": "https://registry.npmjs.org/yallist/-/yallist-4.0.0.tgz",
+                "sha1": "9bb92790d9c0effec63be73519e11a35019a3a72"
+            },
+            "pkg-dir": {
+                "version": "5.0.0",
+                "tarball": "https://registry.npmjs.org/pkg-dir/-/pkg-dir-5.0.0.tgz",
+                "sha1": "a02d6aebe6ba133a928f74aec20bafdfe6b8e760"
+            },
+            "find-up": {
+                "version": "5.0.0",
+                "tarball": "https://registry.npmjs.org/find-up/-/find-up-5.0.0.tgz",
+                "sha1": "4c92819ecb7083561e4f4a240a86be5198f536fc"
+            },
+            "locate-path": {
+                "version": "6.0.0",
+                "tarball": "https://registry.npmjs.org/locate-path/-/locate-path-6.0.0.tgz",
+                "sha1": "55321eb309febbc59c4801d931a72452a681d286"
+            },
+            "p-locate": {
+                "version": "5.0.0",
+                "tarball": "https://registry.npmjs.org/p-locate/-/p-locate-5.0.0.tgz",
+                "sha1": "83c8315c6785005e3bd021839411c9e110e6d834"
+            },
+            "p-limit": {
+                "version": "3.1.0",
+                "tarball": "https://registry.npmjs.org/p-limit/-/p-limit-3.1.0.tgz",
+                "sha1": "e1daccbe78d0d1388ca18c64fea38e3e57e3706b"
+            },
+            "yocto-queue": {
+                "version": "0.1.0",
+                "tarball": "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz",
+                "sha1": "0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
+            },
+            "get-orientation": {
+                "version": "1.1.2",
+                "tarball": "https://registry.npmjs.org/get-orientation/-/get-orientation-1.1.2.tgz",
+                "sha1": "20507928951814f8a91ded0a0e67b29dfab98947"
+            },
+            "stream-parser": {
+                "version": "0.3.1",
+                "tarball": "https://registry.npmjs.org/stream-parser/-/stream-parser-0.3.1.tgz",
+                "sha1": "1618548694420021a1182ff0af1911c129761773"
+            },
+            "debug": {
+                "version": "2"
+            },
+            "https-browserify": {
+                "version": "1.0.0",
+                "tarball": "https://registry.npmjs.org/https-browserify/-/https-browserify-1.0.0.tgz",
+                "sha1": "ec06c10e0a34c0f2faf199f7fd7fc78fffd03c73"
+            },
+            "jest-worker": {
+                "version": "27.0.0-next.5",
+                "tarball": "https://registry.npmjs.org/jest-worker/-/jest-worker-27.0.0-next.5.tgz",
+                "sha1": "5985ee29b12a4e191f4aae4bb73b97971d86ec28"
+            },
+            "@types/node": {
+                "version": "*"
+            },
+            "native-url": {
+                "version": "0.3.4",
+                "tarball": "https://registry.npmjs.org/native-url/-/native-url-0.3.4.tgz",
+                "sha1": "29c943172aed86c63cee62c8c04db7f5756661f8"
+            },
+            "querystring": {
+                "version": "0.2.1",
+                "tarball": "https://registry.npmjs.org/querystring/-/querystring-0.2.1.tgz",
+                "sha1": "40d77615bb09d16902a85c3e38aa8b5ed761c2dd"
+            },
+            "node-fetch": {
+                "version": "2.6.1",
+                "tarball": "https://registry.npmjs.org/node-fetch/-/node-fetch-2.6.1.tgz",
+                "sha1": "045bd323631f76ed2e2b55573394416b639a0052"
+            },
+            "node-html-parser": {
+                "version": "1.4.9",
+                "tarball": "https://registry.npmjs.org/node-html-parser/-/node-html-parser-1.4.9.tgz",
+                "sha1": "3c8f6cac46479fae5800725edb532e9ae8fd816c"
+            },
+            "he": {
+                "version": "1.2.0",
+                "tarball": "https://registry.npmjs.org/he/-/he-1.2.0.tgz",
+                "sha1": "84ae65fa7eafb165fddb61566ae14baf05664f0f",
+                "bin": {
+                    "he": "bin/he"
+                }
+            },
+            "node-libs-browser": {
+                "version": "2.2.1",
+                "tarball": "https://registry.npmjs.org/node-libs-browser/-/node-libs-browser-2.2.1.tgz",
+                "sha1": "b64f513d18338625f90346d27b0d235e631f6425"
+            },
+            "os-browserify": {
+                "version": "0.3.0",
+                "tarball": "https://registry.npmjs.org/os-browserify/-/os-browserify-0.3.0.tgz",
+                "sha1": "854373c7f5c2315914fc9bfc6bd8238fdda1ec27"
+            },
+            "path-browserify": {
+                "version": "1.0.1",
+                "tarball": "https://registry.npmjs.org/path-browserify/-/path-browserify-1.0.1.tgz",
+                "sha1": "d98454a9c3753d5790860f16f68867b9e46be1fd"
+            },
+            "pnp-webpack-plugin": {
+                "version": "1.6.4",
+                "tarball": "https://registry.npmjs.org/pnp-webpack-plugin/-/pnp-webpack-plugin-1.6.4.tgz",
+                "sha1": "c9711ac4dc48a685dabafc86f8b6dd9f8df84149"
+            },
+            "ts-pnp": {
+                "version": "1.2.0",
+                "tarball": "https://registry.npmjs.org/ts-pnp/-/ts-pnp-1.2.0.tgz",
+                "sha1": "a500ad084b0798f1c3071af391e65912c86bca92"
+            },
+            "postcss": {
+                "version": "8.2.13",
+                "tarball": "https://registry.npmjs.org/postcss/-/postcss-8.2.13.tgz",
+                "sha1": "dbe043e26e3c068e45113b1ed6375d2d37e2129f"
+            },
+            "colorette": {
+                "version": "1.2.2",
+                "tarball": "https://registry.npmjs.org/colorette/-/colorette-1.2.2.tgz",
+                "sha1": "cbcc79d5e99caea2dbf10eb3a26fd8b3e6acfa94"
+            },
+            "process": {
+                "version": "0.11.10",
+                "tarball": "https://registry.npmjs.org/process/-/process-0.11.10.tgz",
+                "sha1": "7332300e840161bda3e69a1d1d91a7d4bc16f182"
+            },
+            "prop-types": {
+                "version": "15.7.2",
+                "tarball": "https://registry.npmjs.org/prop-types/-/prop-types-15.7.2.tgz",
+                "sha1": "52c41e75b8c87e72b9d9360e0206b99dcbffa6c5"
+            },
+            "loose-envify": {
+                "version": "1.4.0",
+                "tarball": "https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz",
+                "sha1": "71ee51fa7be4caec1a63839f7e682d8132d30caf",
+                "bin": {
+                    "loose-envify": "cli.js"
+                }
+            },
+            "js-tokens": {
+                "version": "7.0.0",
+                "tarball": "https://registry.npmjs.org/js-tokens/-/js-tokens-7.0.0.tgz",
+                "sha1": "5b847c7f3e16c89dbc90fac34a8be947907a5a72"
+            },
+            "querystring-es3": {
+                "version": "0.2.1",
+                "tarball": "https://registry.npmjs.org/querystring-es3/-/querystring-es3-0.2.1.tgz",
+                "sha1": "9ec61f79049875707d69414596fd907a4d711e73"
+            },
+            "raw-body": {
+                "version": "2.4.1",
+                "tarball": "https://registry.npmjs.org/raw-body/-/raw-body-2.4.1.tgz",
+                "sha1": "30ac82f98bb5ae8c152e67149dac8d55153b168c"
+            },
+            "bytes": {
+                "version": "3.1.0",
+                "tarball": "https://registry.npmjs.org/bytes/-/bytes-3.1.0.tgz",
+                "sha1": "f6cf7933a360e0588fa9fde85651cdc7f805d1f6"
+            },
+            "react-is": {
+                "version": "16.13.1",
+                "tarball": "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz",
+                "sha1": "789729a4dc36de2999dc156dd6c1d9c18cea56a4"
+            },
+            "react-refresh": {
+                "version": "0.8.3",
+                "tarball": "https://registry.npmjs.org/react-refresh/-/react-refresh-0.8.3.tgz",
+                "sha1": "721d4657672d400c5e3c75d063c4a85fb2d5d68f"
+            },
+            "stream-browserify": {
+                "version": "3.0.0",
+                "tarball": "https://registry.npmjs.org/stream-browserify/-/stream-browserify-3.0.0.tgz",
+                "sha1": "22b0a2850cdf6503e73085da1fc7b7d0c2122f2f"
+            },
+            "inherits": {
+                "version": "2.0.4",
+                "tarball": "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz",
+                "sha1": "0fa2c64f932917c3433a0ded55363aae37416b7c"
+            },
+            "stream-http": {
+                "version": "3.1.1",
+                "tarball": "https://registry.npmjs.org/stream-http/-/stream-http-3.1.1.tgz",
+                "sha1": "0370a8017cf8d050b9a8554afe608f043eaff564"
+            },
+            "builtin-status-codes": {
+                "version": "3.0.0",
+                "tarball": "https://registry.npmjs.org/builtin-status-codes/-/builtin-status-codes-3.0.0.tgz",
+                "sha1": "85982878e21b98e1c66425e03d0174788f569ee8"
+            },
+            "string_decoder": {
+                "version": "1.3.0",
+                "tarball": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz",
+                "sha1": "42f114594a46cf1a8e30b0a84f56c78c3edac21e"
+            },
+            "styled-jsx": {
+                "version": "3.3.2",
+                "tarball": "https://registry.npmjs.org/styled-jsx/-/styled-jsx-3.3.2.tgz",
+                "sha1": "2474601a26670a6049fb4d3f94bd91695b3ce018"
+            },
+            "@babel/types": {
+                "version": "7.8.3",
+                "tarball": "https://registry.npmjs.org/@babel/types/-/types-7.8.3.tgz",
+                "sha1": "5a383dffa5416db1b73dedffd311ffd0788fb31c"
+            },
+            "esutils": {
+                "version": "2.0.3",
+                "tarball": "https://registry.npmjs.org/esutils/-/esutils-2.0.3.tgz",
+                "sha1": "74d2eb4de0b8da1293711910d50775b9b710ef64"
+            },
+            "timers-browserify": {
+                "version": "2.0.12",
+                "tarball": "https://registry.npmjs.org/timers-browserify/-/timers-browserify-2.0.12.tgz",
+                "sha1": "44a45c11fbf407f34f97bccd1577c652361b00ee"
+            },
+            "setimmediate": {
+                "version": "1.0.5",
+                "tarball": "https://registry.npmjs.org/setimmediate/-/setimmediate-1.0.5.tgz",
+                "sha1": "290cbb232e306942d7d7ea9b83732ab7856f8285"
+            },
+            "tty-browserify": {
+                "version": "0.0.1",
+                "tarball": "https://registry.npmjs.org/tty-browserify/-/tty-browserify-0.0.1.tgz",
+                "sha1": "3f05251ee17904dfd0677546670db9651682b811"
+            },
+            "use-subscription": {
+                "version": "1.5.1",
+                "tarball": "https://registry.npmjs.org/use-subscription/-/use-subscription-1.5.1.tgz",
+                "sha1": "73501107f02fad84c6dd57965beb0b75c68c42d1"
+            },
+            "object-assign": {
+                "version": "4.1.1",
+                "tarball": "https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz",
+                "sha1": "2109adc7965887cfc05cbbd442cac8bfbb360863"
+            },
+            "util": {
+                "version": "0.12.3",
+                "tarball": "https://registry.npmjs.org/util/-/util-0.12.3.tgz",
+                "sha1": "971bb0292d2cc0c892dab7c6a5d37c2bec707888"
+            },
+            "vm-browserify": {
+                "version": "1.1.2",
+                "tarball": "https://registry.npmjs.org/vm-browserify/-/vm-browserify-1.1.2.tgz",
+                "sha1": "78641c488b8e6ca91a75f511e7a3b32a86e5dda0"
+            },
+            "watchpack": {
+                "version": "2.1.1",
+                "tarball": "https://registry.npmjs.org/watchpack/-/watchpack-2.1.1.tgz",
+                "sha1": "e99630550fca07df9f90a06056987baa40a689c7"
+            },
+            "glob-to-regexp": {
+                "version": "0.4.1",
+                "tarball": "https://registry.npmjs.org/glob-to-regexp/-/glob-to-regexp-0.4.1.tgz",
+                "sha1": "c75297087c851b9a578bd217dd59a92f59fe546e"
+            }
+        }
+    }
+}

@@ -1,84 +1,189 @@
 {
-    "dependencies": {
-      "5.37.0": {
-        "@types/eslint-scope": "^3.7.0",
-        "@types/eslint": "*",
-        "@types/estree": "*",
-        "@types/json-schema": "*",
-        "@types/estree": "^0.0.47",
-        "@webassemblyjs/ast": "1.11.0",
-        "@webassemblyjs/helper-numbers": "1.11.0",
-        "@webassemblyjs/floating-point-hex-parser": "1.11.0",
-        "@webassemblyjs/helper-api-error": "1.11.0",
-        "@xtuc/long": "4.2.2",
-        "@webassemblyjs/helper-wasm-bytecode": "1.11.0",
-        "@webassemblyjs/wasm-edit": "1.11.0",
-        "@webassemblyjs/helper-buffer": "1.11.0",
-        "@webassemblyjs/helper-wasm-section": "1.11.0",
-        "@webassemblyjs/wasm-gen": "1.11.0",
-        "@webassemblyjs/ieee754": "1.11.0",
-        "@xtuc/ieee754": "^1.2.0",
-        "@webassemblyjs/leb128": "1.11.0",
-        "@webassemblyjs/utf8": "1.11.0",
-        "@webassemblyjs/wasm-opt": "1.11.0",
-        "@webassemblyjs/wasm-parser": "1.11.0",
-        "@webassemblyjs/wast-printer": "1.11.0",
-        "acorn": "^8.2.1",
-        "browserslist": "^4.14.5",
-        "caniuse-lite": "^1.0.30001219",
-        "colorette": "^1.2.2",
-        "electron-to-chromium": "^1.3.723",
-        "escalade": "^3.1.1",
-        "node-releases": "^1.1.71",
-        "chrome-trace-event": "^1.0.2",
-        "enhanced-resolve": "^5.8.0",
-        "graceful-fs": "^4.2.4",
-        "tapable": "^2.2.0",
-        "es-module-lexer": "^0.4.0",
-        "eslint-scope": "^5.1.1",
-        "esrecurse": "^4.3.0",
-        "estraverse": "^5.2.0",
-        "estraverse": "^4.1.1",
-        "events": "^3.2.0",
-        "glob-to-regexp": "^0.4.1",
-        "json-parse-better-errors": "^1.0.2",
-        "loader-runner": "^4.2.0",
-        "mime-types": "^2.1.27",
-        "mime-db": "1.47.0",
-        "neo-async": "^2.6.2",
-        "schema-utils": "^3.0.0",
-        "ajv": "^6.12.5",
-        "fast-deep-equal": "^3.1.1",
-        "json-schema-traverse": "^1.0.0",
-        "require-from-string": "^2.0.2",
-        "uri-js": "^4.2.2",
-        "punycode": "^2.1.0",
-        "ajv-keywords": "^3.5.2",
-        "fast-deep-equal": "^3.1.3",
-        "@types/json-schema": "^7.0.6",
-        "tapable": "^2.1.1",
-        "terser-webpack-plugin": "^5.1.1",
-        "jest-worker": "^26.6.2",
-        "@types/node": "*",
-        "merge-stream": "^2.0.0",
-        "supports-color": "^7.0.0",
-        "has-flag": "^5.0.0",
-        "p-limit": "^3.1.0",
-        "yocto-queue": "^0.1.0",
-        "serialize-javascript": "^5.0.1",
-        "randombytes": "^2.1.0",
-        "safe-buffer": "^5.1.0",
-        "source-map": "^0.6.1",
-        "terser": "^5.7.0",
-        "commander": "^2.20.0",
-        "source-map": "~0.7.2",
-        "source-map-support": "~0.5.19",
-        "buffer-from": "^1.0.0",
-        "source-map": "^0.6.0",
-        "watchpack": "^2.0.0",
-        "graceful-fs": "^4.1.2",
-        "webpack-sources": "^2.1.1",
-        "source-list-map": "^2.0.1"
-      }
+    "version": "5.37.0",
+    "5.37.0": {
+        "packages": {
+            "webpack": {
+                "version": "5.37.0",
+                "tarball": "https://registry.npmjs.org/webpack/-/webpack-5.37.0.tgz",
+                "sha1": "2ab00f613faf494504eb2beef278dab7493cc39d"
+            },
+            "@types/eslint-scope": {
+                "version": "3.7.0",
+                "tarball": "https://registry.npmjs.org/@types/eslint-scope/-/eslint-scope-3.7.0.tgz",
+                "sha1": "4792816e31119ebd506902a482caec4951fabd86"
+            },
+            "@types/eslint": {
+                "version": "*"
+            },
+            "@types/estree": {
+                "version": "0.0.47",
+                "tarball": "https://registry.npmjs.org/@types/estree/-/estree-0.0.47.tgz",
+                "sha1": "d7a51db20f0650efec24cd04994f523d93172ed4"
+            },
+            "@webassemblyjs/ast": {
+                "version": "1.11.0",
+                "tarball": "https://registry.npmjs.org/@webassemblyjs/ast/-/ast-1.11.0.tgz",
+                "sha1": "a5aa679efdc9e51707a4207139da57920555961f"
+            },
+            "@webassemblyjs/helper-numbers": {
+                "version": "1.11.0",
+                "tarball": "https://registry.npmjs.org/@webassemblyjs/helper-numbers/-/helper-numbers-1.11.0.tgz",
+                "sha1": "7ab04172d54e312cc6ea4286d7d9fa27c88cd4f9"
+            },
+            "@webassemblyjs/floating-point-hex-parser": {
+                "version": "1.11.0",
+                "tarball": "https://registry.npmjs.org/@webassemblyjs/floating-point-hex-parser/-/floating-point-hex-parser-1.11.0.tgz",
+                "sha1": "34d62052f453cd43101d72eab4966a022587947c"
+            },
+            "@webassemblyjs/wasm-edit": {
+                "version": "1.11.0",
+                "tarball": "https://registry.npmjs.org/@webassemblyjs/wasm-edit/-/wasm-edit-1.11.0.tgz",
+                "sha1": "ee4a5c9f677046a210542ae63897094c2027cb78"
+            },
+            "@webassemblyjs/wasm-parser": {
+                "version": "1.11.0",
+                "tarball": "https://registry.npmjs.org/@webassemblyjs/wasm-parser/-/wasm-parser-1.11.0.tgz",
+                "sha1": "3e680b8830d5b13d1ec86cc42f38f3d4a7700754"
+            },
+            "acorn": {
+                "version": "8.2.4",
+                "tarball": "https://registry.npmjs.org/acorn/-/acorn-8.2.4.tgz",
+                "sha1": "caba24b08185c3b56e3168e97d15ed17f4d31fd0",
+                "bin": {
+                    "acorn": "bin/acorn"
+                }
+            },
+            "browserslist": {
+                "version": "4.16.6",
+                "tarball": "https://registry.npmjs.org/browserslist/-/browserslist-4.16.6.tgz",
+                "sha1": "d7901277a5a88e554ed305b183ec9b0c08f66fa2",
+                "bin": {
+                    "browserslist": "cli.js"
+                }
+            },
+            "caniuse-lite": {
+                "version": "1.0.30001228",
+                "tarball": "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001228.tgz",
+                "sha1": "bfdc5942cd3326fa51ee0b42fbef4da9d492a7fa"
+            },
+            "chrome-trace-event": {
+                "version": "1.0.3",
+                "tarball": "https://registry.npmjs.org/chrome-trace-event/-/chrome-trace-event-1.0.3.tgz",
+                "sha1": "1015eced4741e15d06664a957dbbf50d041e26ac"
+            },
+            "enhanced-resolve": {
+                "version": "5.8.2",
+                "tarball": "https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-5.8.2.tgz",
+                "sha1": "15ddc779345cbb73e97c611cd00c01c1e7bf4d8b"
+            },
+            "graceful-fs": {
+                "version": "4.2.6",
+                "tarball": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.6.tgz",
+                "sha1": "ff040b2b0853b23c3d31027523706f1885d76bee"
+            },
+            "es-module-lexer": {
+                "version": "0.4.1",
+                "tarball": "https://registry.npmjs.org/es-module-lexer/-/es-module-lexer-0.4.1.tgz",
+                "sha1": "dda8c6a14d8f340a24e34331e0fab0cb50438e0e"
+            },
+            "eslint-scope": {
+                "version": "5.1.1",
+                "tarball": "https://registry.npmjs.org/eslint-scope/-/eslint-scope-5.1.1.tgz",
+                "sha1": "e786e59a66cb92b3f6c1fb0d508aab174848f48c"
+            },
+            "esrecurse": {
+                "version": "4.3.0",
+                "tarball": "https://registry.npmjs.org/esrecurse/-/esrecurse-4.3.0.tgz",
+                "sha1": "7ad7964d679abb28bee72cec63758b1c5d2c9921"
+            },
+            "estraverse": {
+                "version": "5.2.0",
+                "tarball": "https://registry.npmjs.org/estraverse/-/estraverse-5.2.0.tgz",
+                "sha1": "307df42547e6cc7324d3cf03c155d5cdb8c53880"
+            },
+            "events": {
+                "version": "3.3.0",
+                "tarball": "https://registry.npmjs.org/events/-/events-3.3.0.tgz",
+                "sha1": "31a95ad0a924e2d2c419a813aeb2c4e878ea7400"
+            },
+            "glob-to-regexp": {
+                "version": "0.4.1",
+                "tarball": "https://registry.npmjs.org/glob-to-regexp/-/glob-to-regexp-0.4.1.tgz",
+                "sha1": "c75297087c851b9a578bd217dd59a92f59fe546e"
+            },
+            "json-parse-better-errors": {
+                "version": "1.0.2",
+                "tarball": "https://registry.npmjs.org/json-parse-better-errors/-/json-parse-better-errors-1.0.2.tgz",
+                "sha1": "bb867cfb3450e69107c131d1c514bab3dc8bcaa9"
+            },
+            "loader-runner": {
+                "version": "4.2.0",
+                "tarball": "https://registry.npmjs.org/loader-runner/-/loader-runner-4.2.0.tgz",
+                "sha1": "d7022380d66d14c5fb1d496b89864ebcfd478384"
+            },
+            "mime-types": {
+                "version": "2.1.30",
+                "tarball": "https://registry.npmjs.org/mime-types/-/mime-types-2.1.30.tgz",
+                "sha1": "6e7be8b4c479825f85ed6326695db73f9305d62d"
+            },
+            "mime-db": {
+                "version": "1.47.0",
+                "tarball": "https://registry.npmjs.org/mime-db/-/mime-db-1.47.0.tgz",
+                "sha1": "8cb313e59965d3c05cfbf898915a267af46a335c"
+            },
+            "neo-async": {
+                "version": "2.6.2",
+                "tarball": "https://registry.npmjs.org/neo-async/-/neo-async-2.6.2.tgz",
+                "sha1": "b4aafb93e3aeb2d8174ca53cf163ab7d7308305f"
+            },
+            "schema-utils": {
+                "version": "3.0.0",
+                "tarball": "https://registry.npmjs.org/schema-utils/-/schema-utils-3.0.0.tgz",
+                "sha1": "67502f6aa2b66a2d4032b4279a2944978a0913ef"
+            },
+            "ajv": {
+                "version": "8.4.0",
+                "tarball": "https://registry.npmjs.org/ajv/-/ajv-8.4.0.tgz",
+                "sha1": "48984fdb2ce225cab15795f0772a8d85669075e4"
+            },
+            "fast-deep-equal": {
+                "version": "3.1.3",
+                "tarball": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz",
+                "sha1": "3a7d56b559d6cbc3eb512325244e619a65c6c525"
+            },
+            "tapable": {
+                "version": "2.2.0",
+                "tarball": "https://registry.npmjs.org/tapable/-/tapable-2.2.0.tgz",
+                "sha1": "5c373d281d9c672848213d0e037d1c4165ab426b"
+            },
+            "terser-webpack-plugin": {
+                "version": "5.1.2",
+                "tarball": "https://registry.npmjs.org/terser-webpack-plugin/-/terser-webpack-plugin-5.1.2.tgz",
+                "sha1": "51d295eb7cc56785a67a372575fdc46e42d5c20c"
+            },
+            "jest-worker": {
+                "version": "26.6.2",
+                "tarball": "https://registry.npmjs.org/jest-worker/-/jest-worker-26.6.2.tgz",
+                "sha1": "7f72cbc4d643c365e27b9fd775f9d0eaa9c7a8ed"
+            },
+            "@types/node": {
+                "version": "*"
+            },
+            "watchpack": {
+                "version": "2.1.1",
+                "tarball": "https://registry.npmjs.org/watchpack/-/watchpack-2.1.1.tgz",
+                "sha1": "e99630550fca07df9f90a06056987baa40a689c7"
+            },
+            "webpack-sources": {
+                "version": "2.2.0",
+                "tarball": "https://registry.npmjs.org/webpack-sources/-/webpack-sources-2.2.0.tgz",
+                "sha1": "058926f39e3d443193b6c31547229806ffd02bac"
+            },
+            "source-list-map": {
+                "version": "2.0.1",
+                "tarball": "https://registry.npmjs.org/source-list-map/-/source-list-map-2.0.1.tgz",
+                "sha1": "3993bd873bfc48479cca9ea3a547835c7c154b34"
+            }
+        }
     }
-  }
+}
