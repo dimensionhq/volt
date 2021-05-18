@@ -14,7 +14,7 @@ limitations under the License.
 //! Add a package to your dependencies for your project.
 
 // Std Imports
-use std::sync::atomic::AtomicI16;
+use std::{process::exit, sync::atomic::AtomicI16};
 // use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
@@ -97,6 +97,12 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         // let package_file = PackageJson::from("package.json");
+        if app.args.len() == 0 {
+            println!("{}", Self::help());
+            exit(1);
+        }
+        let verbose = app.has_flag(&["-v", "--verbose"]);
+        let pballowed = app.has_flag(&["--no-progress", "-np"]);
 
         let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
             .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
@@ -141,30 +147,40 @@ Options:
             let app = app.clone();
             workers.push(async move { Add::install_extract_package(app, &dep).await });
         }
+        if !pballowed {
+            let progress_bar = ProgressBar::new(workers.len() as u64);
 
-        let progress_bar = ProgressBar::new(workers.len() as u64);
+            progress_bar.set_style(
+                ProgressStyle::default_bar()
+                    .progress_chars(PROGRESS_CHARS)
+                    .template(&format!(
+                        "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
+                        "Installing packages".bright_blue()
+                    )),
+            );
 
-        progress_bar.set_style(
-            ProgressStyle::default_bar()
-                .progress_chars(PROGRESS_CHARS)
-                .template(&format!(
-                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
-                    "Installing packages".bright_blue()
-                )),
-        );
+            loop {
+                match workers.next().await {
+                    Some(result) => {
+                        result?;
+                        progress_bar.inc(1)
+                    }
 
-        loop {
-            match workers.next().await {
-                Some(result) => {
-                    result?;
-                    progress_bar.inc(1)
+                    None => break,
                 }
+            }
+            progress_bar.finish();
+        } else {
+            loop {
+                match workers.next().await {
+                    Some(result) => {
+                        result?;
+                    }
 
-                None => break,
+                    None => break,
+                }
             }
         }
-
-        progress_bar.finish();
 
         // Change package.json
         // for value in &dependencies.to_owned().iter() {
@@ -172,6 +188,9 @@ Options:
         // }
 
         // Write to lock file
+        if verbose {
+            println!("info {}", "Writing to lock file".yellow());
+        }
         lock_file.save().context("Failed to save lock file")?;
 
         Ok(())
