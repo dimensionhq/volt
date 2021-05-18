@@ -123,7 +123,7 @@ Options:
         let progress_bar = &progress_bar;
 
         for package_name in packages {
-            let add = add.clone();
+            let mut add = add.clone();
             workers.push(async move {
                 add.get_dependencies(package_name.clone(), None)
                     .await
@@ -158,6 +158,7 @@ Options:
             println!("Loaded {} dependencies.", length);
         }
 
+        println!("{:?}", add.total_dependencies);
         let dependencies = Arc::try_unwrap(add.clone().dependencies)
             .map_err(|_| anyhow!("Unable to read dependencies"))?
             .into_inner();
@@ -368,7 +369,7 @@ impl Add {
     // }
 
     async fn get_dependencies(
-        &self,
+        &mut self,
         package_name: String,
         version_req: Option<semver::VersionReq>,
     ) -> Result<()> {
@@ -387,10 +388,28 @@ impl Add {
                 .map(|value| value.to_string())
                 .collect();
 
+            let mut workers = FuturesUnordered::new();
+
             for dep in deps.iter() {
-                let data = Add::fetch_package(dep.as_str(), None).await?;
-                dependencies.push(data);
+                workers.push(async move {
+                    let data = Add::fetch_package(dep.as_str(), None)
+                        .await
+                        .context("Failed to fetch a package from the registry.")?;
+
+                    Result::<(Package, Version), anyhow::Error>::Ok(data)
+                });
             }
+
+            loop {
+                match workers.next().await {
+                    Some(result) => dependencies.push(result?),
+                    None => break,
+                }
+            }
+
+            self.dependencies = Arc::new(Mutex::new(dependencies));
+
+            Ok(())
         } else {
             // Get latest version
             let latest_version = &data["dependencies"]
@@ -413,19 +432,29 @@ impl Add {
                 .map(|value| value.to_string())
                 .collect();
 
+            let mut workers = FuturesUnordered::new();
+
             for dep in deps.iter() {
-                let data = Add::fetch_package(dep.as_str(), None).await?;
-                dependencies.push(data);
+                workers.push(async move {
+                    println!("Getting: {}", dep);
+                    let data = Add::fetch_package(dep.as_str(), None)
+                        .await
+                        .context("Failed to fetch a package from the registry.")?;
+                    println!("Got: {}", dep);
+                    Result::<(Package, Version), anyhow::Error>::Ok(data)
+                });
             }
+
+            loop {
+                match workers.next().await {
+                    Some(result) => dependencies.push(result?),
+                    None => break,
+                }
+            }
+
+            self.dependencies = Arc::new(Mutex::new(dependencies));
+
+            Ok(())
         }
-
-        self.dependencies
-            .lock()
-            .map(|mut deps| {
-                deps.append(&mut dependencies);
-            })
-            .await;
-
-        Ok(())
     }
 }
