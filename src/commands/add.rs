@@ -101,10 +101,8 @@ Options:
         // let package_file = PackageJson::from("package.json");
 
         // Deserializing volt api into struct (temporary)
-        let file_contents = reqwest::get("http://volt-api.b-cdn.net/react.json").await.unwrap().text().await.unwrap();
-        // let file_contents = std::fs::read_to_string(loc).unwrap().text();
-        let data = serde_json::from_str::<VoltResponse>(&file_contents).unwrap();
-
+        let response = reqwest::get("http://volt-api.b-cdn.net/react.json").await.unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e)).text().await.unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+        let data = serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
         println!("data: {:?}", data);
 
         let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
