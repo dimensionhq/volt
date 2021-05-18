@@ -1,0 +1,30 @@
+{
+    "version": "17.0.2",
+    "17.0.2": {
+        "packages": {
+            "react": {
+                "version": "17.0.2",
+                "tarball": "https://registry.npmjs.org/react/-/react-17.0.2.tgz",
+                "sha1": "d0b5cc516d29eb3eee383f75b62864cfb6800037"
+            },
+            "loose-envify": {
+                "version": "1.4.0",
+                "tarball": "https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz",
+                "sha1": "71ee51fa7be4caec1a63839f7e682d8132d30caf",
+                "bin": {
+                    "loose-envify": "cli.js"
+                }
+            },
+            "js-tokens": {
+                "version": "7.0.0",
+                "tarball": "https://registry.npmjs.org/js-tokens/-/js-tokens-7.0.0.tgz",
+                "sha1": "5b847c7f3e16c89dbc90fac34a8be947907a5a72"
+            },
+            "object-assign": {
+                "version": "4.1.1",
+                "tarball": "https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz",
+                "sha1": "2109adc7965887cfc05cbbd442cac8bfbb360863"
+            }
+        }
+    }
+}
