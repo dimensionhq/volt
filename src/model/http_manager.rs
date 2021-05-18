@@ -62,16 +62,3 @@ pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError>
 
     Ok(Some(package))
 }
-
-/// Get all dependencies of a package
-pub async fn get_dependencies(package_name: &str) -> String {
-    // Temporary CDN
-    let resp = chttp::get_async(format!("http://registry.voltpkg.com/{}.json", package_name))
-        .await
-        .map_err(GetPackageError::Request)
-        .unwrap();
-
-    let mut body = resp.into_body();
-    // println!("{}", body.text_async().await.unwrap());
-    body.text_async().await.unwrap()
-}

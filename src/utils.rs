@@ -34,8 +34,7 @@ use tar::Archive;
 use tokio::fs::remove_dir_all;
 
 // Crate Level Imports
-use crate::classes::package::{Package, Version};
-use crate::classes::voltapi::VoltResponse;
+use crate::classes::voltapi::{VoltPackage, VoltResponse};
 
 #[cfg(windows)]
 pub static PROGRESS_CHARS: &str = "=> ";
@@ -90,7 +89,7 @@ impl App {
             volt_dir,
             lock_file_path,
         }
-    }    
+    }
 
     pub fn has_flag(&self, flags: &[&str]) -> bool {
         self.flags
@@ -98,7 +97,7 @@ impl App {
             .any(|flag| flags.iter().any(|search_flag| flag == search_flag))
     }
 
-    pub async fn extract_tarball(&self, file_path: &str, package: &Package) -> Result<()> {
+    pub async fn extract_tarball(&self, file_path: &str, package: &VoltPackage) -> Result<()> {
         // Open tar file
         let tar_file = File::open(file_path).context("Unable to open tar file")?;
         create_dir_all(&self.node_modules_dir)?;
@@ -161,7 +160,6 @@ impl App {
     }
 }
 
-
 // Gets response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
     let response = reqwest::get(format!("http://volt-api.b-cdn.net/{}.json", package_name))
@@ -187,13 +185,13 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
 }
 
 /// downloads tarball file from package
-pub async fn download_tarball(_app: &App, package: &Package, version: &Version) -> Result<String> {
+pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<String> {
     let name = &package
         .name
         .replace("/", "__")
         .replace("@", "")
         .replace(".", "_");
-    let file_name = format!("{}@{}.tgz", name, version.version);
+    let file_name = format!("{}@{}.tgz", name, package.version);
     let temp_dir = temp_dir();
     let path = temp_dir.join(file_name);
     let path_str = path.to_string_lossy().to_string();
@@ -201,12 +199,12 @@ pub async fn download_tarball(_app: &App, package: &Package, version: &Version) 
     // Corrupt tar files may cause issues
     if let Ok(hash) = App::calc_hash(&path) {
         // File exists, make sure it's not corrupted
-        if hash == version.dist.shasum {
+        if hash == package.sha1 {
             return Ok(path_str);
         }
     }
 
-    let tarball = version.dist.tarball.replace("https", "http");
+    let tarball = package.tarball.replace("https", "http");
 
     let mut response = reqwest::get(tarball).await?;
 
