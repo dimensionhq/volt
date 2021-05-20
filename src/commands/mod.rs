@@ -32,11 +32,8 @@ pub mod init;
 pub mod install;
 pub mod remove;
 pub mod deploy;
-<<<<<<< HEAD
 pub mod create;
-=======
 pub mod clone;
->>>>>>> 476f44adcdf271aaff289716ebb7b41a20acd294
 
 #[derive(Debug)]
 pub enum AppCommand {
