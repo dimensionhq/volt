@@ -22,11 +22,12 @@ use std::sync::Arc;
 // Library Imports
 use crate::classes::create_templates::Template;
 use crate::prompt::prompt::Select;
-use crate::templates::{react_app, react_app_ts, next_app, next_app_ts};
+use crate::templates::react_app;
+// use crate::templates::{react_app, react_app_ts, next_app, next_app_ts};
 use anyhow::Result;
-use dialoguer::Input;
 use async_trait::async_trait;
 use colored::Colorize;
+use dialoguer::Input;
 use std::process;
 
 // Crate Level Imports
@@ -85,7 +86,7 @@ Options:
         let args = app.args.clone();
         // println!("{:#?}", args);
         let templates: Vec<String> = Template::options();
-        let mut template: String = String::new();        
+        let mut template: String = String::new();
         let mut app_name: String = String::new();
 
         if args.len() < 1 {
@@ -95,7 +96,7 @@ Options:
                 selected: Some(1),
                 items: templates.clone(),
             };
-    
+
             select.run().unwrap_or_else(|err| {
                 eprintln!(
                     "{}: {}",
@@ -104,18 +105,22 @@ Options:
                 );
                 process::exit(1);
             });
-    
-            template = Template::from_index(select.selected.unwrap()).unwrap().to_string();
+
+            template = Template::from_index(select.selected.unwrap())
+                .unwrap()
+                .to_string();
 
             println!("template: {}", template);
-        }
-        else {
+        } else {
             let _template = &args[0];
             if templates.contains(_template) {
                 template = _template.to_string();
-            }
-            else {
-                println!("{} Template {} doesn't exist!", "error".bright_red(), _template.bright_blue());
+            } else {
+                println!(
+                    "{} Template {} doesn't exist!",
+                    "error".bright_red(),
+                    _template.bright_blue()
+                );
                 process::exit(1);
             }
         }
@@ -124,17 +129,16 @@ Options:
 
         if args.len() < 2 {
             app_name = Input::new()
-            .with_prompt("App name")
-            .with_initial_text("")
-            .default("my-app".into())
-            .interact_text()?;
+                .with_prompt("App name")
+                .with_initial_text("")
+                .default("my-app".into())
+                .interact_text()?;
 
             if app_name == "" {
                 println!("{} Invalid app name!", "error".bright_red());
                 process::exit(1);
             }
-        }
-        else {
+        } else {
             let _app_name = &args[1];
             app_name = _app_name.to_string();
         }

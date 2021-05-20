@@ -96,7 +96,6 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        // let package_file = PackageJson::from("package.json");
         if app.args.len() == 0 {
             println!("{}", Self::help());
             exit(1);
