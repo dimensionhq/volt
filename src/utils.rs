@@ -25,7 +25,7 @@ use std::{
 };
 
 // Library Imports
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
@@ -108,8 +108,7 @@ impl App {
         if node_modules_dep_path.exists() {
             remove_dir_all(&node_modules_dep_path).await?;
         }
-        let volt_dir_file_path = &self.volt_dir
-        .join(
+        let volt_dir_file_path = &self.volt_dir.join(
             package
                 .name
                 .replace("/", "__")
@@ -149,12 +148,18 @@ impl App {
 
         // create_dir_all(&node_modules_dep_path)?;
 
-        println!("host: {}", volt_dir_file_path.as_os_str().to_str().unwrap().to_string());
-        println!("node: {}", node_modules_dep_path
-        .as_os_str()
-        .to_str()
-        .unwrap()
-        .to_string());
+        println!(
+            "host: {}",
+            volt_dir_file_path.as_os_str().to_str().unwrap().to_string()
+        );
+        println!(
+            "node: {}",
+            node_modules_dep_path
+                .as_os_str()
+                .to_str()
+                .unwrap()
+                .to_string()
+        );
 
         create_symlink(
             volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
