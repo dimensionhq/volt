@@ -22,7 +22,9 @@ use std::sync::Arc;
 // Library Imports
 use crate::classes::create_templates::Template;
 use crate::prompt::prompt::Select;
+use crate::templates::{react_app, react_app_ts, next_app, next_app_ts};
 use anyhow::Result;
+use dialoguer::Input;
 use async_trait::async_trait;
 use colored::Colorize;
 use std::process;
@@ -81,29 +83,65 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         let args = app.args.clone();
-        println!("{:#?}", args);
-
+        // println!("{:#?}", args);
         let templates: Vec<String> = Template::options();
+        let mut template: String = String::new();        
+        let mut app_name: String = String::new();
 
-        let select = Select {
-            message: String::from("Template"),
-            paged: true,
-            selected: Some(1),
-            items: templates.clone(),
-        };
+        if args.len() < 1 {
+            let select = Select {
+                message: String::from("Template"),
+                paged: true,
+                selected: Some(1),
+                items: templates.clone(),
+            };
+    
+            select.run().unwrap_or_else(|err| {
+                eprintln!(
+                    "{}: {}",
+                    "error".bright_red().bold(),
+                    err.to_string().bright_yellow()
+                );
+                process::exit(1);
+            });
+    
+            template = Template::from_index(select.selected.unwrap()).unwrap().to_string();
 
-        select.run().unwrap_or_else(|err| {
-            eprintln!(
-                "{}: {}",
-                "error".bright_red().bold(),
-                err.to_string().bright_yellow()
-            );
-            process::exit(1);
-        });
-
-        let template = Template::from_index(select.selected.unwrap()).unwrap();
+            println!("template: {}", template);
+        }
+        else {
+            let _template = &args[0];
+            if templates.contains(_template) {
+                template = _template.to_string();
+            }
+            else {
+                println!("{} Template {} doesn't exist!", "error".bright_red(), _template.bright_blue());
+                process::exit(1);
+            }
+        }
 
         println!("template: {}", template);
+
+        if args.len() < 2 {
+            app_name = Input::new()
+            .with_prompt("App name")
+            .with_initial_text("")
+            .default("my-app".into())
+            .interact_text()?;
+
+            if app_name == "" {
+                println!("{} Invalid app name!", "error".bright_red());
+                process::exit(1);
+            }
+        }
+        else {
+            let _app_name = &args[1];
+            app_name = _app_name.to_string();
+        }
+
+        if template == "react-app" {
+            react_app::create_react_app(app_name);
+        }
 
         Ok(())
     }

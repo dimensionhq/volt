@@ -23,6 +23,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use std::process;
 
 // Crate Level Imports
 use crate::utils::App;
@@ -73,6 +74,7 @@ Options:
         let args: Vec<String> = app.args.clone();
         if args.len() < 1 {
             println!("{} expected commit name", "error".bright_red());
+            process::exit(1);
         }
         else {
             let commit_msg = &args[0];
