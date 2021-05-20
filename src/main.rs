@@ -24,6 +24,7 @@ mod commands;
 mod junction;
 mod model;
 mod prompt;
+mod templates;
 mod utils;
 
 // Library Imports
