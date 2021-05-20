@@ -18,3 +18,4 @@
 pub mod init_data;
 pub mod package;
 pub mod voltapi;
+pub mod create_templates;

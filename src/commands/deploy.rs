@@ -76,7 +76,6 @@ Options:
         }
         else {
             let commit_msg = &args[0];
-            println!("{}", commit_msg);        
             std::env::set_current_dir(std::env::current_dir()?)?;
             // println!("current dir: {:?}", std::env::current_dir()?);
             std::process::Command::new("git").args(&["add", "."]).output().expect("Failed to add");
