@@ -18,14 +18,12 @@ generated[parent_version]['packages'][name]['name'] = name
 generated[parent_version]['packages'][name]['version'] = version
 generated[parent_version]['packages'][name]['tarball'] = response['versions'][version]['dist']['tarball']
 generated[parent_version]['packages'][name]['sha1'] = response['versions'][version]['dist']['shasum']
-
-
 try:
-    response['versions'][version]['dependencies']
+    generated[parent_version]['packages'][name]['dependencies'] = list(
+        response['versions'][version]['dependencies'].keys())
 except KeyError:
     with open(rf'C:\Users\xtrem\Desktop\volt\api\server\public\{name}.json', 'w+') as f:
-        f.write(json.dumps(generated, indent=4))
-
+        f.write(json.dumps(generated))
     exit()
 
 
@@ -85,6 +83,8 @@ def add_dependencies_recursive(package_name: str, generated: dict, version: str)
     generated[parent_version]['packages'][package_name]['version'] = version
     generated[parent_version]['packages'][package_name]['tarball'] = response['versions'][version]['dist']['tarball']
     generated[parent_version]['packages'][package_name]['sha1'] = response['versions'][version]['dist']['shasum']
+    generated[parent_version]['packages'][package_name]['dependencies'] = list(
+        response['versions'][version]['dependencies'].keys())
 
     if 'bin' in list(response['versions'][version].keys()):
         generated[parent_version]['packages'][package_name]['bin'] = response['versions'][version]['bin']
@@ -155,6 +155,12 @@ for dependency, version in response['versions'][version]['dependencies'].items()
     generated[parent_version]['packages'][dependency]['tarball'] = response['versions'][version]['dist']['tarball']
     generated[parent_version]['packages'][dependency]['sha1'] = response['versions'][version]['dist']['shasum']
 
+    try:
+        generated[parent_version]['packages'][dependency]['dependencies'] = list(
+            response['versions'][version]['dependencies'].keys())
+    except:
+        generated[parent_version]['packages'][dependency]['dependencies'] = []
+
     if 'bin' in list(response['versions'][version].keys()):
         generated[parent_version]['packages'][dependency]['bin'] = response['versions'][version]['bin']
 
@@ -166,4 +172,4 @@ for dependency, version in response['versions'][version]['dependencies'].items()
         pass
 
 with open(rf'C:\Users\xtrem\Desktop\volt\api\server\public\{name}.json', 'w+') as f:
-    f.write(json.dumps(generated, indent=4))
+    f.write(json.dumps(generated))
