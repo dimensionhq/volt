@@ -50,7 +50,10 @@ Commands:
   {} {} - Install all dependencies for a project.
   {} {} - Interactively create or update a package.json file for a project.
   {} {} - Add a dependency to a project.
-  {} {} - Remove a dependency from the package.json file for a project."#,
+  {} {} - Remove a dependency from the package.json file for a project.
+  {} {} - Push changes to a github repository the easy way.
+  {} {} - Clone a github repository and get setup with all required dependencies.
+  "#,
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
             "[commands]".bright_purple(),
@@ -62,7 +65,11 @@ Commands:
             "*".bright_magenta().bold(),
             "add".bright_blue(),
             "*".bright_magenta().bold(),
-            "remove".bright_blue()
+            "remove".bright_blue(),
+            "*".bright_magenta().bold(),
+            "deploy".bright_blue(),
+            "*".bright_magenta().bold(),
+            "clone".bright_blue(),
         )
     }
 
