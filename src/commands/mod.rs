@@ -32,6 +32,7 @@ pub mod init;
 pub mod install;
 pub mod remove;
 pub mod deploy;
+pub mod clone;
 
 #[derive(Debug)]
 pub enum AppCommand {
