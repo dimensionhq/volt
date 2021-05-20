@@ -107,6 +107,7 @@ fn set_privilege(rdwr: bool) -> io::Result<()> {
     }
 }
 
+#[allow(unused)]
 pub fn get_reparse_data_point<'a>(
     handle: HANDLE,
     data: &'a mut [u8],

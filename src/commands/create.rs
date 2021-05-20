@@ -24,8 +24,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use std::process;
-use crate::prompt::prompt::{Confirm, Input, Select};
-use crate::classes::create_templates::{Template, CreateTemplate};
+use crate::prompt::prompt::{Select};
+use crate::classes::create_templates::{Template};
 
 // Crate Level Imports
 use crate::utils::App;
@@ -81,27 +81,40 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         let args = app.args.clone();
-        println!("{:#?}", args);       
-
         let templates: Vec<String> = Template::options();
+        let mut template: String = String::new();        
 
-        let select = Select {
-            message: String::from("Template"),
-            paged: true,
-            selected: Some(1),
-            items: templates.clone(),
-        };
+        if args.len() < 1 {
+            let select = Select {
+                message: String::from("Template"),
+                paged: true,
+                selected: Some(1),
+                items: templates.clone(),
+            };
+    
+            select.run().unwrap_or_else(|err| {
+                eprintln!(
+                    "{}: {}",
+                    "error".bright_red().bold(),
+                    err.to_string().bright_yellow()
+                );
+                process::exit(1);
+            });
+    
+            template = Template::from_index(select.selected.unwrap()).unwrap().to_string();
 
-        select.run().unwrap_or_else(|err| {
-            eprintln!(
-                "{}: {}",
-                "error".bright_red().bold(),
-                err.to_string().bright_yellow()
-            );
-            process::exit(1);
-        });
-
-        let template = Template::from_index(select.selected.unwrap()).unwrap();
+            println!("template: {}", template);
+        }
+        else {
+            let _template = &args[0];
+            if templates.contains(_template) {
+                template = _template.to_string();
+            }
+            else {
+                println!("{} Template {} doesn't exist!", "error".bright_red(), _template.bright_blue());
+                process::exit(1);
+            }
+        }
 
         println!("template: {}", template);
 
