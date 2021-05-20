@@ -24,6 +24,7 @@ use crate::classes::create_templates::Template;
 use crate::prompt::prompt::Select;
 use crate::templates::{react_app, react_app_ts, next_app, next_app_ts};
 use anyhow::Result;
+use dialoguer::Input;
 use async_trait::async_trait;
 use colored::Colorize;
 use std::process;
@@ -85,6 +86,7 @@ Options:
         // println!("{:#?}", args);
         let templates: Vec<String> = Template::options();
         let mut template: String = String::new();        
+        let mut app_name: String = String::new();
 
         if args.len() < 1 {
             let select = Select {
@@ -120,8 +122,25 @@ Options:
 
         println!("template: {}", template);
 
+        if args.len() < 2 {
+            app_name = Input::new()
+            .with_prompt("App name")
+            .with_initial_text("")
+            .default("my-app".into())
+            .interact_text()?;
+
+            if app_name == "" {
+                println!("{} Invalid app name!", "error".bright_red());
+                process::exit(1);
+            }
+        }
+        else {
+            let _app_name = &args[1];
+            app_name = _app_name.to_string();
+        }
+
         if template == "react-app" {
-            react_app::create_react_app();
+            react_app::create_react_app(app_name);
         }
 
         Ok(())
