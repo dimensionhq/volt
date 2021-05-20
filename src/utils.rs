@@ -108,7 +108,8 @@ impl App {
         if node_modules_dep_path.exists() {
             remove_dir_all(&node_modules_dep_path).await?;
         }
-        let volt_dir_file_path = self.volt_dir.join(
+        let volt_dir_file_path = &self.volt_dir
+        .join(
             package
                 .name
                 .replace("/", "__")
@@ -121,14 +122,14 @@ impl App {
         let mut archive = Archive::new(gz_decoder);
 
         archive
-            .unpack(&volt_dir_file_path)
+            .unpack(&self.volt_dir)
             .context("Unable to unpack dependency")?;
 
         std::fs::rename(
-            format!(r"{}\package", &volt_dir_file_path.to_str().unwrap()),
+            format!(r"{}\package", &self.volt_dir.to_str().unwrap()),
             format!(
                 r"{}\{}",
-                &volt_dir_file_path.to_str().unwrap(),
+                &self.volt_dir.to_str().unwrap(),
                 package
                     .name
                     .replace("/", "__")
@@ -139,16 +140,16 @@ impl App {
         .context("Failed to unpack dependency folder")
         .unwrap();
 
-        let options = fs_extra::dir::CopyOptions::new();
+        // let options = fs_extra::dir::CopyOptions::new();
 
-        let files = std::fs::read_dir(&volt_dir_file_path)
-            .unwrap()
-            .into_iter()
-            .map(|v| v.unwrap().file_name().to_str().unwrap().to_string())
-            .collect::<Vec<String>>();
+        // let files = std::fs::read_dir(&volt_dir_file_path)
+        //     .unwrap()
+        //     .into_iter()
+        //     .map(|v| v.unwrap().file_name().to_str().unwrap().to_string())
+        //     .collect::<Vec<String>>();
 
-        fs_extra::move_items(files.as_slice(), &volt_dir_file_path, &options)
-            .context("Failed to recursively move files")?;
+        // fs_extra::move_items(files.as_slice(), &node_modules_dep_path, &options)
+        //     .context("Failed to recursively move files")?;
 
         let host_dep_path = {
             let child = volt_dir_file_path
@@ -160,14 +161,26 @@ impl App {
             child.path()
         };
 
+        // println!("host: {:?}", host_dep_path);
+
         if let Some(parent) = node_modules_dep_path.parent() {
             if !parent.exists() {
+                println!("parent: {:?}", parent);
                 create_dir_all(&parent)?;
             }
         }
 
+        // create_dir_all(&node_modules_dep_path)?;
+
+        println!("host: {}", volt_dir_file_path.as_os_str().to_str().unwrap().to_string());
+        println!("node: {}", node_modules_dep_path
+        .as_os_str()
+        .to_str()
+        .unwrap()
+        .to_string());
+
         create_symlink(
-            host_dep_path.as_os_str().to_str().unwrap().to_string(),
+            volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
             node_modules_dep_path
                 .as_os_str()
                 .to_str()
