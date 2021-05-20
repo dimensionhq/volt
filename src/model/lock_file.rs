@@ -157,8 +157,6 @@ impl LockFile {
         let lock_file = File::create(&self.path).map_err(LockFileError::IO)?;
         let writer = BufWriter::new(lock_file);
 
-        println!("writing lock file: {:?}", self.dependencies);
-
         serde_json::to_writer_pretty(writer, &self.dependencies).map_err(LockFileError::Encode)
     }
 
