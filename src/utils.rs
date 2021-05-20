@@ -120,42 +120,48 @@ impl App {
         let gz_decoder = GzDecoder::new(tar_file);
         let mut archive = Archive::new(gz_decoder);
 
-        archive
+        let loc = format!(r"{}\{}", &self.volt_dir.to_str().unwrap(), package.name);
+
+        let path = Path::new(&loc);
+
+        if !path.exists() {
+            archive
             .unpack(&self.volt_dir)
             .context("Unable to unpack dependency")?;
 
-        std::fs::rename(
-            format!(r"{}\package", &self.volt_dir.to_str().unwrap()),
-            format!(
-                r"{}\{}",
-                &self.volt_dir.to_str().unwrap(),
-                package
-                    .name
-                    .replace("/", "__")
-                    .replace("@", "")
-                    .replace(".", "_"),
-            ),
-        )
-        .context("Failed to unpack dependency folder")
-        .unwrap();
+            std::fs::rename(
+                format!(r"{}\package", &self.volt_dir.to_str().unwrap()),
+                format!(
+                    r"{}\{}",
+                    &self.volt_dir.to_str().unwrap(),
+                    package
+                        .name
+                        .replace("/", "__")
+                        .replace("@", "")
+                        .replace(".", "_"),
+                ),
+            )
+            .context("Failed to unpack dependency folder")
+            .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
 
-        if let Some(parent) = node_modules_dep_path.parent() {
-            if !parent.exists() {
-                println!("parent: {:?}", parent);
-                create_dir_all(&parent)?;
+            if let Some(parent) = node_modules_dep_path.parent() {
+                if !parent.exists() {
+                    println!("parent: {:?}", parent);
+                    create_dir_all(&parent)?;
+                }
             }
+
+            // create_dir_all(&node_modules_dep_path)?;
+
+            create_symlink(
+                volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
+                node_modules_dep_path
+                    .as_os_str()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )?;
         }
-
-        // create_dir_all(&node_modules_dep_path)?;
-
-        create_symlink(
-            volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
-            node_modules_dep_path
-                .as_os_str()
-                .to_str()
-                .unwrap()
-                .to_string(),
-        )?;
 
         Ok(())
     }
