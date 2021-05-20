@@ -29,11 +29,11 @@ use crate::VERSION;
 // Super Imports
 use super::Command;
 
-struct Clone {}
+pub struct Clone {}
 
 #[async_trait]
 impl Command for Clone {
-    /// Display a help menu for the `volt add` command.
+    /// Display a help menu for the `volt clone` command.
     fn help() -> String {
         format!(
             r#"volt {}
@@ -56,9 +56,26 @@ Options:
         )
     }
 
+    /// Execute the `volt clone` command
+    ///
+    /// Clone and setup a repository from Github
+    /// ## Arguments
+    /// * `app` - Instance of the command (`Arc<App>`)
+    /// ## Examples
+    /// ```
+    /// // Clone the react repository (https://github.com/facebook/react)
+    /// // .exec() is an async call so you need to await it
+    /// Add.exec(app).await;
+    /// ```
+    /// ## Returns
+    /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        let exit_code = process::Command::new("git")
-            .arg(format!("clone {} --depth=1", app.args[2]).as_str())
+        let args: Vec<String> = app.args.clone();
+        if args.len() < 1 {
+            println!("{} expected repository url", "error".bright_red());
+        }
+        let exit_code = process::Command::new("cmd")
+            .arg(format!("/C git clone {} --depth=1", args[0]).as_str())
             .status()
             .unwrap();
 
