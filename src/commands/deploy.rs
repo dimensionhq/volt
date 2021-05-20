@@ -74,10 +74,10 @@ Options:
         let commit_msg = &args[0];
         println!("{}", commit_msg);        
         std::env::set_current_dir(std::env::current_dir()?)?;
-        println!("current dir: {:?}", std::env::current_dir());
+        println!("current dir: {:?}", std::env::current_dir()?);
         std::process::Command::new("git").args(&["add", "."]).output().expect("Failed to add");
         std::process::Command::new("git").args(&["commit", "-m", commit_msg.as_str()]).output().expect("Failed to commit");
-        // std::process::Command::new("git").args(&["push"]).output().expect("Failed to push");
+        std::process::Command::new("git").args(&["push"]).output().expect("Failed to push");
         Ok(())
     }
 }
