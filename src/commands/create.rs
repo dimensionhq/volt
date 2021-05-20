@@ -22,6 +22,7 @@ use std::sync::Arc;
 // Library Imports
 use crate::classes::create_templates::Template;
 use crate::prompt::prompt::Select;
+use crate::templates::{react_app, react_app_ts, next_app, next_app_ts};
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
@@ -118,6 +119,10 @@ Options:
         }
 
         println!("template: {}", template);
+
+        if template == "react-app" {
+            react_app::create_react_app();
+        }
 
         Ok(())
     }
