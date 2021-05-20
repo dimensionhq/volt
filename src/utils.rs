@@ -140,29 +140,6 @@ impl App {
         .context("Failed to unpack dependency folder")
         .unwrap();
 
-        // let options = fs_extra::dir::CopyOptions::new();
-
-        // let files = std::fs::read_dir(&volt_dir_file_path)
-        //     .unwrap()
-        //     .into_iter()
-        //     .map(|v| v.unwrap().file_name().to_str().unwrap().to_string())
-        //     .collect::<Vec<String>>();
-
-        // fs_extra::move_items(files.as_slice(), &node_modules_dep_path, &options)
-        //     .context("Failed to recursively move files")?;
-
-        let host_dep_path = {
-            let child = volt_dir_file_path
-                .read_dir()
-                .context("Unable to read unpacked dependency directory")?
-                .next()
-                .ok_or_else(|| anyhow!("No directories found in unpacked dependency"))?
-                .context("Cannot read directory in unpacked dependency")?;
-            child.path()
-        };
-
-        // println!("host: {:?}", host_dep_path);
-
         if let Some(parent) = node_modules_dep_path.parent() {
             if !parent.exists() {
                 println!("parent: {:?}", parent);

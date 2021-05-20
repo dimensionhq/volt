@@ -31,6 +31,7 @@ pub mod help;
 pub mod init;
 pub mod install;
 pub mod remove;
+pub mod deploy;
 
 #[derive(Debug)]
 pub enum AppCommand {
@@ -39,6 +40,7 @@ pub enum AppCommand {
     Init,
     Install,
     Remove,
+    Deploy,
 }
 
 impl FromStr for AppCommand {
@@ -51,6 +53,7 @@ impl FromStr for AppCommand {
             "init" => Ok(Self::Init),
             "install" => Ok(Self::Install),
             "remove" => Ok(Self::Remove),
+            "deploy" => Ok(Self::Deploy),
             _ => Err(()),
         }
     }
@@ -71,6 +74,7 @@ impl AppCommand {
             Self::Init => init::Init::help(),
             Self::Install => install::Install::help(),
             Self::Remove => remove::Remove::help(),
+            Self::Deploy => deploy::Deploy::help(),
         }
     }
 
@@ -82,6 +86,7 @@ impl AppCommand {
             Self::Init => init::Init::exec(app).await,
             Self::Install => install::Install::exec(app).await,
             Self::Remove => remove::Remove::exec(app).await,
+            Self::Deploy => deploy::Deploy::exec(app).await,
         }
     }
 }

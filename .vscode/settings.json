@@ -1,3 +1,5 @@
 {
-    "rust-analyzer.inlayHints.enable": false
+    "rust-analyzer.inlayHints.enable": false,
+    "discord.lowerDetailsEditing": "Workspace: volt",
+    "discord.lowerDetailsDebugging": "Debugging: volt"
 }
