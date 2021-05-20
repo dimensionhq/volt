@@ -23,6 +23,9 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use std::process;
+use crate::prompt::prompt::{Confirm, Input, Select};
+use crate::classes::create_templates::{Template, CreateTemplate};
 
 // Crate Level Imports
 use crate::utils::App;
@@ -78,7 +81,30 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         let args = app.args.clone();
-        println!("{:#?}", args);
+        println!("{:#?}", args);       
+
+        let templates: Vec<String> = Template::options();
+
+        let select = Select {
+            message: String::from("Template"),
+            paged: true,
+            selected: Some(1),
+            items: templates.clone(),
+        };
+
+        select.run().unwrap_or_else(|err| {
+            eprintln!(
+                "{}: {}",
+                "error".bright_red().bold(),
+                err.to_string().bright_yellow()
+            );
+            process::exit(1);
+        });
+
+        let template = Template::from_index(select.selected.unwrap()).unwrap();
+
+        println!("template: {}", template);
+
         Ok(())
     }
 }
