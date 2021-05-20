@@ -103,105 +103,108 @@ impl App {
         package: &VoltPackage,
         pkg_name: String,
     ) -> Result<()> {
-        let loc = format!(
-            r"{}\{}\node_modules",
-            &self.volt_dir.to_str().unwrap(),
-            pkg_name
-        );
-        create_dir_all(&loc)?;
-
         // Open tar file
         let tar_file = File::open(file_path).context("Unable to open tar file")?;
         create_dir_all(&self.node_modules_dir)?;
+        create_dir_all(&self.volt_dir.join(format!(
+            r"{}_symlink\node_modules",
+            pkg_name
+                .replace("/", "__")
+                .replace("@", "")
+                .replace(".", "_"),
+        )))?;
 
-        // Extract tar file
-        let gz_decoder = GzDecoder::new(&tar_file);
-        let mut archive = Archive::new(gz_decoder);
+        // Delete package from node_modules
+        let node_modules_dep_path = self.node_modules_dir.join(&package.name);
+        let volt_dir_symlink_path = &self.volt_dir.join(format!(
+            r"{}_symlink\node_modules\{}",
+            &pkg_name
+                .replace("/", "__")
+                .replace("@", "")
+                .replace(".", "_"),
+            &package
+                .name
+                .replace("/", "__")
+                .replace("@", "")
+                .replace(".", "_"),
+        ));
 
-        archive
-            .unpack(&loc)
-            .context("Unable to unpack dependency")?;
+        if volt_dir_symlink_path.exists() {
+            remove_dir_all(&volt_dir_symlink_path).await?;
+        }
 
-        std::fs::rename(
-            format!(
-                r"{}\{}\node_modules\package",
-                &self.volt_dir.to_str().unwrap(),
-                pkg_name
-            ),
-            format!(
-                r"{}\node_modules\{}",
-                &self.volt_dir.to_str().unwrap(),
-                package
-                    .name
-                    .replace("/", "__")
-                    .replace("@", "")
-                    .replace(".", "_"),
-            ),
-        )
-        .context("Failed to unpack dependency folder")
-        .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+        if node_modules_dep_path.exists() {
+            remove_dir_all(&node_modules_dep_path).await?;
+        }
 
-        if pkg_name != package.name {
-            // Delete package from node_modules
-            let node_modules_dep_path = self.node_modules_dir.join(&package.name);
+        let volt_dir_file_path = &self.volt_dir.join(
+            package
+                .name
+                .replace("/", "__")
+                .replace("@", "")
+                .replace(".", "_"),
+        );
 
-            if node_modules_dep_path.exists() {
-                remove_dir_all(&node_modules_dep_path).await?;
-            }
+        let loc = format!(r"{}\{}", &self.volt_dir.to_str().unwrap(), package.name);
 
-            let volt_dir_file_path = &self.volt_dir.join(
-                package
-                    .name
-                    .replace("/", "__")
-                    .replace("@", "")
-                    .replace(".", "_"),
-            );
+        let path = Path::new(&loc);
 
-            let loc = format!(r"{}\{}", &self.volt_dir.to_str().unwrap(), package.name);
+        if !path.exists() {
+            // Extract tar file
+            let gz_decoder = GzDecoder::new(tar_file);
+            let mut archive = Archive::new(gz_decoder);
+            archive
+                .unpack(&self.volt_dir)
+                .context("Unable to unpack dependency")?;
 
-            let path = Path::new(&loc);
+            std::fs::rename(
+                format!(r"{}\package", &self.volt_dir.to_str().unwrap()),
+                format!(
+                    r"{}\{}",
+                    &self.volt_dir.to_str().unwrap(),
+                    package
+                        .name
+                        .replace("/", "__")
+                        .replace("@", "")
+                        .replace(".", "_"),
+                ),
+            )
+            .context("Failed to unpack dependency folder")
+            .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
 
-            if !path.exists() {
-                // Extract tar file
-                let gz_decoder = GzDecoder::new(tar_file);
-                let mut archive = Archive::new(gz_decoder);
-                archive
-                    .unpack(&self.volt_dir)
-                    .context("Unable to unpack dependency")?;
-
-                std::fs::rename(
-                    format!(r"{}\package", &self.volt_dir.to_str().unwrap()),
-                    format!(
-                        r"{}\{}",
-                        &self.volt_dir.to_str().unwrap(),
-                        package
-                            .name
-                            .replace("/", "__")
-                            .replace("@", "")
-                            .replace(".", "_"),
-                    ),
-                )
-                .context("Failed to unpack dependency folder")
-                .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
-
-                if let Some(parent) = node_modules_dep_path.parent() {
-                    if !parent.exists() {
-                        println!("parent: {:?}", parent);
-                        create_dir_all(&parent)?;
-                    }
+            if let Some(parent) = volt_dir_symlink_path.parent() {
+                if !parent.exists() {
+                    create_dir_all(&parent)?;
                 }
-
-                // create_dir_all(&node_modules_dep_path)?;
-
-                create_symlink(
-                    volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
-                    node_modules_dep_path
-                        .as_os_str()
-                        .to_str()
-                        .unwrap()
-                        .to_string(),
-                )?;
             }
+
+            if let Some(parent) = node_modules_dep_path.parent() {
+                if !parent.exists() {
+                    create_dir_all(&parent)?;
+                }
+            }
+
+            create_symlink(
+                volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
+                volt_dir_symlink_path
+                    .as_os_str()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )?;
+
+            create_symlink(
+                volt_dir_symlink_path
+                    .as_os_str()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                node_modules_dep_path
+                    .as_os_str()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )?;
         }
 
         Ok(())
