@@ -26,11 +26,6 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use std::process;
-<<<<<<< HEAD
-use crate::prompt::prompt::{Select};
-use crate::classes::create_templates::{Template};
-=======
->>>>>>> da180f4e55f551a0aca57e6df261ae5252d97161
 
 // Crate Level Imports
 use crate::utils::App;
@@ -86,11 +81,7 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         let args = app.args.clone();
-<<<<<<< HEAD
-=======
-        println!("{:#?}", args);
-
->>>>>>> da180f4e55f551a0aca57e6df261ae5252d97161
+        // println!("{:#?}", args);
         let templates: Vec<String> = Template::options();
         let mut template: String = String::new();        
 
