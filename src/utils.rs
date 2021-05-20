@@ -119,9 +119,37 @@ impl App {
         // Extract tar file
         let gz_decoder = GzDecoder::new(tar_file);
         let mut archive = Archive::new(gz_decoder);
+
         archive
             .unpack(&volt_dir_file_path)
             .context("Unable to unpack dependency")?;
+
+        std::fs::rename(
+            format!(r"{}\package", &volt_dir_file_path.to_str().unwrap()),
+            format!(
+                r"{}\{}",
+                &volt_dir_file_path.to_str().unwrap(),
+                package
+                    .name
+                    .replace("/", "__")
+                    .replace("@", "")
+                    .replace(".", "_"),
+            ),
+        )
+        .context("Failed to unpack dependency folder")
+        .unwrap();
+
+        let options = fs_extra::dir::CopyOptions::new();
+
+        let files = std::fs::read_dir(&volt_dir_file_path)
+            .unwrap()
+            .into_iter()
+            .map(|v| v.unwrap().file_name().to_str().unwrap().to_string())
+            .collect::<Vec<String>>();
+
+        fs_extra::move_items(files.as_slice(), &volt_dir_file_path, &options)
+            .context("Failed to recursively move files")?;
+
         let host_dep_path = {
             let child = volt_dir_file_path
                 .read_dir()
