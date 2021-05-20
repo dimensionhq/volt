@@ -27,12 +27,12 @@ use crate::utils::App;
 
 // Modules
 pub mod add;
+pub mod clone;
+pub mod deploy;
 pub mod help;
 pub mod init;
 pub mod install;
 pub mod remove;
-pub mod deploy;
-pub mod clone;
 
 #[derive(Debug)]
 pub enum AppCommand {
@@ -42,6 +42,7 @@ pub enum AppCommand {
     Install,
     Remove,
     Deploy,
+    Clone,
 }
 
 impl FromStr for AppCommand {
@@ -55,6 +56,7 @@ impl FromStr for AppCommand {
             "install" => Ok(Self::Install),
             "remove" => Ok(Self::Remove),
             "deploy" => Ok(Self::Deploy),
+            "clone" => Ok(Self::Clone),
             _ => Err(()),
         }
     }
@@ -76,6 +78,7 @@ impl AppCommand {
             Self::Install => install::Install::help(),
             Self::Remove => remove::Remove::help(),
             Self::Deploy => deploy::Deploy::help(),
+            Self::Clone => clone::Clone::help(),
         }
     }
 
@@ -88,6 +91,7 @@ impl AppCommand {
             Self::Install => install::Install::exec(app).await,
             Self::Remove => remove::Remove::exec(app).await,
             Self::Deploy => deploy::Deploy::exec(app).await,
+            Self::Clone => clone::Clone::exec(app).await,
         }
     }
 }
