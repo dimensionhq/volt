@@ -217,7 +217,7 @@ impl Add {
 
         let tarball_path = download_tarball(&app, &package).await?;
 
-        app.extract_tarball(&tarball_path, &package)
+        app.extract_tarball(&tarball_path, &package, app.args[0].to_string())
             .await
             .with_context(|| {
                 format!("Unable to extract tarball for package '{}'", &package.name)
