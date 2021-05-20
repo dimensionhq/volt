@@ -148,19 +148,6 @@ impl App {
 
         // create_dir_all(&node_modules_dep_path)?;
 
-        println!(
-            "host: {}",
-            volt_dir_file_path.as_os_str().to_str().unwrap().to_string()
-        );
-        println!(
-            "node: {}",
-            node_modules_dep_path
-                .as_os_str()
-                .to_str()
-                .unwrap()
-                .to_string()
-        );
-
         create_symlink(
             volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
             node_modules_dep_path
