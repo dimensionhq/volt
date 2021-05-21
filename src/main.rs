@@ -20,6 +20,7 @@ extern crate lazy_static;
 // Modules
 mod classes;
 mod commands;
+mod io;
 #[cfg(windows)]
 mod junction;
 mod model;
