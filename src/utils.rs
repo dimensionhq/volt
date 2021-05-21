@@ -132,21 +132,37 @@ impl App {
                 .unpack(&self.volt_dir)
                 .context("Unable to unpack dependency")?;
 
-            std::fs::rename(
-                format!(r"{}\package", &self.volt_dir.to_str().unwrap()),
-                format!(
-                    r"{}\{}",
-                    &self.volt_dir.to_str().unwrap(),
-                    package
-                        .name
-                        .replace("/", "__")
-                        .replace("@", "")
-                        .replace(".", "_"),
-                ),
-            )
-            .context("Failed to unpack dependency folder")
-            .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
-
+            if cfg!(windows) {
+                std::fs::rename(
+                    format!(r"{}\package", &self.volt_dir.to_str().unwrap()),
+                    format!(
+                        r"{}\{}",
+                        &self.volt_dir.to_str().unwrap(),
+                        package
+                            .name
+                            .replace("/", "__")
+                            .replace("@", "")
+                            .replace(".", "_"),
+                    ),
+                )
+                .context("Failed to unpack dependency folder")
+                .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+            } else {
+                std::fs::rename(
+                    format!(r"{}/package", &self.volt_dir.to_str().unwrap()),
+                    format!(
+                        r"{}/{}",
+                        &self.volt_dir.to_str().unwrap(),
+                        package
+                            .name
+                            .replace("/", "__")
+                            .replace("@", "")
+                            .replace(".", "_"),
+                    ),
+                )
+                .context("Failed to unpack dependency folder")
+                .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+            }
             if let Some(parent) = node_modules_dep_path.parent() {
                 if !parent.exists() {
                     create_dir_all(&parent)?;
@@ -372,7 +388,12 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
     if !Path::new(&temp_dir.join("volt")).exists() {
         std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
     }
-    let path = temp_dir.join(format!(r"volt\{}", file_name));
+    let mut path;
+    if cfg!(windows) {
+        path = temp_dir.join(format!(r"volt\{}", file_name));
+    } else {
+        path = temp_dir.join(format!(r"volt/{}", file_name));
+    }
     let path_str = path.to_string_lossy().to_string();
 
     // Corrupt tar files may cause issues
