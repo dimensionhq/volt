@@ -19,5 +19,6 @@ pub struct VoltPackage {
     pub version: String,
     pub tarball: String,
     pub sha1: String,
+    pub dependencies: Option<Vec<String>>,
     pub bin: Option<HashMap<String, String>>,
 }
