@@ -389,3 +389,28 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> Result<()> {
     std::os::unix::fs::symlink(original, link).context("Unable to symlink directory")
 }
+
+#[cfg(windows)]
+pub fn generate_windows_binary(package: &VoltPackage) {
+    if package.bin.is_some() {
+        let bin = package.clone().bin.unwrap();
+        let k = bin.keys().next().unwrap();
+        let v = bin.values().next().unwrap();
+
+        let command = format!(
+            r#"
+@IF EXIST "%~dp0\node.exe" (
+    "%~dp0\node.exe"  "%~dp0\..\{}\{}" %*
+) ELSE (
+    @SETLOCAL
+    @SET PATHEXT=%PATHEXT:;.JS;=;%
+    node  "%~dp0\..\{}\{}" %*
+)"#,
+            k, v, k, v
+        );
+        println!("{}", command);
+
+        let mut file = File::create(format!(r"node_modules\.bin\{}.cmd", k)).unwrap();
+        //TODO: Move bin file to bin directory
+    }
+}
