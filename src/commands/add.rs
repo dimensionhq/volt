@@ -147,7 +147,7 @@ Options:
 
         let mut workers = FuturesUnordered::new();
 
-        for dep in dependencies {
+        for dep in dependencies.clone() {
             let app = app.clone();
             workers.push(async move { Add::install_extract_package(app, &dep).await });
         }
@@ -184,6 +184,20 @@ Options:
 
                     None => break,
                 }
+            }
+        }
+
+        for dep in dependencies {
+            if dep.name == app.args[0].to_string() {
+                let package: VoltPackage = dep;
+                let user_profile = std::env::var("USERPROFILE")?;
+                let current_dep_dir =
+                    format!(r"{}\.volt\{}", user_profile, app.args[0].to_string());
+                utils::create_dep_symlinks(
+                    current_dep_dir.as_str(),
+                    current_version.packages.clone(),
+                )
+                .await?;
             }
         }
 
