@@ -144,7 +144,7 @@ Options:
         }
 
         if template == "react-app" {
-            react_app::create_react_app(app_name);
+            react_app::create_react_app(app_name).await;
         }
 
         Ok(())
