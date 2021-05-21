@@ -253,10 +253,10 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
         .replace(".", "_");
     let file_name = format!("{}@{}.tgz", name, package.version);
     let temp_dir = temp_dir();
-    if !Path::new(&temp_dir.join(r"\volt")).exists() {
-        std::fs::create_dir(Path::new(&temp_dir.join(r"\volt")))?;
+    if !Path::new(&temp_dir.join("volt")).exists() {
+        std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
     }
-    let path = temp_dir.join(format!(r"\volt\{}", file_name));
+    let path = temp_dir.join(format!(r"volt\{}", file_name));
     let path_str = path.to_string_lossy().to_string();
 
     // Corrupt tar files may cause issues
