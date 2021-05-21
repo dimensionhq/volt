@@ -55,7 +55,7 @@ def get_cleaned_version(unclean_version, data):
                     patch_version = '0'
 
                 split2 = v.split('.')[2]
-
+                print(v)
                 if not re.findall(r'[a-z]', v) and int(split2) > int(patch_version):
                     patch_version = split2
 
@@ -123,9 +123,9 @@ if 'bin' in list(main_response['versions'][main_version].keys()):
     generated[main_version]['packages'][package]['bin'] = main_response['versions'][main_version]['bin']
 
 for main_dependency, version in main_response['versions'][main_version]['dependencies'].items():
+    print('Adding: ', main_dependency)
     get_dependencies_recursive(
         generated, main_dependency, version, main_version)
-    print('Added: ', main_dependency)
 
 with open(rf'public\{package}.json', 'w+') as f:
     f.write(json.dumps(generated))
