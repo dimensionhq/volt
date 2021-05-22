@@ -33,8 +33,8 @@ pub mod deploy;
 pub mod help;
 pub mod init;
 pub mod install;
+pub mod migrate;
 pub mod remove;
-
 #[derive(Debug)]
 pub enum AppCommand {
     Add,
@@ -45,6 +45,7 @@ pub enum AppCommand {
     Deploy,
     Clone,
     Create,
+    Migrate,
 }
 
 impl FromStr for AppCommand {
@@ -60,6 +61,7 @@ impl FromStr for AppCommand {
             "deploy" => Ok(Self::Deploy),
             "clone" => Ok(Self::Clone),
             "create" => Ok(Self::Create),
+            "migrate" => Ok(Self::Migrate),
             _ => Err(()),
         }
     }
@@ -83,6 +85,7 @@ impl AppCommand {
             Self::Deploy => deploy::Deploy::help(),
             Self::Clone => clone::Clone::help(),
             Self::Create => create::Create::help(),
+            Self::Migrate => migrate::Migrate::help(),
         }
     }
 
@@ -97,6 +100,7 @@ impl AppCommand {
             Self::Deploy => deploy::Deploy::exec(app).await,
             Self::Clone => clone::Clone::exec(app).await,
             Self::Create => create::Create::exec(app).await,
+            Self::Migrate => migrate::Migrate::exec(app).await,
         }
     }
 }

@@ -97,7 +97,7 @@ Options:
                 items: templates.clone(),
             };
 
-            select.run().unwrap_or_else(|err| {
+            let selected = select.run().unwrap_or_else(|err| {
                 eprintln!(
                     "{}: {}",
                     "error".bright_red().bold(),
@@ -106,9 +106,7 @@ Options:
                 process::exit(1);
             });
 
-            template = Template::from_index(select.selected.unwrap())
-                .unwrap()
-                .to_string();
+            template = Template::from_index(selected).unwrap().to_string();
 
             println!("template: {}", template);
         } else {
