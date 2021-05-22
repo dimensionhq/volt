@@ -17,6 +17,7 @@
 // Std Imports
 use std::io::Result;
 
+use console::Term;
 // Library Imports
 use dialoguer::theme::ColorfulTheme;
 use structopt::StructOpt;
@@ -188,11 +189,11 @@ pub struct Select {
 }
 
 impl Select {
-    pub fn run(&self) -> Result<()> {
+    pub fn run(&self) -> Result<usize> {
         let item_len = self.items.len();
 
         if item_len == 0 {
-            return Ok(());
+            return Ok(0);
         }
 
         let theme = ColorfulTheme {
@@ -223,13 +224,10 @@ impl Select {
             .with_prompt(&self.message)
             .paged(self.paged)
             .items(&self.items);
-
         if self.selected.is_some() {
             input.default(self.selected.unwrap() - 1);
         }
 
-        input.interact()?;
-
-        Ok(())
+        Ok(input.interact()?)
     }
 }

@@ -15,6 +15,7 @@
 */
 
 // Modules
+pub mod PackageManager;
 pub mod create_templates;
 pub mod init_data;
 pub mod meta;
