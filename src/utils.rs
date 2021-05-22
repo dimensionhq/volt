@@ -138,11 +138,7 @@ impl App {
                     format!(
                         r"{}\{}",
                         &self.volt_dir.to_str().unwrap(),
-                        package
-                            .name
-                            .replace("/", "__")
-                            .replace("@", "")
-                            .replace(".", "_"),
+                        package.name.replace("/", "__").replace("@", "")
                     ),
                 )
                 .context("Failed to unpack dependency folder")
@@ -153,11 +149,7 @@ impl App {
                     format!(
                         r"{}/{}",
                         &self.volt_dir.to_str().unwrap(),
-                        package
-                            .name
-                            .replace("/", "__")
-                            .replace("@", "")
-                            .replace(".", "_"),
+                        package.name.replace("/", "__").replace("@", "")
                     ),
                 )
                 .context("Failed to unpack dependency folder")
@@ -199,9 +191,9 @@ impl App {
             //                     &self.volt_dir.to_str().unwrap(),
             //                     package
             //                         .name
-            //                         .replace("/", "__")
-            //                         .replace("@", "")
-            //                         .replace(".", "_"),
+            // .replace("/", "__")
+            // .replace("@", "")
+            // .replace(".", "_"),
             //                 ),
             //             )
             //             .context("Failed to unpack dependency folder")
@@ -227,7 +219,235 @@ impl App {
     }
 }
 
+pub fn get_dependencies_recursive(
+    dep: &str,
+    pkgname: &str,
+    packages: &std::collections::HashMap<String, VoltPackage>,
+) {
+    for (name, package) in &packages.clone() {
+        if name == dep {
+            if package.dependencies != None {
+                let dependencies = package.dependencies.clone().unwrap();
+                println!("{}: {:?}", name, dependencies);
+                if dependencies.len() != 0 {
+                    let user_profile = std::env::var("USERPROFILE").unwrap();
+                    let volt_dir_loc = format!(r"{}\.volt", user_profile);
+                    let volt_dir = Path::new(&volt_dir_loc);
+                    let name_dir_loc = volt_dir.join(name);
+                    let name_dir = Path::new(&name_dir_loc);
+                    let dep_nodemodules_dir = name_dir.join("node_modules");
+                    if !dep_nodemodules_dir.clone().exists() {
+                        std::fs::create_dir(dep_nodemodules_dir.clone()).unwrap();
+                    }
+                    for dep in dependencies.clone() {
+                        let volt_dep_dir = volt_dir.join(
+                            dep.clone()
+                                .replace("/", "__")
+                                .replace("@", "")
+                                .replace(".", "_"),
+                        );
+                        let dep_dir = dep_nodemodules_dir
+                            .join(dep.replace("/", "__").replace("@", "").replace(".", "_"));
+                        // println!(
+                        //     "dir: {:?}\ndir: {:?}",
+                        //     volt_dep_dir,
+                        //     dep_nodemodules_dir.clone()
+                        // );
+                        if !dep_dir.exists() {
+                            // std::fs::create_dir(dep_dir.clone()).unwrap();
+                            copy(
+                                volt_dep_dir,
+                                dep_nodemodules_dir.clone(),
+                                &CopyOptions::new(),
+                            )
+                            .unwrap();
+                        }
+                    }
+                }
+                for dep in dependencies {
+                    get_dependencies_recursive(dep.as_str(), pkgname, &packages)
+                }
+            }
+        }
+    }
+}
+
+pub fn get_dependencies(
+    pkgname: &str,
+    volt_dir: &Path,
+    package_dir: PathBuf,
+    packages: &std::collections::HashMap<String, VoltPackage>,
+) {
+    let mut dependencies = vec![];
+    for (name, package) in packages {
+        if name == pkgname {
+            let dependency_list = &package.dependencies;
+            for dep in dependency_list.clone().unwrap() {
+                dependencies.push(dep);
+            }
+        }
+    }
+    println!(
+        "pkgname: {}\npackage_dir: {:?}\ndep: {:?}",
+        pkgname, package_dir, dependencies
+    );
+
+    if dependencies.len() > 0 {
+        let node_modules_dir = package_dir.join("node_modules");
+        if !node_modules_dir.exists() {
+            std::fs::create_dir(node_modules_dir.clone()).unwrap();
+        }
+        for dep in dependencies {
+            println!("dep: {}", dep);
+            let volt_dep_dir = volt_dir.join(dep.clone().replace("/", "__").replace("@", ""));
+            let dep_dir = node_modules_dir.join(dep.clone().replace("/", "__").replace("@", ""));
+            if !dep_dir.exists() {
+                copy(volt_dep_dir, node_modules_dir.clone(), &CopyOptions::new()).unwrap();
+            }
+
+            // let node_modules_dep_path = std::env::current_dir().unwrap().join(format!(
+            //     r"node_modules\{}",
+            //     dep.replace("/", "__").replace("@", "").replace(".", "_")
+            // ));
+
+            // if !node_modules_dep_path.exists() {
+            //     create_symlink(
+            //         volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
+            //         node_modules_dep_path
+            //             .as_os_str()
+            //             .to_str()
+            //             .unwrap()
+            //             .to_string(),
+            //     )?;
+            // }
+            get_dependencies(dep.clone().as_str(), volt_dir, dep_dir, packages);
+        }
+    }
+}
+
 pub fn create_dep_symlinks(
+    _pkg_name: &str,
+    packages: std::collections::HashMap<String, VoltPackage>,
+) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + '_>> {
+    Box::pin(async move {
+        let user_profile = std::env::var("USERPROFILE").unwrap();
+        let volt_dir_loc = format!(r"{}\.volt", user_profile);
+        let volt_dir = Path::new(&volt_dir_loc);
+        let package_dir = volt_dir.join("express");
+        get_dependencies("express", volt_dir, package_dir.clone(), &packages);
+
+        let node_modules_dep_path = std::env::current_dir()?.join(r"node_modules\express");
+        create_symlink(
+            package_dir.as_os_str().to_str().unwrap().to_string(),
+            node_modules_dep_path
+                .as_os_str()
+                .to_str()
+                .unwrap()
+                .to_string(),
+        )?;
+        Ok(())
+        // let mut package_list: Vec<VoltPackage> = vec![];
+        // let mut dependencies = vec![];
+        // let user_profile = std::env::var("USERPROFILE")?;
+
+        // for (_, object) in &packages {
+        //     package_list.push(object.clone());
+        // }
+
+        // for package in package_list.clone() {
+        //     // println!("object: {:?}", package);
+        //     if package.dependencies != None {
+        //         if package.dependencies.clone().unwrap().len() != 0 {
+        //             for dep in package.dependencies.unwrap() {
+        //                 if !dependencies.contains(&dep) {
+        //                     dependencies.push(dep);
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     // dependencies.push(package.name);
+        // }
+
+        // println!("dep: {:?}", dependencies);
+
+        // for dep in dependencies.clone() {
+        //     let mut inside_deps = vec![];
+        //     for package in package_list.clone() {
+        //         if package.name == dep {
+        //             if package.dependencies != None {
+        //                 if package.dependencies.clone().unwrap().len() != 0 {
+        //                     for dep in package.dependencies.unwrap() {
+        //                         if !inside_deps.contains(&dep) {
+        //                             inside_deps.push(dep);
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     println!("inside dep: {:?}", inside_deps);
+        //     if inside_deps.len() != 0 {
+        //         for inside_dep in inside_deps {
+        //             let loc_dep_dir = format!(
+        //                 r"{}\.volt\{}\node_modules\{}",
+        //                 user_profile,
+        //                 dep.replace("/", "__").replace("@", "").replace(".", "_"),
+        //                 inside_dep
+        //             );
+        //             let node_modules_loc = format!(
+        //                 r"{}\.volt\{}\node_modules",
+        //                 user_profile,
+        //                 dep.replace("/", "__").replace("@", "").replace(".", "_")
+        //             );
+        //             let node_modules_dir = Path::new(&node_modules_loc);
+        //             let dep_dir = Path::new(&loc_dep_dir);
+        //             let loc = format!(r"{}\.volt\{}", user_profile, inside_dep);
+        //             let volt_dep_dir = Path::new(&loc);
+        //             if !node_modules_dir.exists() {
+        //                 std::fs::create_dir(node_modules_dir)?;
+        //             }
+        //             if !dep_dir.exists() && volt_dep_dir.exists() {
+        //                 copy(volt_dep_dir, node_modules_dir, &CopyOptions::new())?;
+        //             }
+        //         }
+        //     }
+        //     // let response: Package = get_yarn_response(dep).await;
+        //     // let deps: Option<Vec<String>> = Some(response.versions[&response.dist_tags.latest].dependencies.keys().cloned().collect());
+        //     // Box::pin(create_dep_symlinks(dep_dir.as_str(), deps)).await.unwrap();
+        // }
+
+        // for dep in dependencies {
+        //     let volt_dir_dep_loc = format!(
+        //         r"{}\.volt\{}",
+        //         user_profile,
+        //         dep.replace("/", "__").replace("@", "").replace(".", "_")
+        //     );
+        //     let volt_dir_file_path = Path::new(&volt_dir_dep_loc);
+        // let node_modules_dep_path = std::env::current_dir()?.join(format!(
+        //     r"node_modules\{}",
+        //     dep.replace("/", "__").replace("@", "").replace(".", "_")
+        // ));
+        // println!(
+        //     "dir: {:?}\ndir: {:?}",
+        //     volt_dir_file_path, node_modules_dep_path
+        // );
+        // if !node_modules_dep_path.exists() {
+        //     create_symlink(
+        //         volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
+        //         node_modules_dep_path
+        //             .as_os_str()
+        //             .to_str()
+        //             .unwrap()
+        //             .to_string(),
+        //     )?;
+        // }
+        // }
+
+        // Ok(())
+    })
+}
+
+pub fn create_dep_symlinks_old(
     _current_dep_dir: &str,
     packages: std::collections::HashMap<String, VoltPackage>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + '_>> {
