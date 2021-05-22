@@ -74,12 +74,27 @@ def get_dependencies_recursive(generated, dependency, unclean_version, main_vers
 
     version = get_cleaned_version(unclean_version, response)
 
+    print("checking ", dependency);
+
+    print("version: ", version);
+
     dependencies = get_dependencies(response, version)
+
+    print("dependencies: ", dependencies);
+
+    version_split = version.split(' ');
+    print("split:", version_split)
+    if len(version_split) > 1:
+        version = version_split[1]
+    else:
+        version = version_split[0]
+    print("ver:", version)
+    tarball = response['versions'][version]['dist']['tarball'];    
 
     generated[main_version]['packages'][dependency] = {
         'name': dependency,
         'version': version,
-        'tarball': response['versions'][version]['dist']['tarball'],
+        'tarball': tarball,
         'sha1': response['versions'][version]['dist']['shasum'],
         'dependencies': dependencies,
     }
@@ -89,6 +104,7 @@ def get_dependencies_recursive(generated, dependency, unclean_version, main_vers
 
     try:
         for dep, vers in response['versions'][version]['dependencies'].items():
+            # print("dep:", dep)
             get_dependencies_recursive(generated, dep, vers, main_version)
     except KeyError:
         pass
@@ -123,7 +139,7 @@ if 'bin' in list(main_response['versions'][main_version].keys()):
     generated[main_version]['packages'][package]['bin'] = main_response['versions'][main_version]['bin']
 
 for main_dependency, version in main_response['versions'][main_version]['dependencies'].items():
-    print('Adding: ', main_dependency)
+    # print('Adding: ', main_dependency)
     get_dependencies_recursive(
         generated, main_dependency, version, main_version)
 
