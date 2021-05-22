@@ -84,9 +84,10 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         let args = app.args.clone();
-        // println!("{:#?}", args);
         let templates: Vec<String> = Template::options();
+
         let mut template: String = String::new();
+
         let mut app_name: String = String::new();
 
         if args.len() < 1 {
@@ -107,8 +108,6 @@ Options:
             });
 
             template = Template::from_index(selected).unwrap().to_string();
-
-            println!("template: {}", template);
         } else {
             let _template = &args[0];
             if templates.contains(_template) {
@@ -122,8 +121,6 @@ Options:
                 process::exit(1);
             }
         }
-
-        println!("template: {}", template);
 
         if args.len() < 2 {
             app_name = Input::new()

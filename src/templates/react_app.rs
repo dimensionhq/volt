@@ -15,7 +15,9 @@ pub async fn create_react_app(app_name: String) {
     let _ = std::env::set_current_dir(&dir); // Set current directory to $dir as init depends on it
     let mut app = crate::utils::App::initialize();
     app.flags = vec![String::from("-y")];
-    crate::commands::init::Init::exec(std::sync::Arc::new(app)).await;
-    std::env::set_current_dir(std::env::current_dir().unwrap()); // reset current dir
+    crate::commands::init::Init::exec(std::sync::Arc::new(app))
+        .await
+        .unwrap();
+    std::env::set_current_dir(std::env::current_dir().unwrap()).unwrap(); // reset current dir
     fs::File::create(format!("{}/README.md", dir.to_str().unwrap())).unwrap();
 }
