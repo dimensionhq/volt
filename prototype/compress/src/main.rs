@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 // use indicatif::{ProgressBar, ProgressStyle};
 // use minifier;
 // use std::{
@@ -145,6 +147,4 @@ fn compress(provider: &str) {
 
 fn main() {
     let start = Instant::now();
-
-    
 }
