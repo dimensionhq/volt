@@ -287,10 +287,10 @@ pub fn get_dependencies(
             }
         }
     }
-    println!(
-        "pkgname: {}\npackage_dir: {:?}\ndep: {:?}",
-        pkgname, package_dir, dependencies
-    );
+    // println!(
+    //     "pkgname: {}\npackage_dir: {:?}\ndep: {:?}",
+    //     pkgname, package_dir, dependencies
+    // );
 
     if dependencies.len() > 0 {
         let node_modules_dir = package_dir.join("node_modules");
@@ -298,11 +298,16 @@ pub fn get_dependencies(
             std::fs::create_dir(node_modules_dir.clone()).unwrap();
         }
         for dep in dependencies {
-            println!("dep: {}", dep);
+            // println!("dep: {}", dep);
             let volt_dep_dir = volt_dir.join(dep.clone().replace("/", "__").replace("@", ""));
             let dep_dir = node_modules_dir.join(dep.clone().replace("/", "__").replace("@", ""));
             if !dep_dir.exists() {
-                copy(volt_dep_dir, node_modules_dir.clone(), &CopyOptions::new()).unwrap();
+                // copy(volt_dep_dir, node_modules_dir.clone(), &CopyOptions::new()).unwrap();
+                create_symlink(
+                    volt_dep_dir.as_os_str().to_str().unwrap().to_string(),
+                    dep_dir.as_os_str().to_str().unwrap().to_string(),
+                )
+                .unwrap();
             }
 
             // let node_modules_dep_path = std::env::current_dir().unwrap().join(format!(
@@ -326,17 +331,18 @@ pub fn get_dependencies(
 }
 
 pub fn create_dep_symlinks(
-    _pkg_name: &str,
+    pkg_name: &str,
     packages: std::collections::HashMap<String, VoltPackage>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + '_>> {
     Box::pin(async move {
         let user_profile = std::env::var("USERPROFILE").unwrap();
         let volt_dir_loc = format!(r"{}\.volt", user_profile);
         let volt_dir = Path::new(&volt_dir_loc);
-        let package_dir = volt_dir.join("express");
-        get_dependencies("express", volt_dir, package_dir.clone(), &packages);
+        let package_dir = volt_dir.join(pkg_name);
+        get_dependencies(pkg_name, volt_dir, package_dir.clone(), &packages);
 
-        let node_modules_dep_path = std::env::current_dir()?.join(r"node_modules\express");
+        let node_modules_dep_path =
+            std::env::current_dir()?.join(format!(r"node_modules\{}", pkg_name));
         create_symlink(
             package_dir.as_os_str().to_str().unwrap().to_string(),
             node_modules_dep_path
