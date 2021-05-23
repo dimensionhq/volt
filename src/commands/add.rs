@@ -193,11 +193,8 @@ Options:
                 let user_profile = std::env::var("USERPROFILE")?;
                 let current_dep_dir =
                     format!(r"{}\.volt\{}", user_profile, app.args[0].to_string());
-                utils::create_dep_symlinks(
-                    current_dep_dir.as_str(),
-                    current_version.packages.clone(),
-                )
-                .await?;
+                utils::create_dep_symlinks(app.args[0].as_str(), current_version.packages.clone())
+                    .await?;
             }
         }
 
