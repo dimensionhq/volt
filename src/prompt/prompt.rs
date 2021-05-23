@@ -17,7 +17,6 @@
 // Std Imports
 use std::io::Result;
 
-use console::Term;
 // Library Imports
 use dialoguer::theme::ColorfulTheme;
 use structopt::StructOpt;

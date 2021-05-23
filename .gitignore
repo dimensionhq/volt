@@ -7,3 +7,4 @@ yarn.lock
 .DS_Store
 yarn_test/*
 volt_test/*
+prototype/compress/target
