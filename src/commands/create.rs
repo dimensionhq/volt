@@ -82,6 +82,8 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
+    
+    #[allow(unused)]
     async fn exec(app: Arc<App>) -> Result<()> {
         let args = app.args.clone();
         let templates: Vec<String> = Template::options();

@@ -104,7 +104,7 @@ Options:
         }
 
         if packagemanager.eq_ignore_ascii_case("volt") {
-            std::fs::remove_dir_all("node_modules");
+            std::fs::remove_dir_all("node_modules")?;
 
             let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
             files
@@ -118,9 +118,9 @@ Options:
                 })
                 .for_each(|f| std::fs::remove_file(f.file_name()).unwrap());
             println!("{}", "$ volt install".truecolor(147, 148, 148));
-            Install::exec(app).await; // NOTE WILL ONLY WORK IF THE VAR DEPENDENCIES is populated
+            Install::exec(app).await?; // NOTE WILL ONLY WORK IF THE VAR DEPENDENCIES is populated
         } else if packagemanager.eq_ignore_ascii_case("yarn") {
-            std::fs::remove_dir_all("node_modules");
+            std::fs::remove_dir_all("node_modules")?;
 
             let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
             files
@@ -141,7 +141,7 @@ Options:
                 .wait()
                 .unwrap();
         } else if packagemanager.eq_ignore_ascii_case("pnpm") {
-            std::fs::remove_dir_all("node_modules");
+            std::fs::remove_dir_all("node_modules")?;
 
             let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
             files
@@ -163,7 +163,7 @@ Options:
                 .wait()
                 .unwrap();
         } else if packagemanager.eq_ignore_ascii_case("npm") {
-            std::fs::remove_dir_all("node_modules");
+            std::fs::remove_dir_all("node_modules")?;
 
             let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
             files
