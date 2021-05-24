@@ -282,8 +282,10 @@ pub fn get_dependencies_recursive(
     for (name, package) in packages {
         if name == pkgname {
             let dependency_list = &package.dependencies;
-            for dep in dependency_list.clone().unwrap() {
-                dependencies.push(dep);
+            if dependency_list != &None {
+                for dep in dependency_list.clone().unwrap() {
+                    dependencies.push(dep);
+                }
             }
         }
     }
