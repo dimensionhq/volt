@@ -29,13 +29,13 @@ use anyhow::{Context, Result};
 use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
-use fs_extra::dir::{copy, CopyOptions};
+// use fs_extra::dir::{copy, CopyOptions};
 use sha1::{Digest, Sha1};
 use tar::Archive;
 use tokio::fs::remove_dir_all;
 
 // Crate Level Imports
-use crate::classes::package::Package;
+// use crate::classes::package::Package;
 use crate::classes::voltapi::{VoltPackage, VoltResponse};
 
 #[cfg(windows)]
@@ -112,13 +112,13 @@ impl App {
             remove_dir_all(&node_modules_dep_path).await?;
         }
 
-        let volt_dir_file_path = &self.volt_dir.join(
-            package
-                .name
-                .replace("/", "__")
-                .replace("@", "")
-                .replace(".", "_"),
-        );
+        // let volt_dir_file_path = &self.volt_dir.join(
+        //     package
+        //         .name
+        //         .replace("/", "__")
+        //         .replace("@", "")
+        //         .replace(".", "_"),
+        // );
 
         let loc = format!(r"{}\{}", &self.volt_dir.to_str().unwrap(), package.name);
 
@@ -559,27 +559,27 @@ pub fn create_dep_symlinks(
 //     })
 // }
 
-pub async fn get_yarn_response(package_name: String) -> Package {
-    let response = reqwest::get(format!("http://registry.yarnpkg.com/{}", package_name))
-        .await
-        .unwrap_or_else(|e| {
-            println!("{} {}", "error".bright_red(), e);
-            std::process::exit(1);
-        })
-        .text()
-        .await
-        .unwrap_or_else(|e| {
-            println!("{} {}", "error".bright_red(), e);
-            std::process::exit(1);
-        });
+// pub async fn get_yarn_response(package_name: String) -> Package {
+//     let response = reqwest::get(format!("http://registry.yarnpkg.com/{}", package_name))
+//         .await
+//         .unwrap_or_else(|e| {
+//             println!("{} {}", "error".bright_red(), e);
+//             std::process::exit(1);
+//         })
+//         .text()
+//         .await
+//         .unwrap_or_else(|e| {
+//             println!("{} {}", "error".bright_red(), e);
+//             std::process::exit(1);
+//         });
 
-    let data = serde_json::from_str::<Package>(&response).unwrap_or_else(|e| {
-        println!("{} {}", "error".bright_red(), e);
-        std::process::exit(1);
-    });
+//     let data = serde_json::from_str::<Package>(&response).unwrap_or_else(|e| {
+//         println!("{} {}", "error".bright_red(), e);
+//         std::process::exit(1);
+//     });
 
-    data
-}
+//     data
+// }
 
 // Gets response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
@@ -616,7 +616,7 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
     if !Path::new(&temp_dir.join("volt")).exists() {
         std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
     }
-    let mut path;
+    let path;
     if cfg!(windows) {
         path = temp_dir.join(format!(r"volt\{}", file_name));
     } else {
@@ -756,6 +756,7 @@ pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> R
 }
 
 #[cfg(windows)]
+#[allow(unused)]
 pub fn generate_windows_binary(package: &VoltPackage) {
     if package.bin.is_some() {
         let bin = package.clone().bin.unwrap();
