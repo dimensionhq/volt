@@ -84,7 +84,7 @@ Options:
             packagemanager = app.args[0].clone().to_string();
         } else if app.args.len() == 0 {
             let select = Select {
-                message: String::from("Package Manaer"),
+                message: String::from("Package Manager"),
                 paged: true,
                 selected: Some(1),
                 items: packagemanagers.clone(),
