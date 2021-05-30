@@ -289,10 +289,6 @@ pub fn get_dependencies_recursive(
             }
         }
     }
-    // println!(
-    //     "pkgname: {}\npackage_dir: {:?}\ndep: {:?}",
-    //     pkgname, package_dir, dependencies
-    // );
 
     if dependencies.len() > 0 {
         let node_modules_dir = package_dir.join("node_modules");
@@ -337,8 +333,16 @@ pub fn create_dep_symlinks(
     packages: std::collections::HashMap<String, VoltPackage>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + '_>> {
     Box::pin(async move {
-        let user_profile = std::env::var("USERPROFILE").unwrap();
-        let volt_dir_loc = format!(r"{}\.volt", user_profile);
+
+        let mut user_profile;
+        let mut volt_dir_loc;
+        if cfg!(windows) {
+            user_profile = std::env::var("USERPROFILE").unwrap();
+            volt_dir_loc = format!(r"{}\.volt", user_profile);
+        }else{
+            user_profile = std::env::var("HOME").unwrap();
+            volt_dir_loc = format!(r"{}/.volt", user_profile);
+        } 
         let volt_dir = Path::new(&volt_dir_loc);
         let package_dir = volt_dir.join(pkg_name);
         get_dependencies_recursive(pkg_name, volt_dir, package_dir.clone(), &packages);
