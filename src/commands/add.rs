@@ -100,6 +100,7 @@ Options:
             println!("{}", Self::help());
             exit(1);
         }
+
         let verbose = app.has_flag(&["-v", "--verbose"]);
         let pballowed = !app.has_flag(&["--no-progress", "-np"]);
 
@@ -190,15 +191,14 @@ Options:
         for dep in dependencies {
             if dep.name == app.args[0].to_string() {
                 let package: VoltPackage = dep;
-                let mut user_profile =  String::new();
-                if cfg!(windows){
+                let mut user_profile = String::new();
+                if cfg!(windows) {
                     let user_profile = std::env::var("userprofile")?;
-                }else{
+                } else {
                     let user_profile = std::env::var("HOME")?;
                 }
                 let up = user_profile.clone();
-                let current_dep_dir =
-                    format!(r"{}\.volt\{}", up, app.args[0].to_string());
+                let current_dep_dir = format!(r"{}\.volt\{}", up, app.args[0].to_string());
                 utils::create_dep_symlinks(app.args[0].as_str(), current_version.packages.clone())
                     .await?;
             }
