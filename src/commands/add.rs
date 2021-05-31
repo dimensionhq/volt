@@ -101,119 +101,266 @@ Options:
             exit(1);
         }
 
-        let verbose = app.has_flag(&["-v", "--verbose"]);
-        let pballowed = !app.has_flag(&["--no-progress", "-np"]);
-
-        let lock_file = LockFile::load(app.lock_file_path.to_path_buf())
-            .unwrap_or_else(|_| LockFile::new(app.lock_file_path.to_path_buf()));
-
-        // TODO: Change this to handle multiple packages
-        let progress_bar: ProgressBar = ProgressBar::new(1);
-
-        progress_bar.set_style(
-            ProgressStyle::default_bar()
-                .progress_chars(PROGRESS_CHARS)
-                .template(&format!(
-                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
-                    "Fetching dependencies".bright_blue()
-                )),
-        );
-
-        let response = utils::get_volt_response(app.args[0].to_string()).await;
-
-        let progress_bar = &progress_bar;
-
-        progress_bar.finish_with_message("[OK]".bright_green().to_string());
-
-        let length = &response
-            .versions
-            .get(&response.version)
-            .unwrap()
-            .packages
-            .len();
-
-        if length.to_owned() == 1 {
-            println!("Loaded 1 dependency");
-        } else {
-            println!("Loaded {} dependencies.", length);
+        let mut packages = vec![];
+        for arg in &app.args {
+            packages.push(arg.clone());
         }
 
-        let mut dependencies: Vec<VoltPackage> = vec![];
-
-        let current_version = response.versions.get(&response.version).unwrap();
-
-        for (_, object) in &current_version.packages {
-            dependencies.push(object.clone());
-        }
-
-        let mut workers = FuturesUnordered::new();
-
-        for dep in dependencies.clone() {
-            let app = app.clone();
-            workers.push(async move { Add::install_extract_package(app, &dep).await });
-        }
-
-        if pballowed {
-            let progress_bar = ProgressBar::new(workers.len() as u64);
-
-            progress_bar.set_style(
-                ProgressStyle::default_bar()
-                    .progress_chars(PROGRESS_CHARS)
-                    .template(&format!(
-                        "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
-                        "Installing packages".bright_blue()
-                    )),
+        if !std::env::current_dir()?.join("package.json").exists() {
+            println!("{} no package.json found", "error".bright_red());
+            println!(
+                "{} run {} to initiate volt",
+                "info".bright_blue(),
+                "volt init".bright_purple()
             );
-
-            loop {
-                match workers.next().await {
-                    Some(result) => {
-                        result?;
-                        progress_bar.inc(1)
-                    }
-
-                    None => break,
-                }
-            }
-            progress_bar.finish();
-        } else {
-            loop {
-                match workers.next().await {
-                    Some(result) => {
-                        result?;
-                    }
-
-                    None => break,
-                }
-            }
+            exit(1);
         }
 
-        for dep in dependencies {
-            if dep.name == app.args[0].to_string() {
-                let package: VoltPackage = dep;
-                let mut user_profile = String::new();
-                if cfg!(windows) {
-                    let user_profile = std::env::var("userprofile")?;
+        let mut handles = vec![];
+
+        for package in packages.clone() {
+            let app_new = app.clone();
+            let package_dir_loc = format!(
+                r"{}\.volt\{}",
+                std::env::var("USERPROFILE").unwrap(),
+                package
+            );
+            let package_dir = std::path::Path::new(&package_dir_loc);
+            if package_dir.exists() {
+                handles.push(tokio::spawn(async move {
+                    let verbose = app_new.has_flag(&["-v", "--verbose"]);
+                    let pballowed = !app_new.has_flag(&["--no-progress", "-np"]);
+
+                    let lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
+                        .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
+
+                    // TODO: Change this to handle multiple packages
+                    let progress_bar: ProgressBar = ProgressBar::new(1);
+
+                    progress_bar.set_style(
+                        ProgressStyle::default_bar()
+                            .progress_chars(PROGRESS_CHARS)
+                            .template(&format!(
+                                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                                "Fetching dependencies".bright_blue()
+                            )),
+                    );
+
+                    let response = utils::get_volt_response(package.to_string()).await;
+
+                    let progress_bar = &progress_bar;
+
+                    progress_bar.finish_with_message("[OK]".bright_green().to_string());
+
+                    let length = &response
+                        .versions
+                        .get(&response.version)
+                        .unwrap()
+                        .packages
+                        .len();
+
+                    if length.to_owned() == 1 {
+                        println!("Loaded 1 dependency");
+                    } else {
+                        println!("Loaded {} dependencies.", length);
+                    }
+
+                    let mut dependencies: Vec<VoltPackage> = vec![];
+
+                    let current_version = response.versions.get(&response.version).unwrap();
+
+                    for (_, object) in &current_version.packages {
+                        dependencies.push(object.clone());
+                    }
+
+                    let mut workers = FuturesUnordered::new();
+
+                    for dep in dependencies.clone() {
+                        let app_new = app_new.clone();
+                        workers
+                            .push(async move { Add::install_extract_package(app_new, &dep).await });
+                    }
+
+                    if pballowed {
+                        let progress_bar = ProgressBar::new(workers.len() as u64);
+
+                        progress_bar.set_style(
+                            ProgressStyle::default_bar()
+                                .progress_chars(PROGRESS_CHARS)
+                                .template(&format!(
+                                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
+                                    "Installing packages".bright_blue()
+                                )),
+                        );
+
+                        loop {
+                            match workers.next().await {
+                                Some(result) => {
+                                    result.unwrap();
+                                    progress_bar.inc(1)
+                                }
+
+                                None => break,
+                            }
+                        }
+                        progress_bar.finish();
+                    } else {
+                        loop {
+                            match workers.next().await {
+                                Some(result) => {
+                                    result.unwrap();
+                                }
+
+                                None => break,
+                            }
+                        }
+                    }
+
+                    for dep in dependencies {
+                        if dep.name == package.to_string() {
+                            utils::create_dep_symlinks(
+                                package.as_str(),
+                                current_version.packages.clone(),
+                            )
+                            .await
+                            .unwrap();
+                        }
+                    }
+
+                    // Change package.json
+                    // for value in &dependencies.to_owned().iter() {
+                    //     package_file.add_dependency(value.0.name, value.1.version);
+                    // }
+
+                    // Write to lock file
+                    if verbose {
+                        println!("info {}", "Writing to lock file".yellow());
+                    }
+                    lock_file
+                        .save()
+                        .context("Failed to save lock file")
+                        .unwrap();
+                }));
+            } else {
+                let verbose = app_new.has_flag(&["-v", "--verbose"]);
+                let pballowed = !app_new.has_flag(&["--no-progress", "-np"]);
+
+                let lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
+                    .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
+
+                // TODO: Change this to handle multiple packages
+                let progress_bar: ProgressBar = ProgressBar::new(1);
+
+                progress_bar.set_style(
+                    ProgressStyle::default_bar()
+                        .progress_chars(PROGRESS_CHARS)
+                        .template(&format!(
+                            "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                            "Fetching dependencies".bright_blue()
+                        )),
+                );
+
+                let response = utils::get_volt_response(package.to_string()).await;
+
+                let progress_bar = &progress_bar;
+
+                progress_bar.finish_with_message("[OK]".bright_green().to_string());
+
+                let length = &response
+                    .versions
+                    .get(&response.version)
+                    .unwrap()
+                    .packages
+                    .len();
+
+                if length.to_owned() == 1 {
+                    println!("Loaded 1 dependency");
                 } else {
-                    let user_profile = std::env::var("HOME")?;
+                    println!("Loaded {} dependencies.", length);
                 }
-                let up = user_profile.clone();
-                let current_dep_dir = format!(r"{}\.volt\{}", up, app.args[0].to_string());
-                utils::create_dep_symlinks(app.args[0].as_str(), current_version.packages.clone())
-                    .await?;
+
+                let mut dependencies: Vec<VoltPackage> = vec![];
+
+                let current_version = response.versions.get(&response.version).unwrap();
+
+                for (_, object) in &current_version.packages {
+                    dependencies.push(object.clone());
+                }
+
+                let mut workers = FuturesUnordered::new();
+
+                for dep in dependencies.clone() {
+                    let app_new = app_new.clone();
+                    workers.push(async move { Add::install_extract_package(app_new, &dep).await });
+                }
+
+                if pballowed {
+                    let progress_bar = ProgressBar::new(workers.len() as u64);
+
+                    progress_bar.set_style(
+                        ProgressStyle::default_bar()
+                            .progress_chars(PROGRESS_CHARS)
+                            .template(&format!(
+                                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
+                                "Installing packages".bright_blue()
+                            )),
+                    );
+
+                    loop {
+                        match workers.next().await {
+                            Some(result) => {
+                                result.unwrap();
+                                progress_bar.inc(1)
+                            }
+
+                            None => break,
+                        }
+                    }
+                    progress_bar.finish();
+                } else {
+                    loop {
+                        match workers.next().await {
+                            Some(result) => {
+                                result.unwrap();
+                            }
+
+                            None => break,
+                        }
+                    }
+                }
+
+                for dep in dependencies {
+                    if dep.name == package.to_string() {
+                        utils::create_dep_symlinks(
+                            package.as_str(),
+                            current_version.packages.clone(),
+                        )
+                        .await
+                        .unwrap();
+                    }
+                }
+
+                // Change package.json
+                // for value in &dependencies.to_owned().iter() {
+                //     package_file.add_dependency(value.0.name, value.1.version);
+                // }
+
+                // Write to lock file
+                if verbose {
+                    println!("info {}", "Writing to lock file".yellow());
+                }
+                lock_file
+                    .save()
+                    .context("Failed to save lock file")
+                    .unwrap();
             }
         }
 
-        // Change package.json
-        // for value in &dependencies.to_owned().iter() {
-        //     package_file.add_dependency(value.0.name, value.1.version);
-        // }
-
-        // Write to lock file
-        if verbose {
-            println!("info {}", "Writing to lock file".yellow());
+        if handles.len() > 0 {
+            for handle in handles {
+                handle.await?;
+            }
         }
-        lock_file.save().context("Failed to save lock file")?;
 
         Ok(())
     }
