@@ -120,11 +120,19 @@ Options:
 
         for package in packages.clone() {
             let app_new = app.clone();
-            let package_dir_loc = format!(
-                r"{}\.volt\{}",
-                std::env::var("USERPROFILE").unwrap(),
-                package
-            );
+
+            let package_dir_loc;
+
+            if cfg!(windows) {
+                package_dir_loc = format!(
+                    r"{}\.volt\{}",
+                    std::env::var("USERPROFILE").unwrap(),
+                    package
+                );
+            } else {
+                package_dir_loc = format!(r"{}\.volt\{}", std::env::var("HOME").unwrap(), package);
+            }
+
             let package_dir = std::path::Path::new(&package_dir_loc);
             if package_dir.exists() {
                 handles.push(tokio::spawn(async move {
