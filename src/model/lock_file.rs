@@ -159,9 +159,4 @@ impl LockFile {
 
         serde_json::to_writer_pretty(writer, &self.dependencies).map_err(LockFileError::Encode)
     }
-
-    // #[allow(dead_code)]
-    // pub fn add<T: Into<DependencyID>>(&mut self, id: T, dep: DependencyLock) {
-    //     self.dependencies[0].insert(id.into(), dep);
-    // }
 }
