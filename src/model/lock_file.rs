@@ -59,19 +59,19 @@ pub enum LockFileError {
 /// // Save changes to disk
 /// lock_file.save().expect("Unable to save lock file");
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LockFile {
     pub path: PathBuf,
-    pub dependencies: DependenciesMap,
+    #[serde(serialize_with = "sorted_dependencies")]
+    pub dependencies: HashMap<DependencyID, DependencyLock>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct DependenciesMap(
-    #[serde(serialize_with = "sorted_dependencies")] HashMap<DependencyID, DependencyLock>,
-);
+// #[derive(Clone, Serialize, Deserialize, Debug, Default)]
+// pub struct DependenciesMap(
+// );
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct DependencyID(String, String);
+pub struct DependencyID(pub String, pub String);
 
 impl From<(String, String)> for DependencyID {
     fn from(info: (String, String)) -> Self {
@@ -137,7 +137,7 @@ impl LockFile {
     pub fn new(path: PathBuf) -> Self {
         Self {
             path,
-            dependencies: DependenciesMap(HashMap::with_capacity(1)), // We will be installing at least 1 dependency
+            dependencies: HashMap::with_capacity(1), // We will be installing at least 1 dependency
         }
     }
 
@@ -160,9 +160,8 @@ impl LockFile {
         serde_json::to_writer_pretty(writer, &self.dependencies).map_err(LockFileError::Encode)
     }
 
-    /// Add a dependency to the lock file.
-    #[allow(dead_code)]
-    pub fn add<T: Into<DependencyID>>(&mut self, id: T, dep: DependencyLock) {
-        self.dependencies.0.insert(id.into(), dep);
-    }
+    // #[allow(dead_code)]
+    // pub fn add<T: Into<DependencyID>>(&mut self, id: T, dep: DependencyLock) {
+    //     self.dependencies[0].insert(id.into(), dep);
+    // }
 }

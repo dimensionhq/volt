@@ -112,14 +112,6 @@ impl App {
             remove_dir_all(&node_modules_dep_path).await?;
         }
 
-        // let volt_dir_file_path = &self.volt_dir.join(
-        //     package
-        //         .name
-        //         .replace("/", "__")
-        //         .replace("@", "")
-        //         .replace(".", "_"),
-        // );
-
         let loc = format!(r"{}\{}", &self.volt_dir.to_str().unwrap(), package.name);
 
         let path = Path::new(&loc);
@@ -160,50 +152,6 @@ impl App {
                     create_dir_all(&parent)?;
                 }
             }
-
-            // if package.dependencies != None {
-            //     let dependencies = &package.dependencies;
-            //     for dep in &dependencies.clone().unwrap() {
-            //         let volt_dir_symlink_path = &self.volt_dir.join(format!(
-            //             r"{}\node_modules\{}",
-            //             package
-            //                 .name
-            // .replace("/", "__")
-            // .replace("@", "")
-            // .replace(".", "_"),
-            //             dep.replace("/", "__").replace("@", "").replace(".", "_"),
-            //         ));
-
-            //         let volt_dir_dep_path = &self
-            //             .volt_dir
-            //             .join(dep.replace("/", "__").replace("@", "").replace(".", "_"));
-
-            //         if !volt_dir_dep_path.exists() {
-            //             println!("unpacking dep: {}", dep);
-            //             archive
-            //                 .unpack(&self.volt_dir)
-            //                 .context("Unable to unpack dependency")?;
-
-            //             std::fs::rename(
-            //                 format!(r"{}\package", &self.volt_dir.to_str().unwrap()),
-            //                 format!(
-            //                     r"{}\{}",
-            //                     &self.volt_dir.to_str().unwrap(),
-            //                     package
-            //                         .name
-            // .replace("/", "__")
-            // .replace("@", "")
-            // .replace(".", "_"),
-            //                 ),
-            //             )
-            //             .context("Failed to unpack dependency folder")
-            //             .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
-            //         }
-
-            //         // create_dir_all(volt_dir_symlink_path)?;
-            //         // copy(volt_dir_dep_path, volt_dir_symlink_path, &options)?;
-            // }
-            // }
         }
 
         Ok(())
@@ -333,16 +281,15 @@ pub fn create_dep_symlinks(
     packages: std::collections::HashMap<String, VoltPackage>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + '_>> {
     Box::pin(async move {
-
-        let mut user_profile;
-        let mut volt_dir_loc;
+        let user_profile;
+        let volt_dir_loc;
         if cfg!(windows) {
             user_profile = std::env::var("USERPROFILE").unwrap();
             volt_dir_loc = format!(r"{}\.volt", user_profile);
-        }else{
+        } else {
             user_profile = std::env::var("HOME").unwrap();
             volt_dir_loc = format!(r"{}/.volt", user_profile);
-        } 
+        }
         let volt_dir = Path::new(&volt_dir_loc);
         let package_dir = volt_dir.join(pkg_name);
         get_dependencies_recursive(pkg_name, volt_dir, package_dir.clone(), &packages);
@@ -617,6 +564,7 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
         .replace(".", "_");
     let file_name = format!("{}@{}.tgz", name, package.version);
     let temp_dir = temp_dir();
+
     if !Path::new(&temp_dir.join("volt")).exists() {
         std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
     }
