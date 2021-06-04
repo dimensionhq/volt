@@ -17,6 +17,7 @@
 // Std Imports
 use std::io;
 
+use chttp::http::StatusCode;
 // Library Imports
 use thiserror::Error;
 
@@ -51,8 +52,13 @@ pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError>
         .await
         .map_err(GetPackageError::Request)?;
 
-    if resp.status().is_client_error() {
-        return Ok(None);
+    if !resp.status().is_success() {
+        match resp.status() {
+            StatusCode::NOT_FOUND => {}
+            StatusCode::INTERNAL_SERVER_ERROR => {}
+            StatusCode::METHOD_NOT_ALLOWED => {}
+            _ => {}
+        }
     }
 
     let mut body = resp.into_body();
