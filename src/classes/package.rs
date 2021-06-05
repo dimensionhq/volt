@@ -176,7 +176,8 @@ pub struct PackageJson {
     pub repository: Option<String>,
     pub author: Option<String>,
     pub license: Option<String>,
-    pub dependencies: Option<HashMap<String, String>>,
+    #[serde(default)]
+    pub dependencies: HashMap<String, String>,
 }
 
 impl PackageJson {
