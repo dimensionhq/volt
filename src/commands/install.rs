@@ -81,11 +81,7 @@ Options:
 
         let mut app = App::initialize();
 
-        app.args = dependencies
-            .unwrap()
-            .into_iter()
-            .map(|value| value.0)
-            .collect();
+        app.args = dependencies.into_iter().map(|value| value.0).collect();
 
         Add::exec(Arc::new(app)).await.unwrap();
 

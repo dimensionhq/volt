@@ -270,8 +270,6 @@ Options:
 
                     package_json_file
                         .dependencies
-                        .as_mut()
-                        .unwrap()
                         .insert(package.to_string(), response.clone().version);
 
                     package_json_file.save();
