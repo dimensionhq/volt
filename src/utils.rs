@@ -562,6 +562,7 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
         .replace("/", "__")
         .replace("@", "")
         .replace(".", "_");
+
     let file_name = format!("{}@{}.tgz", name, package.version);
     let temp_dir = temp_dir();
 
@@ -587,7 +588,6 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
     let tarball = package.tarball.replace("https", "http");
 
     let mut response = reqwest::get(tarball).await?;
-
     // Placeholder buffer
     let mut file = File::create(&path)?;
 
