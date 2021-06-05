@@ -24,7 +24,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::{classes::PackageManager::PackageManager, commands::install::Install};
+use crate::{classes::package_manager::PackageManager, commands::install::Install};
 // Crate Level Imports
 use crate::VERSION;
 use crate::{prompt::prompt::Select, utils::App};

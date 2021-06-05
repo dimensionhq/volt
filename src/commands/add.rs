@@ -275,7 +275,7 @@ Options:
                 let verbose = app_new.has_flag(&["-v", "--verbose"]);
                 let pballowed = !app_new.has_flag(&["--no-progress", "-np"]);
 
-                let lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
+                let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
                     .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
 
                 // TODO: Change this to handle multiple packages
@@ -315,6 +315,26 @@ Options:
 
                 for (_, object) in &current_version.packages {
                     dependencies.push(object.clone());
+
+                    let mut lock_dependencies: HashMap<String, String> = HashMap::new();
+
+                    if object.clone().dependencies.is_some() {
+                        for dep in object.clone().dependencies.unwrap().iter() {
+                            // TODO: Change this to real version
+                            lock_dependencies.insert(dep.clone(), String::new());
+                        }
+                    }
+
+                    lock_file.dependencies.insert(
+                        DependencyID(object.clone().name, object.clone().version),
+                        DependencyLock {
+                            name: object.clone().name,
+                            version: object.clone().version,
+                            tarball: object.clone().tarball,
+                            sha1: object.clone().sha1,
+                            dependencies: lock_dependencies,
+                        },
+                    );
                 }
 
                 let mut workers = FuturesUnordered::new();
