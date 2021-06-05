@@ -30,6 +30,7 @@ use tokio::{
     sync::{mpsc, Mutex},
 };
 
+use crate::classes::package::PackageJson;
 use crate::model::lock_file::{DependencyID, DependencyLock};
 // Crate Level Imports
 use crate::utils;
@@ -118,6 +119,7 @@ Options:
             exit(1);
         }
 
+        let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
         let mut handles = vec![];
 
         for package in packages.clone() {
@@ -136,6 +138,8 @@ Options:
             }
 
             let package_dir = std::path::Path::new(&package_dir_loc);
+            let package_file = package_file.clone();
+
             if package_dir.exists() {
                 handles.push(tokio::spawn(async move {
                     let verbose = app_new.has_flag(&["-v", "--verbose"]);
@@ -262,10 +266,21 @@ Options:
                     //     package_file.add_dependency(value.0.name, value.1.version);
                     // }
 
+                    let mut package_json_file = package_file.lock().await;
+
+                    package_json_file
+                        .dependencies
+                        .as_mut()
+                        .unwrap()
+                        .insert(package.to_string(), response.clone().version);
+
+                    package_json_file.save();
+
                     // Write to lock file
                     if verbose {
                         println!("info {}", "Writing to lock file".yellow());
                     }
+
                     lock_file
                         .save()
                         .context("Failed to save lock file")

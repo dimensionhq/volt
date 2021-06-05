@@ -14,9 +14,14 @@
     limitations under the License.
 */
 
+use anyhow::Context;
 // Std Imports
-use std::{collections::HashMap, fs::read_to_string};
 use colored::Colorize;
+use std::io::Write;
+use std::{
+    collections::HashMap,
+    fs::{read_to_string, File},
+};
 
 // Library Imports
 use serde::{Deserialize, Serialize};
@@ -179,13 +184,18 @@ impl PackageJson {
         if std::path::Path::new(path).exists() {
             let data = read_to_string(path).unwrap();
             serde_json::from_str(data.as_str()).unwrap()
-        }
-        else {
+        } else {
             println!("{} {}", "error".bright_red(), "No package.json found");
             std::process::exit(1);
         }
     }
 
+    pub fn save(&self) {
+        let mut file = File::create("package.json").unwrap();
+        file.write(serde_json::to_string_pretty(self).unwrap().as_bytes())
+            .context("failed to write to package.json")
+            .unwrap();
+    }
     // pub fn add_dependency(&mut self, name: String, version: String) {
     //     self.dependencies.unwrap().insert(name, version);
     // }

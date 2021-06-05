@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct VoltResponse {
     pub version: String,
     #[serde(flatten)]
     pub versions: HashMap<String, VersionData>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct VersionData {
     pub packages: HashMap<String, VoltPackage>,
 }
