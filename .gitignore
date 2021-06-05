@@ -1,3 +1,4 @@
+/dev
 /target
 **/node_modules
 package.json
