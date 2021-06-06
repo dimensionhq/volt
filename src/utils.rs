@@ -47,7 +47,7 @@ pub static PROGRESS_CHARS: &str = "▰▰▱";
 lazy_static! {
     pub static ref ERROR_TAG: String = "error".red().bold().to_string();
 }
-
+#[derive(Debug)]
 pub struct App {
     pub current_dir: PathBuf,
     pub home_dir: PathBuf,
@@ -74,7 +74,7 @@ impl App {
         let mut args: Vec<String> = Vec::new();
         let mut flags: Vec<String> = Vec::new();
 
-        for arg in cli_args.into_iter().skip(2) {
+        for arg in cli_args.into_iter().skip(1) {
             if arg.starts_with("--") || arg.starts_with("-") {
                 flags.push(arg);
             } else {
