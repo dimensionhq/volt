@@ -2,5 +2,5 @@
     "rust-analyzer.inlayHints.enable": false,
     "discord.lowerDetailsEditing": "Workspace: volt",
     "discord.lowerDetailsDebugging": "Debugging: volt",
-    "python.pythonPath": "C:\\Python39\\python.exe"
+    "python.pythonPath": "C:\\Users\\xtrem\\AppData\\Local\\Programs\\Python\\Python39\\python.exe"
 }
