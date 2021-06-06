@@ -82,7 +82,7 @@ Options:
         let mut packagemanager: String = String::new();
         if app.args.len() == 1 {
             packagemanager = app.args[0].clone().to_string();
-        } else if app.args.len() == 0 {
+        } else if app.args.len() == 1 {
             let select = Select {
                 message: String::from("Package Manager"),
                 paged: true,

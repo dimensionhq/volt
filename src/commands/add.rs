@@ -103,7 +103,7 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        if app.args.len() == 0 {
+        if app.args.len() == 1 {
             println!("{}", Self::help());
             exit(1);
         }
@@ -125,11 +125,10 @@ Options:
             let mut string: String = String::new();
             let _ = std::io::stdin().read_line(&mut string);
             if string.trim().to_lowercase() != "y" {
-                exit(0);                
-            }
-            else {
+                exit(0);
+            } else {
                 init::Init::exec(app.clone()).await.unwrap();
-            }            
+            }
         }
 
         let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
