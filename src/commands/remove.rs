@@ -28,6 +28,19 @@ use colored::Colorize;
 use crate::utils::App;
 use crate::VERSION;
 
+use std::process::exit;
+
+use std::io::Write;
+
+use crate::commands::init;
+
+use crate::classes::package::PackageJson;
+
+use tokio::{
+    self,
+    sync::Mutex,
+};
+
 // Super Imports
 use super::Command;
 
@@ -76,8 +89,62 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
-        println!("Removing packages");
+    async fn exec(app: Arc<App>) -> Result<()> {
+        if app.args.len() == 0 {
+            println!("{}", Self::help());
+            exit(1);
+        }
+
+        let mut packages = vec![];
+        for arg in &app.args {
+            if arg != "add" {
+                packages.push(arg.clone());
+            }
+        }
+    
+        let package_json_dir = std::env::current_dir()?.join("package.json");
+
+        if !package_json_dir.exists() {
+            println!("{} no package.json found", "error".bright_red());
+            print!("Do you want to initialize package.json (Y/N): ");
+            std::io::stdout()
+                .flush()
+                .ok()
+                .expect("Could not flush stdout");
+            let mut string: String = String::new();
+            let _ = std::io::stdin().read_line(&mut string);
+            if string.trim().to_lowercase() != "y" {
+                exit(0);                
+            }
+            else {
+                init::Init::exec(app.clone()).await.unwrap();
+            }            
+        }
+
+        let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
+
+        let mut handles = vec![];
+
+        for package in packages {
+
+            let package_file = package_file.clone();
+
+            handles.push(tokio::spawn(async move {
+                let mut package_json_file = package_file.lock().await;    
+
+                package_json_file
+                .dependencies.remove(&package);
+
+                package_json_file.save();
+            }));
+        }
+
+        if handles.len() > 0 {
+            for handle in handles {
+                handle.await?;
+            }
+        }
+
         Ok(())
     }
 }
