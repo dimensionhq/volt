@@ -727,6 +727,8 @@ pub fn generate_script(package: &VoltPackage) {
         let k = bin.keys().next().unwrap();
         let v = bin.values().next().unwrap();
 
+        let user_profile = std::env::var("USERPROFILE").unwrap();
+        let volt_path = format!("{}/.volt", user_profile);
         let command = format!(
             r#"
 @IF EXIST "%~dp0\node.exe" (
@@ -738,7 +740,7 @@ pub fn generate_script(package: &VoltPackage) {
 )"#,
             k, v, k, v
         )
-        .replace(r"%~dp0\..", r"C:\Users\xtrem\.volt");
+        .replace(r"%~dp0\..", &volt_path);
 
         let mut f = File::create(format!(r"node_modules/scripts/{}.cmd", k)).unwrap();
         f.write(command.as_bytes()).unwrap();

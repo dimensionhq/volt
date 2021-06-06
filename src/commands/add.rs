@@ -30,6 +30,10 @@ use tokio::{
     sync::{mpsc, Mutex},
 };
 
+use std::io::Write;
+
+use crate::commands::init;
+
 use crate::classes::package::PackageJson;
 use crate::model::lock_file::{DependencyID, DependencyLock};
 // Crate Level Imports
@@ -113,12 +117,19 @@ Options:
 
         if !std::env::current_dir()?.join("package.json").exists() {
             println!("{} no package.json found", "error".bright_red());
-            println!(
-                "{} run {} to initiate volt",
-                "info".bright_blue(),
-                "volt init".bright_purple()
-            );
-            exit(1);
+            print!("Do you want to initialize package.json (Y/N): ");
+            std::io::stdout()
+                .flush()
+                .ok()
+                .expect("Could not flush stdout");
+            let mut string: String = String::new();
+            let _ = std::io::stdin().read_line(&mut string);
+            if string.trim().to_lowercase() != "y" {
+                exit(0);                
+            }
+            else {
+                init::Init::exec(app.clone()).await.unwrap();
+            }            
         }
 
         let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));

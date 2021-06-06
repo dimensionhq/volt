@@ -21,7 +21,7 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum License {
     MIT = 0,
     Apache2 = 1,
@@ -93,7 +93,7 @@ impl License {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct InitData {
     pub name: String,
     pub version: String,
