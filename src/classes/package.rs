@@ -178,6 +178,8 @@ pub struct PackageJson {
     pub license: Option<String>,
     #[serde(default)]
     pub dependencies: HashMap<String, String>,
+    #[serde(default)]
+    pub scripts: HashMap<String, String>,
 }
 
 impl PackageJson {

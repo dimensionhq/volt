@@ -36,11 +36,13 @@ pub mod init;
 pub mod install;
 pub mod migrate;
 pub mod remove;
+pub mod unknown;
 
 #[derive(Debug)]
 pub enum AppCommand {
     Add,
     Help,
+    Unknown,
     Init,
     Install,
     Remove,
@@ -73,6 +75,10 @@ impl FromStr for AppCommand {
 
 impl AppCommand {
     pub fn current() -> Option<Self> {
+        if std::env::args().len() == 1 {
+            return Some(Self::Help);
+        }
+
         match std::env::args().nth(1) {
             Some(cmd) => Self::from_str(cmd.as_str()).ok(),
             None => None,
@@ -91,6 +97,7 @@ impl AppCommand {
             Self::Create => create::Create::help(),
             Self::Migrate => migrate::Migrate::help(),
             Self::Compress => compress::Compress::help(),
+            Self::Unknown => unknown::Unknown::help(),
         }
     }
 
@@ -107,6 +114,7 @@ impl AppCommand {
             Self::Create => create::Create::exec(app).await,
             Self::Migrate => migrate::Migrate::exec(app).await,
             Self::Compress => compress::Compress::exec(app).await,
+            Self::Unknown => unknown::Unknown::exec(app).await,
         }
     }
 }

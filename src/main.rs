@@ -28,6 +28,8 @@ mod prompt;
 mod templates;
 mod utils;
 
+use std::process::exit;
+
 // Library Imports
 use anyhow::Result;
 use colored::Colorize;
@@ -62,8 +64,7 @@ async fn main() {
 
 async fn try_main() -> Result<()> {
     let app = App::initialize();
-
-    let cmd = AppCommand::current().unwrap_or(AppCommand::Help); // Default command is help
+    let cmd = AppCommand::current().unwrap_or(AppCommand::Unknown); // Default command is help
 
     if app.has_flag(&["--help", "-h"]) {
         println!("{}", cmd.help());
@@ -71,7 +72,12 @@ async fn try_main() -> Result<()> {
     }
 
     if app.has_flag(&["--version"]) {
-        println!("volt version::{}", VERSION.bright_green().bold());
+        println!(
+            "volt v{}{}",
+            "::".bright_magenta(),
+            VERSION.bright_green().bold()
+        );
+        exit(0);
     }
 
     let start = Instant::now();
