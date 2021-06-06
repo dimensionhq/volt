@@ -35,6 +35,7 @@ use std::io::Write;
 use crate::commands::init;
 
 use crate::classes::package::PackageJson;
+use crate::model::lock_file::LockFile;
 
 use tokio::{
     self,
@@ -128,14 +129,20 @@ Options:
         for package in packages {
 
             let package_file = package_file.clone();
+            let app_new = app.clone();
 
             handles.push(tokio::spawn(async move {
-                let mut package_json_file = package_file.lock().await;    
+                // let mut package_json_file = package_file.lock().await;    
 
-                package_json_file
-                .dependencies.remove(&package);
+                // package_json_file
+                // .dependencies.remove(&package);
 
-                package_json_file.save();
+                // package_json_file.save();
+
+                let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
+                .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
+
+                println!("lock: {:?}", lock_file);
             }));
         }
 
