@@ -60,9 +60,13 @@ impl Command for Unknown {
 
             split[0] = bin_cmd.as_str();
 
-            let exec = format!(r"node_modules/scripts/{}", split.join(" "));
+            let exec = format!("node_modules\\scripts\\{}", split.join(" "));
 
-            println!("{}", exec);
+            std::process::Command::new("cmd.exe")
+                .arg("/C")
+                .arg(exec)
+                .spawn()
+                .unwrap();
         } else {
         }
 
