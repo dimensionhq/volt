@@ -39,7 +39,7 @@ use super::Command;
 pub struct Init;
 
 #[async_trait]
-impl Command for Init {
+impl Command for Init {    
     /// Display a help menu for the `volt init` command.
     fn help() -> String {
         format!(
