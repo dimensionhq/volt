@@ -106,7 +106,9 @@ Options:
 
         let mut packages = vec![];
         for arg in &app.args {
-            packages.push(arg.clone());
+            if arg != "add" {
+                packages.push(arg.clone());
+            }
         }
 
         if !std::env::current_dir()?.join("package.json").exists() {
@@ -211,8 +213,10 @@ Options:
 
                     for dep in dependencies.clone() {
                         let app_new = app_new.clone();
-                        workers
-                            .push(async move { Add::install_extract_package(app_new, &dep).await });
+                        workers.push(async move {
+                            Add::install_extract_package(app_new, &dep).await.unwrap();
+                            utils::generate_script(&dep);
+                        });
                     }
 
                     if pballowed {
@@ -229,11 +233,7 @@ Options:
 
                         loop {
                             match workers.next().await {
-                                Some(result) => {
-                                    result.unwrap();
-                                    progress_bar.inc(1)
-                                }
-
+                                Some(_) => progress_bar.inc(1),
                                 None => break,
                             }
                         }
@@ -241,10 +241,7 @@ Options:
                     } else {
                         loop {
                             match workers.next().await {
-                                Some(result) => {
-                                    result.unwrap();
-                                }
-
+                                Some(_) => {}
                                 None => break,
                             }
                         }
@@ -354,7 +351,10 @@ Options:
 
                 for dep in dependencies.clone() {
                     let app_new = app_new.clone();
-                    workers.push(async move { Add::install_extract_package(app_new, &dep).await });
+                    workers.push(async move {
+                        Add::install_extract_package(app_new, &dep).await.unwrap();
+                        utils::generate_script(&dep);
+                    });
                 }
 
                 if pballowed {
@@ -371,10 +371,7 @@ Options:
 
                     loop {
                         match workers.next().await {
-                            Some(result) => {
-                                result.unwrap();
-                                progress_bar.inc(1)
-                            }
+                            Some(_) => progress_bar.inc(1),
 
                             None => break,
                         }
@@ -383,10 +380,7 @@ Options:
                 } else {
                     loop {
                         match workers.next().await {
-                            Some(result) => {
-                                result.unwrap();
-                            }
-
+                            Some(_) => {}
                             None => break,
                         }
                     }
@@ -450,6 +444,7 @@ impl Add {
                 format!("Unable to extract tarball for package '{}'", &package.name)
             })?;
 
+        utils::generate_script(package);
         Ok(())
     }
 }

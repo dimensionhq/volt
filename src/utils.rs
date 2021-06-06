@@ -14,6 +14,7 @@
     limitations under the License.
 */
 
+use std::fs::create_dir;
 // Std Imports
 use std::path::Path;
 use std::process;
@@ -26,6 +27,7 @@ use std::{
 
 // Library Imports
 use anyhow::{Context, Result};
+use chttp::ResponseExt;
 use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
@@ -534,13 +536,13 @@ pub fn create_dep_symlinks(
 
 // Gets response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
-    let response = reqwest::get(format!("http://volt-api.b-cdn.net/{}.json", package_name))
+    let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
         .await
         .unwrap_or_else(|e| {
             println!("{} {}", "error".bright_red(), e);
             std::process::exit(1);
         })
-        .text()
+        .text_async()
         .await
         .unwrap_or_else(|e| {
             println!("{} {}", "error".bright_red(), e);
@@ -708,8 +710,11 @@ pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> R
 }
 
 #[cfg(windows)]
-#[allow(unused)]
-pub fn generate_windows_binary(package: &VoltPackage) {
+pub fn generate_script(package: &VoltPackage) {
+    if !Path::new("node_modules/scripts").exists() {
+        create_dir("node_modules/scripts").unwrap();
+    }
+
     if package.bin.is_some() {
         let bin = package.clone().bin.unwrap();
         let k = bin.keys().next().unwrap();
@@ -725,10 +730,10 @@ pub fn generate_windows_binary(package: &VoltPackage) {
     node  "%~dp0\..\{}\{}" %*
 )"#,
             k, v, k, v
-        );
-        println!("{}", command);
+        )
+        .replace(r"%~dp0\..", r"C:\Users\xtrem\.volt");
 
-        let mut file = File::create(format!(r"node_modules\.bin\{}.cmd", k)).unwrap();
-        //TODO: Move bin file to bin directory
+        let mut f = File::create(format!(r"node_modules/scripts/{}.cmd", k)).unwrap();
+        f.write(command.as_bytes()).unwrap();
     }
 }
