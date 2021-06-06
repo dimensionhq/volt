@@ -15,6 +15,7 @@
 */
 
 use std::fs::create_dir;
+use std::io::Read;
 // Std Imports
 use std::path::Path;
 use std::process;
@@ -589,13 +590,19 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
 
     let tarball = package.tarball.replace("https", "http");
 
-    let mut response = reqwest::get(tarball).await?;
-    // Placeholder buffer
+    let response = chttp::get_async(tarball).await?;
+
+    let body = response.into_body();
+
     let mut file = File::create(&path)?;
 
-    while let Some(chunk) = response.chunk().await? {
-        file.write(&*chunk)?;
-    }
+    file.write(
+        body.bytes()
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap()
+            .as_slice(),
+    )?;
 
     App::calc_hash(&path)?;
 
