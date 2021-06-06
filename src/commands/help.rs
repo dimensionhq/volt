@@ -52,6 +52,7 @@ Commands:
   {} {} - Add a dependency to a project.
   {} {} - Remove a dependency from the package.json file for a project.
   {} {} - Push changes to a github repository the easy way.
+  {} {} - Clean the volt cache files and metadata.
   {} {} - Clone a github repository and get setup with all required dependencies.
   "#,
             VERSION.bright_green().bold(),
@@ -66,6 +67,8 @@ Commands:
             "add".bright_blue(),
             "*".bright_magenta().bold(),
             "remove".bright_blue(),
+            "*".bright_magenta().bold(),
+            "cache".bright_blue(),
             "*".bright_magenta().bold(),
             "deploy".bright_blue(),
             "*".bright_magenta().bold(),

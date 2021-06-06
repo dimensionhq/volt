@@ -27,6 +27,7 @@ use crate::utils::App;
 
 // Modules
 pub mod add;
+pub mod cache;
 pub mod clone;
 pub mod compress;
 pub mod create;
@@ -51,6 +52,7 @@ pub enum AppCommand {
     Create,
     Migrate,
     Compress,
+    Cache,
 }
 
 impl FromStr for AppCommand {
@@ -68,6 +70,7 @@ impl FromStr for AppCommand {
             "create" => Ok(Self::Create),
             "migrate" => Ok(Self::Migrate),
             "compress" => Ok(Self::Compress),
+            "cache" => Ok(Self::Cache),
             _ => Err(()),
         }
     }
@@ -98,6 +101,7 @@ impl AppCommand {
             Self::Migrate => migrate::Migrate::help(),
             Self::Compress => compress::Compress::help(),
             Self::Unknown => unknown::Unknown::help(),
+            Self::Cache => cache::Cache::help(),
         }
     }
 
@@ -115,6 +119,7 @@ impl AppCommand {
             Self::Migrate => migrate::Migrate::exec(app).await,
             Self::Compress => compress::Compress::exec(app).await,
             Self::Unknown => unknown::Unknown::exec(app).await,
+            Self::Cache => cache::Cache::exec(app).await
         }
     }
 }
