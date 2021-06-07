@@ -30,12 +30,16 @@ use crate::VERSION;
 
 use std::process::exit;
 
+use std::collections::HashMap;
+
 use std::io::Write;
 
 use crate::commands::init;
 
+use crate::utils::get_volt_response;
+
 use crate::classes::package::PackageJson;
-use crate::model::lock_file::LockFile;
+use crate::model::lock_file::{DependencyID, DependencyLock, LockFile};
 
 use tokio::{self, sync::Mutex};
 
@@ -127,15 +131,47 @@ Options:
             let app_new = app.clone();
 
             handles.push(tokio::spawn(async move {
-                // let mut package_json_file = package_file.lock().await;
+                let mut package_json_file = package_file.lock().await;
 
-                // package_json_file
-                // .dependencies.remove(&package);
+                package_json_file
+                .dependencies.remove(&package);
 
-                // package_json_file.save();
+                package_json_file.save();
 
                 let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
-                    .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
+                .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
+
+                let response = get_volt_response(package.to_string()).await;
+
+                let current_version = response.versions.get(&response.version).unwrap();
+
+                for (_, object) in &current_version.packages {
+                    let mut lock_dependencies: HashMap<String, String> = HashMap::new();
+
+                    if object.clone().dependencies.is_some() {
+                        for dep in object.clone().dependencies.unwrap().iter() {
+                            // TODO: Change this to real version
+                            lock_dependencies.insert(dep.clone(), String::new());
+                        }
+                    }
+
+                    let hashmap: HashMap<DependencyID, DependencyLock> = [(DependencyID(object.clone().name, object.clone().version),
+                    DependencyLock {
+                        name: object.clone().name,
+                        version: object.clone().version,
+                        tarball: object.clone().tarball,
+                        sha1: object.clone().sha1,
+                        dependencies: lock_dependencies,
+                    })].iter().cloned().collect();
+
+                    lock_file.dependencies.remove(
+                        &DependencyID(object.clone().name, object.clone().version)
+                    );
+                }                
+
+                lock_file
+                .save()                
+                .unwrap();
 
                 println!("lock: {:?}", lock_file);
             }));
