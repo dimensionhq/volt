@@ -18,7 +18,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::io::{self, BufReader, BufWriter};
+use std::io::{self, BufWriter};
 use std::path::PathBuf;
 
 // Library Imports
@@ -143,12 +143,18 @@ impl LockFile {
 
     /// Loads a lock file from the given path.
     pub fn load(path: PathBuf) -> Result<Self, LockFileError> {
-        let lock_file = File::open(&path).map_err(LockFileError::IO)?;
-        let reader = BufReader::new(lock_file);
+        let lock_file = std::fs::read_to_string(path.clone()).map_err(LockFileError::IO)?; 
+        let data = serde_json::from_str::<HashMap<DependencyID, DependencyLock>>(&lock_file).unwrap();
+        // let lock_file = File::open(&path).map_err(LockFileError::IO)?;
+        // let reader = BufReader::new(lock_file);        
+
+        // let dependencies: HashMap<DependencyID, DependencyLock> = serde_json::from_reader(reader).unwrap();
+
+        // println!("reader: {:?}", data);
 
         Ok(LockFile {
             path,
-            dependencies: serde_json::from_reader(reader).map_err(LockFileError::Decode)?,
+            dependencies: data,
         })
     }
 
