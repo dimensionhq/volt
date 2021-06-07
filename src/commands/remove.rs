@@ -126,13 +126,13 @@ Options:
 
         let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
 
-        let mut handles = vec![];
+        // let mut handles = vec![];
 
         for package in packages {
             let package_file = package_file.clone();
             let app_new = app.clone();
 
-            handles.push(tokio::spawn(async move {
+            // handles.push(tokio::spawn(async move {
                 let mut package_json_file = package_file.lock().await;
 
                 package_json_file
@@ -171,14 +171,14 @@ Options:
                 if dep_dir.exists() {
                     remove_dir_all(dep_dir).unwrap_or_else(|_| println!("Failed to delete dependency dir in node_modules"));
                 }
-            }));
+            // }));
         }
 
-        if handles.len() > 0 {
-            for handle in handles {
-                handle.await?;
-            }
-        }
+        // if handles.len() > 0 {
+        //     for handle in handles {
+        //         handle.await?;
+        //     }
+        // }
 
         Ok(())
     }
