@@ -16,6 +16,7 @@
 
 //! Remove a package from your direct dependencies.
 
+use std::path::Path;
 // Std Imports
 use std::sync::Arc;
 
@@ -23,6 +24,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use tokio::fs::remove_file;
 
 // Crate Level Imports
 use crate::utils::App;
@@ -133,45 +135,60 @@ Options:
             let app_new = app.clone();
 
             // handles.push(tokio::spawn(async move {
-                let mut package_json_file = package_file.lock().await;
+            let mut package_json_file = package_file.lock().await;
 
-                package_json_file
-                .dependencies.remove(&package);
+            package_json_file.dependencies.remove(&package);
 
-                package_json_file.save();
+            package_json_file.save();
 
-                let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
+            let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
                 .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
 
-                let response = get_volt_response(package.to_string()).await;
+            let response = get_volt_response(package.to_string()).await;
 
-                let current_version = response.versions.get(&response.version).unwrap();
+            let current_version = response.versions.get(&response.version).unwrap();
 
-                for (_, object) in &current_version.packages {
-                    let mut lock_dependencies: HashMap<String, String> = HashMap::new();
+            for (_, object) in &current_version.packages {
+                let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 
-                    if object.clone().dependencies.is_some() {
-                        for dep in object.clone().dependencies.unwrap().iter() {
-                            // TODO: Change this to real version
-                            lock_dependencies.insert(dep.clone(), String::new());
-                        }
+                if object.clone().dependencies.is_some() {
+                    for dep in object.clone().dependencies.unwrap().iter() {
+                        // TODO: Change this to real version
+                        lock_dependencies.insert(dep.clone(), String::new());
                     }
-
-                    lock_file.dependencies.remove(
-                        &DependencyID(object.clone().name, object.clone().version)
-                    );
-                }                
+                }
 
                 lock_file
-                .save()                
-                .unwrap();
+                    .dependencies
+                    .remove(&DependencyID(object.clone().name, object.clone().version));
 
-                let node_modules_dir = std::env::current_dir().unwrap().join("node_modules");
-                let dep_dir = node_modules_dir.join(package);
-                if dep_dir.exists() {
-                    remove_dir_all(dep_dir).unwrap_or_else(|_| println!("Failed to delete dependency dir in node_modules"));
+                let scripts = Path::new("node_modules/scripts")
+                    .join(format!("{}.cmd", object.clone().name).as_str());
+
+                if scripts.exists() {
+                    remove_file(format!(
+                        "node_modules/scripts/{}",
+                        scripts.file_name().unwrap().to_str().unwrap()
+                    ))
+                    .await
+                    .unwrap_or_else(|err| {
+                        println!(
+                            "Failed to delete scripts file in node_modules/scripts: {}",
+                            err
+                        );
+                    });
                 }
-            // }));
+            }
+
+            lock_file.save().unwrap();
+
+            let node_modules_dir = std::env::current_dir().unwrap().join("node_modules");
+            let dep_dir = node_modules_dir.join(&package);
+            if dep_dir.exists() {
+                remove_dir_all(dep_dir).unwrap_or_else(|_| {
+                    println!("Failed to delete dependency dir in node_modules")
+                });
+            }
         }
 
         // if handles.len() > 0 {
