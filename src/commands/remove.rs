@@ -39,7 +39,9 @@ use crate::commands::init;
 use crate::utils::get_volt_response;
 
 use crate::classes::package::PackageJson;
-use crate::model::lock_file::{DependencyID, DependencyLock, LockFile};
+use crate::model::lock_file::{DependencyID, LockFile};
+
+use std::fs::remove_dir_all;
 
 use tokio::{self, sync::Mutex};
 
@@ -155,15 +157,6 @@ Options:
                         }
                     }
 
-                    let hashmap: HashMap<DependencyID, DependencyLock> = [(DependencyID(object.clone().name, object.clone().version),
-                    DependencyLock {
-                        name: object.clone().name,
-                        version: object.clone().version,
-                        tarball: object.clone().tarball,
-                        sha1: object.clone().sha1,
-                        dependencies: lock_dependencies,
-                    })].iter().cloned().collect();
-
                     lock_file.dependencies.remove(
                         &DependencyID(object.clone().name, object.clone().version)
                     );
@@ -173,7 +166,11 @@ Options:
                 .save()                
                 .unwrap();
 
-                println!("lock: {:?}", lock_file);
+                let node_modules_dir = std::env::current_dir().unwrap().join("node_modules");
+                let dep_dir = node_modules_dir.join(package);
+                if dep_dir.exists() {
+                    remove_dir_all(dep_dir).unwrap_or_else(|_| println!("Failed to delete dependency dir in node_modules"));
+                }
             }));
         }
 
