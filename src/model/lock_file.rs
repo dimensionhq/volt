@@ -30,6 +30,7 @@ pub enum LockFileError {
     #[error("unable to read lock file")]
     IO(io::Error),
     #[error("unable to deserialize lock file")]
+    #[allow(dead_code)]
     Decode(serde_json::Error),
     #[error("unable to serialize lock file")]
     Encode(serde_json::Error),
@@ -143,10 +144,11 @@ impl LockFile {
 
     /// Loads a lock file from the given path.
     pub fn load(path: PathBuf) -> Result<Self, LockFileError> {
-        let lock_file = std::fs::read_to_string(path.clone()).map_err(LockFileError::IO)?; 
-        let data = serde_json::from_str::<HashMap<DependencyID, DependencyLock>>(&lock_file).unwrap();
+        let lock_file = std::fs::read_to_string(path.clone()).map_err(LockFileError::IO)?;
+        let data =
+            serde_json::from_str::<HashMap<DependencyID, DependencyLock>>(&lock_file).unwrap();
         // let lock_file = File::open(&path).map_err(LockFileError::IO)?;
-        // let reader = BufReader::new(lock_file);        
+        // let reader = BufReader::new(lock_file);
 
         // let dependencies: HashMap<DependencyID, DependencyLock> = serde_json::from_reader(reader).unwrap();
 
