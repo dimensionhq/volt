@@ -1,9 +1,5 @@
-<p align="center">
-  <img src="https://github.com/voltpkg/volt/blob/master/assets/volt-transparent-bg.png?raw=true">
-</p>
-
 <h1 align="center">Volt</h1>
-<h3 align="center">A powerful, fast and memory safe package manager for the web.</h3>
+<h3 align="center">The official registry for volt.</h3>
 <br>
 
 <p align="center">
