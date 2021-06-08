@@ -31,7 +31,7 @@ pub enum GetPackageError {
     #[error("unable to read network response")]
     IO(io::Error),
     #[error("unable to deserialize network response: {0:?}")]
-    JSON(serde_json::Error),
+    Json(serde_json::Error),
 }
 
 #[allow(dead_code)]
@@ -64,7 +64,7 @@ pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError>
     let mut body = resp.into_body();
     let body_string = body.text().map_err(GetPackageError::IO)?;
 
-    let package: Package = serde_json::from_str(&body_string).map_err(GetPackageError::JSON)?;
+    let package: Package = serde_json::from_str(&body_string).map_err(GetPackageError::Json)?;
 
     Ok(Some(package))
 }
