@@ -119,7 +119,7 @@ impl AppCommand {
             Self::Migrate => migrate::Migrate::exec(app).await,
             Self::Compress => compress::Compress::exec(app).await,
             Self::Unknown => unknown::Unknown::exec(app).await,
-            Self::Cache => cache::Cache::exec(app).await
+            Self::Cache => cache::Cache::exec(app).await,
         }
     }
 }

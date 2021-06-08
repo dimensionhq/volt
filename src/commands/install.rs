@@ -81,7 +81,14 @@ Options:
 
         let mut app = App::initialize();
 
-        app.args = dependencies.into_iter().map(|value| value.0).collect();
+        let mut deps = dependencies
+            .into_iter()
+            .map(|value| value.0)
+            .collect::<Vec<String>>();
+
+        deps.push(String::from("add"));
+
+        app.args = deps;
 
         Add::exec(Arc::new(app)).await.unwrap();
 
