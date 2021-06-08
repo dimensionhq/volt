@@ -1,14 +1,12 @@
-// Modules
-mod minifier;
-
+use std::io::Read;
+use std::io::Write;
+use std::process::Command;
+use std::process::Stdio;
 use std::time::Instant;
 
 use indicatif::{ProgressBar, ProgressStyle};
 use std::fs::File;
-use std::{
-    io::{Read, Write},
-    path::Path,
-};
+use std::path::Path;
 use walkdir::WalkDir;
 
 use flate2::write::GzEncoder;
@@ -18,6 +16,7 @@ enum SourceType {
     Css,
     Js,
     Json,
+    Html,
     Unknown,
 }
 
@@ -39,7 +38,7 @@ fn dir_size(path: impl Into<PathBuf>) -> io::Result<u64> {
 }
 
 fn minifiable<P: AsRef<Path>>(path: P) -> Option<SourceType> {
-    let recognized_file_types = vec!["js", "ts", "jsx", "tsx", ".d.ts"];
+    let recognized_file_types = vec!["js", "ts", ".d.ts"];
 
     let ext = path.as_ref().extension()?;
     if ext == "css" {
@@ -48,59 +47,42 @@ fn minifiable<P: AsRef<Path>>(path: P) -> Option<SourceType> {
         Some(SourceType::Js)
     } else if ext == "json" {
         Some(SourceType::Json)
+    } else if ext == "html" {
+        Some(SourceType::Html)
     } else {
         Some(SourceType::Unknown)
     }
 }
 
-fn minify_file<P: AsRef<Path>>(
-    path: P,
-    src_ty: SourceType,
-    buf: &mut String,
-) -> std::io::Result<u64> {
-    // Read
-    buf.clear();
-
-    // Open File
-    File::open(&path)?.read_to_string(buf)?;
-
-    let old_size = buf.len() as u64;
-
-    let mut minified: String = String::new();
-
+fn minify_file(path: String, src_ty: SourceType) {
     // Minify
     match src_ty {
-        SourceType::Css => {
-            minified = minifier::json::minify(&buf);
-        }
+        SourceType::Css => {}
         SourceType::Json => {
-            minified = minifier::json::minify(&buf);
+            let mut buf = String::new();
+
+            // Open File
+            File::open(&path).unwrap().read_to_string(&mut buf).unwrap();
+
+            let minified: String = minifier::json::minify(&buf);
+
+            File::create(&path)
+                .unwrap()
+                .write_all(minified.as_bytes())
+                .unwrap();
         }
         SourceType::Js => {
-            minified = minifier::js::minify(&buf);
+            minify_js(path);
         }
+        SourceType::Html => {}
         SourceType::Unknown => {}
-    }
-
-    if minified != String::new() {
-        let new_size = minified.len() as u64;
-
-        if new_size >= old_size {
-            return Ok(0);
-        }
-
-        // Write
-        File::create(&path)?.write_all(minified.as_bytes())?;
-
-        return Ok(old_size - new_size);
-    } else {
-        return Ok(0);
     }
 }
 
 fn main() {
     let start = Instant::now();
     let files = WalkDir::new("node_modules");
+    let old_size = dir_size("node_modules").unwrap();
 
     let to_minify: Vec<_> = files
         .into_iter()
@@ -122,24 +104,13 @@ fn main() {
             .progress_chars("=> "),
     );
 
-    let mut files_minified: u64 = 0;
-    let mut space_saved = 0;
-
-    let mut buf = String::new();
     for (entry, src_ty) in to_minify {
         let path = entry.path();
 
         let name = path.to_string_lossy().into_owned();
-        pb.set_message(name);
+        pb.set_message(name.clone());
 
-        match minify_file(path, src_ty, &mut buf) {
-            Ok(0) => {}
-            Ok(n) => {
-                files_minified += 1;
-                space_saved += n;
-            }
-            Err(_e) => {}
-        }
+        minify_file(name, src_ty);
 
         // Either way, we're done with this file
         pb.inc(1);
@@ -148,24 +119,29 @@ fn main() {
     pb.finish_and_clear();
 
     let msg = format!(
-        "Minified {} files, saving {} bytes in {} seconds",
-        files_minified,
-        space_saved,
+        "Minified files, saving {} bytes in {} seconds",
+        old_size - dir_size("node_modules").unwrap(),
         start.elapsed().as_secs_f32()
     );
-
-    let old_size = dir_size("node_modules").unwrap();
-    println!("Minified Size: {}", old_size);
 
     let tar_gz = File::create("node_modules.tgz").unwrap();
     let enc = GzEncoder::new(&tar_gz, Compression::default());
     let mut tar = tar::Builder::new(enc);
     tar.append_dir_all("node_modules", ".").unwrap();
 
-    println!(
-        "Minified + Compressed Size: {} bytes",
-        tar_gz.metadata().unwrap().len()
-    );
-
     println!("{}", msg);
+}
+
+fn minify_js(path: String) {
+    Command::new("cmd.exe")
+        .arg("/C")
+        .arg(format!(
+            "esbuild.cmd {} --minify --allow-overwrite --outfile={}",
+            path, path
+        ))
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .output()
+        .unwrap();
 }
