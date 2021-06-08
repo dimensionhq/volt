@@ -26,7 +26,7 @@ pub enum PackageManager {
     Volt,
     Yarn,
     Pnpm,
-    NPM,
+    Npm,
 }
 
 impl fmt::Display for PackageManager {
@@ -35,7 +35,7 @@ impl fmt::Display for PackageManager {
             Self::Volt => write!(f, "Volt"),
             Self::Yarn => write!(f, "Yarn"),
             Self::Pnpm => write!(f, "pnpm"),
-            Self::NPM => write!(f, "npm"),
+            Self::Npm => write!(f, "npm"),
         }
     }
 }
@@ -53,7 +53,7 @@ impl PackageManager {
             Self::Volt.to_string(),
             Self::Yarn.to_string(),
             Self::Pnpm.to_string(),
-            Self::NPM.to_string(),
+            Self::Npm.to_string(),
         ]
     }
 
@@ -63,7 +63,7 @@ impl PackageManager {
             0 => Some(Self::Volt),
             1 => Some(Self::Yarn),
             2 => Some(Self::Pnpm),
-            3 => Some(Self::NPM),
+            3 => Some(Self::Npm),
             _ => None,
         }
     }

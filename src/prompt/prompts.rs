@@ -227,6 +227,6 @@ impl Select {
             input.default(self.selected.unwrap() - 1);
         }
 
-        Ok(input.interact()?)
+        input.interact()
     }
 }

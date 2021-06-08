@@ -22,7 +22,7 @@ use std::{env, process};
 
 // Crate Level Imports
 use crate::classes::init_data::{InitData, License};
-use crate::prompt::prompt::{Confirm, Input, Select};
+use crate::prompt::prompts::{Confirm, Input, Select};
 use crate::utils::{self, get_git_config, App};
 use crate::VERSION;
 
@@ -39,7 +39,7 @@ use super::Command;
 pub struct Init;
 
 #[async_trait]
-impl Command for Init {    
+impl Command for Init {
     /// Display a help menu for the `volt init` command.
     fn help() -> String {
         format!(
@@ -81,7 +81,7 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
-        let split: Vec<&str> = temp.split(r"\").collect::<Vec<&str>>();
+        let split: Vec<&str> = temp.split('\\').collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();
 
         let data = if app.has_flag(&["-y", "--yes"]) {
@@ -105,13 +105,13 @@ Options:
                 let git_user_name = get_git_config("user.name")
                     .ok()
                     .flatten()
-                    .unwrap_or_else(|| String::new());
+                    .unwrap_or_else(String::new);
 
                 let git_email = get_git_config("user.email")
                     .ok()
                     .flatten()
                     .map(|email| format!("<{}>", email))
-                    .unwrap_or_else(|| String::new());
+                    .unwrap_or_else(String::new);
 
                 if git_user_name.is_empty() && git_email.is_empty() {
                     None
@@ -125,13 +125,13 @@ Options:
             let license = License::default();
 
             InitData {
-                name: name,
-                version: version,
-                description: description,
-                main: main,
-                repository: repository,
-                author: author,
-                license: license,
+                name,
+                version,
+                description,
+                main,
+                repository,
+                author,
+                license,
                 private: None,
             }
         } else {
@@ -223,13 +223,13 @@ Options:
             let git_user_name = get_git_config("user.name")
                 .ok()
                 .flatten()
-                .unwrap_or_else(|| String::new());
+                .unwrap_or_else(String::new);
 
             let git_email = get_git_config("user.email")
                 .ok()
                 .flatten()
                 .map(|email| format!("<{}>", email))
-                .unwrap_or_else(|| String::new());
+                .unwrap_or_else(String::new);
 
             let author;
 
@@ -285,7 +285,7 @@ Options:
                 message: String::from("License"),
                 paged: true,
                 selected: Some(1),
-                items: licenses.clone(),
+                items: licenses,
             };
 
             select.run().unwrap_or_else(|err| {
@@ -314,13 +314,13 @@ Options:
             });
 
             InitData {
-                name: name,
-                version: version,
+                name,
+                version,
                 description: Some(description),
-                main: main,
+                main,
                 repository: Some(repository),
                 author: Some(author),
-                license: license,
+                license,
                 private: Some(private),
             }
         };

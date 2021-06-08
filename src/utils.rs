@@ -78,7 +78,7 @@ impl App {
         let mut flags: Vec<String> = Vec::new();
 
         for arg in cli_args.into_iter().skip(1) {
-            if arg.starts_with("--") || arg.starts_with("-") {
+            if arg.starts_with("--") || arg.starts_with('-') {
                 flags.push(arg);
             } else {
                 args.push(arg);
@@ -86,13 +86,13 @@ impl App {
         }
 
         App {
-            args,
-            flags,
             current_dir,
             home_dir,
             node_modules_dir,
             volt_dir,
             lock_file_path,
+            args,
+            flags,
         }
     }
 
@@ -241,7 +241,7 @@ pub fn get_dependencies_recursive(
         }
     }
 
-    if dependencies.len() > 0 {
+    if !dependencies.is_empty() {
         let node_modules_dir = package_dir.join("node_modules");
         if !node_modules_dir.exists() {
             std::fs::create_dir(node_modules_dir.clone()).unwrap();
@@ -550,12 +550,10 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
             std::process::exit(1);
         });
 
-    let data = serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|e| {
+    serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|e| {
         println!("{} {}", "error".bright_red(), e);
         std::process::exit(1);
-    });
-
-    data
+    })
 }
 
 /// downloads tarball file from package
@@ -596,7 +594,7 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
 
     let mut file = File::create(&path)?;
 
-    file.write(
+    file.write_all(
         body.bytes()
             .into_iter()
             .collect::<Result<Vec<_>, _>>()
@@ -609,7 +607,7 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
     Ok(path_str)
 }
 
-pub fn get_basename<'a>(path: &'a str) -> Cow<'a, str> {
+pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
     let sep: char;
     if cfg!(windows) {
         sep = '\\';
@@ -716,7 +714,6 @@ pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> R
     std::os::unix::fs::symlink(original, link).context("Unable to symlink directory")
 }
 
-#[cfg(windows)]
 pub fn generate_script(package: &VoltPackage) {
     if !Path::new("node_modules/scripts").exists() {
         create_dir("node_modules/scripts").unwrap();
@@ -743,6 +740,6 @@ pub fn generate_script(package: &VoltPackage) {
         .replace(r"%~dp0\..", &volt_path);
 
         let mut f = File::create(format!(r"node_modules/scripts/{}.cmd", k)).unwrap();
-        f.write(command.as_bytes()).unwrap();
+        f.write_all(command.as_bytes()).unwrap();
     }
 }
