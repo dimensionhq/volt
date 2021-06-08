@@ -121,9 +121,6 @@ fn main() {
     for (entry, src_ty) in to_minify {
         let path = entry.path();
 
-        // if you want to say which thing you're minifying...
-        // this does involve allocation due to indicatif's API
-        // so if each file goes by fast enough, maybe don't do this
         let name = path.to_string_lossy().into_owned();
         pb.set_message(name);
 
