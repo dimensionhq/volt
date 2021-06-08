@@ -118,10 +118,7 @@ Options:
         if !std::env::current_dir()?.join("package.json").exists() {
             println!("{} no package.json found", "error".bright_red());
             print!("Do you want to initialize package.json (Y/N): ");
-            std::io::stdout()
-                .flush()
-                .ok()
-                .expect("Could not flush stdout");
+            std::io::stdout().flush().expect("Could not flush stdout");
             let mut string: String = String::new();
             let _ = std::io::stdin().read_line(&mut string);
             if string.trim().to_lowercase() != "y" {
@@ -185,39 +182,41 @@ Options:
                         .packages
                         .len();
 
-                    if length.to_owned() == 1 {
+                    if *length == 1 {
                         println!("Loaded 1 dependency");
                     } else {
                         println!("Loaded {} dependencies.", length);
                     }
 
-                    let mut dependencies: Vec<VoltPackage> = vec![];
-
                     let current_version = response.versions.get(&response.version).unwrap();
 
-                    for (_, object) in &current_version.packages {
-                        dependencies.push(object.clone());
+                    let dependencies: Vec<_> = current_version
+                        .packages
+                        .iter()
+                        .map(|(_, object)| {
+                            let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 
-                        let mut lock_dependencies: HashMap<String, String> = HashMap::new();
-
-                        if object.clone().dependencies.is_some() {
-                            for dep in object.clone().dependencies.unwrap().iter() {
-                                // TODO: Change this to real version
-                                lock_dependencies.insert(dep.clone(), String::new());
+                            if object.clone().dependencies.is_some() {
+                                for dep in object.clone().dependencies.unwrap().iter() {
+                                    // TODO: Change this to real version
+                                    lock_dependencies.insert(dep.clone(), String::new());
+                                }
                             }
-                        }
 
-                        lock_file.dependencies.insert(
-                            DependencyID(object.clone().name, object.clone().version),
-                            DependencyLock {
-                                name: object.clone().name,
-                                version: object.clone().version,
-                                tarball: object.clone().tarball,
-                                sha1: object.clone().sha1,
-                                dependencies: lock_dependencies,
-                            },
-                        );
-                    }
+                            lock_file.dependencies.insert(
+                                DependencyID(object.clone().name, object.clone().version),
+                                DependencyLock {
+                                    name: object.clone().name,
+                                    version: object.clone().version,
+                                    tarball: object.clone().tarball,
+                                    sha1: object.clone().sha1,
+                                    dependencies: lock_dependencies,
+                                },
+                            );
+
+                            object.clone()
+                        })
+                        .collect();
 
                     let mut workers = FuturesUnordered::new();
 
@@ -241,24 +240,17 @@ Options:
                                 )),
                         );
 
-                        loop {
-                            match workers.next().await {
-                                Some(_) => progress_bar.inc(1),
-                                None => break,
-                            }
+                        while workers.next().await.is_some() {
+                            progress_bar.inc(1);
                         }
+
                         progress_bar.finish();
                     } else {
-                        loop {
-                            match workers.next().await {
-                                Some(_) => {}
-                                None => break,
-                            }
-                        }
+                        while workers.next().await.is_some() {}
                     }
 
                     for dep in dependencies {
-                        if dep.name == package.to_string() {
+                        if dep.name == package {
                             utils::create_dep_symlinks(
                                 package.as_str(),
                                 current_version.packages.clone(),
@@ -323,39 +315,41 @@ Options:
                     .packages
                     .len();
 
-                if length.to_owned() == 1 {
+                if *length == 1 {
                     println!("Loaded 1 dependency");
                 } else {
                     println!("Loaded {} dependencies.", length);
                 }
 
-                let mut dependencies: Vec<VoltPackage> = vec![];
-
                 let current_version = response.versions.get(&response.version).unwrap();
 
-                for (_, object) in &current_version.packages {
-                    dependencies.push(object.clone());
+                let dependencies: Vec<_> = current_version
+                    .packages
+                    .iter()
+                    .map(|(_, object)| {
+                        let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 
-                    let mut lock_dependencies: HashMap<String, String> = HashMap::new();
-
-                    if object.clone().dependencies.is_some() {
-                        for dep in object.clone().dependencies.unwrap().iter() {
-                            // TODO: Change this to real version
-                            lock_dependencies.insert(dep.clone(), String::new());
+                        if object.clone().dependencies.is_some() {
+                            for dep in object.clone().dependencies.unwrap().iter() {
+                                // TODO: Change this to real version
+                                lock_dependencies.insert(dep.clone(), String::new());
+                            }
                         }
-                    }
 
-                    lock_file.dependencies.insert(
-                        DependencyID(object.clone().name, object.clone().version),
-                        DependencyLock {
-                            name: object.clone().name,
-                            version: object.clone().version,
-                            tarball: object.clone().tarball,
-                            sha1: object.clone().sha1,
-                            dependencies: lock_dependencies,
-                        },
-                    );
-                }
+                        lock_file.dependencies.insert(
+                            DependencyID(object.clone().name, object.clone().version),
+                            DependencyLock {
+                                name: object.clone().name,
+                                version: object.clone().version,
+                                tarball: object.clone().tarball,
+                                sha1: object.clone().sha1,
+                                dependencies: lock_dependencies,
+                            },
+                        );
+
+                        object.clone()
+                    })
+                    .collect();
 
                 let mut workers = FuturesUnordered::new();
 
@@ -379,25 +373,19 @@ Options:
                             )),
                     );
 
-                    loop {
-                        match workers.next().await {
-                            Some(_) => progress_bar.inc(1),
-
-                            None => break,
-                        }
+                    while workers.next().await.is_some() {
+                        progress_bar.inc(1);
                     }
+
                     progress_bar.finish();
                 } else {
-                    loop {
-                        match workers.next().await {
-                            Some(_) => {}
-                            None => break,
-                        }
+                    while workers.next().await.is_some() {
+                        progress_bar.inc(1);
                     }
                 }
 
                 for dep in dependencies {
-                    if dep.name == package.to_string() {
+                    if dep.name == package {
                         utils::create_dep_symlinks(
                             package.as_str(),
                             current_version.packages.clone(),
@@ -424,7 +412,7 @@ Options:
             }
         }
 
-        if handles.len() > 0 {
+        if !handles.is_empty() {
             for handle in handles {
                 handle.await?;
             }

@@ -71,7 +71,7 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         let args: Vec<String> = app.args.clone();
-        if args.len() < 1 {
+        if args.is_empty() {
             println!("{} expected repository url", "error".bright_red());
         }
         let exit_code = process::Command::new("cmd")

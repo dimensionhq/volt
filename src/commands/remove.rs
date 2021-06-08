@@ -32,8 +32,6 @@ use crate::VERSION;
 
 use std::process::exit;
 
-use std::collections::HashMap;
-
 use std::io::Write;
 
 use crate::commands::init;
@@ -113,10 +111,7 @@ Options:
         if !package_json_dir.exists() {
             println!("{} no package.json found", "error".bright_red());
             print!("Do you want to initialize package.json (Y/N): ");
-            std::io::stdout()
-                .flush()
-                .ok()
-                .expect("Could not flush stdout");
+            std::io::stdout().flush().expect("Could not flush stdout");
             let mut string: String = String::new();
             let _ = std::io::stdin().read_line(&mut string);
             if string.trim().to_lowercase() != "y" {
@@ -148,15 +143,16 @@ Options:
 
             let current_version = response.versions.get(&response.version).unwrap();
 
-            for (_, object) in &current_version.packages {
-                let mut lock_dependencies: HashMap<String, String> = HashMap::new();
+            for object in current_version.packages.values() {
+                // This is doing nothing? I guess it's still WIP?...
+                // let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 
-                if object.clone().dependencies.is_some() {
-                    for dep in object.clone().dependencies.unwrap().iter() {
-                        // TODO: Change this to real version
-                        lock_dependencies.insert(dep.clone(), String::new());
-                    }
-                }
+                // if object.dependencies.is_some() {
+                //     for dep in object.clone().dependencies.unwrap().iter() {
+                //         // TODO: Change this to real version
+                //         lock_dependencies.insert(dep.clone(), String::new());
+                //     }
+                // }
 
                 lock_file
                     .dependencies

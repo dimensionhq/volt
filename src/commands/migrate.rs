@@ -27,7 +27,7 @@ use colored::Colorize;
 use crate::{classes::package_manager::PackageManager, commands::install::Install};
 // Crate Level Imports
 use crate::VERSION;
-use crate::{prompt::prompt::Select, utils::App};
+use crate::{prompt::prompts::Select, utils::App};
 
 // Super Imports
 use super::Command;
@@ -81,7 +81,7 @@ Options:
         let packagemanagers: Vec<String> = PackageManager::options();
         let mut packagemanager: String = String::new();
         if app.args.len() == 1 {
-            packagemanager = app.args[0].clone().to_string();
+            packagemanager = app.args[0].to_string();
         } else if app.args.len() == 1 {
             let select = Select {
                 message: String::from("Package Manager"),

@@ -21,7 +21,7 @@ use std::sync::Arc;
 
 // Library Imports
 use crate::classes::create_templates::Template;
-use crate::prompt::prompt::Select;
+use crate::prompt::prompts::Select;
 use crate::templates::react_app;
 // use crate::templates::{react_app, react_app_ts, next_app, next_app_ts};
 use anyhow::Result;
@@ -82,7 +82,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    
+
     #[allow(unused)]
     async fn exec(app: Arc<App>) -> Result<()> {
         let args = app.args.clone();
@@ -92,7 +92,7 @@ Options:
 
         let mut app_name: String = String::new();
 
-        if args.len() < 1 {
+        if args.is_empty() {
             let select = Select {
                 message: String::from("Template"),
                 paged: true,
@@ -131,7 +131,7 @@ Options:
                 .default("my-app".into())
                 .interact_text()?;
 
-            if app_name == "" {
+            if app_name.is_empty() {
                 println!("{} Invalid app name!", "error".bright_red());
                 process::exit(1);
             }
