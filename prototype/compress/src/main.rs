@@ -1,9 +1,11 @@
+// Modules
+mod minifier;
+
 use std::time::Instant;
 
 use indicatif::{ProgressBar, ProgressStyle};
-use minifier;
+use std::fs::File;
 use std::{
-    fs::File,
     io::{Read, Write},
     path::Path,
 };
@@ -16,6 +18,7 @@ enum SourceType {
     Css,
     Js,
     Json,
+    Unknown,
 }
 
 use std::{fs, io, path::PathBuf};
@@ -36,15 +39,17 @@ fn dir_size(path: impl Into<PathBuf>) -> io::Result<u64> {
 }
 
 fn minifiable<P: AsRef<Path>>(path: P) -> Option<SourceType> {
+    let recognized_file_types = vec!["js", "ts", "jsx", "tsx", ".d.ts"];
+
     let ext = path.as_ref().extension()?;
     if ext == "css" {
         Some(SourceType::Css)
-    } else if ext == "js" {
+    } else if recognized_file_types.contains(&ext.to_str().unwrap()) {
         Some(SourceType::Js)
     } else if ext == "json" {
         Some(SourceType::Json)
     } else {
-        Some(SourceType::Js)
+        Some(SourceType::Unknown)
     }
 }
 
@@ -55,28 +60,42 @@ fn minify_file<P: AsRef<Path>>(
 ) -> std::io::Result<u64> {
     // Read
     buf.clear();
+
+    // Open File
     File::open(&path)?.read_to_string(buf)?;
 
     let old_size = buf.len() as u64;
 
+    let mut minified: String = String::new();
+
     // Minify
-    let minified = match src_ty {
-        SourceType::Css => minifier::css::minify(&buf).unwrap(),
-        SourceType::Json => minifier::json::minify(&buf),
-        SourceType::Js => minifier::js::minify(&buf),
-    };
-
-    let new_size = minified.len() as u64;
-
-    // Don't bother writing if the minification didn't help.
-    if new_size >= old_size {
-        return Ok(0);
+    match src_ty {
+        SourceType::Css => {
+            minified = minifier::json::minify(&buf);
+        }
+        SourceType::Json => {
+            minified = minifier::json::minify(&buf);
+        }
+        SourceType::Js => {
+            minified = minifier::js::minify(&buf);
+        }
+        SourceType::Unknown => {}
     }
 
-    // Write
-    File::create(&path)?.write_all(minified.as_bytes())?;
+    if minified != String::new() {
+        let new_size = minified.len() as u64;
 
-    Ok(old_size - new_size)
+        if new_size >= old_size {
+            return Ok(0);
+        }
+
+        // Write
+        File::create(&path)?.write_all(minified.as_bytes())?;
+
+        return Ok(old_size - new_size);
+    } else {
+        return Ok(0);
+    }
 }
 
 fn main() {
@@ -95,17 +114,6 @@ fn main() {
             Some((entry, src_ty))
         })
         .collect();
-
-    // // Use this if it turns out the scanning phase takes a while.
-    // let mut to_minify = Vec::new();
-    // let pb = ProgressBar::new(0);
-    // pb.set_message("Scanning...");
-    // for entry in files.into_iter().filter_map(...).filter(...) {
-    //     if let Some(src_ty) = minifiable(entry.file_name()) {
-    //         to_minify.push((entry, src_ty));
-    //         pb.inc_len(1);
-    //     }
-    // }
 
     let pb = ProgressBar::new(to_minify.len() as u64);
     pb.set_style(
@@ -130,9 +138,7 @@ fn main() {
                 files_minified += 1;
                 space_saved += n;
             }
-            Err(_e) => {
-                // Communicate the error?
-            }
+            Err(_e) => {}
         }
 
         // Either way, we're done with this file

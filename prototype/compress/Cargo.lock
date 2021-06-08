@@ -39,6 +39,7 @@ version = "0.1.0"
 dependencies = [
  "flate2",
  "indicatif",
+ "macro-utils",
  "minifier",
  "tar",
  "walkdir",
