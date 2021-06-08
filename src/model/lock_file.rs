@@ -14,6 +14,7 @@
     limitations under the License.
 */
 
+use std::collections::hash_map::DefaultHasher;
 // Std Imports
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
@@ -71,7 +72,7 @@ pub struct LockFile {
 // pub struct DependenciesMap(
 // );
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialOrd, Ord)]
 pub struct DependencyID(pub String, pub String);
 
 impl From<(String, String)> for DependencyID {
@@ -97,7 +98,7 @@ impl<'de> de::Deserialize<'de> for DependencyID {
         D: Deserializer<'de>,
     {
         let s: &str = Deserialize::deserialize(deserializer)?;
-        let mut parts = s.split("@");
+        let mut parts = s.split('@');
         let name = parts
             .next()
             .ok_or_else(|| de::Error::custom("missing dependency name"))?;
@@ -122,6 +123,18 @@ impl Hash for DependencyID {
         state.write(&format!("{}@{}", self.0, self.1).as_bytes());
     }
 }
+
+impl PartialEq for DependencyID {
+    fn eq(&self, other: &Self) -> bool {
+        let mut state = DefaultHasher::new();
+        self.hash(&mut state);
+        let mut state_2 = DefaultHasher::new();
+        other.hash(&mut state_2);
+        state.finish() == state_2.finish()
+    }
+}
+
+impl Eq for DependencyID {}
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct DependencyLock {

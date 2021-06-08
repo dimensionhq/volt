@@ -188,7 +188,7 @@ impl PackageJson {
             let data = read_to_string(path).unwrap();
             serde_json::from_str(data.as_str()).unwrap()
         } else {
-            println!("{} {}", "error".bright_red(), "No package.json found");
+            println!("{} No package.json found", "error".bright_red());
             std::process::exit(1);
         }
     }
