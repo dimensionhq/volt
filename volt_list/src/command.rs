@@ -69,9 +69,16 @@ Options:
 
         let mut dependencies: Vec<String> = vec![];
 
-        if dependency_paths.len() <= 1 {
+        if dependency_paths.len() == 1 {
             println!(
-                "{}: dependencies not found in {}",
+                "{}: packages not found in {}",
+                "info".bright_cyan().bold(),
+                "node_modules".bright_yellow().bold()
+            );
+            return Ok(());
+        } else if dependency_paths.len() == 0 {
+            println!(
+                "{}: {} folder not found.",
                 "info".bright_cyan().bold(),
                 "node_modules".bright_yellow().bold()
             );
@@ -87,7 +94,7 @@ Options:
                 && !dep_name.starts_with("node_modules")
             {
                 dependencies.push(dep_name.to_string());
-                println!("{} {}", "-".bright_yellow(), dep_name.bright_blue().bold());
+                println!("{} {}", "-".bright_cyan(), dep_name.bright_blue().bold());
                 let dirs = WalkDir::new(format!("node_modules/{}/node_modules", dep_name))
                     .follow_links(true);
                 let dependency_paths: Vec<_> = dirs
