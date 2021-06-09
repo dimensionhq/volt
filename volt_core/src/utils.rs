@@ -509,7 +509,7 @@ pub fn get_git_config(key: &str) -> io::Result<Option<String>> {
 
 // Windows Function
 #[cfg(windows)]
-fn enable_ansi_support() -> Result<(), u32> {
+pub fn enable_ansi_support() -> Result<(), u32> {
     // ref: https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#EXAMPLE_OF_ENABLING_VIRTUAL_TERMINAL_PROCESSING @@ https://archive.is/L7wRJ#76%
 
     use std::ffi::OsStr;
@@ -566,7 +566,7 @@ fn enable_ansi_support() -> Result<(), u32> {
 /// Create a junction / hard symlink to a directory
 #[cfg(windows)]
 pub fn create_symlink(original: String, link: String) -> Result<()> {
-    use crate::junction::lib as junction;
+    // use junction::lib as junction;
     junction::create(original, link)?;
     Ok(())
 }
