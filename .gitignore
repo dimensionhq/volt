@@ -7,3 +7,4 @@ yarn_test/*
 volt_test/*
 pnpm_test/*
 prototype/compress/target
+/tests

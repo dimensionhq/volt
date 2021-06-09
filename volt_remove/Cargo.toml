@@ -1,0 +1,14 @@
+[package]
+name = "volt_remove"
+version = "0.0.1"
+authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+description = "The remove command for volt cli."
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+colored = "2.0"
+tokio = { version = "1.5", features = ["full"] }
+volt_core = { path = "../volt_core" }
+volt_init = { path = "../volt_init" }
