@@ -111,6 +111,8 @@ Options:
 
         // let mut handles = vec![];
 
+        println!("{}", "Removing dependencies".bright_purple());
+
         for package in packages {
             let package_file = package_file.clone();
             let app_new = app.clone();
@@ -178,6 +180,8 @@ Options:
         //         handle.await?;
         //     }
         // }
+
+        println!("{}", "Successfully Removed Packages".bright_blue());
 
         Ok(())
     }

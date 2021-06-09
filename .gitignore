@@ -2,9 +2,6 @@
 /target
 **/node_modules
 package.json
-volt_test/volt.lock
-volt.lock
-yarn.lock
 .DS_Store
 yarn_test/*
 volt_test/*

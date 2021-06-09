@@ -19,6 +19,7 @@ volt_deploy = { path = "../volt_deploy" }
 volt_help = { path = "../volt_help" }
 volt_init = { path = "../volt_init" }
 volt_install = { path = "../volt_install" }
+volt_list = { path = "../volt_list" }
 volt_migrate = { path = "../volt_migrate" }
 volt_remove = { path = "../volt_remove" }
 volt_unknown = { path = "../volt_unknown" }
