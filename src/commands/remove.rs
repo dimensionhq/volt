@@ -37,9 +37,12 @@ use std::io::Write;
 use crate::commands::init;
 
 use crate::utils::get_volt_response;
+use crate::utils::PROGRESS_CHARS;
 
 use crate::classes::package::PackageJson;
 use crate::model::lock_file::{DependencyID, LockFile};
+
+use indicatif::{ProgressBar, ProgressStyle};
 
 use std::fs::remove_dir_all;
 
@@ -125,6 +128,8 @@ Options:
 
         // let mut handles = vec![];
 
+        println!("{}", "Removing dependencies".bright_purple());
+
         for package in packages {
             let package_file = package_file.clone();
             let app_new = app.clone();
@@ -192,6 +197,8 @@ Options:
         //         handle.await?;
         //     }
         // }
+
+        println!("{}", "Successfully Removed Packages".bright_blue());
 
         Ok(())
     }
