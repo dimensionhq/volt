@@ -1,0 +1,13 @@
+[package]
+name = "junction"
+version = "0.0.1"
+authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+description = "Windows api utility."
+edition = "2018"
+
+[dependencies]
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["errhandlingapi", "fileapi", "guiddef", "handleapi", "ioapiset", "processthreadsapi", "securitybaseapi", "winbase", "winioctl", "winnt"]}
+tempfile = "3.2"
+scopeguard = "1.1"
