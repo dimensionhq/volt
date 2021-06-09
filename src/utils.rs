@@ -540,18 +540,26 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
     let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
         .await
         .unwrap_or_else(|e| {
-            println!("{} {}", "error".bright_red(), e);
+            println!(
+                "{} {}",
+                "error".bright_red(),
+                "That package does not exist yet!"
+            );
             std::process::exit(1);
         })
         .text_async()
         .await
         .unwrap_or_else(|e| {
-            println!("{} {}", "error".bright_red(), e);
+            println!(
+                "{} {}",
+                "error".bright_red(),
+                "That package does not exist yet!"
+            );
             std::process::exit(1);
         });
 
     serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|e| {
-        println!("{} {}", "error".bright_red(), e);
+        println!("{} {}", "error".bright_red(), "Failed to parse response!");
         std::process::exit(1);
     })
 }
