@@ -1,5 +1,5 @@
-use crate::junction::inter::helpers;
-use crate::junction::inter::types;
+use crate::inter::helpers;
+use crate::inter::types;
 
 use types::ReparseDataBuffer;
 use types::{MOUNT_POINT_REPARSE_BUFFER_HEADER_SIZE, REPARSE_DATA_BUFFER_HEADER_SIZE};
@@ -13,7 +13,6 @@ use std::os::windows::io::AsRawHandle;
 use std::path::{Path, PathBuf};
 use std::ptr;
 use std::slice;
-// use winapi::ctypes::c_void;
 
 use winapi::um::winnt::{IO_REPARSE_TAG_MOUNT_POINT, MAXIMUM_REPARSE_DATA_BUFFER_SIZE};
 

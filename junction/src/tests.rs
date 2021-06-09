@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::junction::lib;
+use crate::{create, delete, exists, get_target};
 use std::fs::File;
 use std::io;
 use std::io::Write;
@@ -39,7 +39,7 @@ fn create_dir_all_with_junctions() {
 
     fs::create_dir_all(&target).unwrap();
 
-    check!(lib::create(&target, &junction));
+    check!(create(&target, &junction));
     check!(fs::create_dir_all(&b));
     // the junction itself is not a directory, but `is_dir()` on a Path
     // follows links
@@ -60,7 +60,7 @@ fn create_recursive_rmdir() {
     check!(fs::create_dir_all(&d2));
     check!(check!(File::create(&canary)).write_all(b"foo"));
 
-    check!(lib::create(&d2, &dt.join("d2"))); // "d1/t/d2" -> "d2"
+    check!(create(&d2, &dt.join("d2"))); // "d1/t/d2" -> "d2"
 
     let _ = symlink_file(&canary, &d1.join("canary")); // d1/canary -> d2/do_not_delete
     check!(fs::remove_dir_all(&d1));
@@ -78,7 +78,7 @@ fn create_recursive_rmdir_of_symlink() {
     let canary = dir.join("do_not_delete");
     check!(fs::create_dir_all(&dir));
     check!(check!(File::create(&canary)).write_all(b"foo"));
-    check!(lib::create(&dir, &link));
+    check!(create(&dir, &link));
     check!(fs::remove_dir_all(&link));
 
     assert!(!link.is_dir());
@@ -94,7 +94,7 @@ fn create_directory_exist_before() {
 
     check!(fs::create_dir_all(&junction));
 
-    match lib::create(&target, &junction) {
+    match create(&target, &junction) {
         Err(ref e) if e.raw_os_error() == Some(ERROR_ALREADY_EXISTS) => {}
         _ => panic!("directory exists before creating"),
     }
@@ -107,7 +107,7 @@ fn create_target_no_exist() {
     let target = tmpdir.path().join("target");
     let junction = tmpdir.path().join("junction");
 
-    match lib::create(&target, &junction) {
+    match create(&target, &junction) {
         Ok(()) => {}
         _ => panic!("junction should point to non exist target path"),
     }
@@ -118,21 +118,21 @@ fn delete_junctions() {
     let tmpdir = create_tempdir();
 
     let non_existence_dir = tmpdir.path().join("non_existence_dir");
-    match lib::delete(&non_existence_dir) {
+    match delete(&non_existence_dir) {
         Err(ref e) if e.kind() == io::ErrorKind::NotFound => {}
         _ => panic!("target path does not exist or is not a directory"),
     }
 
     let dir_not_junction = tmpdir.path().join("dir_not_junction");
     check!(fs::create_dir_all(&dir_not_junction));
-    match lib::delete(&dir_not_junction) {
+    match delete(&dir_not_junction) {
         Err(ref e) if e.raw_os_error() == Some(ERROR_NOT_A_REPARSE_POINT) => {}
         _ => panic!("target path is not a junction point"),
     }
 
     let file = tmpdir.path().join("foo-file");
     check!(check!(File::create(&file)).write_all(b"foo"));
-    match lib::delete(&file) {
+    match delete(&file) {
         Err(ref e) if e.raw_os_error() == Some(ERROR_NOT_A_REPARSE_POINT) => {}
         _ => panic!("target path is not a junction point"),
     }
@@ -144,12 +144,12 @@ fn exists_verify() {
 
     // Check no such directory or file
     let no_such_dir = tmpdir.path().join("no_such_dir");
-    assert_eq!(check!(lib::exists(&no_such_dir)), false);
+    assert_eq!(check!(exists(&no_such_dir)), false);
 
     // Target exists but not a junction
     let no_such_file = tmpdir.path().join("file");
     check!(check!(File::create(&no_such_file)).write_all(b"foo"));
-    match lib::exists(&no_such_file) {
+    match exists(&no_such_file) {
         Err(ref e) if e.raw_os_error() == Some(ERROR_NOT_A_REPARSE_POINT) => {}
         _ => panic!("target exists but not a junction"),
     }
@@ -166,26 +166,18 @@ fn exists_verify() {
         !junction_file.exists(),
         "file should not be located until junction created"
     );
-    assert_eq!(
-        check!(lib::exists(&junction)),
-        false,
-        "junction not created yet"
-    );
+    assert_eq!(check!(exists(&junction)), false, "junction not created yet");
 
-    check!(lib::create(&target, &junction));
-    assert_eq!(
-        check!(lib::exists(&junction)),
-        true,
-        "junction should exist now"
-    );
-    assert_eq!(&check!(lib::get_target(&junction)), &target);
+    check!(create(&target, &junction));
+    assert_eq!(check!(exists(&junction)), true, "junction should exist now");
+    assert_eq!(&check!(get_target(&junction)), &target);
     assert!(
         junction_file.exists(),
         "file should be accessible via the junction"
     );
 
-    check!(lib::delete(&junction));
-    match lib::exists(&junction) {
+    check!(delete(&junction));
+    match exists(&junction) {
         Err(ref e) if e.raw_os_error() == Some(ERROR_NOT_A_REPARSE_POINT) => {}
         _ => panic!("junction had been deleted"),
     }
@@ -200,33 +192,33 @@ fn exists_verify() {
 fn get_target_user_dirs() {
     // junction
     assert_eq!(
-        check!(lib::get_target(r"C:\Users\Default User")).to_str(),
+        check!(get_target(r"C:\Users\Default User")).to_str(),
         Some(r"C:\Users\Default"),
     );
     // junction with special permissions
     assert_eq!(
-        check!(lib::get_target(r"C:\Documents and Settings\")).to_str(),
+        check!(get_target(r"C:\Documents and Settings\")).to_str(),
         Some(r"C:\Users"),
     );
 
     let tmpdir = create_tempdir();
 
     let non_existence_dir = tmpdir.path().join("non_existence_dir");
-    match lib::get_target(&non_existence_dir) {
+    match get_target(&non_existence_dir) {
         Err(ref e) if e.kind() == io::ErrorKind::NotFound => {}
         _ => panic!("target path does not exist or is not a directory"),
     }
 
     let dir_not_junction = tmpdir.path().join("dir_not_junction");
     check!(fs::create_dir_all(&dir_not_junction));
-    match lib::get_target(&dir_not_junction) {
+    match get_target(&dir_not_junction) {
         Err(ref e) if e.raw_os_error() == Some(ERROR_NOT_A_REPARSE_POINT) => {}
         _ => panic!("target path is not a junction point"),
     }
 
     let file = tmpdir.path().join("foo-file");
     check!(check!(File::create(&file)).write_all(b"foo"));
-    match lib::get_target(&file) {
+    match get_target(&file) {
         Err(ref e) if e.raw_os_error() == Some(ERROR_NOT_A_REPARSE_POINT) => {}
         _ => panic!("target path is not a junction point"),
     }

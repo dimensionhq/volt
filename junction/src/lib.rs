@@ -18,10 +18,7 @@ an application accessing `D:\SYMLINK\DRIVERS` would in reality be accessing
 
 pub mod inter;
 pub mod internals;
-pub mod lib;
 pub mod tests;
-
-use crate::junction::internals;
 
 // #[cfg(test)]
 // use crate::junction::tests;
