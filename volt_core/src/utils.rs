@@ -15,10 +15,12 @@
 */
 
 use std::fs::create_dir;
+use std::fs::create_dir_all;
 use std::io::Read;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process;
+use std::process::exit;
 use std::{borrow::Cow, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 
@@ -427,24 +429,46 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
 
 /// downloads tarball file from package
 pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<String> {
-    let name = &package
-        .name
-        .replace("/", "__")
-        .replace("@", "")
-        .replace(".", "_");
-
+    let name = &package.name.replace("/", "^^");
     let file_name = format!("{}@{}.tgz", name, package.version);
     let temp_dir = temp_dir();
 
     if !Path::new(&temp_dir.join("volt")).exists() {
         std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
     }
+
+    if name.starts_with("@") && name.contains("^^") {
+        let package_dir_loc;
+
+        if cfg!(windows) {
+            // Check if C:\Users\username\.volt exists
+            package_dir_loc = format!(
+                r"{}\.volt\{}",
+                std::env::var("USERPROFILE").unwrap(),
+                name.split("^^").collect::<Vec<&str>>()[0]
+            );
+        } else {
+            // Check if ~/.volt\packagename exists
+            package_dir_loc = format!(
+                r"{}\.volt\{}",
+                std::env::var("HOME").unwrap(),
+                name.split("^^").collect::<Vec<&str>>()[0]
+            );
+        }
+
+        if !Path::new(&package_dir_loc).exists() {
+            create_dir_all(&package_dir_loc).unwrap();
+        }
+    }
+
     let path;
+
     if cfg!(windows) {
         path = temp_dir.join(format!(r"volt\{}", file_name));
     } else {
         path = temp_dir.join(format!(r"volt/{}", file_name));
     }
+
     let path_str = path.to_string_lossy().to_string();
 
     // Corrupt tar files may cause issues
