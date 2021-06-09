@@ -1,0 +1,15 @@
+[package]
+name = "volt_create"
+version = "0.0.1"
+authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+description = "The create command for volt cli."
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+colored = "2.0"
+dialoguer = "0.8"
+tokio = { version = "1.5.0", features = ["full"] }
+volt_core = { path = "../volt_core" }
+volt_init = { path = "../volt_init" }
