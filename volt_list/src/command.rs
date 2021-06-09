@@ -69,6 +69,15 @@ Options:
 
         let mut dependencies: Vec<String> = vec![];
 
+        if dependency_paths.len() == 1 {
+            println!(
+                "{}: dependencies not found in {}",
+                "info".bright_cyan().bold(),
+                "node_modules".bright_yellow().bold()
+            );
+            return Ok(());
+        }
+
         for dep in dependency_paths {
             let dep_path = dep.path().to_str().unwrap();
             let dep_path_split: Vec<&str> = dep_path.split('\\').collect();
