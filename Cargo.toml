@@ -1,37 +1,19 @@
-[package]
-name = "volt"
-version = "0.0.1"
-authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
-description = "A fast, memory-safe package manager for the web."
-edition = "2018"
-
-[dependencies]
-anyhow = "1.0.40"
-async-trait = "0.1.50"
-chttp = "0.5.5"
-colored = "2.0.0"
-console  = "0.14.1"
-dialoguer = "0.8.0"
-dirs = "3.0.2"
-flate2 = "1.0.20"
-futures = "0.3.15"
-futures-util = "0.3.14"
-indicatif = "0.16.0"
-lazy_static = "1.4.0"
-reqwest = { version = "0.11.3", features = ["json"] }
-sha-1 = "0.9.6"
-semver = "0.11.0"
-serde = { version = "1.0.125", features = ["derive"] }
-serde_json = "1.0.64"
-structopt = "0.3.21"
-thiserror = "1.0"
-tokio = { version = "1.5.0", features = ["full"] }
-tar = "0.4.33"
-regex = "1"
-fs_extra = "1.2.0"
-walkdir = "2.3.2"
-
-[target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["errhandlingapi", "fileapi", "guiddef", "handleapi", "ioapiset", "processthreadsapi", "securitybaseapi", "winbase", "winioctl", "winnt"]}
-tempfile = "3.2.0"
-scopeguard = "1.1.0"
+[workspace]
+members = [
+  "junction",
+  "volt_add",
+  "volt_cache",
+  "volt_cli",
+  "volt_clone",
+  "volt_compress",
+  "volt_core",
+  "volt_create",
+  "volt_deploy",
+  "volt_help",
+  "volt_init",
+  "volt_install",
+  "volt_list",
+  "volt_migrate",
+  "volt_remove",
+  "volt_unknown",
+]

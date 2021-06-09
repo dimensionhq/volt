@@ -1,0 +1,28 @@
+[package]
+name = "volt_cli"
+version = "0.0.1"
+authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+description = "A fast, memory-safe package manager for the web."
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+colored = "2.0"
+tokio = { version = "1.5", features = ["full"] }
+volt_core = { path = "../volt_core" }
+volt_add = { path = "../volt_add" }
+volt_cache = { path = "../volt_cache" }
+volt_clone = { path = "../volt_clone" }
+volt_compress = { path = "../volt_compress" }
+volt_create = { path = "../volt_create" }
+volt_deploy = { path = "../volt_deploy" }
+volt_help = { path = "../volt_help" }
+volt_init = { path = "../volt_init" }
+volt_install = { path = "../volt_install" }
+volt_list = { path = "../volt_list" }
+volt_migrate = { path = "../volt_migrate" }
+volt_remove = { path = "../volt_remove" }
+volt_unknown = { path = "../volt_unknown" }
+
+[target.'cfg(windows)'.dependencies]
+junction = { path = "../junction" }
