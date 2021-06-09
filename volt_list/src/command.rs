@@ -69,7 +69,7 @@ Options:
 
         let mut dependencies: Vec<String> = vec![];
 
-        if dependency_paths.len() == 1 {
+        if dependency_paths.len() <= 1 {
             println!(
                 "{}: dependencies not found in {}",
                 "info".bright_cyan().bold(),
