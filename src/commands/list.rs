@@ -118,32 +118,6 @@ Options:
             }
         }
 
-        // for dep in dependencies.clone() {
-        //     let dirs = WalkDir::new(format!("node_modules/{}", dep));
-        //     let dependency_paths: Vec<_> = dirs
-        //         .into_iter()
-        //         .filter_map(Result::ok)
-        //         .filter(|entry| entry.file_type().is_dir() || entry.file_type().is_symlink())
-        //         .filter_map(|entry| Some(entry))
-        //         .collect();
-
-        //     for dep in dependency_paths {
-        //         let dep_path = dep.path().to_str().unwrap();
-        //         let dep_path_split: Vec<&str> = dep_path.split("\\").collect();
-        //         let dep_name: &str = dep_path_split[dep_path_split.len() - 1];
-        //         if dep_name != "node_modules"
-        //             && dep_name != "scripts"
-        //             && !dep_name.starts_with("node_modules")
-        //         {
-        //             dependencies.push(dep_name.to_string());
-        //             for _ in 0..dep_path_split.len() {
-        //                 print!("  ");
-        //             }
-        //             println!("- {} - {}", dep_name, dep_path_split.len());
-        //         }
-        //     }
-        // }
-
         Ok(())
     }
 }
