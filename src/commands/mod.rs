@@ -35,6 +35,7 @@ pub mod deploy;
 pub mod help;
 pub mod init;
 pub mod install;
+pub mod list;
 pub mod migrate;
 pub mod remove;
 pub mod unknown;
@@ -53,6 +54,7 @@ pub enum AppCommand {
     Migrate,
     Compress,
     Cache,
+    List,
 }
 
 impl FromStr for AppCommand {
@@ -71,6 +73,7 @@ impl FromStr for AppCommand {
             "migrate" => Ok(Self::Migrate),
             "compress" => Ok(Self::Compress),
             "cache" => Ok(Self::Cache),
+            "list" => Ok(Self::List),
             _ => Err(()),
         }
     }
@@ -102,6 +105,7 @@ impl AppCommand {
             Self::Compress => compress::Compress::help(),
             Self::Unknown => unknown::Unknown::help(),
             Self::Cache => cache::Cache::help(),
+            Self::List => list::List::help(),
         }
     }
 
@@ -120,6 +124,7 @@ impl AppCommand {
             Self::Compress => compress::Compress::exec(app).await,
             Self::Unknown => unknown::Unknown::exec(app).await,
             Self::Cache => cache::Cache::exec(app).await,
+            Self::List => list::List::exec(app).await,
         }
     }
 }
