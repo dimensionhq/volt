@@ -22,7 +22,7 @@ use std::process;
 use std::{borrow::Cow, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use chttp::ResponseExt;
 use colored::Colorize;
 
@@ -566,7 +566,6 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 /// Create a junction / hard symlink to a directory
 #[cfg(windows)]
 pub fn create_symlink(original: String, link: String) -> Result<()> {
-    // use junction::lib as junction;
     junction::create(original, link)?;
     Ok(())
 }
