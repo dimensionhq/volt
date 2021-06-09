@@ -100,10 +100,15 @@ Options:
 
                 for dep in dependency_paths {
                     let dep_path = dep.path().to_str().unwrap();
+                    // println!("path: {}", dep_path);
                     let dep_path_split: Vec<&str> = dep_path.split("\\").collect();
                     let dep_name: &str = dep_path_split[dep_path_split.len() - 1];
                     if dep_name != "node_modules"
                         && dep_name != "scripts"
+                        && !dep_path.contains("lib")
+                        && !dep_path.contains("src")
+                        && !dep_path.contains("dist")
+                        && !dep_path.contains("test")
                         && !dep_name.starts_with("node_modules")
                     {
                         dependencies.push(dep_name.to_string());
