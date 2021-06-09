@@ -107,7 +107,7 @@ Options:
         }
 
         if !std::env::current_dir()?.join("package.json").exists() {
-            println!("{} no package.json found", "error".bright_red());
+            println!("{} no package.json found.", "error".bright_red());
             print!("Do you want to initialize package.json (Y/N): ");
             std::io::stdout().flush().expect("Could not flush stdout");
             let mut string: String = String::new();
@@ -187,6 +187,18 @@ Options:
                         .map(|(_, object)| {
                             let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 
+                            for dep in object.clone().peer_dependencies {
+                                if !utils::check_peer_dependency(&dep) {
+                                    progress_bar.println(format!(
+                                        "{}{} {} has unmet peer dependency {}",
+                                        " warn ".black().on_bright_yellow(),
+                                        ":",
+                                        object.clone().name.bright_cyan().bold(),
+                                        &dep.bright_yellow()
+                                    ));
+                                }
+                            }
+
                             if object.clone().dependencies.is_some() {
                                 for dep in object.clone().dependencies.unwrap().iter() {
                                     // TODO: Change this to real version
@@ -209,6 +221,7 @@ Options:
                         })
                         .collect();
 
+                    progress_bar.finish_and_clear();
                     let mut workers = FuturesUnordered::new();
 
                     for dep in dependencies.clone() {
@@ -320,6 +333,18 @@ Options:
                     .map(|(_, object)| {
                         let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 
+                        for dep in object.clone().peer_dependencies {
+                            if !utils::check_peer_dependency(&dep) {
+                                progress_bar.println(format!(
+                                    "{}{} {} has unmet peer dependency {}",
+                                    " warn ".black().on_bright_yellow(),
+                                    ":",
+                                    object.clone().name.bright_cyan().bold(),
+                                    &dep.bright_yellow()
+                                ));
+                            }
+                        }
+
                         if object.clone().dependencies.is_some() {
                             for dep in object.clone().dependencies.unwrap().iter() {
                                 // TODO: Change this to real version
@@ -341,7 +366,7 @@ Options:
                         object.clone()
                     })
                     .collect();
-
+                progress_bar.finish_and_clear();
                 let mut workers = FuturesUnordered::new();
 
                 for dep in dependencies.clone() {
