@@ -58,7 +58,15 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
+        let flags = &app.flags;
+
+        let mut depth: u64 = std::u64::MAX;
+
+        if flags.contains(&"--depth".to_string()) {
+            depth = app.args.iter().find_map(|s| s.parse().ok()).unwrap();
+        }
+
         let dirs = WalkDir::new("node_modules");
 
         let dependency_paths: Vec<_> = dirs
@@ -93,7 +101,8 @@ Options:
                 dependencies.push(dep_name.to_string());
                 println!("{} {}", "-".bright_cyan(), dep_name.bright_blue().bold());
                 let dirs = WalkDir::new(format!("node_modules/{}/node_modules", dep_name))
-                    .follow_links(true);
+                    .follow_links(true)
+                    .max_depth((depth - 1) as usize);
                 let dependency_paths: Vec<_> = dirs
                     .into_iter()
                     .filter_map(Result::ok)
