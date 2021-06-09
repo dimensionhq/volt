@@ -70,17 +70,14 @@ Options:
         let mut dependencies: Vec<String> = vec![];
 
         if dependency_paths.len() == 1 {
-            println!(
-                "{}: packages not found in {}",
-                "info".bright_cyan().bold(),
-                "node_modules".bright_yellow().bold()
-            );
+            println!("{}", "No Dependencies Found!".bright_cyan());
             return Ok(());
         } else if dependency_paths.len() == 0 {
             println!(
-                "{}: {} folder not found.",
-                "info".bright_cyan().bold(),
-                "node_modules".bright_yellow().bold()
+                "{} {} {}",
+                "Failed to find".bright_cyan(),
+                "node_modules".bright_yellow().bold(),
+                "folder".bright_cyan(),
             );
             return Ok(());
         }
