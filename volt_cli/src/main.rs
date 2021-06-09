@@ -34,6 +34,7 @@ async fn main() {
             eprintln!("{}", "\nCaused by:".italic().truecolor(190, 190, 190));
         }
         err_chain.for_each(|cause| eprintln!(" - {}", cause.to_string().truecolor(190, 190, 190)));
+        
         #[cfg(not(debug_assertions))]
         eprintln!(
             "\nIf the problem persists, please submit an issue on the Github repository.\n{}",

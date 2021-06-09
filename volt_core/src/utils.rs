@@ -611,3 +611,7 @@ pub fn generate_script(package: &VoltPackage) {
         f.write_all(command.as_bytes()).unwrap();
     }
 }
+
+pub fn check_peer_dependency(_package_name: &String) -> bool {
+    return false;
+}

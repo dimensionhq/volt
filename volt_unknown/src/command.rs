@@ -17,6 +17,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use colored::Colorize;
 use volt_core::{app::App, classes::package::PackageJson, command::Command};
 
 pub struct Unknown {}
@@ -60,6 +61,12 @@ impl Command for Unknown {
                 .arg(exec)
                 .spawn()
                 .unwrap();
+        } else {
+            println!(
+                "{}: {} is not a valid command.",
+                "error".bright_red().bold(),
+                command.bright_yellow().bold()
+            );
         }
 
         Ok(())
