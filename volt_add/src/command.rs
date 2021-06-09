@@ -122,6 +122,8 @@ Options:
         let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
         let mut handles = vec![];
 
+        println!("{}", "Adding dependencies".bright_purple());
+
         for package in packages.clone() {
             let app_new = app.clone();
 
@@ -434,6 +436,9 @@ impl Add {
             })?;
 
         utils::generate_script(package);
+
+        println!("{}", "Successfully Added Packages".bright_blue());
+
         Ok(())
     }
 }

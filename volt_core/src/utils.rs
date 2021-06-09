@@ -408,19 +408,19 @@ pub fn create_dep_symlinks(
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
     let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
         .await
-        .unwrap_or_else(|e| {
-            println!("{} {}", "error".bright_red(), e);
+        .unwrap_or_else(|_| {
+            println!("{} That package does not exist yet!", "error".bright_red(),);
             std::process::exit(1);
         })
         .text_async()
         .await
-        .unwrap_or_else(|e| {
-            println!("{} {}", "error".bright_red(), e);
+        .unwrap_or_else(|_| {
+            println!("{} That package does not exist yet!", "error".bright_red());
             std::process::exit(1);
         });
 
-    serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|e| {
-        println!("{} {}", "error".bright_red(), e);
+    serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|_| {
+        println!("{} Failed to parse response!", "error".bright_red());
         std::process::exit(1);
     })
 }
