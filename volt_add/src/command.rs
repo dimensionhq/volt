@@ -94,18 +94,22 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
+        // Display help menu if `volt add` is run.
         if app.args.len() == 1 {
             println!("{}", Self::help());
             exit(1);
         }
 
         let mut packages = vec![];
+
+        // Add packages to the packages vec.
         for arg in &app.args {
             if arg != "add" {
                 packages.push(arg.clone());
             }
         }
 
+        // Check if package.json exists, otherwise, handle it.
         if !std::env::current_dir()?.join("package.json").exists() {
             println!("{} no package.json found.", "error".bright_red());
             print!("Do you want to initialize package.json (Y/N): ");
@@ -119,21 +123,28 @@ Options:
             }
         }
 
+        // Load the existing package.json file
+
         let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
+
+        // Handles for multi-threaded operations
         let mut handles = vec![];
 
+        // Iterate through each package
         for package in packages.clone() {
             let app_new = app.clone();
 
             let package_dir_loc;
 
             if cfg!(windows) {
+                // Check if C:\Users\username\.volt\packagename exists
                 package_dir_loc = format!(
                     r"{}\.volt\{}",
                     std::env::var("USERPROFILE").unwrap(),
                     package
                 );
             } else {
+                // Check if ~/.volt\packagename exists
                 package_dir_loc = format!(r"{}\.volt\{}", std::env::var("HOME").unwrap(), package);
             }
 
@@ -366,7 +377,9 @@ Options:
                         object.clone()
                     })
                     .collect();
+
                 progress_bar.finish_and_clear();
+
                 let mut workers = FuturesUnordered::new();
 
                 for dep in dependencies.clone() {
