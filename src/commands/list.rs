@@ -25,6 +25,10 @@ use colored::Colorize;
 use crate::utils::App;
 use crate::VERSION;
 
+use std::fs;
+
+use walkdir::WalkDir;
+
 // Super Imports
 use super::Command;
 
@@ -66,7 +70,80 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(_app: Arc<App>) -> Result<()> {
-        println!("listing");
+        let dirs = WalkDir::new("node_modules");
+
+        let dependency_paths: Vec<_> = dirs
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|entry| entry.file_type().is_dir() || entry.file_type().is_symlink())
+            .filter_map(|entry| Some(entry))
+            .collect();
+
+        let mut dependencies: Vec<String> = vec![];
+
+        for dep in dependency_paths {
+            let dep_path = dep.path().to_str().unwrap();
+            let dep_path_split: Vec<&str> = dep_path.split("\\").collect();
+            let dep_name: &str = dep_path_split[dep_path_split.len() - 1];
+            if dep_name != "node_modules"
+                && dep_name != "scripts"
+                && !dep_name.starts_with("node_modules")
+            {
+                dependencies.push(dep_name.to_string());
+                println!("{} {}", "-".bright_yellow(), dep_name.bright_blue().bold());
+                let dirs = WalkDir::new(format!("node_modules/{}/node_modules", dep_name))
+                    .follow_links(true);
+                let dependency_paths: Vec<_> = dirs
+                    .into_iter()
+                    .filter_map(Result::ok)
+                    .filter(|entry| entry.file_type().is_dir() || entry.file_type().is_symlink())
+                    .filter_map(|entry| Some(entry))
+                    .collect();
+
+                for dep in dependency_paths {
+                    let dep_path = dep.path().to_str().unwrap();
+                    let dep_path_split: Vec<&str> = dep_path.split("\\").collect();
+                    let dep_name: &str = dep_path_split[dep_path_split.len() - 1];
+                    if dep_name != "node_modules"
+                        && dep_name != "scripts"
+                        && !dep_name.starts_with("node_modules")
+                    {
+                        dependencies.push(dep_name.to_string());
+                        for _ in 0..dep_path_split.len() {
+                            print!("  ");
+                        }
+                        println!("{} {}", "-".bright_purple(), dep_name);
+                    }
+                }
+            }
+        }
+
+        // for dep in dependencies.clone() {
+        //     let dirs = WalkDir::new(format!("node_modules/{}", dep));
+        //     let dependency_paths: Vec<_> = dirs
+        //         .into_iter()
+        //         .filter_map(Result::ok)
+        //         .filter(|entry| entry.file_type().is_dir() || entry.file_type().is_symlink())
+        //         .filter_map(|entry| Some(entry))
+        //         .collect();
+
+        //     for dep in dependency_paths {
+        //         let dep_path = dep.path().to_str().unwrap();
+        //         let dep_path_split: Vec<&str> = dep_path.split("\\").collect();
+        //         let dep_name: &str = dep_path_split[dep_path_split.len() - 1];
+        //         if dep_name != "node_modules"
+        //             && dep_name != "scripts"
+        //             && !dep_name.starts_with("node_modules")
+        //         {
+        //             dependencies.push(dep_name.to_string());
+        //             for _ in 0..dep_path_split.len() {
+        //                 print!("  ");
+        //             }
+        //             println!("- {} - {}", dep_name, dep_path_split.len());
+        //         }
+        //     }
+        // }
+
         Ok(())
     }
 }
