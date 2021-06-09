@@ -42,6 +42,7 @@ Commands:
   {} {} - Install all dependencies for a project.
   {} {} - Interactively create or update a package.json file for a project.
   {} {} - Add a dependency to a project.
+  {} {} - Lists the dependency tree of a project.
   {} {} - Remove a dependency from the package.json file for a project.
   {} {} - Push changes to a github repository the easy way.
   {} {} - Clean the volt cache files and metadata.
@@ -57,6 +58,8 @@ Commands:
             "init".bright_blue(),
             "*".bright_magenta().bold(),
             "add".bright_blue(),
+            "*".bright_magenta().bold(),
+            "list".bright_blue(),
             "*".bright_magenta().bold(),
             "remove".bright_blue(),
             "*".bright_magenta().bold(),
