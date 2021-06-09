@@ -193,7 +193,7 @@ Options:
                                         "{}{} {} has unmet peer dependency {}",
                                         " warn ".black().on_bright_yellow(),
                                         ":",
-                                        object.clone().name.bright_cyan().bold(),
+                                        object.clone().name.bright_cyan(),
                                         &dep.bright_yellow()
                                     ));
                                 }
@@ -339,7 +339,7 @@ Options:
                                     "{}{} {} has unmet peer dependency {}",
                                     " warn ".black().on_bright_yellow(),
                                     ":",
-                                    object.clone().name.bright_cyan().bold(),
+                                    object.clone().name.bright_cyan(),
                                     &dep.bright_yellow()
                                 ));
                             }
