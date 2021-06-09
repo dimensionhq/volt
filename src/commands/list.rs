@@ -25,8 +25,6 @@ use colored::Colorize;
 use crate::utils::App;
 use crate::VERSION;
 
-use std::fs;
-
 use walkdir::WalkDir;
 
 // Super Imports
