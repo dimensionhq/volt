@@ -437,8 +437,6 @@ impl Add {
 
         utils::generate_script(package);
 
-        println!("{}", "Successfully Added Packages".bright_blue());
-
         Ok(())
     }
 }
