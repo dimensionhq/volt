@@ -7,10 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-walkdir = "2.3.2"
+walkdir = { version = "2.3.2" }
 indicatif = "0.16.1"
-zstd = "0.8.1+zstd.1.5.0"
 tar = "0.4.33"
 flate2 = "1.0.20"
-macro-utils = "^0.1"
-minifier = "0.0.41"
+byte-unit = "4.0.12"
