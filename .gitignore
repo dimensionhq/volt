@@ -3,6 +3,7 @@
 **/node_modules
 package.json
 .DS_Store
+test/*
 yarn_test/*
 volt_test/*
 pnpm_test/*
