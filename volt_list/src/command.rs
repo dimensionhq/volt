@@ -68,7 +68,7 @@ Options:
         let mut depth: u64 = 2;
 
         if flags.contains(&"--depth".to_string()) {
-            depth = app.args.iter().find_map(|s| s.parse().ok()).unwrap();
+            depth = app.args.iter().find_map(|s| s.parse().ok()).unwrap_or(2);
         }
 
         let dirs = WalkDir::new("node_modules");
