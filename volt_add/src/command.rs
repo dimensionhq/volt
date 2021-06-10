@@ -23,10 +23,7 @@ use async_trait::async_trait;
 use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
-use tokio::{
-    self,
-    sync::{mpsc, Mutex},
-};
+use tokio::sync::{mpsc, Mutex};
 use volt_core::app::App;
 use volt_core::{
     classes::{
@@ -464,7 +461,6 @@ impl Add {
         );
 
         let tarball_path = download_tarball(&app, &package).await?;
-
         app.extract_tarball(&tarball_path, &package)
             .await
             .with_context(|| {

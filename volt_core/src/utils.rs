@@ -20,7 +20,6 @@ use std::io::Read;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process;
-use std::process::exit;
 use std::{borrow::Cow, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 
@@ -119,32 +118,20 @@ pub fn get_dependencies_recursive(
         }
         for dep in dependencies {
             // println!("dep: {}", dep);
-            let volt_dep_dir = volt_dir.join(dep.clone().replace("/", "__").replace("@", ""));
-            let dep_dir = node_modules_dir.join(dep.clone().replace("/", "__").replace("@", ""));
+            let volt_dep_dir = volt_dir.join(dep.clone().replace("/", r"\"));
+            let dep_dir = node_modules_dir.join(dep.clone().replace("/", r"\"));
+
             if !dep_dir.exists() {
-                // copy(volt_dep_dir, node_modules_dir.clone(), &CopyOptions::new()).unwrap();
+                create_dir_all(&dep_dir).unwrap();
+                println!("path: {}", &dep_dir.display());
                 create_symlink(
                     volt_dep_dir.as_os_str().to_str().unwrap().to_string(),
                     dep_dir.as_os_str().to_str().unwrap().to_string(),
                 )
-                .unwrap();
+                .unwrap_or_else(|err| {
+                    eprintln!("error: {}", err);
+                });
             }
-
-            // let node_modules_dep_path = std::env::current_dir().unwrap().join(format!(
-            //     r"node_modules\{}",
-            //     dep.replace("/", "__").replace("@", "").replace(".", "_")
-            // ));
-
-            // if !node_modules_dep_path.exists() {
-            //     create_symlink(
-            //         volt_dir_file_path.as_os_str().to_str().unwrap().to_string(),
-            //         node_modules_dep_path
-            //             .as_os_str()
-            //             .to_str()
-            //             .unwrap()
-            //             .to_string(),
-            //     )?;
-            // }
             get_dependencies_recursive(dep.clone().as_str(), volt_dir, dep_dir, packages);
         }
     }
@@ -157,6 +144,7 @@ pub fn create_dep_symlinks(
     Box::pin(async move {
         let user_profile;
         let volt_dir_loc;
+
         if cfg!(windows) {
             user_profile = std::env::var("USERPROFILE").unwrap();
             volt_dir_loc = format!(r"{}\.volt", user_profile);
@@ -164,8 +152,10 @@ pub fn create_dep_symlinks(
             user_profile = std::env::var("HOME").unwrap();
             volt_dir_loc = format!(r"{}/.volt", user_profile);
         }
+
         let volt_dir = Path::new(&volt_dir_loc);
         let package_dir = volt_dir.join(pkg_name);
+
         get_dependencies_recursive(pkg_name, volt_dir, package_dir.clone(), &packages);
 
         let node_modules_dep_path =
@@ -590,6 +580,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 /// Create a junction / hard symlink to a directory
 #[cfg(windows)]
 pub fn create_symlink(original: String, link: String) -> Result<()> {
+    println!("symlinking from {} to {}", original, link);
     junction::create(original, link)?;
     Ok(())
 }

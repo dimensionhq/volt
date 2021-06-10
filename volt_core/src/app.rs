@@ -69,7 +69,7 @@ impl App {
     pub async fn extract_tarball(&self, file_path: &str, package: &VoltPackage) -> Result<()> {
         // Open tar file
         let tar_file = File::open(file_path).context("Unable to open tar file")?;
-        // println!("{}", file_path);
+
         create_dir_all(&self.node_modules_dir)?;
 
         // Delete package from node_modules
@@ -87,27 +87,53 @@ impl App {
             // Extract tar file
             let gz_decoder = GzDecoder::new(tar_file);
             let mut archive = Archive::new(gz_decoder);
+
+            let mut vlt_dir = PathBuf::from(&self.volt_dir);
+
+            if package.clone().name.starts_with("@") && package.clone().name.contains(r"/") {
+                if cfg!(windows) {
+                    let name = package.clone().name.replace(r"/", r"\");
+
+                    let split = name.split(r"\").collect::<Vec<&str>>();
+
+                    vlt_dir = vlt_dir.join(split[0]);
+                } else {
+                    let name = package.clone().name;
+
+                    let split = name.split("/").collect::<Vec<&str>>();
+
+                    vlt_dir = vlt_dir.join(split[0]);
+                }
+            }
+
             archive
-                .unpack(&self.volt_dir)
+                .unpack(&vlt_dir)
                 .context("Unable to unpack dependency")?;
 
             if cfg!(windows) {
-                std::fs::rename(
-                    format!(r"{}\package", &self.volt_dir.to_str().unwrap()),
-                    format!(
-                        r"{}\{}",
-                        &self.volt_dir.to_str().unwrap(),
-                        package.name.replace("/", "__").replace("@", "")
-                    ),
-                )
-                .context("Failed to unpack dependency folder")
-                .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+                let mut idx = 0;
+                let name = package.clone().name;
+
+                let split = name.split("/").collect::<Vec<&str>>();
+
+                if package.clone().name.contains("@") && package.clone().name.contains("/") {
+                    idx = 1;
+                }
+
+                if Path::new(format!(r"{}\package", &vlt_dir.to_str().unwrap()).as_str()).exists() {
+                    std::fs::rename(
+                        format!(r"{}\package", &vlt_dir.to_str().unwrap()),
+                        format!(r"{}\{}", &vlt_dir.to_str().unwrap(), split[idx]),
+                    )
+                    .context("failed to rename dependency folder")
+                    .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+                }
             } else {
                 std::fs::rename(
-                    format!(r"{}/package", &self.volt_dir.to_str().unwrap()),
+                    format!(r"{}/package", &vlt_dir.to_str().unwrap()),
                     format!(
                         r"{}/{}",
-                        &self.volt_dir.to_str().unwrap(),
+                        &vlt_dir.to_str().unwrap(),
                         package.name.replace("/", "__").replace("@", "")
                     ),
                 )
