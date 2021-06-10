@@ -21,6 +21,10 @@ use colored::Colorize;
 use volt_core::{app::App, command::Command, VERSION};
 use walkdir::WalkDir;
 
+use std::fs::read_dir;
+
+use std::path::PathBuf;
+
 pub struct List;
 
 #[async_trait]
@@ -61,10 +65,10 @@ Options:
     async fn exec(app: Arc<App>) -> Result<()> {
         let flags = &app.flags;
 
-        let mut depth: u64 = std::u64::MAX;
+        let mut depth: u64 = 2;
 
         if flags.contains(&"--depth".to_string()) {
-            depth = app.args.iter().find_map(|s| s.parse().ok()).unwrap();
+            depth = app.args.iter().find_map(|s| s.parse().ok()).unwrap_or(2);
         }
 
         let dirs = WalkDir::new("node_modules");
@@ -74,8 +78,6 @@ Options:
             .filter_map(Result::ok)
             .filter(|entry| entry.file_type().is_dir() || entry.file_type().is_symlink())
             .collect();
-
-        let mut dependencies: Vec<String> = vec![];
 
         if dependency_paths.len() == 1 {
             println!("{}", "No Dependencies Found!".bright_cyan());
@@ -98,7 +100,6 @@ Options:
                 && dep_name != "scripts"
                 && !dep_name.starts_with("node_modules")
             {
-                dependencies.push(dep_name.to_string());
                 println!("{} {}", "-".bright_cyan(), dep_name.bright_blue().bold());
                 let dirs = WalkDir::new(format!("node_modules/{}/node_modules", dep_name))
                     .follow_links(true)
@@ -121,11 +122,25 @@ Options:
                         && !dep_path.contains("test")
                         && !dep_name.starts_with("node_modules")
                     {
-                        dependencies.push(dep_name.to_string());
                         for _ in 0..dep_path_split.len() {
                             print!("  ");
                         }
-                        println!("{} {}", "-".bright_purple(), dep_name);
+                        let mut version = "".to_owned();
+                        for file in read_dir(std::env::temp_dir().join("volt"))? {
+                            let file_path: PathBuf = file?.path();
+                            let file_name: &str = file_path.to_str().unwrap();
+                            let file_split: Vec<&str> = file_name.split("\\").collect();
+                            let name: &str = file_split[file_split.len() - 1];
+                            if name.starts_with(dep_name) {
+                                let file_split: Vec<&str> = name.split("@").collect();
+                                let file_end = file_split[1];
+                                let file_split: Vec<&str> = file_end.split(".tgz").collect();
+                                version = file_split[0].to_owned();
+                            }
+                        }    
+                        let padding = 50 - (dep_path_split.len() * 2);
+                        print!("{} {:<width$}", "-".bright_purple(), dep_name, width = padding);
+                        println!("{}", version.clone().truecolor(190, 190, 190));                    
                     }
                 }
             }
