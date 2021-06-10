@@ -20,7 +20,6 @@ use std::io::Read;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process;
-use std::process::exit;
 use std::{borrow::Cow, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 
