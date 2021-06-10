@@ -140,7 +140,7 @@ Options:
                         }    
                         let padding = 50 - (dep_path_split.len() * 2);
                         print!("{} {:<width$}", "-".bright_purple(), dep_name, width = padding);
-                        println!("{}", version.clone().truecolor(140, 140, 140));                    
+                        println!("{}", version.clone().truecolor(190, 190, 190));                    
                     }
                 }
             }
