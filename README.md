@@ -11,6 +11,6 @@
 </p>
 <br>
 
-Credits:
+**Credits**:
 
 Volt uses third party code from different libraries. A list of them can be found [here](https://github.com/voltpkg/volt/blob/master/CREDITS.md).
