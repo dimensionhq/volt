@@ -35,7 +35,7 @@
 
 #### <a href="https://github.com/retep998/winapi-rs">winapi</a> for using functions inside the windows API
 
-#### <a href="https://crates.io/crates/junction/0.2.0">Junction</a> for handling symlinks in windows.
+#### <a href="https://github.com/lzutao/junction">Junction</a> for handling symlinks in windows.
 
 #### <a href="https://github.com/Stebalien/tempfile">tempfile</a> for handling temp files/directories
 
