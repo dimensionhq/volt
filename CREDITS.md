@@ -33,7 +33,7 @@
 
 <br />
 
-### Windows
+## Windows
 
 #### <a href="https://github.com/retep998/winapi-rs">winapi</a> for using functions inside the windows API
 
