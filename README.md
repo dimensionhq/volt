@@ -12,9 +12,4 @@
 <br>
 
 Credits:
-
-https://crates.io/crates/junction - Modified (Library Licensed Under MIT)
-
-https://crates.io/crates/dialoguer - Modifier (Library Licensed Under MIT)
-
-Dependencies on `Cargo.toml` files of each folder.
+Volt uses third party code from different libraries. A list of them can be found (here)[https://github.com/voltpkg/volt/blob/master/CREDITS.md].
