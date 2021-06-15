@@ -83,8 +83,7 @@ Options:
         let mut template: String = String::new();
 
         let mut app_name: String = String::new();
-
-        if args.is_empty() {
+        if args.len() > 0 {
             let select = Select {
                 message: String::from("Template"),
                 paged: true,
@@ -131,11 +130,9 @@ Options:
             let _app_name = &args[1];
             app_name = _app_name.to_string();
         }
-
-        if template == "react-app" {
-            react_app::create_react_app(app_name).await;
+        if template == "react" {
+            react_app::create_react_app(app_name);
         }
-
         Ok(())
     }
 }
