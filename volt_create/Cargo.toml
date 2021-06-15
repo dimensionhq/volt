@@ -13,3 +13,5 @@ dialoguer = "0.8"
 tokio = { version = "1.5.0", features = ["full"] }
 volt_core = { path = "../volt_core" }
 volt_init = { path = "../volt_init" }
+flate2 = "1.0"
+tar = "0.4"
