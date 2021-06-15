@@ -23,8 +23,8 @@ use async_trait::async_trait;
 use colored::Colorize;
 use dialoguer::Input;
 use volt_core::{
-    app::App, classes::create_templates::Template, command::Command, prompt::prompts::Select,
-    VERSION,
+    app::App, classes::create_templates::Template, command::Command,
+    model::http_manager::get_package, prompt::prompts::Select, VERSION,
 };
 
 use crate::templates::react_app;
@@ -130,9 +130,11 @@ Options:
             let _app_name = &args[1];
             app_name = _app_name.to_string();
         }
-        if template == "react" {
-            react_app::create_react_app(app_name);
-        }
+
+        let template_name = template.split("-").collect::<Vec<&str>>()[0];
+        let package_json = get_package(template_name).await;
+        // For dev checking
+        panic!("{:#?}", package_json.unwrap());
         Ok(())
     }
 }
