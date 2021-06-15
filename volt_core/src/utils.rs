@@ -23,11 +23,13 @@ use std::process;
 use std::{borrow::Cow, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 
+use anyhow::Error;
 use anyhow::Result;
 use chttp::ResponseExt;
 use colored::Colorize;
 
 use crate::app::App;
+use crate::classes::package::Package;
 use crate::classes::voltapi::{VoltPackage, VoltResponse};
 
 #[cfg(windows)]
@@ -490,6 +492,86 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
     Ok(path_str)
 }
 
+pub async fn download_tarball_create(
+    _app: &App,
+    package: &Package,
+    name: &str,
+) -> Result<String, Error> {
+    let file_name = format!("{}-{}.tgz", name, package.dist_tags.latest);
+    let temp_dir = temp_dir();
+
+    if !Path::new(&temp_dir.join("volt")).exists() {
+        std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
+    }
+
+    if name.starts_with("@") && name.contains("^^") {
+        let package_dir_loc;
+
+        if cfg!(windows) {
+            // Check if C:\Users\username\.volt exists
+            package_dir_loc = format!(
+                r"{}\.volt\{}",
+                std::env::var("USERPROFILE").unwrap(),
+                name.split("^^").collect::<Vec<&str>>()[0]
+            );
+        } else {
+            // Check if ~/.volt\packagename exists
+            package_dir_loc = format!(
+                r"{}\.volt\{}",
+                std::env::var("HOME").unwrap(),
+                name.split("^^").collect::<Vec<&str>>()[0]
+            );
+        }
+
+        if !Path::new(&package_dir_loc).exists() {
+            create_dir_all(&package_dir_loc).unwrap();
+        }
+    }
+
+    let path;
+
+    if cfg!(windows) {
+        path = temp_dir.join(format!(r"volt\{}", file_name));
+    } else {
+        path = temp_dir.join(format!(r"volt/{}", file_name));
+    }
+
+    let path_str = path.to_string_lossy().to_string();
+    let package_version = package.versions.get(&package.dist_tags.latest).unwrap();
+    // Corrupt tar files may cause issues
+    if let Ok(hash) = App::calc_hash(&path) {
+        // File exists, make sure it's not corrupted
+        if hash
+            == package
+                .versions
+                .get(&package.dist_tags.latest)
+                .unwrap()
+                .dist
+                .shasum
+        {
+            return Ok(path_str);
+        }
+    }
+
+    let tarball = package_version.dist.tarball.replace("https", "http");
+    let response = chttp::get_async(tarball).await?;
+
+    let body = response.into_body();
+
+    let mut file = File::create(&path)?;
+
+    file.write_all(
+        body.bytes()
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap()
+            .as_slice(),
+    )?;
+
+    App::calc_hash(&path)?;
+
+    Ok(path_str)
+}
 pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
     let sep: char;
     if cfg!(windows) {

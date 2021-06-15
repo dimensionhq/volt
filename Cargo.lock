@@ -1316,6 +1316,8 @@ dependencies = [
  "async-trait",
  "colored",
  "dialoguer",
+ "flate2",
+ "tar",
  "tokio",
  "volt_core",
  "volt_init",

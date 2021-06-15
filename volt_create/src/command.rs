@@ -16,18 +16,27 @@
 
 //! Remove a package from your direct dependencies.
 
-use std::{process, sync::Arc};
+use std::{
+    fs::File,
+    path::PathBuf,
+    process::{self, exit},
+    sync::Arc,
+};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
 use dialoguer::Input;
+use flate2::read::GzDecoder;
+use tar::Archive;
 use volt_core::{
-    app::App, classes::create_templates::Template, command::Command,
-    model::http_manager::get_package, prompt::prompts::Select, VERSION,
+    app::App,
+    classes::{create_templates::Template, voltapi::VoltResponse},
+    command::Command,
+    model::http_manager::get_package,
+    prompt::prompts::Select,
+    utils, VERSION,
 };
-
-use crate::templates::react_app;
 
 /// Struct implementation for the `Remove` command.
 pub struct Create;
@@ -83,7 +92,7 @@ Options:
         let mut template: String = String::new();
 
         let mut app_name: String = String::new();
-        if args.len() > 0 {
+        if args.len() == 1 {
             let select = Select {
                 message: String::from("Template"),
                 paged: true,
@@ -102,7 +111,7 @@ Options:
 
             template = Template::from_index(selected).unwrap().to_string();
         } else {
-            let _template = &args[0];
+            let _template = &args[1];
             if templates.contains(_template) {
                 template = _template.to_string();
             } else {
@@ -115,7 +124,7 @@ Options:
             }
         }
 
-        if args.len() < 2 {
+        if args.len() > 1 {
             app_name = Input::new()
                 .with_prompt("App name")
                 .with_initial_text("")
@@ -132,9 +141,41 @@ Options:
         }
 
         let template_name = template.split("-").collect::<Vec<&str>>()[0];
-        let package_json = get_package(template_name).await;
+        let version = "create-".to_owned() + template_name;
+        let package_json = get_package(&version).await?.unwrap_or_else(|| {
+            println!(
+                "{} Could not find template for {}",
+                "error".red().bold(),
+                template_name
+            );
+            exit(1)
+        });
         // For dev checking
-        panic!("{:#?}", package_json.unwrap());
+        let v = package_json
+            .versions
+            .get(&package_json.dist_tags.latest)
+            .unwrap_or_else(|| {
+                println!(
+                    "{} Could not find template version for {}",
+                    "error".red().bold(),
+                    template_name
+                );
+                exit(1)
+            });
+        let tarball_file = utils::download_tarball_create(&app, &package_json, &version)
+            .await
+            .unwrap();
+        let gz_decoder = GzDecoder::new(
+            File::open(tarball_file)
+                .context("Unable to open tar file")
+                .unwrap(),
+        );
+        let mut archive = Archive::new(gz_decoder);
+        let mut dir = PathBuf::from(std::env::current_dir().unwrap());
+
+        archive
+            .unpack(&dir.join(app_name))
+            .context("Unable to unpack dependency")?;
         Ok(())
     }
 }
