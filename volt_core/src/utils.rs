@@ -32,6 +32,8 @@ use crate::app::App;
 use crate::classes::package::Package;
 use crate::classes::voltapi::{VoltPackage, VoltResponse};
 
+use volt_add::command::install_extract_package;
+
 #[cfg(windows)]
 pub static PROGRESS_CHARS: &str = "=> ";
 
@@ -95,47 +97,63 @@ lazy_static! {
 //     }
 // }
 
-pub fn get_dependencies_recursive(
+// pub fn get_dependencies_recursive(
+//     pkgname: &str,
+//     volt_dir: &Path,
+//     package_dir: PathBuf,
+//     packages: &std::collections::HashMap<String, VoltPackage>,
+// ) {
+//     let mut dependencies = vec![];
+//     for (name, package) in packages {
+//         if name == pkgname {
+//             let dependency_list = &package.dependencies;
+//             if dependency_list != &None {
+//                 for dep in dependency_list.clone().unwrap() {
+//                     dependencies.push(dep);
+//                 }
+//             }
+//         }
+//     }
+
+//     if !dependencies.is_empty() {
+//         let node_modules_dir = package_dir.join("node_modules");
+//         if !node_modules_dir.exists() {
+//             std::fs::create_dir(node_modules_dir.clone()).unwrap();
+//         }
+//         for dep in dependencies {
+//             // println!("dep: {}", dep);
+//             let volt_dep_dir = volt_dir.join(dep.clone().replace("/", r"\"));
+//             let dep_dir = node_modules_dir.join(dep.clone().replace("/", r"\"));
+
+//             if !dep_dir.exists() {
+//                 create_dir_all(&dep_dir).unwrap();
+//                 println!("path: {}", &dep_dir.display());
+//                 create_symlink(
+//                     volt_dep_dir.as_os_str().to_str().unwrap().to_string(),
+//                     dep_dir.as_os_str().to_str().unwrap().to_string(),
+//                 )
+//                 .unwrap_or_else(|err| {
+//                     eprintln!("error: {}", err);
+//                 });
+//             }
+//             get_dependencies_recursive(dep.clone().as_str(), volt_dir, dep_dir, packages);
+//         }
+//     }
+// }
+
+fn get_dependencies_recursive(
     pkgname: &str,
     volt_dir: &Path,
     package_dir: PathBuf,
     packages: &std::collections::HashMap<String, VoltPackage>,
 ) {
-    let mut dependencies = vec![];
-    for (name, package) in packages {
-        if name == pkgname {
-            let dependency_list = &package.dependencies;
-            if dependency_list != &None {
-                for dep in dependency_list.clone().unwrap() {
-                    dependencies.push(dep);
-                }
-            }
-        }
-    }
+    println!("package name: {}", pkgname);
+    println!("volt dir: {:?}", volt_dir);
+    println!("package dir: {:?}", package_dir);
+    println!("packages: {:?}", packages);
 
-    if !dependencies.is_empty() {
-        let node_modules_dir = package_dir.join("node_modules");
-        if !node_modules_dir.exists() {
-            std::fs::create_dir(node_modules_dir.clone()).unwrap();
-        }
-        for dep in dependencies {
-            // println!("dep: {}", dep);
-            let volt_dep_dir = volt_dir.join(dep.clone().replace("/", r"\"));
-            let dep_dir = node_modules_dir.join(dep.clone().replace("/", r"\"));
-
-            if !dep_dir.exists() {
-                create_dir_all(&dep_dir).unwrap();
-                println!("path: {}", &dep_dir.display());
-                create_symlink(
-                    volt_dep_dir.as_os_str().to_str().unwrap().to_string(),
-                    dep_dir.as_os_str().to_str().unwrap().to_string(),
-                )
-                .unwrap_or_else(|err| {
-                    eprintln!("error: {}", err);
-                });
-            }
-            get_dependencies_recursive(dep.clone().as_str(), volt_dir, dep_dir, packages);
-        }
+    for package in packages.iter() {
+        install_extract_package('hi')
     }
 }
 
