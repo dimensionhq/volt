@@ -15,3 +15,4 @@ volt_core = { path = "../volt_core" }
 volt_init = { path = "../volt_init" }
 flate2 = "1.0"
 tar = "0.4"
+volt_utils = {path="../volt_utils"}

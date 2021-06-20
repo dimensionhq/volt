@@ -18,9 +18,9 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use volt_core::{app::App, command::Command, VERSION};
+use volt_core::{command::Command, VERSION};
 use walkdir::WalkDir;
-
+use volt_utils::app::App;
 use std::fs::read_dir;
 
 use std::path::PathBuf;

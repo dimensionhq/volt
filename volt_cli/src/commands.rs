@@ -18,9 +18,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::Result;
-use volt_core::app::App;
 use volt_core::command::Command;
-
+use volt_utils::app::App;
 #[derive(Debug)]
 pub enum AppCommand {
     Add,

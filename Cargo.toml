@@ -12,6 +12,7 @@ members = [
   "volt_help",
   "volt_init",
   "volt_install",
+  "volt_utils",
   "volt_list",
   "volt_migrate",
   "volt_remove",

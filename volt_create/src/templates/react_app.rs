@@ -1,7 +1,7 @@
 use colored::Colorize;
 use tokio::fs;
-use volt_core::{app::App, command::Command};
-
+use volt_core::{command::Command};
+use volt_utils::app::App;
 pub async fn create_react_app(app_name: String) {
     println!("creating react app: {}", app_name.bright_green());
     fs::create_dir(app_name.clone())
