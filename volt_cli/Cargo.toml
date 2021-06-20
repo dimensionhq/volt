@@ -23,7 +23,7 @@ volt_list = { path = "../volt_list" }
 volt_migrate = { path = "../volt_migrate" }
 volt_remove = { path = "../volt_remove" }
 volt_unknown = { path = "../volt_unknown" }
-
+volt_utils = {path="../volt_utils"}
 [target.'cfg(windows)'.dependencies]
 junction = { path = "../junction" }
 

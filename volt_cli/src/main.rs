@@ -21,8 +21,8 @@ use std::process::exit;
 use anyhow::Result;
 use colored::Colorize;
 use tokio::time::Instant;
-use volt_core::{app::App, utils::ERROR_TAG, VERSION};
-
+use volt_core::{VERSION};
+use volt_utils::{ERROR_TAG, app::App};
 use crate::commands::AppCommand;
 
 #[tokio::main]

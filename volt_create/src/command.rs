@@ -30,14 +30,13 @@ use dialoguer::Input;
 use flate2::read::GzDecoder;
 use tar::Archive;
 use volt_core::{
-    app::App,
-    classes::{create_templates::Template, voltapi::VoltResponse},
+    classes::create_templates::Template,
     command::Command,
     model::http_manager::get_package,
     prompt::prompts::Select,
-    utils, VERSION,
+    VERSION,
 };
-
+use volt_utils::app::App;
 /// Struct implementation for the `Remove` command.
 pub struct Create;
 
@@ -162,7 +161,7 @@ Options:
                 );
                 exit(1)
             });
-        let tarball_file = utils::download_tarball_create(&app, &package_json, &version)
+        let tarball_file = volt_utils::download_tarball_create(&app, &package_json, &version)
             .await
             .unwrap();
         let gz_decoder = GzDecoder::new(

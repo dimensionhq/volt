@@ -24,18 +24,13 @@ use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use tokio::sync::{mpsc, Mutex};
-use volt_core::app::App;
+use volt_utils::app::App;
 use volt_core::{
-    classes::{
-        package::{Package, PackageJson, Version},
-        voltapi::VoltPackage,
-    },
     command::Command,
     model::lock_file::{DependencyID, DependencyLock, LockFile},
-    utils::{self, download_tarball, PROGRESS_CHARS},
     VERSION,
 };
-
+use volt_utils::{self,package::{PackageJson, Package, Version}, PROGRESS_CHARS,};
 // use crate::commands::init;
 
 /// Struct implementation for the `Add` command.
@@ -168,7 +163,7 @@ Options:
                             )),
                     );
 
-                    let response = utils::get_volt_response(package.to_string()).await;
+                    let response = volt_utils::get_volt_response(package.to_string()).await;
 
                     let progress_bar = &progress_bar;
 
@@ -196,7 +191,7 @@ Options:
                             let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 
                             for dep in object.clone().peer_dependencies {
-                                if !utils::check_peer_dependency(&dep) {
+                                if !volt_utils::check_peer_dependency(&dep) {
                                     progress_bar.println(format!(
                                         "{}{} {} has unmet peer dependency {}",
                                         " warn ".black().on_bright_yellow(),
@@ -235,8 +230,8 @@ Options:
                     for dep in dependencies.clone() {
                         let app_new = app_new.clone();
                         workers.push(async move {
-                            Add::install_extract_package(app_new, &dep).await.unwrap();
-                            utils::generate_script(&dep);
+                            volt_utils::install_extract_package(app_new, &dep).await.unwrap();
+                            volt_utils::generate_script(&dep);
                         });
                     }
 
@@ -263,7 +258,7 @@ Options:
 
                     for dep in dependencies {
                         if dep.name == package {
-                            utils::create_dep_symlinks(
+                            volt_utils::create_dep_symlinks(
                                 package.as_str(),
                                 current_version.packages.clone(),
                             )
@@ -314,7 +309,7 @@ Options:
                         )),
                 );
 
-                let response = utils::get_volt_response(package.to_string()).await;
+                let response = volt_utils::get_volt_response(package.to_string()).await;
 
                 let progress_bar = &progress_bar;
 
@@ -342,7 +337,7 @@ Options:
                         let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 
                         for dep in object.clone().peer_dependencies {
-                            if !utils::check_peer_dependency(&dep) {
+                            if !volt_utils::check_peer_dependency(&dep) {
                                 progress_bar.println(format!(
                                     "{}{} {} has unmet peer dependency {}",
                                     " warn ".black().on_bright_yellow(),
@@ -382,8 +377,8 @@ Options:
                 for dep in dependencies.clone() {
                     let app_new = app_new.clone();
                     workers.push(async move {
-                        Add::install_extract_package(app_new, &dep).await.unwrap();
-                        utils::generate_script(&dep);
+                        volt_utils::install_extract_package(app_new, &dep).await.unwrap();
+                        volt_utils::generate_script(&dep);
                     });
                 }
 
@@ -412,7 +407,7 @@ Options:
 
                 for dep in dependencies {
                     if dep.name == package {
-                        utils::create_dep_symlinks(
+                        volt_utils::create_dep_symlinks(
                             package.as_str(),
                             current_version.packages.clone(),
                         )
@@ -443,31 +438,6 @@ Options:
                 handle.await?;
             }
         }
-
-        Ok(())
-    }
-}
-
-impl Add {
-    // Add new package
-    async fn install_extract_package(app: Arc<App>, package: &VoltPackage) -> Result<()> {
-        let pb = ProgressBar::new(0);
-        let text = format!("{}", "Installing Packages".bright_cyan());
-
-        pb.set_style(
-            ProgressStyle::default_spinner()
-                .template(("{spinner:.green}".to_string() + format!(" {}", text).as_str()).as_str())
-                .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
-        );
-
-        let tarball_path = download_tarball(&app, &package).await?;
-        app.extract_tarball(&tarball_path, &package)
-            .await
-            .with_context(|| {
-                format!("Unable to extract tarball for package '{}'", &package.name)
-            })?;
-
-        utils::generate_script(package);
 
         Ok(())
     }

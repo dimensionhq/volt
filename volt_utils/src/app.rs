@@ -4,16 +4,15 @@ use std::{
     io,
     path::{Path, PathBuf},
 };
-
 use anyhow::{Context, Result};
 use colored::Colorize;
 use dirs::home_dir;
 use flate2::read::GzDecoder;
 use sha1::{Digest, Sha1};
 use tar::Archive;
+use crate::enable_ansi_support;
 
-use crate::{classes::voltapi::VoltPackage, utils::enable_ansi_support};
-
+use super::voltapi::*;
 #[derive(Debug)]
 pub struct App {
     pub current_dir: PathBuf,
