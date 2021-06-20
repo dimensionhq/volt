@@ -12,3 +12,4 @@ colored = "2.0"
 tokio = { version = "1.5", features = ["full"] }
 volt_core = { path = "../volt_core" }
 volt_init = { path = "../volt_init" }
+volt_utils = {path="../volt_utils"}

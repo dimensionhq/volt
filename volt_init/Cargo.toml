@@ -11,3 +11,4 @@ async-trait = "0.1"
 colored = "2.0"
 regex = "1"
 volt_core = { path = "../volt_core" }
+volt_utils = {path="../volt_utils"}
