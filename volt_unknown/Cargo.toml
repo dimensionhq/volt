@@ -10,3 +10,4 @@ anyhow = "1.0"
 async-trait = "0.1"
 volt_core = { path = "../volt_core" }
 colored = "2.0.0"
+volt_utils = {path="../volt_utils"}

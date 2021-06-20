@@ -12,3 +12,4 @@ async-trait = "0.1"
 colored = "2.0"
 volt_core = { path = "../volt_core" }
 walkdir = "2.3"
+volt_utils = {path = "../volt_utils"}

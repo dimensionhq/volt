@@ -21,8 +21,9 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use volt_core::{app::App, classes::package::PackageJson, command::Command, VERSION};
-
+use volt_core::{command::Command, VERSION};
+use volt_utils::app::App;
+use volt_utils::package::PackageJson;
 /// Struct implementation for the `Install` command.
 pub struct Install;
 

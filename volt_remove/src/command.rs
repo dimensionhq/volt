@@ -26,14 +26,11 @@ use tokio::{
     sync::Mutex,
 };
 use volt_core::{
-    app::App,
-    classes::package::PackageJson,
     command::Command,
     model::lock_file::{DependencyID, LockFile},
-    utils::get_volt_response,
     VERSION,
 };
-
+use volt_utils::{get_volt_response, app::App, package::PackageJson};
 /// Struct implementation for the `Remove` command.
 pub struct Remove;
 

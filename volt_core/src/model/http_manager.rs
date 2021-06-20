@@ -18,8 +18,7 @@ use std::io;
 
 use chttp::http::StatusCode;
 use thiserror::Error;
-
-use crate::classes::package::Package;
+use volt_utils::package::Package;
 
 #[derive(Error, Debug)]
 pub enum GetPackageError {

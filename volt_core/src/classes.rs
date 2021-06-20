@@ -17,6 +17,4 @@
 pub mod create_templates;
 pub mod init_data;
 pub mod meta;
-pub mod package;
 pub mod package_manager;
-pub mod voltapi;
