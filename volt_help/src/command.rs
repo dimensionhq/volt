@@ -47,6 +47,7 @@ Commands:
   {} {} - Push changes to a github repository the easy way.
   {} {} - Clean the volt cache files and metadata.
   {} {} - Clone a github repository and get setup with all required dependencies.
+  {} {} - Run a defined script.
   "#,
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
@@ -68,6 +69,8 @@ Commands:
             "deploy".bright_blue(),
             "*".bright_magenta().bold(),
             "clone".bright_blue(),
+            "*".bright_magenta().bold(),
+            "run".bright_blue(),
         )
     }
 

@@ -1261,6 +1261,7 @@ dependencies = [
  "volt_list",
  "volt_migrate",
  "volt_remove",
+ "volt_run",
  "volt_unknown",
  "volt_utils",
 ]
@@ -1410,6 +1411,32 @@ dependencies = [
  "tokio",
  "volt_core",
  "volt_init",
+ "volt_utils",
+]
+
+[[package]]
+name = "volt_run"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "junction",
+ "tokio",
+ "volt_add",
+ "volt_cache",
+ "volt_clone",
+ "volt_compress",
+ "volt_core",
+ "volt_create",
+ "volt_deploy",
+ "volt_help",
+ "volt_init",
+ "volt_install",
+ "volt_list",
+ "volt_migrate",
+ "volt_remove",
+ "volt_unknown",
  "volt_utils",
 ]
 

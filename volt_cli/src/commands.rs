@@ -34,6 +34,7 @@ pub enum AppCommand {
     List,
     Migrate,
     Remove,
+    Run,
     Unknown,
 }
 
@@ -54,6 +55,7 @@ impl FromStr for AppCommand {
             "list" => Ok(Self::List),
             "migrate" => Ok(Self::Migrate),
             "remove" => Ok(Self::Remove),
+            "run" => Ok(Self::Run),
             _ => Err(()),
         }
     }
@@ -85,6 +87,7 @@ impl AppCommand {
             Self::List => volt_list::command::List::help(),
             Self::Migrate => volt_migrate::command::Migrate::help(),
             Self::Remove => volt_remove::command::Remove::help(),
+            Self::Run => volt_run::command::Run::help(),
             Self::Unknown => volt_unknown::command::Unknown::help(),
         }
     }
@@ -104,6 +107,7 @@ impl AppCommand {
             Self::List => volt_list::command::List::exec(app).await,
             Self::Migrate => volt_migrate::command::Migrate::exec(app).await,
             Self::Remove => volt_remove::command::Remove::exec(app).await,
+            Self::Run => volt_run::command::Run::exec(app).await,
             Self::Unknown => volt_unknown::command::Unknown::exec(app).await,
         }
     }

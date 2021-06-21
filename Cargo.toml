@@ -16,5 +16,6 @@ members = [
   "volt_list",
   "volt_migrate",
   "volt_remove",
+  "volt_run",
   "volt_unknown",
 ]
