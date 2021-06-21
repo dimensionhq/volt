@@ -11,6 +11,19 @@
 </p>
 <br>
 
+# Benchmarks
+## Speed
+![image](https://user-images.githubusercontent.com/63039748/122814035-b9696280-d2e4-11eb-8157-67a49f03190d.png)
+
+
+## Bandwidth
+![image](https://user-images.githubusercontent.com/63039748/122814065-c1c19d80-d2e4-11eb-868f-6c7519bc9820.png)
+
+
+## Space
+(Coming Soon!)
+
+
 **Credits**:
 
 Volt uses third party code from different libraries. A list of them can be found [here](https://github.com/voltpkg/volt/blob/master/CREDITS.md).
