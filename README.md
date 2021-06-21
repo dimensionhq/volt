@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">Volt</h1>
-<h3 align="center">A powerful, fast and memory safe package manager for the web.</h3>
+<h3 align="center">A powerful, fast and memory safe package manager for the web. (WIP)</h3>
 <br>
 
 <p align="center">
@@ -11,7 +11,7 @@
 </p>
 <br>
 
-# 🧪 Benchmarks
+# 🧪 Benchmarks (Work In Progress)
 ## ⚡ Speed
 ![image](https://user-images.githubusercontent.com/63039748/122814035-b9696280-d2e4-11eb-8157-67a49f03190d.png)
 
