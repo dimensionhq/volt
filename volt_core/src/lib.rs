@@ -14,7 +14,6 @@
     limitations under the License.
 */
 
-#[macro_use]
 extern crate lazy_static;
 
 pub mod classes;

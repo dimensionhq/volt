@@ -1,11 +1,12 @@
 [package]
-name = "volt_cli"
+name = "volt_run"
 version = "0.0.1"
 authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
 description = "A fast, memory-safe package manager for the web."
 edition = "2018"
 
 [dependencies]
+async-trait = "0.1.50"
 anyhow = "1.0"
 colored = "2.0"
 tokio = { version = "1.5", features = ["full"] }
@@ -22,15 +23,8 @@ volt_install = { path = "../volt_install" }
 volt_list = { path = "../volt_list" }
 volt_migrate = { path = "../volt_migrate" }
 volt_remove = { path = "../volt_remove" }
-volt_unknown = { path = "../volt_unknown" }
 volt_utils = { path = "../volt_utils" }
-volt_run = { path = "../volt_run" }
+volt_unknown = { path = "../volt_unknown" }
 
 [target.'cfg(windows)'.dependencies]
 junction = { path = "../junction" }
-
-[profile.release]
-opt-level = 'z'     # Optimize for size.
-lto = true          # Enable Link Time Optimization
-codegen-units = 1   # Reduce number of codegen units to increase optimizations.
-panic = 'abort'
