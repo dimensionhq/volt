@@ -23,9 +23,9 @@ use async_trait::async_trait;
 use colored::Colorize;
 use volt_core::command::Command;
 use volt_core::VERSION;
+use volt_unknown::command::Unknown;
 use volt_utils::app::App;
 use volt_utils::package::PackageJson;
-use volt_unknown::command::Unknown;
 
 /// Struct implementation for the `Run` command.
 pub struct Run;
@@ -69,12 +69,12 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        if app.clone().args.len() == 1 as usize {
+        if app.clone().args.len() == 1_usize {
             let package_json = PackageJson::from("package.json");
 
             let args = app.args.clone();
             let command: &str = args[0].as_str();
-    
+
             if package_json.scripts.contains_key(command) {
                 Unknown::exec(app.clone()).await.unwrap();
                 std::process::exit(0);
@@ -96,7 +96,7 @@ Options:
                 files_vec.push(file_name_str.to_string());
             }
 
-            if app.clone().args.len() == 1 as usize {
+            if app.clone().args.len() == 1_usize {
                 let print_string = files_vec.join(", ");
                 println!(
                     "{}{} {}",
@@ -120,10 +120,9 @@ Options:
                     .unwrap();
             } else {
                 println!(
-                    "{}: {} {}",
+                    "{}: {} 'is not a valid script.'",
                     "error".bright_red().bold(),
                     &app.args[1].bright_yellow().bold(),
-                    "is not a valid script."
                 );
             }
         }

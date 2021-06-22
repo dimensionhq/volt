@@ -6,7 +6,6 @@ use std::fs::File;
 use std::io;
 use std::io::Write;
 use std::{fs, os::windows::fs::symlink_file};
-use tempfile;
 
 // https://docs.microsoft.com/en-us/windows/desktop/debug/system-error-codes
 const ERROR_NOT_A_REPARSE_POINT: i32 = 0x1126;

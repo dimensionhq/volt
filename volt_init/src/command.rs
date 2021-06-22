@@ -23,17 +23,16 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use regex::Regex;
-use volt_utils::app::App;
 use volt_core::classes::init_data::InitData;
 use volt_core::classes::init_data::License;
 use volt_core::command::Command;
 use volt_core::prompt::prompts::Confirm;
 use volt_core::prompt::prompts::Input;
 use volt_core::prompt::prompts::Select;
+use volt_utils::app::App;
 // use volt_core::utils;
-use volt_utils;
-use volt_utils::get_git_config;
 use volt_core::VERSION;
+use volt_utils::get_git_config;
 
 /// Struct implementation for the `Init` command.
 pub struct Init;
@@ -80,7 +79,8 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        let temp = volt_utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
+        let temp =
+            volt_utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
         let split: Vec<&str> = temp.split('\\').collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();
 
