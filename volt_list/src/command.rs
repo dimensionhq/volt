@@ -18,10 +18,10 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use volt_core::{command::Command, VERSION};
-use walkdir::WalkDir;
-use volt_utils::app::App;
 use std::fs::read_dir;
+use volt_core::{command::Command, VERSION};
+use volt_utils::app::App;
+use walkdir::WalkDir;
 
 use std::path::PathBuf;
 
@@ -82,7 +82,7 @@ Options:
         if dependency_paths.len() == 1 {
             println!("{}", "No Dependencies Found!".bright_cyan());
             return Ok(());
-        } else if dependency_paths.len() == 0 {
+        } else if dependency_paths.is_empty() {
             println!(
                 "{} {} {}",
                 "Failed to find".bright_cyan(),
@@ -129,18 +129,23 @@ Options:
                         for file in read_dir(std::env::temp_dir().join("volt"))? {
                             let file_path: PathBuf = file?.path();
                             let file_name: &str = file_path.to_str().unwrap();
-                            let file_split: Vec<&str> = file_name.split("\\").collect();
+                            let file_split: Vec<&str> = file_name.split('\\').collect();
                             let name: &str = file_split[file_split.len() - 1];
                             if name.starts_with(dep_name) {
-                                let file_split: Vec<&str> = name.split("@").collect();
+                                let file_split: Vec<&str> = name.split('@').collect();
                                 let file_end = file_split[1];
                                 let file_split: Vec<&str> = file_end.split(".tgz").collect();
                                 version = file_split[0].to_owned();
                             }
-                        }    
+                        }
                         let padding = 50 - (dep_path_split.len() * 2);
-                        print!("{} {:<width$}", "-".bright_purple(), dep_name, width = padding);
-                        println!("{}", version.clone().truecolor(190, 190, 190));                    
+                        print!(
+                            "{} {:<width$}",
+                            "-".bright_purple(),
+                            dep_name,
+                            width = padding
+                        );
+                        println!("{}", version.clone().truecolor(190, 190, 190));
                     }
                 }
             }

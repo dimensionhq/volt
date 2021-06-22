@@ -24,13 +24,17 @@ use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use tokio::sync::{mpsc, Mutex};
-use volt_utils::app::App;
 use volt_core::{
     command::Command,
     model::lock_file::{DependencyID, DependencyLock, LockFile},
     VERSION,
 };
-use volt_utils::{self,package::{PackageJson, Package, Version}, PROGRESS_CHARS,};
+use volt_utils::app::App;
+use volt_utils::{
+    self,
+    package::{Package, PackageJson, Version},
+    PROGRESS_CHARS,
+};
 // use crate::commands::init;
 
 /// Struct implementation for the `Add` command.
@@ -230,7 +234,9 @@ Options:
                     for dep in dependencies.clone() {
                         let app_new = app_new.clone();
                         workers.push(async move {
-                            volt_utils::install_extract_package(app_new, &dep).await.unwrap();
+                            volt_utils::install_extract_package(app_new, &dep)
+                                .await
+                                .unwrap();
                             volt_utils::generate_script(&dep);
                         });
                     }
@@ -260,6 +266,7 @@ Options:
                         if dep.name == package {
                             volt_utils::create_dep_symlinks(
                                 package.as_str(),
+                                app_new.clone(),
                                 current_version.packages.clone(),
                             )
                             .await
@@ -377,7 +384,9 @@ Options:
                 for dep in dependencies.clone() {
                     let app_new = app_new.clone();
                     workers.push(async move {
-                        volt_utils::install_extract_package(app_new, &dep).await.unwrap();
+                        volt_utils::install_extract_package(app_new, &dep)
+                            .await
+                            .unwrap();
                         volt_utils::generate_script(&dep);
                     });
                 }
@@ -409,6 +418,7 @@ Options:
                     if dep.name == package {
                         volt_utils::create_dep_symlinks(
                             package.as_str(),
+                            app_new.clone(),
                             current_version.packages.clone(),
                         )
                         .await

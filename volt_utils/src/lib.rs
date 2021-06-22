@@ -1,25 +1,25 @@
-pub mod voltapi;
-pub mod package;
 pub mod app;
+pub mod package;
+pub mod voltapi;
 use std::sync::Arc;
 
 use anyhow::Context;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
+use std::borrow::Cow;
 use std::fs::create_dir;
 use std::fs::create_dir_all;
 use std::io::Read;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process;
-use std::{borrow::Cow, path::PathBuf};
 use std::{env::temp_dir, fs::File};
 
 use anyhow::Error;
 use anyhow::Result;
+use app::App;
 use chttp::ResponseExt;
 use lazy_static::lazy_static;
-use app::App;
 use package::Package;
 use voltapi::{VoltPackage, VoltResponse};
 
@@ -33,25 +33,22 @@ lazy_static! {
     pub static ref ERROR_TAG: String = "error".red().bold().to_string();
 }
 
-
-fn get_dependencies_recursive(
-    pkgname: &str,
-    volt_dir: &Path,
-    package_dir: PathBuf,
+async fn get_dependencies_recursive(
+    app: Arc<App>,
     packages: &std::collections::HashMap<String, VoltPackage>,
 ) {
-    println!("package name: {}", pkgname);
-    println!("volt dir: {:?}", volt_dir);
-    println!("package dir: {:?}", package_dir);
     println!("packages: {:?}", packages);
 
     for package in packages.iter() {
-        // Utils::install_extract_package("as", "asd");
+        install_extract_package(app.clone(), package.1)
+            .await
+            .unwrap();
     }
 }
 
 pub fn create_dep_symlinks(
     pkg_name: &str,
+    app: Arc<App>,
     packages: std::collections::HashMap<String, VoltPackage>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + '_>> {
     Box::pin(async move {
@@ -69,7 +66,7 @@ pub fn create_dep_symlinks(
         let volt_dir = Path::new(&volt_dir_loc);
         let package_dir = volt_dir.join(pkg_name);
 
-        get_dependencies_recursive(pkg_name, volt_dir, package_dir.clone(), &packages);
+        get_dependencies_recursive(app, &packages).await;
 
         let node_modules_dep_path =
             std::env::current_dir()?.join(format!(r"node_modules\{}", pkg_name));
@@ -115,7 +112,7 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
         std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
     }
 
-    if name.starts_with("@") && name.contains("^^") {
+    if name.starts_with('@') && name.contains("^^") {
         let package_dir_loc;
 
         if cfg!(windows) {
@@ -190,7 +187,7 @@ pub async fn download_tarball_create(
         std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
     }
 
-    if name.starts_with("@") && name.contains("^^") {
+    if name.starts_with('@') && name.contains("^^") {
         let package_dir_loc;
 
         if cfg!(windows) {
@@ -342,7 +339,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
         }
     }
 
-    return Ok(());
+    Ok(())
 }
 
 /// Create a junction / hard symlink to a directory
@@ -362,7 +359,7 @@ pub fn generate_script(package: &VoltPackage) {
         let bin = package.clone().bin.unwrap();
         let k = bin.keys().next().unwrap();
         let v = bin.values().next().unwrap();
-        
+
         let user_profile = std::env::var("USERPROFILE").unwrap();
 
         let volt_path = format!("{}/.volt", user_profile);
@@ -390,8 +387,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 }
 #[cfg(unix)]
 
-pub fn generate_script(package: &VoltPackage) {
-}
+pub fn generate_script(package: &VoltPackage) {}
 
 /// Create a symlink to a directory
 #[cfg(unix)]
@@ -399,9 +395,8 @@ pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> R
     std::os::unix::fs::symlink(original, link).context("Unable to symlink directory")
 }
 
-
-pub fn check_peer_dependency(_package_name: &String) -> bool {
-    return false;
+pub fn check_peer_dependency(_package_name: &str) -> bool {
+    false
 }
 
 pub async fn install_extract_package(app: Arc<App>, package: &VoltPackage) -> Result<()> {
@@ -417,9 +412,7 @@ pub async fn install_extract_package(app: Arc<App>, package: &VoltPackage) -> Re
     let tarball_path = download_tarball(&app, &package).await?;
     app.extract_tarball(&tarball_path, &package)
         .await
-        .with_context(|| {
-            format!("Unable to extract tarball for package '{}'", &package.name)
-        })?;
+        .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name))?;
 
     generate_script(package);
 

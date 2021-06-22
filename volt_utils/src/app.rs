@@ -1,16 +1,16 @@
+use crate::enable_ansi_support;
+use anyhow::{Context, Result};
+use colored::Colorize;
+use dirs::home_dir;
+use flate2::read::GzDecoder;
+use sha1::{Digest, Sha1};
 use std::{
     env,
     fs::{create_dir_all, remove_dir_all, File},
     io,
     path::{Path, PathBuf},
 };
-use anyhow::{Context, Result};
-use colored::Colorize;
-use dirs::home_dir;
-use flate2::read::GzDecoder;
-use sha1::{Digest, Sha1};
 use tar::Archive;
-use crate::enable_ansi_support;
 
 use super::voltapi::*;
 #[derive(Debug)]
@@ -89,7 +89,7 @@ impl App {
 
             let mut vlt_dir = PathBuf::from(&self.volt_dir);
 
-            if package.clone().name.starts_with("@") && package.clone().name.contains(r"/") {
+            if package.clone().name.starts_with('@') && package.clone().name.contains(r"/") {
                 if cfg!(windows) {
                     let name = package.clone().name.replace(r"/", r"\");
 
@@ -99,7 +99,7 @@ impl App {
                 } else {
                     let name = package.clone().name;
 
-                    let split = name.split("/").collect::<Vec<&str>>();
+                    let split = name.split('/').collect::<Vec<&str>>();
 
                     vlt_dir = vlt_dir.join(split[0]);
                 }
@@ -113,9 +113,9 @@ impl App {
                 let mut idx = 0;
                 let name = package.clone().name;
 
-                let split = name.split("/").collect::<Vec<&str>>();
+                let split = name.split('/').collect::<Vec<&str>>();
 
-                if package.clone().name.contains("@") && package.clone().name.contains("/") {
+                if package.clone().name.contains('@') && package.clone().name.contains('/') {
                     idx = 1;
                 }
 

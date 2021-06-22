@@ -18,7 +18,6 @@
 
 use std::{
     fs::File,
-    path::PathBuf,
     process::{self, exit},
     sync::Arc,
 };
@@ -30,11 +29,8 @@ use dialoguer::Input;
 use flate2::read::GzDecoder;
 use tar::Archive;
 use volt_core::{
-    classes::create_templates::Template,
-    command::Command,
-    model::http_manager::get_package,
-    prompt::prompts::Select,
-    VERSION,
+    classes::create_templates::Template, command::Command, model::http_manager::get_package,
+    prompt::prompts::Select, VERSION,
 };
 use volt_utils::app::App;
 /// Struct implementation for the `Remove` command.
@@ -139,7 +135,7 @@ Options:
             app_name = _app_name.to_string();
         }
 
-        let template_name = template.split("-").collect::<Vec<&str>>()[0];
+        let template_name = template.split('-').collect::<Vec<&str>>()[0];
         let version = "create-".to_owned() + template_name;
         let package_json = get_package(&version).await?.unwrap_or_else(|| {
             println!(
@@ -170,7 +166,7 @@ Options:
                 .unwrap(),
         );
         let mut archive = Archive::new(gz_decoder);
-        let mut dir = PathBuf::from(std::env::current_dir().unwrap());
+        let mut dir = std::env::current_dir().unwrap();
 
         archive
             .unpack(&dir.join(app_name))
