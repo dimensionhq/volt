@@ -7,7 +7,7 @@ use sha1::{Digest, Sha1};
 use std::{
     env,
     fs::{create_dir_all, remove_dir_all, File},
-    io,
+    io::{self},
     path::{Path, PathBuf},
 };
 use tar::Archive;
@@ -149,11 +149,9 @@ impl App {
         Ok(())
     }
 
-    pub fn calc_hash<P: AsRef<Path>>(path: P) -> Result<String> {
-        let mut file = std::fs::File::open(path)?;
-
+    pub fn calc_hash(data: bytes::Bytes) -> Result<String> {
         let mut hasher = Sha1::new();
-        io::copy(&mut file, &mut hasher)?;
+        io::copy(&mut &*data, &mut hasher)?;
 
         Ok(format!("{:x}", hasher.finalize()))
     }

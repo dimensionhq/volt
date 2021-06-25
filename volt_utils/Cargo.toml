@@ -7,9 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chttp = "0.5.5"
 anyhow = "1.0"
 async-trait = "0.1"
-chttp = "0.5"
+reqwest = "*"
 colored = "2.0"
 console  = "0.14"
 dialoguer = "0.8"
@@ -24,6 +25,7 @@ tar = "0.4"
 thiserror = "1.0"
 tokio = { version = "1.5.0", features = ["full"] }
 indicatif = "0.16"
+bytes = "1.0.1"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["errhandlingapi", "fileapi", "guiddef", "handleapi", "ioapiset", "processthreadsapi", "securitybaseapi", "winbase", "winioctl", "winnt"]}
