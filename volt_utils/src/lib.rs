@@ -6,14 +6,16 @@ use std::sync::Arc;
 use anyhow::Context;
 use chttp::{self, ResponseExt};
 use colored::Colorize;
+use flate2::read::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
-use std::fs::create_dir;
 use std::fs::create_dir_all;
+use std::fs::{create_dir, remove_dir_all};
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process;
 use std::{env::temp_dir, fs::File};
+use tar::Archive;
 
 use anyhow::Error;
 use anyhow::Result;
@@ -25,7 +27,7 @@ use voltapi::{VoltPackage, VoltResponse};
 #[cfg(windows)]
 pub static PROGRESS_CHARS: &str = "=> ";
 
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 pub static PROGRESS_CHARS: &str = "▰▰▱";
 
 lazy_static! {
@@ -36,8 +38,6 @@ async fn get_dependencies_recursive(
     app: Arc<App>,
     packages: &std::collections::HashMap<String, VoltPackage>,
 ) {
-    println!("packages: {:?}", packages);
-
     for package in packages.iter() {
         install_extract_package(app.clone(), package.1)
             .await
@@ -106,7 +106,7 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
 }
 
 /// downloads tarball file from package
-pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<String> {
+pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String> {
     let name = &package.name.replace("/", "__");
     let file_name = format!("{}@{}.tgz", name, package.version);
     let temp_dir = temp_dir();
@@ -150,10 +150,12 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
     let path_str = path.to_string_lossy().to_string();
 
     if path.exists() {
-        // Corrupt tar files may cause issues
-        if let Ok(hash) = App::calc_hash(&path) {
+        let bytes = std::fs::read(path_str.clone()).unwrap();
+
+        if let Ok(hash) = App::calc_hash(&bytes::Bytes::from(bytes)) {
             // File exists, make sure it's not corrupted
             if hash == package.sha1 {
+                println!("Valid Hash!");
                 return Ok(path_str);
             }
         }
@@ -163,9 +165,86 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
 
     let res = reqwest::get(tarball).await.unwrap();
 
-    let bytes = res.bytes().await.unwrap();
+    let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
-    App::calc_hash(bytes)?;
+    App::calc_hash(&bytes)?;
+
+    create_dir_all(&app.node_modules_dir)?;
+
+    // Delete package from node_modules
+    let node_modules_dep_path = app.node_modules_dir.join(&package.name);
+
+    if node_modules_dep_path.exists() {
+        remove_dir_all(&node_modules_dep_path)?;
+    }
+
+    let loc = format!(r"{}\{}", &app.volt_dir.to_str().unwrap(), package.name);
+
+    let path = Path::new(&loc);
+
+    if !path.exists() {
+        // Extract tar file
+        let gz_decoder = GzDecoder::new(&*bytes);
+        let mut archive = Archive::new(gz_decoder);
+
+        let mut vlt_dir = PathBuf::from(&app.volt_dir);
+
+        if package.clone().name.starts_with('@') && package.clone().name.contains(r"/") {
+            if cfg!(target_os = "windows") {
+                let name = package.clone().name.replace(r"/", r"\");
+
+                let split = name.split(r"\").collect::<Vec<&str>>();
+
+                vlt_dir = vlt_dir.join(split[0]);
+            } else {
+                let name = package.clone().name;
+
+                let split = name.split('/').collect::<Vec<&str>>();
+
+                vlt_dir = vlt_dir.join(split[0]);
+            }
+        }
+
+        archive
+            .unpack(&vlt_dir)
+            .context("Unable to unpack dependency")?;
+
+        if cfg!(target_os = "windows") {
+            let mut idx = 0;
+            let name = package.clone().name;
+
+            let split = name.split('/').collect::<Vec<&str>>();
+
+            if package.clone().name.contains('@') && package.clone().name.contains('/') {
+                idx = 1;
+            }
+
+            if Path::new(format!(r"{}\package", &vlt_dir.to_str().unwrap()).as_str()).exists() {
+                std::fs::rename(
+                    format!(r"{}\package", &vlt_dir.to_str().unwrap()),
+                    format!(r"{}\{}", &vlt_dir.to_str().unwrap(), split[idx]),
+                )
+                .context("failed to rename dependency folder")
+                .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+            }
+        } else {
+            std::fs::rename(
+                format!(r"{}/package", &vlt_dir.to_str().unwrap()),
+                format!(
+                    r"{}/{}",
+                    &vlt_dir.to_str().unwrap(),
+                    package.name.replace("/", "__").replace("@", "")
+                ),
+            )
+            .context("Failed to unpack dependency folder")
+            .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+        }
+        if let Some(parent) = node_modules_dep_path.parent() {
+            if !parent.exists() {
+                create_dir_all(&parent)?;
+            }
+        }
+    }
 
     // extract now
     Ok(path_str)
@@ -217,8 +296,11 @@ pub async fn download_tarball_create(
 
     let path_str = path.to_string_lossy().to_string();
     let package_version = package.versions.get(&package.dist_tags.latest).unwrap();
+
+    let bytes = std::fs::read(path_str.clone()).unwrap();
+
     // Corrupt tar files may cause issues
-    if let Ok(hash) = App::calc_hash(&path) {
+    if let Ok(hash) = App::calc_hash(&bytes::Bytes::from(bytes)) {
         // File exists, make sure it's not corrupted
         if hash
             == package
@@ -233,21 +315,12 @@ pub async fn download_tarball_create(
     }
 
     let tarball = package_version.dist.tarball.replace("https", "http");
-    let response = chttp::get_async(tarball).await?;
 
-    let body = response.into_body();
+    let res = reqwest::get(tarball).await.unwrap();
 
-    let mut file = File::create(&path)?;
+    let bytes = res.bytes().await.unwrap();
 
-    file.write_all(
-        body.bytes()
-            .into_iter()
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap()
-            .as_slice(),
-    )?;
-
-    App::calc_hash(&path)?;
+    App::calc_hash(&bytes)?;
 
     Ok(path_str)
 }
@@ -405,10 +478,7 @@ pub async fn install_extract_package(app: Arc<App>, package: &VoltPackage) -> Re
             .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
     );
 
-    let tarball_path = download_tarball(&app, &package).await?;
-    app.extract_tarball(&tarball_path, &package)
-        .await
-        .with_context(|| format!("Unable to extract tarball for package '{}'", &package.name))?;
+    download_tarball(&app, &package).await?;
 
     generate_script(package);
 
