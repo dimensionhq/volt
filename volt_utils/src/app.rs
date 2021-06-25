@@ -90,7 +90,7 @@ impl App {
             let mut vlt_dir = PathBuf::from(&self.volt_dir);
 
             if package.clone().name.starts_with('@') && package.clone().name.contains(r"/") {
-                if cfg!(windows) {
+                if cfg!(target_os = "windows") {
                     let name = package.clone().name.replace(r"/", r"\");
 
                     let split = name.split(r"\").collect::<Vec<&str>>();
@@ -109,7 +109,7 @@ impl App {
                 .unpack(&vlt_dir)
                 .context("Unable to unpack dependency")?;
 
-            if cfg!(windows) {
+            if cfg!(target_os = "windows") {
                 let mut idx = 0;
                 let name = package.clone().name;
 
