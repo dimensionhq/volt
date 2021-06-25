@@ -414,17 +414,17 @@ Options:
                     }
                 }
 
-                for dep in dependencies {
-                    if dep.name == package {
-                        volt_utils::create_dep_symlinks(
-                            package.as_str(),
-                            app_new.clone(),
-                            current_version.packages.clone(),
-                        )
-                        .await
-                        .unwrap();
-                    }
-                }
+                // for dep in dependencies {
+                //     if dep.name == package {
+                //         volt_utils::create_dep_symlinks(
+                //             package.as_str(),
+                //             app_new.clone(),
+                //             current_version.packages.clone(),
+                //         )
+                //         .await
+                //         .unwrap();
+                //     }
+                // }
 
                 // Change package.json
                 // for value in &dependencies.to_owned().iter() {
