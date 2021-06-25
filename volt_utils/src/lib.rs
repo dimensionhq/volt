@@ -4,12 +4,12 @@ pub mod voltapi;
 use std::sync::Arc;
 
 use anyhow::Context;
+use chttp::{self, ResponseExt};
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
 use std::fs::create_dir;
 use std::fs::create_dir_all;
-use std::io::Read;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process;
@@ -18,7 +18,6 @@ use std::{env::temp_dir, fs::File};
 use anyhow::Error;
 use anyhow::Result;
 use app::App;
-use chttp::ResponseExt;
 use lazy_static::lazy_static;
 use package::Package;
 use voltapi::{VoltPackage, VoltResponse};
@@ -87,25 +86,28 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
     let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
         .await
         .unwrap_or_else(|_| {
-            println!("{} That package does not exist yet!", "error".bright_red(),);
+            println!("{}: package does not exist", "error".bright_red(),);
             std::process::exit(1);
         })
         .text_async()
         .await
         .unwrap_or_else(|_| {
-            println!("{} That package does not exist yet!", "error".bright_red());
+            println!("{}: package does not exist", "error".bright_red());
             std::process::exit(1);
         });
 
     serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|_| {
-        println!("{} Failed to parse response!", "error".bright_red());
+        println!(
+            "{}: failed to parse response from server",
+            "error".bright_red()
+        );
         std::process::exit(1);
     })
 }
 
 /// downloads tarball file from package
 pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<String> {
-    let name = &package.name.replace("/", "^^");
+    let name = &package.name.replace("/", "__");
     let file_name = format!("{}@{}.tgz", name, package.version);
     let temp_dir = temp_dir();
 
@@ -113,7 +115,7 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
         std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
     }
 
-    if name.starts_with('@') && name.contains("^^") {
+    if name.starts_with('@') && name.contains("__") {
         let package_dir_loc;
 
         if cfg!(target_os = "windows") {
@@ -121,14 +123,14 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
             package_dir_loc = format!(
                 r"{}\.volt\{}",
                 std::env::var("USERPROFILE").unwrap(),
-                name.split("^^").collect::<Vec<&str>>()[0]
+                name.split("__").collect::<Vec<&str>>()[0]
             );
         } else {
             // Check if ~/.volt\packagename exists
             package_dir_loc = format!(
                 r"{}\.volt\{}",
                 std::env::var("HOME").unwrap(),
-                name.split("^^").collect::<Vec<&str>>()[0]
+                name.split("__").collect::<Vec<&str>>()[0]
             );
         }
 
@@ -147,32 +149,25 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
 
     let path_str = path.to_string_lossy().to_string();
 
-    // Corrupt tar files may cause issues
-    if let Ok(hash) = App::calc_hash(&path) {
-        // File exists, make sure it's not corrupted
-        if hash == package.sha1 {
-            return Ok(path_str);
+    if path.exists() {
+        // Corrupt tar files may cause issues
+        if let Ok(hash) = App::calc_hash(&path) {
+            // File exists, make sure it's not corrupted
+            if hash == package.sha1 {
+                return Ok(path_str);
+            }
         }
     }
 
     let tarball = package.tarball.replace("https", "http");
 
-    let response = chttp::get_async(tarball).await?;
+    let res = reqwest::get(tarball).await.unwrap();
 
-    let body = response.into_body();
+    let bytes = res.bytes().await.unwrap();
 
-    let mut file = File::create(&path)?;
+    App::calc_hash(bytes)?;
 
-    file.write_all(
-        body.bytes()
-            .into_iter()
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap()
-            .as_slice(),
-    )?;
-
-    App::calc_hash(&path)?;
-
+    // extract now
     Ok(path_str)
 }
 
@@ -188,7 +183,7 @@ pub async fn download_tarball_create(
         std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
     }
 
-    if name.starts_with('@') && name.contains("^^") {
+    if name.starts_with('@') && name.contains("__") {
         let package_dir_loc;
 
         if cfg!(target_os = "windows") {
@@ -196,14 +191,14 @@ pub async fn download_tarball_create(
             package_dir_loc = format!(
                 r"{}\.volt\{}",
                 std::env::var("USERPROFILE").unwrap(),
-                name.split("^^").collect::<Vec<&str>>()[0]
+                name.split("__").collect::<Vec<&str>>()[0]
             );
         } else {
             // Check if ~/.volt\packagename exists
             package_dir_loc = format!(
                 r"{}\.volt\{}",
                 std::env::var("HOME").unwrap(),
-                name.split("^^").collect::<Vec<&str>>()[0]
+                name.split("__").collect::<Vec<&str>>()[0]
             );
         }
 
