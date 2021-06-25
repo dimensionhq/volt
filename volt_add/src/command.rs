@@ -132,7 +132,7 @@ Options:
 
             let package_dir_loc;
 
-            if cfg!(windows) {
+            if cfg!(target_os = "windows") {
                 // Check if C:\Users\username\.volt\packagename exists
                 package_dir_loc = format!(
                     r"{}\.volt\{}",

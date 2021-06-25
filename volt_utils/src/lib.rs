@@ -55,7 +55,7 @@ pub fn create_dep_symlinks(
         let user_profile;
         let volt_dir_loc;
 
-        if cfg!(windows) {
+        if cfg!(target_os = "windows") {
             user_profile = std::env::var("USERPROFILE").unwrap();
             volt_dir_loc = format!(r"{}\.volt", user_profile);
         } else {
@@ -70,6 +70,7 @@ pub fn create_dep_symlinks(
 
         let node_modules_dep_path =
             std::env::current_dir()?.join(format!(r"node_modules\{}", pkg_name));
+
         create_symlink(
             package_dir.as_os_str().to_str().unwrap().to_string(),
             node_modules_dep_path
@@ -115,7 +116,7 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
     if name.starts_with('@') && name.contains("^^") {
         let package_dir_loc;
 
-        if cfg!(windows) {
+        if cfg!(target_os = "windows") {
             // Check if C:\Users\username\.volt exists
             package_dir_loc = format!(
                 r"{}\.volt\{}",
@@ -138,7 +139,7 @@ pub async fn download_tarball(_app: &App, package: &VoltPackage) -> Result<Strin
 
     let path;
 
-    if cfg!(windows) {
+    if cfg!(target_os = "windows") {
         path = temp_dir.join(format!(r"volt\{}", file_name));
     } else {
         path = temp_dir.join(format!(r"volt/{}", file_name));
@@ -190,7 +191,7 @@ pub async fn download_tarball_create(
     if name.starts_with('@') && name.contains("^^") {
         let package_dir_loc;
 
-        if cfg!(windows) {
+        if cfg!(target_os = "windows") {
             // Check if C:\Users\username\.volt exists
             package_dir_loc = format!(
                 r"{}\.volt\{}",
@@ -213,7 +214,7 @@ pub async fn download_tarball_create(
 
     let path;
 
-    if cfg!(windows) {
+    if cfg!(target_os = "windows") {
         path = temp_dir.join(format!(r"volt\{}", file_name));
     } else {
         path = temp_dir.join(format!(r"volt/{}", file_name));
@@ -257,7 +258,7 @@ pub async fn download_tarball_create(
 }
 pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
     let sep: char;
-    if cfg!(windows) {
+    if cfg!(target_os = "windows") {
         sep = '\\';
     } else {
         sep = '/';
