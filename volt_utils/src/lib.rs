@@ -13,7 +13,8 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
 use std::env::temp_dir;
 use std::fs::remove_dir_all;
-use std::io;
+use std::fs::{create_dir, File};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
 use tar::Archive;
@@ -391,7 +392,7 @@ pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
 }
 
 /// Gets a config key from git using the git cli.
-pub fn get_git_config(key: &str) -> io::Result<Option<String>> {
+pub fn get_git_config(key: &str) -> std::io::Result<Option<String>> {
     process::Command::new("git")
         .arg("config")
         .arg("--get")

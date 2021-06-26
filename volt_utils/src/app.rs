@@ -13,6 +13,7 @@ use std::{
 use tar::Archive;
 
 use super::voltapi::*;
+
 #[derive(Debug)]
 pub struct App {
     pub current_dir: PathBuf,
@@ -28,13 +29,16 @@ impl App {
     pub fn initialize() -> Self {
         enable_ansi_support().unwrap();
 
-        let current_dir = env::current_dir().unwrap();
-        let home_dir = home_dir().unwrap_or_else(|| current_dir.clone());
-        let node_modules_dir = current_dir.join("node_modules");
-        let volt_dir = home_dir.join(".volt");
+        // Current Directory
+        let current_directory = env::current_dir().unwrap();
+
+        // 
+        let home_directory = home_dir().unwrap_or_else(|| current_directory.clone());
+        let node_modules_dir = current_directory.join("node_modules");
+        let volt_dir = home_directory.join(".volt");
         std::fs::create_dir_all(&volt_dir).ok();
 
-        let lock_file_path = current_dir.join("volt.lock");
+        let lock_file_path = current_directory.join("volt.lock");
 
         let cli_args: Vec<_> = std::env::args().collect();
         let mut args: Vec<String> = Vec::new();
@@ -49,8 +53,8 @@ impl App {
         }
 
         App {
-            current_dir,
-            home_dir,
+            current_dir: current_directory,
+            home_dir: home_directory,
             node_modules_dir,
             volt_dir,
             lock_file_path,
