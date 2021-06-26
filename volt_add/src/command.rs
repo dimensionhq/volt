@@ -60,6 +60,7 @@ Options:
     
   {} {} Output the version number.
   {} {} Output verbose messages on internal operations.
+  {} {} Adds package as a dev dependency
   {} {} Disable progress bar."#,
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
@@ -70,6 +71,8 @@ Options:
             "(-ver)".yellow(),
             "--verbose".blue(),
             "(-v)".yellow(),
+            "--dev".blue(),
+            "(-D)".yellow(),
             "--no-progress".blue(),
             "(-np)".yellow()
         )
@@ -105,6 +108,8 @@ Options:
                 packages.push(arg.clone());
             }
         }
+
+        // let flags = &app.flags;
 
         // Check if package.json exists, otherwise, handle it.
         if !std::env::current_dir()?.join("package.json").exists() {
@@ -272,9 +277,17 @@ Options:
 
                     let mut package_json_file = package_file.lock().await;
 
-                    package_json_file
-                        .dependencies
-                        .insert(package.to_string(), response.clone().version);
+                    if app_new.flags.contains(&"-D".to_string())
+                        || app_new.flags.contains(&"--dev".to_string())
+                    {
+                        // package_json_file
+                        //     .devDependencies
+                        //     .insert(package.to_string(), response.clone().version);
+                    } else {
+                        package_json_file
+                            .dependencies
+                            .insert(package.to_string(), response.clone().version);
+                    }
 
                     package_json_file.save();
 
