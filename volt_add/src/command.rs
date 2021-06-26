@@ -269,7 +269,7 @@ Options:
                         while workers.next().await.is_some() {}
                     }
 
-                    volt_utils::create_dep_symlinks(
+                    volt_utils::create_dependency_links(
                         app_instance.clone(),
                         current_version.packages.clone(),
                     )
@@ -420,12 +420,14 @@ Options:
                 }
 
                 let now = Instant::now();
-                volt_utils::create_dep_symlinks(
+
+                volt_utils::create_dependency_links(
                     app_instance.clone(),
                     current_version.packages.clone(),
                 )
                 .await
                 .unwrap();
+
                 println!("{}", now.elapsed().as_secs_f32());
 
                 // Change package.json
