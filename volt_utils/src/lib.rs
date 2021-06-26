@@ -9,13 +9,14 @@ use colored::Colorize;
 use flate2::read::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
-use std::fs::create_dir_all;
 use std::fs::{create_dir, remove_dir_all};
+use std::fs::{create_dir_all, hard_link};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::{env::temp_dir, fs::File};
 use tar::Archive;
+use walkdir::WalkDir;
 
 use anyhow::Error;
 use anyhow::Result;
@@ -62,26 +63,18 @@ pub fn create_dep_symlinks(
             volt_dir_loc = format!(r"{}/.volt", user_profile);
         }
 
-        let volt_dir = Path::new(&volt_dir_loc);
-        let package_dir = volt_dir.join(pkg_name);
-
         get_dependencies_recursive(app, &packages).await;
 
-        let node_modules_dep_path =
-            std::env::current_dir()?.join(format!(r"node_modules\{}", pkg_name));
+        for package in packages {
+            // Hardlink Files
+            hardlink_files(format!(r"{}\{}", &volt_dir_loc, &package.1.name))
+        }
 
-        create_symlink(
-            package_dir.as_os_str().to_str().unwrap().to_string(),
-            node_modules_dep_path
-                .as_os_str()
-                .to_str()
-                .unwrap()
-                .to_string(),
-        )?;
         Ok(())
     })
 }
-// Gets response from volt CDN
+
+// Getresponse from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
     let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
         .await
@@ -103,6 +96,40 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
         );
         std::process::exit(1);
     })
+}
+
+pub fn hardlink_files(src: String) {
+    let volt_dir_loc;
+    let user_profile;
+
+    if cfg!(target_os = "windows") {
+        user_profile = std::env::var("USERPROFILE").unwrap();
+        volt_dir_loc = format!(r"{}\.volt", user_profile).replace(r"\", "/");
+    } else {
+        user_profile = std::env::var("HOME").unwrap();
+        volt_dir_loc = format!(r"{}/.volt", user_profile);
+    }
+    println!("{}", src);
+    for entry in WalkDir::new(src) {
+        let entry = entry.unwrap();
+        if !entry.path().is_dir() {
+            let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
+            let path = format!("{}", &entry.path().display())
+                .replace(r"\", "/")
+                .replace(&volt_dir_loc, "");
+
+            if !Path::new(format!("node_modules/{}", &path.replace(file_name, "")).as_str())
+                .exists()
+            {
+                create_dir(format!("node_modules/{}", &path.replace(file_name, ""))).unwrap();
+            }
+            hard_link(
+                format!("{}{}", volt_dir_loc, &path),
+                format!("node_modules{}", &path),
+            )
+            .unwrap();
+        }
+    }
 }
 
 /// downloads tarball file from package

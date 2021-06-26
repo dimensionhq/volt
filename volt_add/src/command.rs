@@ -263,17 +263,14 @@ Options:
                     }
 
                     for dep in dependencies {
-                        if dep.name == package {
-                            volt_utils::create_dep_symlinks(
-                                package.as_str(),
-                                app_new.clone(),
-                                current_version.packages.clone(),
-                            )
-                            .await
-                            .unwrap();
-                        }
+                        volt_utils::create_dep_symlinks(
+                            &dep.name,
+                            app_new.clone(),
+                            current_version.packages.clone(),
+                        )
+                        .await
+                        .unwrap();
                     }
-
                     // Change package.json
                     // for value in &dependencies.to_owned().iter() {
                     //     package_file.add_dependency(value.0.name, value.1.version);
@@ -414,22 +411,18 @@ Options:
                     }
                 }
 
-                // for dep in dependencies {
-                //     if dep.name == package {
-                //         volt_utils::create_dep_symlinks(
-                //             package.as_str(),
-                //             app_new.clone(),
-                //             current_version.packages.clone(),
-                //         )
-                //         .await
-                //         .unwrap();
-                //     }
-                // }
+                for dep in dependencies {
+                    volt_utils::create_dep_symlinks(
+                        dep.name.as_str(),
+                        app_new.clone(),
+                        current_version.packages.clone(),
+                    )
+                    .await
+                    .unwrap();
 
-                // Change package.json
-                // for value in &dependencies.to_owned().iter() {
-                //     package_file.add_dependency(value.0.name, value.1.version);
-                // }
+                    // Change package.json
+                    // package_file.add_dependency(dep.name, dep.version);
+                }
 
                 // Write to lock file
                 if verbose {
