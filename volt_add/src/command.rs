@@ -109,6 +109,8 @@ Options:
             }
         }
 
+        // let flags = &app.flags;
+
         // Check if package.json exists, otherwise, handle it.
         if !std::env::current_dir()?.join("package.json").exists() {
             println!("{} no package.json found.", "error".bright_red());
@@ -275,9 +277,17 @@ Options:
 
                     let mut package_json_file = package_file.lock().await;
 
-                    package_json_file
-                        .dependencies
-                        .insert(package.to_string(), response.clone().version);
+                    if app_new.flags.contains(&"-D".to_string())
+                        || app_new.flags.contains(&"--dev".to_string())
+                    {
+                        // package_json_file
+                        //     .devDependencies
+                        //     .insert(package.to_string(), response.clone().version);
+                    } else {
+                        package_json_file
+                            .dependencies
+                            .insert(package.to_string(), response.clone().version);
+                    }
 
                     package_json_file.save();
 
