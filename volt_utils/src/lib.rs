@@ -7,15 +7,18 @@ use anyhow::Context;
 use chttp::{self, ResponseExt};
 use colored::Colorize;
 use flate2::read::GzDecoder;
+use futures_util::stream::FuturesUnordered;
+use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
 use std::fs::{create_dir, remove_dir_all};
-use std::fs::{create_dir_all, hard_link};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::{env::temp_dir, fs::File};
 use tar::Archive;
+use tokio::fs::create_dir_all;
+use tokio::fs::hard_link;
 use walkdir::WalkDir;
 
 use anyhow::Error;
@@ -46,7 +49,7 @@ lazy_static! {
 //     }
 // }
 
-pub fn create_dep_symlinks(
+pub fn create_dependency_links(
     _app: Arc<App>,
     packages: std::collections::HashMap<String, VoltPackage>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + 'static>> {
@@ -62,11 +65,18 @@ pub fn create_dep_symlinks(
             volt_dir_loc = format!(r"{}/.volt", user_profile);
         }
 
+        let mut workers = FuturesUnordered::new();
+
         for package in packages {
-            // Hardlink Files
-            hardlink_files(format!(r"{}\{}", &volt_dir_loc, &package.1.name));
+            let pkg_clone = package.clone();
+            let volt_directory_location = volt_dir_loc.clone();
+            workers.push(async move {
+                // Hardlink Files
+                hardlink_files(format!(r"{}\{}", volt_directory_location, pkg_clone.1.name)).await;
+            });
         }
 
+        while workers.next().await.is_some() {}
         Ok(())
     })
 }
@@ -95,7 +105,7 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
     })
 }
 
-pub fn hardlink_files(src: String) {
+pub async fn hardlink_files(src: String) {
     let volt_dir_loc;
     let user_profile;
 
@@ -119,12 +129,14 @@ pub fn hardlink_files(src: String) {
                 "node_modules/{}",
                 &path.trim_end_matches(file_name)
             ))
+            .await
             .unwrap();
 
             hard_link(
                 format!("{}{}", volt_dir_loc, &path),
                 format!("node_modules{}", &path),
             )
+            .await
             .unwrap();
         }
     }
@@ -160,7 +172,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
         }
 
         if !Path::new(&package_dir_loc).exists() {
-            create_dir_all(&package_dir_loc).unwrap();
+            create_dir_all(&package_dir_loc).await.unwrap();
         }
     }
 
@@ -194,7 +206,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
 
     App::calc_hash(&bytes)?;
 
-    create_dir_all(&app.node_modules_dir)?;
+    create_dir_all(&app.node_modules_dir).await?;
 
     // Delete package from node_modules
     let node_modules_dep_path = app.node_modules_dir.join(&package.name);
@@ -266,7 +278,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
         }
         if let Some(parent) = node_modules_dep_path.parent() {
             if !parent.exists() {
-                create_dir_all(&parent)?;
+                create_dir_all(&parent).await?;
             }
         }
     }
@@ -307,7 +319,7 @@ pub async fn download_tarball_create(
         }
 
         if !Path::new(&package_dir_loc).exists() {
-            create_dir_all(&package_dir_loc).unwrap();
+            create_dir_all(&package_dir_loc).await.unwrap();
         }
     }
 
@@ -443,6 +455,7 @@ pub fn create_symlink(original: String, link: String) -> Result<()> {
     junction::create(original, link)?;
     Ok(())
 }
+
 #[cfg(windows)]
 pub fn generate_script(package: &VoltPackage) {
     if !Path::new("node_modules/scripts").exists() {
@@ -474,6 +487,7 @@ pub fn generate_script(package: &VoltPackage) {
         f.write_all(command.as_bytes()).unwrap();
     }
 }
+
 // Unix functions
 #[cfg(unix)]
 pub fn enable_ansi_support() -> Result<(), u32> {
@@ -482,12 +496,6 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 #[cfg(unix)]
 
 pub fn generate_script(package: &VoltPackage) {}
-
-/// Create a symlink to a directory
-#[cfg(unix)]
-pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> Result<()> {
-    std::os::unix::fs::symlink(original, link).context("Unable to symlink directory")
-}
 
 pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
