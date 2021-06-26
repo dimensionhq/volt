@@ -60,6 +60,7 @@ Options:
     
   {} {} Output the version number.
   {} {} Output verbose messages on internal operations.
+  {} {} Adds package as a dev dependency
   {} {} Disable progress bar."#,
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
@@ -70,6 +71,8 @@ Options:
             "(-ver)".yellow(),
             "--verbose".blue(),
             "(-v)".yellow(),
+            "--dev".blue(),
+            "(-D)".yellow(),
             "--no-progress".blue(),
             "(-np)".yellow()
         )
