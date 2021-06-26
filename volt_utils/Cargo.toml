@@ -28,6 +28,7 @@ indicatif = "0.16"
 bytes = "1.0.1"
 # jwalk = "0.6.0"
 walkdir = "2.3.2"
+futures-util = "0.3.15"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["errhandlingapi", "fileapi", "guiddef", "handleapi", "ioapiset", "processthreadsapi", "securitybaseapi", "winbase", "winioctl", "winnt"]}
