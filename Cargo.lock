@@ -1669,6 +1669,7 @@ dependencies = [
  "volt_core",
  "volt_create",
  "volt_deploy",
+ "volt_fix",
  "volt_help",
  "volt_init",
  "volt_install",
@@ -1747,6 +1748,17 @@ dependencies = [
 
 [[package]]
 name = "volt_deploy"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "volt_core",
+ "volt_utils",
+]
+
+[[package]]
+name = "volt_fix"
 version = "0.0.1"
 dependencies = [
  "anyhow",
