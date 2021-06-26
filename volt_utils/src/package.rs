@@ -58,14 +58,10 @@ pub struct Version {
     pub name: String,
     pub version: String,
     pub description: String,
-    // pub author: Author,
-    // pub license: String,
-    // pub repository: Repository,
     pub main: String,
     pub module: String,
     #[serde(rename = "jsnext:main")]
     pub jsnext_main: String,
-    // pub engines: Option<Engines>,
     pub scripts: Scripts,
     pub dependencies: HashMap<String, String>,
     pub peer_dependencies: HashMap<String, String>,
@@ -202,6 +198,7 @@ impl PackageJson {
             .context("failed to write to package.json")
             .unwrap();
     }
+
     // pub fn add_dependency(&mut self, name: String, version: String) {
     //     self.dependencies.unwrap().insert(name, version);
     // }

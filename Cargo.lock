@@ -1677,7 +1677,7 @@ dependencies = [
  "volt_migrate",
  "volt_remove",
  "volt_run",
- "volt_unknown",
+ "volt_scripts",
  "volt_utils",
 ]
 
@@ -1862,12 +1862,12 @@ dependencies = [
  "volt_list",
  "volt_migrate",
  "volt_remove",
- "volt_unknown",
+ "volt_scripts",
  "volt_utils",
 ]
 
 [[package]]
-name = "volt_unknown"
+name = "volt_scripts"
 version = "0.0.1"
 dependencies = [
  "anyhow",

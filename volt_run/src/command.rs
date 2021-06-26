@@ -23,7 +23,7 @@ use async_trait::async_trait;
 use colored::Colorize;
 use volt_core::command::Command;
 use volt_core::VERSION;
-use volt_unknown::command::Unknown;
+use volt_scripts::command::Script;
 use volt_utils::app::App;
 use volt_utils::package::PackageJson;
 
@@ -76,7 +76,7 @@ Options:
             let command: &str = args[0].as_str();
 
             if package_json.scripts.contains_key(command) {
-                Unknown::exec(app.clone()).await.unwrap();
+                Script::exec(app.clone()).await.unwrap();
                 std::process::exit(0);
             }
         }

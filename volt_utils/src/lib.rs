@@ -1,6 +1,6 @@
 pub mod app;
 pub mod package;
-pub mod voltapi;
+pub mod volt_api;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -27,7 +27,7 @@ use anyhow::Result;
 use app::App;
 use lazy_static::lazy_static;
 use package::Package;
-use voltapi::{VoltPackage, VoltResponse};
+use volt_api::{VoltPackage, VoltResponse};
 
 pub static PROGRESS_CHARS: &str = "=> ";
 
@@ -35,47 +35,30 @@ lazy_static! {
     pub static ref ERROR_TAG: String = "error".red().bold().to_string();
 }
 
-// async fn get_dependencies_recursive(
-//     app: Arc<App>,
-//     packages: &std::collections::HashMap<String, VoltPackage>,
-// ) {
-//     for package in packages.iter() {
-//         install_extract_package(app.clone(), package.1)
-//             .await
-//             .unwrap();
-//     }
-// }
-
-pub fn create_dependency_links(
-    _app: Arc<App>,
+pub async fn create_dependency_links(
+    app: Arc<App>,
     packages: std::collections::HashMap<String, VoltPackage>,
-) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + 'static>> {
-    Box::pin(async move {
-        let user_profile;
-        let volt_dir_loc;
+) -> Result<()> {
+    let mut workers = FuturesUnordered::new();
 
-        if cfg!(target_os = "windows") {
-            user_profile = std::env::var("USERPROFILE").unwrap();
-            volt_dir_loc = format!(r"{}\.volt", user_profile);
-        } else {
-            user_profile = std::env::var("HOME").unwrap();
-            volt_dir_loc = format!(r"{}/.volt", user_profile);
-        }
+    for package in packages {
+        let package_instance = package.clone();
+        let app_instance = app.clone();
+        let volt_directory_location = format!("{}", app.volt_dir.display());
 
-        let mut workers = FuturesUnordered::new();
+        workers.push(async move {
+            // Hardlink Files
+            hardlink_files(
+                app_instance,
+                format!(r"{}\{}", volt_directory_location, package_instance.1.name),
+            )
+            .await;
+        });
+    }
 
-        for package in packages {
-            let pkg_clone = package.clone();
-            let volt_directory_location = volt_dir_loc.clone();
-            workers.push(async move {
-                // Hardlink Files
-                hardlink_files(format!(r"{}\{}", volt_directory_location, pkg_clone.1.name)).await;
-            });
-        }
+    while workers.next().await.is_some() {}
 
-        while workers.next().await.is_some() {}
-        Ok(())
-    })
+    Ok(())
 }
 
 // Get response from volt CDN
@@ -93,8 +76,6 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
             std::process::exit(1);
         });
 
-    // println!("Response Time: {:?}", time.elapsed());
-
     serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|_| {
         println!(
             "{}: failed to parse response from server",
@@ -104,29 +85,27 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
     })
 }
 
-pub async fn hardlink_files(src: String) {
-    let volt_dir_loc;
-    let user_profile;
+pub async fn hardlink_files(app: Arc<App>, src: String) {
     let mut src = src;
+    let volt_directory = format!("{}", app.volt_dir.display());
 
-    if cfg!(target_os = "windows") {
-        user_profile = std::env::var("USERPROFILE").unwrap();
-        volt_dir_loc = format!(r"{}\.volt", user_profile).replace(r"\", "/");
-    } else {
+    if !cfg!(target_os = "windows") {
         src = src.replace(r"\", "/");
-        user_profile = std::env::var("HOME").unwrap();
-        volt_dir_loc = format!(r"{}/.volt", user_profile);
     }
 
     for entry in WalkDir::new(src) {
         let entry = entry.unwrap();
+
         if !entry.path().is_dir() {
+            // index.js
             let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
 
+            // lib/index.js
             let path = format!("{}", &entry.path().display())
                 .replace(r"\", "/")
-                .replace(&volt_dir_loc, "");
+                .replace(&volt_directory, "");
 
+            // lib
             create_dir_all(format!(
                 "node_modules/{}",
                 &path.trim_end_matches(file_name)
@@ -134,8 +113,9 @@ pub async fn hardlink_files(src: String) {
             .await
             .unwrap();
 
+            // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
             hard_link(
-                format!("{}{}", volt_dir_loc, &path),
+                format!("{}{}", volt_directory, &path),
                 format!("node_modules{}", &path),
             )
             .await
@@ -408,6 +388,7 @@ pub fn get_git_config(key: &str) -> std::io::Result<Option<String>> {
 }
 
 // Windows Function
+/// Enable ansi support and colors
 #[cfg(windows)]
 pub fn enable_ansi_support() -> Result<(), u32> {
     // ref: https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#EXAMPLE_OF_ENABLING_VIRTUAL_TERMINAL_PROCESSING @@ https://archive.is/L7wRJ#76%
