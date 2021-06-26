@@ -16,7 +16,6 @@ limitations under the License.
 use std::collections::HashMap;
 use std::io::Write;
 use std::sync::Arc;
-use std::time::Instant;
 use std::{process::exit, sync::atomic::AtomicI16};
 
 use anyhow::{Context, Result};

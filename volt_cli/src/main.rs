@@ -18,12 +18,13 @@ mod commands;
 
 use std::process::exit;
 
+use crate::commands::AppCommand;
+
 use anyhow::Result;
 use colored::Colorize;
 use tokio::time::Instant;
-use volt_core::{VERSION};
-use volt_utils::{ERROR_TAG, app::App};
-use crate::commands::AppCommand;
+use volt_core::VERSION;
+use volt_utils::{app::App, ERROR_TAG};
 
 #[tokio::main]
 async fn main() {
@@ -34,7 +35,7 @@ async fn main() {
             eprintln!("{}", "\nCaused by:".italic().truecolor(190, 190, 190));
         }
         err_chain.for_each(|cause| eprintln!(" - {}", cause.to_string().truecolor(190, 190, 190)));
-        
+
         #[cfg(not(debug_assertions))]
         eprintln!(
             "\nIf the problem persists, please submit an issue on the Github repository.\n{}",
@@ -62,10 +63,9 @@ async fn try_main() -> Result<()> {
         exit(0);
     }
 
-    let start = Instant::now();
+    let time = Instant::now();
     cmd.run(app).await?;
-    let end = Instant::now();
-    println!("Finished in {:.2}s", (end - start).as_secs_f32());
+    println!("Finished in {:.2}s", time.elapsed().as_secs_f32());
 
     Ok(())
 }

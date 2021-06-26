@@ -59,7 +59,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         println!("{}", "Scanning for errors".bright_cyan());
 
         // Temporary detecting modules declared in index.js
