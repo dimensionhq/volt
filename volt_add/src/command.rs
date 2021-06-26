@@ -43,6 +43,7 @@ use volt_utils::{
 pub struct Add {
     lock_file: LockFile,
     dependencies: Arc<Mutex<Vec<(Package, Version)>>>,
+    dev_dependencies: Arc<Mutex<Vec<(Package, Version)>>>,
     total_dependencies: Arc<AtomicI16>,
     progress_sender: mpsc::Sender<()>,
 }
@@ -109,8 +110,6 @@ Options:
             }
         }
 
-        // let flags = &app.flags;
-
         // Check if package.json exists, otherwise, handle it.
         if !std::env::current_dir()?.join("package.json").exists() {
             println!("{} no package.json found.", "error".bright_red());
@@ -134,19 +133,19 @@ Options:
 
         // Iterate through each package
         for package in packages.clone() {
-            let app_new = app.clone();
+            let app_instance = app.clone();
 
             let package_dir_loc;
 
             if cfg!(target_os = "windows") {
-                // Check if C:\Users\username\.volt\packagename exists
+                // Check if %USERPROFILE%/.volt/packagename exists
                 package_dir_loc = format!(
                     r"{}\.volt\{}",
                     std::env::var("USERPROFILE").unwrap(),
                     package
                 );
             } else {
-                // Check if ~/.volt\packagename exists
+                // Check if ~/.volt/packagename exists
                 package_dir_loc = format!(r"{}\.volt\{}", std::env::var("HOME").unwrap(), package);
             }
 
@@ -155,11 +154,13 @@ Options:
 
             if package_dir.exists() {
                 handles.push(tokio::spawn(async move {
-                    let verbose = app_new.has_flag(&["-v", "--verbose"]);
-                    let pballowed = !app_new.has_flag(&["--no-progress", "-np"]);
+                    let verbose = app_instance.has_flag(&["-v", "--verbose"]);
+                    let pballowed = !app_instance.has_flag(&["--no-progress", "-np"]);
 
-                    let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
-                        .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
+                    let mut lock_file = LockFile::load(app_instance.lock_file_path.to_path_buf())
+                        .unwrap_or_else(|_| {
+                            LockFile::new(app_instance.lock_file_path.to_path_buf())
+                        });
 
                     // TODO: Change this to handle multiple packages
                     let progress_bar: ProgressBar = ProgressBar::new(1);
@@ -238,9 +239,9 @@ Options:
                     let mut workers = FuturesUnordered::new();
 
                     for dep in dependencies.clone() {
-                        let app_new = app_new.clone();
+                        let app_instance = app_instance.clone();
                         workers.push(async move {
-                            volt_utils::install_extract_package(app_new, &dep)
+                            volt_utils::install_extract_package(app_instance, &dep)
                                 .await
                                 .unwrap();
                             volt_utils::generate_script(&dep);
@@ -269,7 +270,7 @@ Options:
                     }
 
                     volt_utils::create_dep_symlinks(
-                        app_new.clone(),
+                        app_instance.clone(),
                         current_version.packages.clone(),
                     )
                     .await
@@ -277,12 +278,12 @@ Options:
 
                     let mut package_json_file = package_file.lock().await;
 
-                    if app_new.flags.contains(&"-D".to_string())
-                        || app_new.flags.contains(&"--dev".to_string())
+                    if app_instance.flags.contains(&"-D".to_string())
+                        || app_instance.flags.contains(&"--dev".to_string())
                     {
-                        // package_json_file
-                        //     .devDependencies
-                        //     .insert(package.to_string(), response.clone().version);
+                        package_json_file
+                            .dev_dependencies
+                            .insert(package.to_string(), response.clone().version);
                     } else {
                         package_json_file
                             .dependencies
@@ -302,11 +303,11 @@ Options:
                         .unwrap();
                 }));
             } else {
-                let verbose = app_new.has_flag(&["-v", "--verbose"]);
-                let pballowed = !app_new.has_flag(&["--no-progress", "-np"]);
+                let verbose = app_instance.has_flag(&["-v", "--verbose"]);
+                let pballowed = !app_instance.has_flag(&["--no-progress", "-np"]);
 
-                let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
-                    .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
+                let mut lock_file = LockFile::load(app_instance.lock_file_path.to_path_buf())
+                    .unwrap_or_else(|_| LockFile::new(app_instance.lock_file_path.to_path_buf()));
 
                 // TODO: Change this to handle multiple packages
                 let progress_bar: ProgressBar = ProgressBar::new(1);
@@ -386,9 +387,9 @@ Options:
                 let mut workers = FuturesUnordered::new();
 
                 for dep in dependencies.clone() {
-                    let app_new = app_new.clone();
+                    let app_instance = app_instance.clone();
                     workers.push(async move {
-                        volt_utils::install_extract_package(app_new, &dep)
+                        volt_utils::install_extract_package(app_instance, &dep)
                             .await
                             .unwrap();
                         volt_utils::generate_script(&dep);
@@ -419,9 +420,12 @@ Options:
                 }
 
                 let now = Instant::now();
-                volt_utils::create_dep_symlinks(app_new.clone(), current_version.packages.clone())
-                    .await
-                    .unwrap();
+                volt_utils::create_dep_symlinks(
+                    app_instance.clone(),
+                    current_version.packages.clone(),
+                )
+                .await
+                .unwrap();
                 println!("{}", now.elapsed().as_secs_f32());
 
                 // Change package.json
