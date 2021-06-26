@@ -105,18 +105,33 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
                 .replace(r"\", "/")
                 .replace(&volt_directory, "");
 
-            // lib
+            // node_modules/lib
             create_dir_all(format!(
                 "node_modules/{}",
-                &path.trim_end_matches(file_name)
+                &path
+                    .replace(
+                        format!("{}", &app.volt_dir.display())
+                            .replace(r"\", "/")
+                            .as_str(),
+                        ""
+                    )
+                    .trim_end_matches(file_name)
             ))
             .await
             .unwrap();
 
             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
             hard_link(
-                format!("{}{}", volt_directory, &path),
-                format!("node_modules{}", &path),
+                format!("{}", &path),
+                format!(
+                    "node_modules{}",
+                    &path.replace(
+                        format!("{}", &app.volt_dir.display())
+                            .replace(r"\", "/")
+                            .as_str(),
+                        ""
+                    )
+                ),
             )
             .await
             .unwrap();
@@ -126,159 +141,146 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
 
 /// downloads tarball file from package
 pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String> {
-    let name = &package.name.replace("/", "__");
-    let file_name = format!("{}@{}.tgz", name, package.version);
-    let temp_dir = temp_dir();
-
-    if !Path::new(&temp_dir.join("volt")).exists() {
-        std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
-    }
-
-    if name.starts_with('@') && name.contains("__") {
-        let package_dir_loc;
+    // @types/eslint
+    if package.clone().name.starts_with('@') && package.clone().name.contains("/") {
+        let package_directory_location;
 
         if cfg!(target_os = "windows") {
-            // Check if C:\Users\username\.volt exists
-            package_dir_loc = format!(
+            package_directory_location = format!(
                 r"{}\.volt\{}",
                 std::env::var("USERPROFILE").unwrap(),
-                name.split("__").collect::<Vec<&str>>()[0]
+                &package.name.split("/").collect::<Vec<&str>>()[0]
             );
         } else {
-            // Check if ~/.volt\packagename exists
-            package_dir_loc = format!(
+            package_directory_location = format!(
                 r"{}/.volt/{}",
                 std::env::var("HOME").unwrap(),
-                name.split("__").collect::<Vec<&str>>()[0]
+                &package.name.split("/").collect::<Vec<&str>>()[0]
             );
         }
 
-        if !Path::new(&package_dir_loc).exists() {
-            create_dir_all(&package_dir_loc).await.unwrap();
+        if !Path::new(&package_directory_location).exists() {
+            create_dir_all(&package_directory_location).await.unwrap();
         }
     }
 
-    let path;
-
-    if cfg!(target_os = "windows") {
-        path = temp_dir.join(format!(r"volt\{}", file_name));
-    } else {
-        path = temp_dir.join(format!(r"volt/{}", file_name));
-    }
-
-    let path_str = path.to_string_lossy().to_string();
-
-    if path.exists() {
-        let bytes = std::fs::read(path_str.clone()).unwrap();
-
-        if let Ok(hash) = App::calc_hash(&bytes::Bytes::from(bytes)) {
-            // File exists, make sure it's not corrupted
-            if hash == package.sha1 {
-                return Ok(path_str);
-            }
-        }
-    }
-
-    let tarball = package.tarball.replace("https", "http");
-
-    let res = reqwest::get(tarball).await.unwrap();
-
-    let bytes: bytes::Bytes = res.bytes().await.unwrap();
-
-    App::calc_hash(&bytes)?;
-
-    create_dir_all(&app.node_modules_dir).await?;
-
-    // Delete package from node_modules
-    let node_modules_dep_path = app.node_modules_dir.join(&package.name);
-
-    if node_modules_dep_path.exists() {
-        remove_dir_all(&node_modules_dep_path)?;
-    }
-
+    // location of extracted package
     let loc;
 
     if cfg!(target_os = "windows") {
-        loc = format!(r"{}\{}", &app.volt_dir.to_str().unwrap(), package.name);
+        // C:\Users\username\.volt/@types/eslint
+        loc = format!(r"{}\{}", &app.volt_dir.to_str().unwrap(), &package.name);
     } else {
-        loc = format!(r"{}/{}", &app.volt_dir.to_str().unwrap(), package.name);
+        // ~/.volt/@types/eslint
+        loc = format!(r"{}/{}", &app.volt_dir.to_str().unwrap(), &package.name);
     }
 
-    let path = Path::new(&loc);
+    // if package is not already installed
+    if !Path::new(&loc).exists() {
+        // Url to download tarball code files from
+        let url = package.tarball.replace("https", "http");
 
-    if !path.exists() {
-        // Extract tar file
-        let gz_decoder = GzDecoder::new(&*bytes);
-        let mut archive = Archive::new(gz_decoder);
+        // Get Tarball File
+        let res = reqwest::get(url).await.unwrap();
 
-        let mut vlt_dir = PathBuf::from(&app.volt_dir);
+        // Recieve Bytes
+        let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
-        if package.clone().name.starts_with('@') && package.clone().name.contains(r"/") {
+        // Verify If Bytes == Sha1
+        if package.sha1 == App::calc_hash(&bytes).unwrap() {
+            // Create node_modules
+            create_dir_all(&app.node_modules_dir).await?;
+
+            // Delete package from node_modules
+            let node_modules_dep_path = app.node_modules_dir.join(&package.name);
+
+            if node_modules_dep_path.exists() {
+                remove_dir_all(&node_modules_dep_path)?;
+            }
+
+            // Directory to extract tarball to
+            let mut extract_directory = PathBuf::from(&app.volt_dir);
+
+            // @types/eslint
+            if package.clone().name.starts_with('@') && package.clone().name.contains("/") {
+                if cfg!(target_os = "windows") {
+                    let name = package.clone().name.replace(r"/", r"\");
+
+                    let split = name.split(r"\").collect::<Vec<&str>>();
+
+                    // C:\Users\xtrem\.volt\@types
+                    extract_directory = extract_directory.join(split[0]);
+                } else {
+                    let name = package.clone().name;
+
+                    let split = name.split('/').collect::<Vec<&str>>();
+
+                    // ~/.volt/@types
+                    extract_directory = extract_directory.join(split[0]);
+                }
+            }
+
+            // Initialize tarfile decoder while directly passing in bytes
+            let gz_decoder = GzDecoder::new(&*bytes);
+
+            let mut archive = Archive::new(gz_decoder);
+
+            // Extract the data into extract_directory
+            archive
+                .unpack(&extract_directory)
+                .context("Unable to unpack dependency")?;
+
             if cfg!(target_os = "windows") {
-                let name = package.clone().name.replace(r"/", r"\");
-
-                let split = name.split(r"\").collect::<Vec<&str>>();
-
-                vlt_dir = vlt_dir.join(split[0]);
-            } else {
+                let mut idx = 0;
                 let name = package.clone().name;
 
                 let split = name.split('/').collect::<Vec<&str>>();
 
-                vlt_dir = vlt_dir.join(split[0]);
+                if package.clone().name.contains('@') && package.clone().name.contains('/') {
+                    idx = 1;
+                }
+
+                if Path::new(format!(r"{}\package", &extract_directory.to_str().unwrap()).as_str())
+                    .exists()
+                {
+                    std::fs::rename(
+                        format!(r"{}\package", &extract_directory.to_str().unwrap()),
+                        format!(r"{}\{}", &extract_directory.to_str().unwrap(), split[idx]),
+                    )
+                    .context("failed to rename dependency folder")
+                    .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+                }
+            } else {
+                let mut idx = 0;
+                let name = package.clone().name;
+
+                let split = name.split('/').collect::<Vec<&str>>();
+
+                if package.clone().name.contains('@') && package.clone().name.contains('/') {
+                    idx = 1;
+                }
+
+                if Path::new(format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str())
+                    .exists()
+                {
+                    std::fs::rename(
+                        format!(r"{}/package", &extract_directory.to_str().unwrap()),
+                        format!(r"{}/{}", &extract_directory.to_str().unwrap(), split[idx]),
+                    )
+                    .context("failed to rename dependency folder")
+                    .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+                }
             }
-        }
-
-        archive
-            .unpack(&vlt_dir)
-            .context("Unable to unpack dependency")?;
-
-        if cfg!(target_os = "windows") {
-            let mut idx = 0;
-            let name = package.clone().name;
-
-            let split = name.split('/').collect::<Vec<&str>>();
-
-            if package.clone().name.contains('@') && package.clone().name.contains('/') {
-                idx = 1;
-            }
-
-            if Path::new(format!(r"{}\package", &vlt_dir.to_str().unwrap()).as_str()).exists() {
-                std::fs::rename(
-                    format!(r"{}\package", &vlt_dir.to_str().unwrap()),
-                    format!(r"{}\{}", &vlt_dir.to_str().unwrap(), split[idx]),
-                )
-                .context("failed to rename dependency folder")
-                .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
-            }
-        } else {
-            let mut idx = 0;
-            let name = package.clone().name;
-
-            let split = name.split('/').collect::<Vec<&str>>();
-
-            if package.clone().name.contains('@') && package.clone().name.contains('/') {
-                idx = 1;
-            }
-
-            if Path::new(format!(r"{}/package", &vlt_dir.to_str().unwrap()).as_str()).exists() {
-                std::fs::rename(
-                    format!(r"{}/package", &vlt_dir.to_str().unwrap()),
-                    format!(r"{}/{}", &vlt_dir.to_str().unwrap(), split[idx]),
-                )
-                .context("failed to rename dependency folder")
-                .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
-            }
-        }
-        if let Some(parent) = node_modules_dep_path.parent() {
-            if !parent.exists() {
-                create_dir_all(&parent).await?;
+            if let Some(parent) = node_modules_dep_path.parent() {
+                if !parent.exists() {
+                    create_dir_all(&parent).await?;
+                }
             }
         }
     }
 
     // extract now
-    Ok(path_str)
+    Ok(loc)
 }
 
 pub async fn download_tarball_create(
@@ -453,19 +455,19 @@ pub fn create_symlink(original: String, link: String) -> Result<()> {
 }
 
 #[cfg(windows)]
-pub fn generate_script(package: &VoltPackage) {
+pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
+    // Create node_modules/scripts if it doesn't exist
     if !Path::new("node_modules/scripts").exists() {
         create_dir("node_modules/scripts").unwrap();
     }
 
+    // If the package has binary scripts, create them
     if package.bin.is_some() {
-        let bin = package.clone().bin.unwrap();
+        let bin = package.bin.as_ref().unwrap();
+
         let k = bin.keys().next().unwrap();
         let v = bin.values().next().unwrap();
 
-        let user_profile = std::env::var("USERPROFILE").unwrap();
-
-        let volt_path = format!("{}/.volt", user_profile);
         let command = format!(
             r#"
 @IF EXIST "%~dp0\node.exe" (
@@ -477,7 +479,7 @@ pub fn generate_script(package: &VoltPackage) {
 )"#,
             k, v, k, v
         )
-        .replace(r"%~dp0\..", &volt_path);
+        .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
 
         let mut f = File::create(format!(r"node_modules/scripts/{}.cmd", k)).unwrap();
         f.write_all(command.as_bytes()).unwrap();
@@ -489,15 +491,15 @@ pub fn generate_script(package: &VoltPackage) {
 pub fn enable_ansi_support() -> Result<(), u32> {
     Ok(())
 }
-#[cfg(unix)]
 
-pub fn generate_script(_package: &VoltPackage) {}
+// #[cfg(unix)]
+// pub fn generate_script(_package: &VoltPackage) {}
 
 pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
 }
 
-pub async fn install_extract_package(app: Arc<App>, package: &VoltPackage) -> Result<()> {
+pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> Result<()> {
     let pb = ProgressBar::new(0);
     let text = format!("{}", "Installing Packages".bright_cyan());
 
@@ -509,7 +511,7 @@ pub async fn install_extract_package(app: Arc<App>, package: &VoltPackage) -> Re
 
     download_tarball(&app, &package).await?;
 
-    generate_script(package);
+    generate_script(&app, package);
 
     Ok(())
 }
