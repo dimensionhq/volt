@@ -73,6 +73,7 @@ pub fn create_dep_symlinks(
 
 // Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
+    let time = std::time::Instant::now();
     let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
         .await
         .unwrap_or_else(|_| {
@@ -85,6 +86,8 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
             println!("{}: package does not exist", "error".bright_red());
             std::process::exit(1);
         });
+
+    // println!("Response Time: {:?}", time.elapsed());
 
     serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|_| {
         println!(
