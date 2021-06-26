@@ -47,7 +47,7 @@ async fn main() {
 
 async fn try_main() -> Result<()> {
     let app = App::initialize();
-    let cmd = AppCommand::current().unwrap_or(AppCommand::Unknown); // Default command is help
+    let cmd = AppCommand::current().unwrap_or(AppCommand::Script); // Default command is help
 
     if app.has_flag(&["--help", "-h"]) {
         println!("{}", cmd.help());

@@ -1,5 +1,5 @@
 [package]
-name = "volt_unknown"
+name = "volt_scripts"
 version = "0.0.1"
 authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
 description = "The unknown command for volt cli."

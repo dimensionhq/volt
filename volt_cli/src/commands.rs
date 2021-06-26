@@ -37,7 +37,7 @@ pub enum AppCommand {
     Remove,
     Fix,
     Run,
-    Unknown,
+    Script,
 }
 
 impl FromStr for AppCommand {
@@ -91,7 +91,7 @@ impl AppCommand {
             Self::Migrate => volt_migrate::command::Migrate::help(),
             Self::Remove => volt_remove::command::Remove::help(),
             Self::Run => volt_run::command::Run::help(),
-            Self::Unknown => volt_unknown::command::Unknown::help(),
+            Self::Script => volt_scripts::command::Script::help(),
             Self::Fix => volt_fix::command::Fix::help(),
         }
     }
@@ -112,7 +112,7 @@ impl AppCommand {
             Self::Migrate => volt_migrate::command::Migrate::exec(app).await,
             Self::Remove => volt_remove::command::Remove::exec(app).await,
             Self::Run => volt_run::command::Run::exec(app).await,
-            Self::Unknown => volt_unknown::command::Unknown::exec(app).await,
+            Self::Script => volt_scripts::command::Script::exec(app).await,
             Self::Fix => volt_fix::command::Fix::exec(app).await,
         }
     }
