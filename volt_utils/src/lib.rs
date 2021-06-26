@@ -115,11 +115,12 @@ pub fn hardlink_files(src: String) {
                 .replace(r"\", "/")
                 .replace(&volt_dir_loc, "");
 
-            if !Path::new(format!("node_modules/{}", &path.replace(file_name, "")).as_str())
-                .exists()
-            {
-                create_dir(format!("node_modules/{}", &path.replace(file_name, ""))).unwrap();
-            }
+            create_dir_all(format!(
+                "node_modules/{}",
+                &path.trim_end_matches(file_name)
+            ))
+            .unwrap();
+
             hard_link(
                 format!("{}{}", volt_dir_loc, &path),
                 format!("node_modules{}", &path),
