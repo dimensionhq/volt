@@ -240,10 +240,9 @@ Options:
                     for dep in dependencies.clone() {
                         let app_instance = app_instance.clone();
                         workers.push(async move {
-                            volt_utils::install_extract_package(app_instance, &dep)
+                            volt_utils::install_extract_package(&app_instance, &dep)
                                 .await
                                 .unwrap();
-                            volt_utils::generate_script(&dep);
                         });
                     }
 
@@ -388,10 +387,9 @@ Options:
                 for dep in dependencies.clone() {
                     let app_instance = app_instance.clone();
                     workers.push(async move {
-                        volt_utils::install_extract_package(app_instance, &dep)
+                        volt_utils::install_extract_package(&app_instance, &dep)
                             .await
                             .unwrap();
-                        volt_utils::generate_script(&dep);
                     });
                 }
 
