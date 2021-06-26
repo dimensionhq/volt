@@ -59,8 +59,36 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
-        println!("Scanning for errors");
+    async fn exec(app: Arc<App>) -> Result<()> {
+        println!("{}", "Scanning for errors".bright_cyan());
+
+        // Temporary detecting modules declared in index.js
+        let file = std::env::current_dir()?.join("index.js");
+
+        let file_contents = std::fs::read_to_string(file)?;
+
+        let contents: Vec<&str> = file_contents.split(" ").collect();
+
+        let mut modules: Vec<String> = vec![];
+
+        for val in contents {
+            if val.contains(&"require(") {
+                let parenthesis_split: Vec<&str> = val.split("(").collect();
+                let module_split: Vec<&str> = parenthesis_split[1].split(")").collect();
+                let mut module = module_split[0];
+                if module.contains("\'") {
+                    let split: Vec<&str> = module.split("\'").collect();
+                    module = split[1];
+                } else {
+                    let split: Vec<&str> = module.split("\"").collect();
+                    module = split[1];
+                }
+                modules.push(module.to_string());
+            }
+        }
+
+        println!("modules: {:?}", modules);
+
         Ok(())
     }
 }
