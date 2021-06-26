@@ -2,7 +2,6 @@ pub mod app;
 pub mod package;
 pub mod voltapi;
 use std::sync::Arc;
-use std::time::Instant;
 
 use anyhow::Context;
 use chttp::{self, ResponseExt};
@@ -36,19 +35,19 @@ lazy_static! {
     pub static ref ERROR_TAG: String = "error".red().bold().to_string();
 }
 
-async fn get_dependencies_recursive(
-    app: Arc<App>,
-    packages: &std::collections::HashMap<String, VoltPackage>,
-) {
-    for package in packages.iter() {
-        install_extract_package(app.clone(), package.1)
-            .await
-            .unwrap();
-    }
-}
+// async fn get_dependencies_recursive(
+//     app: Arc<App>,
+//     packages: &std::collections::HashMap<String, VoltPackage>,
+// ) {
+//     for package in packages.iter() {
+//         install_extract_package(app.clone(), package.1)
+//             .await
+//             .unwrap();
+//     }
+// }
 
 pub fn create_dep_symlinks(
-    app: Arc<App>,
+    _app: Arc<App>,
     packages: std::collections::HashMap<String, VoltPackage>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + 'static>> {
     Box::pin(async move {
@@ -63,13 +62,9 @@ pub fn create_dep_symlinks(
             volt_dir_loc = format!(r"{}/.volt", user_profile);
         }
 
-        // get_dependencies_recursive(app, &packages).await;
-
         for package in packages {
             // Hardlink Files
-            let start = Instant::now();
             hardlink_files(format!(r"{}\{}", &volt_dir_loc, &package.1.name));
-            println!("linked in : {}", start.elapsed().as_secs_f32());
         }
 
         Ok(())
