@@ -16,7 +16,7 @@
 
 //! Fix common errors in the package.json file
 
-use std::{env, process, sync::Arc};
+use std::sync::Arc;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -59,7 +59,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         println!("Scanning for errors");
         Ok(())
     }

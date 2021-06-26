@@ -11,11 +11,11 @@ use futures_util::stream::FuturesUnordered;
 use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
-use std::fs::{create_dir, remove_dir_all};
-use std::io::{self, Write};
+use std::env::temp_dir;
+use std::fs::remove_dir_all;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::process;
-use std::{env::temp_dir, fs::File};
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use tokio::fs::hard_link;
@@ -28,11 +28,7 @@ use lazy_static::lazy_static;
 use package::Package;
 use voltapi::{VoltPackage, VoltResponse};
 
-#[cfg(windows)]
 pub static PROGRESS_CHARS: &str = "=> ";
-
-#[cfg(target_os = "linux")]
-pub static PROGRESS_CHARS: &str = "▰▰▱";
 
 lazy_static! {
     pub static ref ERROR_TAG: String = "error".red().bold().to_string();
@@ -83,7 +79,6 @@ pub fn create_dependency_links(
 
 // Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
-    let time = std::time::Instant::now();
     let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
         .await
         .unwrap_or_else(|_| {
@@ -111,11 +106,13 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
 pub async fn hardlink_files(src: String) {
     let volt_dir_loc;
     let user_profile;
+    let mut src = src;
 
     if cfg!(target_os = "windows") {
         user_profile = std::env::var("USERPROFILE").unwrap();
         volt_dir_loc = format!(r"{}\.volt", user_profile).replace(r"\", "/");
     } else {
+        src = src.replace(r"\", "/");
         user_profile = std::env::var("HOME").unwrap();
         volt_dir_loc = format!(r"{}/.volt", user_profile);
     }
@@ -124,6 +121,7 @@ pub async fn hardlink_files(src: String) {
         let entry = entry.unwrap();
         if !entry.path().is_dir() {
             let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
+
             let path = format!("{}", &entry.path().display())
                 .replace(r"\", "/")
                 .replace(&volt_dir_loc, "");
@@ -168,7 +166,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
         } else {
             // Check if ~/.volt\packagename exists
             package_dir_loc = format!(
-                r"{}\.volt\{}",
+                r"{}/.volt/{}",
                 std::env::var("HOME").unwrap(),
                 name.split("__").collect::<Vec<&str>>()[0]
             );
@@ -195,7 +193,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
         if let Ok(hash) = App::calc_hash(&bytes::Bytes::from(bytes)) {
             // File exists, make sure it's not corrupted
             if hash == package.sha1 {
-                println!("Valid Hash!");
                 return Ok(path_str);
             }
         }
@@ -218,7 +215,13 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
         remove_dir_all(&node_modules_dep_path)?;
     }
 
-    let loc = format!(r"{}\{}", &app.volt_dir.to_str().unwrap(), package.name);
+    let loc;
+
+    if cfg!(target_os = "windows") {
+        loc = format!(r"{}\{}", &app.volt_dir.to_str().unwrap(), package.name);
+    } else {
+        loc = format!(r"{}/{}", &app.volt_dir.to_str().unwrap(), package.name);
+    }
 
     let path = Path::new(&loc);
 
@@ -268,16 +271,23 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
                 .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
             }
         } else {
-            std::fs::rename(
-                format!(r"{}/package", &vlt_dir.to_str().unwrap()),
-                format!(
-                    r"{}/{}",
-                    &vlt_dir.to_str().unwrap(),
-                    package.name.replace("/", "__").replace("@", "")
-                ),
-            )
-            .context("Failed to unpack dependency folder")
-            .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+            let mut idx = 0;
+            let name = package.clone().name;
+
+            let split = name.split('/').collect::<Vec<&str>>();
+
+            if package.clone().name.contains('@') && package.clone().name.contains('/') {
+                idx = 1;
+            }
+
+            if Path::new(format!(r"{}/package", &vlt_dir.to_str().unwrap()).as_str()).exists() {
+                std::fs::rename(
+                    format!(r"{}/package", &vlt_dir.to_str().unwrap()),
+                    format!(r"{}/{}", &vlt_dir.to_str().unwrap(), split[idx]),
+                )
+                .context("failed to rename dependency folder")
+                .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+            }
         }
         if let Some(parent) = node_modules_dep_path.parent() {
             if !parent.exists() {
@@ -364,6 +374,7 @@ pub async fn download_tarball_create(
 
     Ok(path_str)
 }
+
 pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
     let sep: char;
     if cfg!(target_os = "windows") {
@@ -498,7 +509,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 }
 #[cfg(unix)]
 
-pub fn generate_script(package: &VoltPackage) {}
+pub fn generate_script(_package: &VoltPackage) {}
 
 pub fn check_peer_dependency(_package_name: &str) -> bool {
     false

@@ -419,16 +419,12 @@ Options:
                     }
                 }
 
-                let now = Instant::now();
-
                 volt_utils::create_dependency_links(
                     app_instance.clone(),
                     current_version.packages.clone(),
                 )
                 .await
                 .unwrap();
-
-                println!("{}", now.elapsed().as_secs_f32());
 
                 // Change package.json
                 // package_file.add_dependency(dep.name, dep.version);
