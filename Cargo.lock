@@ -1878,6 +1878,7 @@ dependencies = [
  "dialoguer",
  "dirs",
  "flate2",
+ "futures-util",
  "indicatif",
  "junction",
  "lazy_static",
