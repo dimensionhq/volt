@@ -16,6 +16,7 @@ limitations under the License.
 use std::collections::HashMap;
 use std::io::Write;
 use std::sync::Arc;
+use std::time::Instant;
 use std::{process::exit, sync::atomic::AtomicI16};
 
 use anyhow::{Context, Result};
@@ -262,19 +263,12 @@ Options:
                         while workers.next().await.is_some() {}
                     }
 
-                    for dep in dependencies {
-                        volt_utils::create_dep_symlinks(
-                            &dep.name,
-                            app_new.clone(),
-                            current_version.packages.clone(),
-                        )
-                        .await
-                        .unwrap();
-                    }
-                    // Change package.json
-                    // for value in &dependencies.to_owned().iter() {
-                    //     package_file.add_dependency(value.0.name, value.1.version);
-                    // }
+                    volt_utils::create_dep_symlinks(
+                        app_new.clone(),
+                        current_version.packages.clone(),
+                    )
+                    .await
+                    .unwrap();
 
                     let mut package_json_file = package_file.lock().await;
 
@@ -410,19 +404,15 @@ Options:
                         progress_bar.inc(1);
                     }
                 }
+                let now = Instant::now();
 
-                for dep in dependencies {
-                    volt_utils::create_dep_symlinks(
-                        dep.name.as_str(),
-                        app_new.clone(),
-                        current_version.packages.clone(),
-                    )
+                volt_utils::create_dep_symlinks(app_new.clone(), current_version.packages.clone())
                     .await
                     .unwrap();
 
-                    // Change package.json
-                    // package_file.add_dependency(dep.name, dep.version);
-                }
+                println!("{}", now.elapsed().as_secs_f32());
+                // Change package.json
+                // package_file.add_dependency(dep.name, dep.version);
 
                 // Write to lock file
                 if verbose {

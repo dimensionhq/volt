@@ -2,6 +2,7 @@ pub mod app;
 pub mod package;
 pub mod voltapi;
 use std::sync::Arc;
+use std::time::Instant;
 
 use anyhow::Context;
 use chttp::{self, ResponseExt};
@@ -47,10 +48,9 @@ async fn get_dependencies_recursive(
 }
 
 pub fn create_dep_symlinks(
-    pkg_name: &str,
     app: Arc<App>,
     packages: std::collections::HashMap<String, VoltPackage>,
-) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + '_>> {
+) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + 'static>> {
     Box::pin(async move {
         let user_profile;
         let volt_dir_loc;
@@ -63,18 +63,20 @@ pub fn create_dep_symlinks(
             volt_dir_loc = format!(r"{}/.volt", user_profile);
         }
 
-        get_dependencies_recursive(app, &packages).await;
+        // get_dependencies_recursive(app, &packages).await;
 
         for package in packages {
             // Hardlink Files
-            hardlink_files(format!(r"{}\{}", &volt_dir_loc, &package.1.name))
+            let start = Instant::now();
+            hardlink_files(format!(r"{}\{}", &volt_dir_loc, &package.1.name));
+            println!("linked in : {}", start.elapsed().as_secs_f32());
         }
 
         Ok(())
     })
 }
 
-// Getresponse from volt CDN
+// Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
     let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
         .await
@@ -109,7 +111,7 @@ pub fn hardlink_files(src: String) {
         user_profile = std::env::var("HOME").unwrap();
         volt_dir_loc = format!(r"{}/.volt", user_profile);
     }
-    println!("{}", src);
+
     for entry in WalkDir::new(src) {
         let entry = entry.unwrap();
         if !entry.path().is_dir() {
