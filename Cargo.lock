@@ -1858,6 +1858,7 @@ dependencies = [
  "volt_core",
  "volt_create",
  "volt_deploy",
+ "volt_fix",
  "volt_help",
  "volt_init",
  "volt_install",
@@ -1866,6 +1867,7 @@ dependencies = [
  "volt_remove",
  "volt_scripts",
  "volt_utils",
+ "volt_watch",
 ]
 
 [[package]]
@@ -1943,6 +1945,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "colored",
+ "dialoguer",
  "regex",
  "volt_add",
  "volt_core",
