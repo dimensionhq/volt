@@ -25,6 +25,8 @@ volt_migrate = { path = "../volt_migrate" }
 volt_remove = { path = "../volt_remove" }
 volt_utils = { path = "../volt_utils" }
 volt_scripts = { path = "../volt_scripts" }
+volt_fix = { path = "../volt_fix" }
+volt_watch = { path = "../volt_watch" }
 
 [target.'cfg(windows)'.dependencies]
 junction = { path = "../junction" }

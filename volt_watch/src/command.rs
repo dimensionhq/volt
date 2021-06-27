@@ -18,13 +18,13 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use dialoguer::MultiSelect;
 use regex::Regex;
 use std::fs;
-use std::path::PathBuf;
 use std::process;
 use volt_core::command::Command;
+
 use volt_utils::app::App;
-use volt_utils::package::PackageJson;
 
 pub struct Watch {}
 
@@ -54,6 +54,7 @@ impl Command for Watch {
         if &app.args.len() > &1 {
             let _error = &app.args[1];
         }
+
         // Set current dir
         let current_dir = std::env::current_dir()?;
 
@@ -70,7 +71,7 @@ impl Command for Watch {
         }
 
         // Set list of modules which are not found
-        let mut modules: Vec<String> = vec!["add".to_string()];
+        let mut modules: Vec<String> = vec![];
 
         for file in files {
             let file_split: Vec<&str> = file.split(r"\").collect();
@@ -92,21 +93,25 @@ impl Command for Watch {
             }
         }
 
-        let mut app = App::initialize();
+        // Set args for adding packages
+        let mut args: Vec<String> = vec!["add".to_string()];
 
-        print!("{}", "Installing".bright_purple());
-        for module in modules.clone() {
-            if module != "add" {
-                print!(" {}", module.bright_purple());
+        if modules.len() > 0 {
+            println!("Found missing modules.\nPress {} to select the modules and {} to install the selected modules", "space".bright_cyan(), "enter".bright_cyan());
+            let chosen_modules: Vec<usize> = MultiSelect::new().items(&modules).interact()?;
+            for chosen_module in chosen_modules {
+                let module = &modules[chosen_module];
+                args.push(module.to_string());
             }
         }
-        println!("");
 
-        // Install the modules
-        app.args = modules;
+        // Initialize app
+        let mut app = App::initialize();
 
-        // println!("app: {:#?}", app);
+        // Set the args for the app
+        app.args = args;
 
+        // Add the modules
         volt_add::command::Add::exec(Arc::new(app)).await.unwrap();
 
         Ok(())

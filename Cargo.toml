@@ -18,6 +18,8 @@ members = [
   "volt_remove",
   "volt_run",
   "volt_scripts",
+  "volt_fix",
+  "volt_watch"
 ]
 
 [profile.release]
