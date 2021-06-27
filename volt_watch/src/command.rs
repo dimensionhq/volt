@@ -21,7 +21,8 @@ use colored::Colorize;
 use volt_core::command::Command;
 use volt_utils::app::App;
 use volt_utils::package::PackageJson;
-pub struct Script {}
+
+pub struct Watch {}
 
 #[async_trait]
 impl Command for Watch {
@@ -29,46 +30,21 @@ impl Command for Watch {
         todo!()
     }
 
-    /// Execute the `volt {script}` command
+    /// Execute the `volt watch` command
     ///
-    /// Execute a script command (any script command specified in package.json)
+    /// Execute a watch command
     /// ## Arguments
-    /// * `app` - Instance of the command (`Arc<App>`)
+    /// * `error` - Instance of the command (`Arc<App>`)
     /// ## Examples
     /// ```
-    /// // Clone the react repository (https://github.com/facebook/react)
+    /// // Scan for errors / a specific error in the code and fix it
     /// // .exec() is an async call so you need to await it
     /// Add.exec(app).await;
     /// ```
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        let package_json = PackageJson::from("package.json");
-
-        let args = app.args.clone();
-        let command: &str = args[0].as_str();
-
-        if package_json.scripts.contains_key(command) {
-            let script = package_json.scripts.get(command).unwrap();
-            let mut split: Vec<&str> = script.split_ascii_whitespace().into_iter().collect();
-            let bin_cmd = format!("{}.cmd", split[0]);
-
-            split[0] = bin_cmd.as_str();
-
-            let exec = format!("node_modules\\scripts\\{}", split.join(" "));
-
-            std::process::Command::new("cmd.exe")
-                .arg("/C")
-                .arg(exec)
-                .spawn()
-                .unwrap();
-        } else {
-            println!(
-                "{}: {} is not a valid command.",
-                "error".bright_red().bold(),
-                command.bright_yellow().bold()
-            );
-        }
+        println!("{}", "Scanning for errors".bright_cyan());
 
         Ok(())
     }
