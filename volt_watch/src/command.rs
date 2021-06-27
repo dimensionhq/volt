@@ -18,10 +18,15 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use regex::Regex;
+use std::fs;
+use std::path::PathBuf;
+use std::process;
 use volt_core::command::Command;
 use volt_utils::app::App;
 use volt_utils::package::PackageJson;
-pub struct Script {}
+
+pub struct Watch {}
 
 #[async_trait]
 impl Command for Watch {
@@ -29,46 +34,80 @@ impl Command for Watch {
         todo!()
     }
 
-    /// Execute the `volt {script}` command
+    /// Execute the `volt watch` command
     ///
-    /// Execute a script command (any script command specified in package.json)
+    /// Execute a watch command
     /// ## Arguments
-    /// * `app` - Instance of the command (`Arc<App>`)
+    /// * `error` - Instance of the command (`Arc<App>`)
     /// ## Examples
     /// ```
-    /// // Clone the react repository (https://github.com/facebook/react)
+    /// // Scan for errors / a specific error in the code and fix it
     /// // .exec() is an async call so you need to await it
     /// Add.exec(app).await;
     /// ```
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        let package_json = PackageJson::from("package.json");
+        println!("{}", "Scanning for errors".bright_cyan());
 
-        let args = app.args.clone();
-        let command: &str = args[0].as_str();
-
-        if package_json.scripts.contains_key(command) {
-            let script = package_json.scripts.get(command).unwrap();
-            let mut split: Vec<&str> = script.split_ascii_whitespace().into_iter().collect();
-            let bin_cmd = format!("{}.cmd", split[0]);
-
-            split[0] = bin_cmd.as_str();
-
-            let exec = format!("node_modules\\scripts\\{}", split.join(" "));
-
-            std::process::Command::new("cmd.exe")
-                .arg("/C")
-                .arg(exec)
-                .spawn()
-                .unwrap();
-        } else {
-            println!(
-                "{}: {} is not a valid command.",
-                "error".bright_red().bold(),
-                command.bright_yellow().bold()
-            );
+        // Get error to find
+        if &app.args.len() > &1 {
+            let _error = &app.args[1];
         }
+        // Set current dir
+        let current_dir = std::env::current_dir()?;
+
+        // Set list for all JS files
+        let mut files: Vec<String> = vec![];
+
+        // Scan for all JS files
+        for file in fs::read_dir(current_dir)? {
+            let file_name = file?.path();
+            if file_name.display().to_string().ends_with(".js") {
+                // println!("{}", file_name.display().to_string());
+                files.push(file_name.display().to_string());
+            }
+        }
+
+        // Set list of modules which are not found
+        let mut modules: Vec<String> = vec!["add".to_string()];
+
+        for file in files {
+            let file_split: Vec<&str> = file.split(r"\").collect();
+            let file_name = file_split[file_split.len() - 1];
+            let output = process::Command::new("node").arg(file_name).output()?;
+            let code = output.status.code().unwrap();
+            if code == 1 {
+                let err_message = String::from_utf8(output.stderr)?;
+                // println!("error: {}", err_message);
+                let re = Regex::new(r"Cannot find module '(.+)'").unwrap();
+                let matches: Vec<&str> = re
+                    .captures_iter(&err_message)
+                    .map(|c| c.get(1).unwrap().as_str())
+                    .collect();
+                // println!("matches: {:?}", matches);
+                for _match in matches {
+                    modules.push(_match.to_string());
+                }
+            }
+        }
+
+        let mut app = App::initialize();
+
+        print!("{}", "Installing".bright_purple());
+        for module in modules.clone() {
+            if module != "add" {
+                print!(" {}", module.bright_purple());
+            }
+        }
+        println!("");
+
+        // Install the modules
+        app.args = modules;
+
+        // println!("app: {:#?}", app);
+
+        volt_add::command::Add::exec(Arc::new(app)).await.unwrap();
 
         Ok(())
     }

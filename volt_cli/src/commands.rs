@@ -36,6 +36,7 @@ pub enum AppCommand {
     Migrate,
     Remove,
     Fix,
+    Watch,
     Run,
     Script,
 }
@@ -59,6 +60,7 @@ impl FromStr for AppCommand {
             "remove" => Ok(Self::Remove),
             "run" => Ok(Self::Run),
             "fix" => Ok(Self::Fix),
+            "watch" => Ok(Self::Watch),
             _ => Err(()),
         }
     }
@@ -93,6 +95,7 @@ impl AppCommand {
             Self::Run => volt_run::command::Run::help(),
             Self::Script => volt_scripts::command::Script::help(),
             Self::Fix => volt_fix::command::Fix::help(),
+            Self::Watch => volt_watch::command::Watch::help(),
         }
     }
 
@@ -114,6 +117,7 @@ impl AppCommand {
             Self::Run => volt_run::command::Run::exec(app).await,
             Self::Script => volt_scripts::command::Script::exec(app).await,
             Self::Fix => volt_fix::command::Fix::exec(app).await,
+            Self::Watch => volt_watch::command::Watch::exec(app).await,
         }
     }
 }

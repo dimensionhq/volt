@@ -2,12 +2,14 @@
 name = "volt_watch"
 version = "0.0.1"
 authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
-description = "The unknown command for volt cli."
+description = "The watch command for volt cli."
 edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
+regex = "1"
 volt_core = { path = "../volt_core" }
 colored = "2.0.0"
 volt_utils = {path="../volt_utils"}
+volt_add = { path = "../volt_add" }
