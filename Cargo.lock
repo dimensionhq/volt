@@ -1960,10 +1960,12 @@ dependencies = [
  "async-trait",
  "colored",
  "dialoguer",
+ "indicatif",
  "regex",
  "volt_add",
  "volt_core",
  "volt_utils",
+ "walkdir",
 ]
 
 [[package]]

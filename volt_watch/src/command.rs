@@ -13,20 +13,45 @@
 
 //! Handle an unknown command (can be listed in scripts).
 
+use std::fs::{read_dir, read_to_string};
 use std::sync::Arc;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use dialoguer::MultiSelect;
-use regex::Regex;
-use std::fs;
-use std::process;
+use indicatif::ProgressBar;
+use indicatif::ProgressStyle;
+// use regex::Regex;
+// use std::process;
 use volt_core::command::Command;
-
 use volt_utils::app::App;
+use walkdir::WalkDir;
 
+const PROGRESS_CHARS: &str = "=> ";
 pub struct Watch {}
+
+fn src_folder_exists() -> bool {
+    for f in read_dir(".").unwrap() {
+        let f = f.unwrap();
+        if f.path().is_dir() && format!("{}", f.path().display()).as_str() == r".\src" {
+            return true;
+        }
+    }
+    false
+}
+
+fn get_top_elements(elements: &[String]) -> Vec<String> {
+    let mut file_names: Vec<String> = vec![];
+    let vec = elements[..3.min(elements.len())].to_vec();
+
+    for item in &vec {
+        let split = item.split(r"\").collect::<Vec<&str>>();
+        let final_element = split.last().unwrap();
+        file_names.push(final_element.to_string());
+    }
+
+    file_names
+}
 
 #[async_trait]
 impl Command for Watch {
@@ -41,79 +66,147 @@ impl Command for Watch {
     /// * `error` - Instance of the command (`Arc<App>`)
     /// ## Examples
     /// ```
-    /// // Scan for errors / a specific error in the code and fix it
+    /// //
     /// // .exec() is an async call so you need to await it
-    /// Add.exec(app).await;
+    /// Watch.exec(app).await;
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        println!("{}", "Scanning for errors".bright_cyan());
-
-        // Get error to find
-        if &app.args.len() > &1 {
-            let _error = &app.args[1];
-        }
-
+    async fn exec(_app: Arc<App>) -> Result<()> {
         // Set current dir
-        let current_dir = std::env::current_dir()?;
+        let mut current_dir = std::env::current_dir()?;
 
         // Set list for all JS files
         let mut files: Vec<String> = vec![];
 
         // Scan for all JS files
-        for file in fs::read_dir(current_dir)? {
-            let file_name = file?.path();
-            if file_name.display().to_string().ends_with(".js") {
-                // println!("{}", file_name.display().to_string());
-                files.push(file_name.display().to_string());
-            }
+        // Code must be in src folder
+        if !current_dir.ends_with("src") && src_folder_exists() {
+            current_dir = current_dir.join("src");
         }
 
-        // Set list of modules which are not found
-        let mut modules: Vec<String> = vec![];
-
-        for file in files {
-            let file_split: Vec<&str> = file.split(r"\").collect();
-            let file_name = file_split[file_split.len() - 1];
-            let output = process::Command::new("node").arg(file_name).output()?;
-            let code = output.status.code().unwrap();
-            if code == 1 {
-                let err_message = String::from_utf8(output.stderr)?;
-                // println!("error: {}", err_message);
-                let re = Regex::new(r"Cannot find module '(.+)'").unwrap();
-                let matches: Vec<&str> = re
-                    .captures_iter(&err_message)
-                    .map(|c| c.get(1).unwrap().as_str())
-                    .collect();
-                // println!("matches: {:?}", matches);
-                for _match in matches {
-                    modules.push(_match.to_string());
+        if current_dir.ends_with("src") {
+            for entry in WalkDir::new(current_dir) {
+                let entry = entry.unwrap();
+                let file_name = format!("{}", entry.path().display());
+                if file_name.ends_with(".js") {
+                    files.push(file_name);
                 }
             }
         }
 
-        // Set args for adding packages
-        let mut args: Vec<String> = vec!["add".to_string()];
+        let progress_bar = ProgressBar::new(files.len() as u64);
 
-        if modules.len() > 0 {
-            println!("Found missing modules.\nPress {} to select the modules and {} to install the selected modules", "space".bright_cyan(), "enter".bright_cyan());
-            let chosen_modules: Vec<usize> = MultiSelect::new().items(&modules).interact()?;
-            for chosen_module in chosen_modules {
-                let module = &modules[chosen_module];
-                args.push(module.to_string());
+        // 5 Checks
+        // -> 1: Matching Bracket Check
+        progress_bar.set_style(
+            ProgressStyle::default_bar()
+                .progress_chars(PROGRESS_CHARS)
+                .template(&format!(
+                    "{} [{{bar:20.magenta/blue}}] {{pos}} / {{len}} {{msg:.yellow}}",
+                    "Scanning Code".bright_cyan()
+                )),
+        );
+
+        files.insert(1, files[0].clone());
+        let mut files_iter = files.into_iter();
+
+        while let Some(f) = files_iter.next() {
+            // display next 3 files to be analyzed
+            let file_names = get_top_elements(files_iter.as_slice());
+            let message = file_names.join(", ");
+            progress_bar.set_message(message);
+
+            let mut contents = read_to_string(f).unwrap();
+            contents = contents.trim().to_string();
+            let open_curly_count = contents.matches("{").count();
+            let close_curly_count = contents.matches("}").count();
+            let open_square_count = contents.matches("[").count();
+            let close_square_count = contents.matches("]").count();
+            let open_paren_count = contents.matches("(").count();
+            let close_paren_count = contents.matches(")").count();
+
+            if open_curly_count != close_curly_count {
+                todo!()
+            } else if open_square_count != close_square_count {
+                todo!()
+            } else if open_paren_count != close_paren_count {
+                todo!()
             }
+            progress_bar.inc(1);
+            // sleep(Duration::from_millis(100));
         }
 
+        progress_bar.finish_and_clear();
+
+        // Set list of modules which are not found
+        // let mut modules: Vec<String> = vec![];
+
+        // for file in files {
+        //     let file_split: Vec<&str> = file.split(r"\").collect();
+        //     let file_name = file_split[file_split.len() - 1];
+        //     let output = process::Command::new("node").arg(file_name).output()?;
+        //     let code = output.status.code().unwrap();
+        //     if code == 1 {
+        //         let err_message = String::from_utf8(output.stderr)?;
+        //         let re = Regex::new(r"Cannot find module '(.+)'").unwrap();
+        //         let matches: Vec<&str> = re
+        //             .captures_iter(&err_message)
+        //             .map(|c| c.get(1).unwrap().as_str())
+        //             .collect();
+        //         for _match in matches {
+        //             modules.push(_match.to_string());
+        //         }
+        //     }
+        // }
+
+        // Set args for adding packages
+        // let mut args: Vec<String> = vec!["add".to_string()];
+        // if modules.len() > 0 {
+        //     println!("Found missing modules.\nPress {} to select the modules and {} to install the selected modules", "space".bright_cyan(), "enter".bright_cyan());
+        //     let chosen_modules: Vec<usize> = MultiSelect::new().items(&modules).interact()?;
+        //     for chosen_module in chosen_modules {
+        //         let module = &modules[chosen_module];
+        //         args.push(module.to_string());
+        //     }
+        // }
+
         // Initialize app
-        let mut app = App::initialize();
+        // let mut app = App::initialize();
 
         // Set the args for the app
-        app.args = args;
+        // app.args = args.clone();
 
-        // Add the modules
-        volt_add::command::Add::exec(Arc::new(app)).await.unwrap();
+        // if &args.len() > &1 {
+        //     // Add the modules
+        //     volt_add::command::Add::exec(Arc::new(app)).await.unwrap();
+        // }
 
         Ok(())
     }
 }
+
+/*
+            let split = &f.split(r"\").collect::<Vec<&str>>();
+            let file_name = split.last().unwrap();
+            let file_names = get_top_elements(files);
+            progress_bar.set_message(file_name.to_string());
+
+            let mut contents = read_to_string(f).unwrap();
+            contents = contents.trim().to_string();
+            let open_curly_count = contents.matches("{").count();
+            let close_curly_count = contents.matches("}").count();
+            let open_square_count = contents.matches("[").count();
+            let close_square_count = contents.matches("]").count();
+            let open_paren_count = contents.matches("(").count();
+            let close_paren_count = contents.matches(")").count();
+
+            if open_curly_count != close_curly_count {
+                todo!()
+            } else if open_square_count != close_square_count {
+                todo!()
+            } else if open_paren_count != close_paren_count {
+                todo!()
+            }
+
+*/
