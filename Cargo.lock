@@ -1916,6 +1916,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "colored",
+ "regex",
  "volt_core",
  "volt_utils",
 ]

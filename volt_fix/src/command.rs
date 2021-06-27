@@ -60,7 +60,7 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(_app: Arc<App>) -> Result<()> {
-        println!("{}", "Fixing errors".bright_cyan());
+        println!("{}", "Scanning for errors".bright_cyan());
 
         Ok(())
     }
