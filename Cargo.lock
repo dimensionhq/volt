@@ -1678,6 +1678,7 @@ dependencies = [
  "volt_remove",
  "volt_run",
  "volt_scripts",
+ "volt_upgrade",
  "volt_utils",
  "volt_watch",
 ]
@@ -1875,6 +1876,32 @@ dependencies = [
  "async-trait",
  "colored",
  "volt_core",
+ "volt_utils",
+]
+
+[[package]]
+name = "volt_upgrade"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "junction",
+ "tokio",
+ "volt_add",
+ "volt_cache",
+ "volt_clone",
+ "volt_compress",
+ "volt_core",
+ "volt_create",
+ "volt_deploy",
+ "volt_help",
+ "volt_init",
+ "volt_install",
+ "volt_list",
+ "volt_migrate",
+ "volt_remove",
+ "volt_scripts",
  "volt_utils",
 ]
 
