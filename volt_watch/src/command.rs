@@ -70,7 +70,7 @@ impl Command for Watch {
         }
 
         // Set list of modules which are not found
-        let modules: Vec<String> = vec![];
+        let mut modules: Vec<String> = vec!["add".to_string()];
 
         for file in files {
             let file_split: Vec<&str> = file.split(r"\").collect();
@@ -79,18 +79,35 @@ impl Command for Watch {
             let code = output.status.code().unwrap();
             if code == 1 {
                 let err_message = String::from_utf8(output.stderr)?;
-                println!("error: {}", err_message);
+                // println!("error: {}", err_message);
                 let re = Regex::new(r"Cannot find module '(.+)'").unwrap();
                 let matches: Vec<&str> = re
                     .captures_iter(&err_message)
                     .map(|c| c.get(1).unwrap().as_str())
                     .collect();
-                println!("matches: {:?}", matches);
+                // println!("matches: {:?}", matches);
                 for _match in matches {
                     modules.push(_match.to_string());
                 }
             }
         }
+
+        let mut app = App::initialize();
+
+        print!("{}", "Installing".bright_purple());
+        for module in modules.clone() {
+            if module != "add" {
+                print!(" {}", module.bright_purple());
+            }
+        }
+        println!("");
+
+        // Install the modules
+        app.args = modules;
+
+        // println!("app: {:#?}", app);
+
+        volt_add::command::Add::exec(Arc::new(app)).await.unwrap();
 
         Ok(())
     }
