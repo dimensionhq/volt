@@ -458,7 +458,7 @@ pub fn create_symlink(original: String, link: String) -> Result<()> {
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
     // Create node_modules/scripts if it doesn't exist
     if !Path::new("node_modules/scripts").exists() {
-        create_dir("node_modules/scripts").unwrap();
+        std::fs::create_dir_all("node_modules/scripts").unwrap();
     }
 
     // If the package has binary scripts, create them
