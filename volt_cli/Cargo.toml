@@ -26,6 +26,7 @@ volt_scripts = { path = "../volt_scripts" }
 volt_utils = { path = "../volt_utils" }
 volt_run = { path = "../volt_run" }
 volt_fix = { path = "../volt_fix" }
+volt_watch = { path = "../volt_watch" }
 
 [target.'cfg(windows)'.dependencies]
 junction = { path = "../junction" }

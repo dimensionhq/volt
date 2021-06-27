@@ -2,7 +2,7 @@
 name = "volt_watch"
 version = "0.0.1"
 authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
-description = "The unknown command for volt cli."
+description = "The watch command for volt cli."
 edition = "2018"
 
 [dependencies]

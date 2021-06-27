@@ -1679,6 +1679,7 @@ dependencies = [
  "volt_run",
  "volt_scripts",
  "volt_utils",
+ "volt_watch",
 ]
 
 [[package]]
@@ -1906,6 +1907,17 @@ dependencies = [
  "tokio",
  "walkdir",
  "winapi",
+]
+
+[[package]]
+name = "volt_watch"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "volt_core",
+ "volt_utils",
 ]
 
 [[package]]
