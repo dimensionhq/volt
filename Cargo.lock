@@ -1882,6 +1882,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "volt_set"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+]
+
+[[package]]
 name = "volt_upgrade"
 version = "0.0.1"
 dependencies = [
