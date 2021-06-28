@@ -1643,6 +1643,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "volt_audit"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
+]
+
+[[package]]
 name = "volt_cache"
 version = "0.0.1"
 dependencies = [
@@ -1650,6 +1666,17 @@ dependencies = [
  "async-trait",
  "colored",
  "indicatif",
+ "volt_core",
+ "volt_utils",
+]
+
+[[package]]
+name = "volt_check"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
  "volt_core",
  "volt_utils",
 ]
@@ -1782,6 +1809,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "volt_info"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
+]
+
+[[package]]
 name = "volt_init"
 version = "0.0.1"
 dependencies = [
@@ -1879,6 +1922,22 @@ dependencies = [
  "colored",
  "volt_core",
  "volt_utils",
+]
+
+[[package]]
+name = "volt_search"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
 ]
 
 [[package]]

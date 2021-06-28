@@ -21,7 +21,11 @@ members = [
   "volt_fix",
   "volt_watch",
   "volt_upgrade",
-  "volt_set"
+  "volt_set",
+  "volt_audit",
+  "volt_check",
+  "volt_info",
+  "volt_search"
 ]
 
 [profile.release]
