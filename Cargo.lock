@@ -1861,6 +1861,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "volt_login"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
+]
+
+[[package]]
+name = "volt_logout"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
+]
+
+[[package]]
 name = "volt_migrate"
 version = "0.0.1"
 dependencies = [
@@ -1870,6 +1902,54 @@ dependencies = [
  "volt_core",
  "volt_install",
  "volt_utils",
+]
+
+[[package]]
+name = "volt_outdated"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
+]
+
+[[package]]
+name = "volt_owner"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
+]
+
+[[package]]
+name = "volt_publish"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
 ]
 
 [[package]]
@@ -1952,6 +2032,38 @@ dependencies = [
  "volt_add",
  "volt_core",
  "volt_utils",
+]
+
+[[package]]
+name = "volt_tag"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
+]
+
+[[package]]
+name = "volt_team"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
+ "dialoguer",
+ "indicatif",
+ "regex",
+ "volt_add",
+ "volt_core",
+ "volt_utils",
+ "walkdir",
 ]
 
 [[package]]

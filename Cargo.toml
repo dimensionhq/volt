@@ -25,7 +25,14 @@ members = [
   "volt_audit",
   "volt_check",
   "volt_info",
-  "volt_search"
+  "volt_search",
+  "volt_outdated",
+  "volt_login",
+  "volt_logout",
+  "volt_publish",
+  "volt_tag",
+  "volt_owner",
+  "volt_team"
 ]
 
 [profile.release]
