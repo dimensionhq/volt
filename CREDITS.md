@@ -1,4 +1,5 @@
 # Credits
+
 #### <a href="https://github.com/dtolnay/anyhow">Anyhow</a> for handling errors
 
 #### <a href="https://github.com/dtolnay/async-trait">Async-trait</a> for using async/await in traits
@@ -42,3 +43,5 @@
 #### <a href="https://github.com/Stebalien/tempfile">tempfile</a> for handling temp files/directories
 
 #### <a href="https://github.com/bluss/scopeguard">Scopegaurd</a> for convenient RAII scope guard handling
+
+#### <a href="https://github.com/rslint/rslint">RSLint</a> Code linting and validation for `volt watch`
