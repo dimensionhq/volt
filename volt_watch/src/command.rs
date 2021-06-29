@@ -21,8 +21,8 @@ use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
-// use regex::Regex;
-// use std::process;
+use regex::Regex;
+use std::process;
 use volt_core::command::Command;
 use volt_utils::app::App;
 use walkdir::WalkDir;
@@ -95,92 +95,99 @@ impl Command for Watch {
             }
         }
 
-        let progress_bar = ProgressBar::new(files.len() as u64);
+        if files.len() == 0 {
+            println!("No JS files found");
+            process::exit(0);
+        }
+
+        // let progress_bar = ProgressBar::new(files.len() as u64);
 
         // 5 Checks
         // -> 1: Matching Bracket Check
-        progress_bar.set_style(
-            ProgressStyle::default_bar()
-                .progress_chars(PROGRESS_CHARS)
-                .template(&format!(
-                    "{} [{{bar:20.magenta/blue}}] {{pos}} / {{len}} {{msg:.yellow}}",
-                    "Scanning Code".bright_cyan()
-                )),
-        );
+        // progress_bar.set_style(
+        //     ProgressStyle::default_bar()
+        //         .progress_chars(PROGRESS_CHARS)
+        //         .template(&format!(
+        //             "{} [{{bar:20.magenta/blue}}] {{pos}} / {{len}} {{msg:.yellow}}",
+        //             "Scanning Code".bright_cyan()
+        //         )),
+        // );
 
-        files.insert(1, files[0].clone());
-        let mut files_iter = files.into_iter();
+        // files.insert(1, files[0].clone());
+        // let mut files_iter = files.into_iter();
 
-        while let Some(f) = files_iter.next() {
-            // display next 3 files to be analyzed
-            let file_names = get_top_elements(files_iter.as_slice());
-            let message = file_names.join(", ");
-            progress_bar.set_message(message);
+        // while let Some(f) = files_iter.next() {
+        //     // display next 3 files to be analyzed
+        //     let file_names = get_top_elements(files_iter.as_slice());
+        //     let message = file_names.join(", ");
+        //     progress_bar.set_message(message);
 
-            let mut contents = read_to_string(f).unwrap();
-            contents = contents.trim().to_string();
-            let open_curly_count = contents.matches("{").count();
-            let close_curly_count = contents.matches("}").count();
-            let open_square_count = contents.matches("[").count();
-            let close_square_count = contents.matches("]").count();
-            let open_paren_count = contents.matches("(").count();
-            let close_paren_count = contents.matches(")").count();
+        //     let mut contents = read_to_string(f).unwrap();
+        //     contents = contents.trim().to_string();
+        //     let open_curly_count = contents.matches("{").count();
+        //     let close_curly_count = contents.matches("}").count();
+        //     let open_square_count = contents.matches("[").count();
+        //     let close_square_count = contents.matches("]").count();
+        //     let open_paren_count = contents.matches("(").count();
+        //     let close_paren_count = contents.matches(")").count();
 
-            if open_curly_count != close_curly_count {
-                todo!()
-            } else if open_square_count != close_square_count {
-                todo!()
-            } else if open_paren_count != close_paren_count {
-                todo!()
-            }
-            progress_bar.inc(1);
-            // sleep(Duration::from_millis(100));
-        }
+        //     if open_curly_count != close_curly_count {
+        //         todo!()
+        //     } else if open_square_count != close_square_count {
+        //         todo!()
+        //     } else if open_paren_count != close_paren_count {
+        //         todo!()
+        //     }
+        //     progress_bar.inc(1);
+        //     // sleep(Duration::from_millis(100));
+        // }
 
-        progress_bar.finish_and_clear();
+        // progress_bar.finish_and_clear();
 
         // Set list of modules which are not found
-        // let mut modules: Vec<String> = vec![];
+        let mut module = "module".to_string();
 
-        // for file in files {
-        //     let file_split: Vec<&str> = file.split(r"\").collect();
-        //     let file_name = file_split[file_split.len() - 1];
-        //     let output = process::Command::new("node").arg(file_name).output()?;
-        //     let code = output.status.code().unwrap();
-        //     if code == 1 {
-        //         let err_message = String::from_utf8(output.stderr)?;
-        //         let re = Regex::new(r"Cannot find module '(.+)'").unwrap();
-        //         let matches: Vec<&str> = re
-        //             .captures_iter(&err_message)
-        //             .map(|c| c.get(1).unwrap().as_str())
-        //             .collect();
-        //         for _match in matches {
-        //             modules.push(_match.to_string());
-        //         }
-        //     }
-        // }
+        while module != "".to_string() {
+            module = "".to_string();
 
-        // Set args for adding packages
-        // let mut args: Vec<String> = vec!["add".to_string()];
-        // if modules.len() > 0 {
-        //     println!("Found missing modules.\nPress {} to select the modules and {} to install the selected modules", "space".bright_cyan(), "enter".bright_cyan());
-        //     let chosen_modules: Vec<usize> = MultiSelect::new().items(&modules).interact()?;
-        //     for chosen_module in chosen_modules {
-        //         let module = &modules[chosen_module];
-        //         args.push(module.to_string());
-        //     }
-        // }
+            for file in &files {
+                let file_split: Vec<&str> = file.split(r"\").collect();
+                let file_name = file_split[file_split.len() - 1];
+                // println!("file name: {}", file_name);
+                let output = process::Command::new("node")
+                    .arg(format!("src/{}", file_name))
+                    .output()?;
+                let code = output.status.code().unwrap();
+                if code == 1 {
+                    let err_message = String::from_utf8(output.stderr)?;
+                    // println!("error: {}", err_message);
+                    let re = Regex::new(r"Cannot find module '(.+)'").unwrap();
+                    let matches: Vec<&str> = re
+                        .captures_iter(&err_message)
+                        .map(|c| c.get(1).unwrap().as_str())
+                        .collect();
+                    for _match in matches {
+                        module = _match.to_string();
+                    }
+                }
+            }
 
-        // Initialize app
-        // let mut app = App::initialize();
+            // Check if module is empty
+            if module == "".to_string() {
+                break;
+            } else {
+                println!("{}{}", "Installing ".bright_cyan(), module.bright_cyan())
+            }
 
-        // Set the args for the app
-        // app.args = args.clone();
+            // Initialize app
+            let mut app = App::initialize();
 
-        // if &args.len() > &1 {
-        //     // Add the modules
-        //     volt_add::command::Add::exec(Arc::new(app)).await.unwrap();
-        // }
+            // Set the args for the app
+            app.args = vec!["add".to_string(), module.clone()];
+
+            // Add the module
+            volt_add::command::Add::exec(Arc::new(app)).await.unwrap();
+        }
 
         Ok(())
     }
