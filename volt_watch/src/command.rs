@@ -101,49 +101,51 @@ impl Command for Watch {
             process::exit(0);
         }
 
-        // let progress_bar = ProgressBar::new(files.len() as u64);
+        let progress_bar = ProgressBar::new(files.len() as u64);
 
         // 5 Checks
         // -> 1: Matching Bracket Check
-        // progress_bar.set_style(
-        //     ProgressStyle::default_bar()
-        //         .progress_chars(PROGRESS_CHARS)
-        //         .template(&format!(
-        //             "{} [{{bar:20.magenta/blue}}] {{pos}} / {{len}} {{msg:.yellow}}",
-        //             "Scanning Code".bright_cyan()
-        //         )),
-        // );
+        progress_bar.set_style(
+            ProgressStyle::default_bar()
+                .progress_chars(PROGRESS_CHARS)
+                .template(&format!(
+                    "{} [{{bar:20.magenta/blue}}] {{pos}} / {{len}} {{msg:.yellow}}",
+                    "Scanning Code".bright_cyan()
+                )),
+        );
 
-        // files.insert(1, files[0].clone());
-        // let mut files_iter = files.into_iter();
+        files.insert(1, files[0].clone());
+        let mut files_iter = files.clone().into_iter();
 
-        // while let Some(f) = files_iter.next() {
-        //     // display next 3 files to be analyzed
-        //     let file_names = get_top_elements(files_iter.as_slice());
-        //     let message = file_names.join(", ");
-        //     progress_bar.set_message(message);
+        while let Some(f) = files_iter.next() {
+            // display next 3 files to be analyzed
+            let file_names = get_top_elements(files_iter.as_slice());
+            let message = file_names.join(", ");
+            progress_bar.set_message(message);
 
-        //     let mut contents = read_to_string(f).unwrap();
-        //     contents = contents.trim().to_string();
-        //     let open_curly_count = contents.matches("{").count();
-        //     let close_curly_count = contents.matches("}").count();
-        //     let open_square_count = contents.matches("[").count();
-        //     let close_square_count = contents.matches("]").count();
-        //     let open_paren_count = contents.matches("(").count();
-        //     let close_paren_count = contents.matches(")").count();
+            let mut contents = read_to_string(f).unwrap();
+            contents = contents.trim().to_string();
+            let open_curly_count = contents.matches("{").count();
+            let close_curly_count = contents.matches("}").count();
+            let open_square_count = contents.matches("[").count();
+            let close_square_count = contents.matches("]").count();
+            let open_paren_count = contents.matches("(").count();
+            let close_paren_count = contents.matches(")").count();
 
-        //     if open_curly_count != close_curly_count {
-        //         todo!()
-        //     } else if open_square_count != close_square_count {
-        //         todo!()
-        //     } else if open_paren_count != close_paren_count {
-        //         todo!()
-        //     }
-        //     progress_bar.inc(1);
-        //     // sleep(Duration::from_millis(100));
-        // }
+            if open_curly_count != close_curly_count {
+                println!("{}", "Missing Brace".bright_magenta());
+            } else if open_square_count != close_square_count {
+                println!("{}", "Missing Square Brace".bright_magenta());
+            } else if open_paren_count != close_paren_count {
+                println!("{}", "Missing Parenthesis".bright_magenta());
+            }
+            progress_bar.inc(1);
+            // sleep(Duration::from_millis(100));
+        }
 
-        // progress_bar.finish_and_clear();
+        progress_bar.finish_and_clear();
+
+        // -> 2: Matching Module Check
 
         // Set list of modules which are not found
         let mut module = "module".to_string();
