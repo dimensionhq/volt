@@ -22,6 +22,7 @@ use colored::Colorize;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
 use regex::Regex;
+use std::io::Write;
 use std::process;
 use volt_core::command::Command;
 use volt_utils::app::App;
@@ -185,8 +186,18 @@ impl Command for Watch {
             // Set the args for the app
             app.args = vec!["add".to_string(), module.clone()];
 
-            // Add the module
-            volt_add::command::Add::exec(Arc::new(app)).await.unwrap();
+            // Prompt to confirm installation
+            print!("Do you want to install {} (Y/N): ", module);
+            std::io::stdout()
+                .flush()
+                .ok()
+                .expect("Could not flush stdout");
+            let mut string: String = String::new();
+            let _ = std::io::stdin().read_line(&mut string);
+            if string.trim().to_lowercase() == "y" {
+                // Add the module
+                volt_add::command::Add::exec(Arc::new(app)).await.unwrap();
+            }
         }
 
         Ok(())
