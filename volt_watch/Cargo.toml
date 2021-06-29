@@ -16,4 +16,8 @@ indicatif = "0.16.2"
 volt_utils = { path="../volt_utils" }
 volt_add = { path = "../volt_add" }
 walkdir = "2.3.2"
-rslint_parser = "0.2.1"
+rslint_core = { path = "../rslint_core" }
+rslint_config = { path = "../rslint_config" }
+rslint_cli = { path = "../rslint_cli" }
+rslint_parser = { path = "../rslint_parser" }
+serde_json = "1.0.64"

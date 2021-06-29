@@ -13,6 +13,7 @@
 
 //! Handle an unknown command (can be listed in scripts).
 
+use rslint_parser::Syntax;
 use std::fs::{read_dir, read_to_string};
 use std::sync::Arc;
 use std::thread::sleep_ms;
@@ -22,8 +23,6 @@ use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
-// use regex::Regex;
-// use std::process;
 use volt_core::command::Command;
 use volt_utils::app::App;
 use walkdir::WalkDir;
@@ -90,46 +89,61 @@ impl Command for Watch {
             for entry in WalkDir::new(current_dir) {
                 let entry = entry.unwrap();
                 let file_name = format!("{}", entry.path().display());
-                if file_name.ends_with(".js") {
+                if file_name.ends_with(".js")
+                    || file_name.ends_with(".ts")
+                    || file_name.ends_with(".json")
+                {
                     files.push(file_name);
                 }
             }
         }
 
         if files.len() > 0 {
-            // let progress_bar = ProgressBar::new(files.len() as u64);
+            let progress_bar = ProgressBar::new(files.len() as u64);
 
-            // progress_bar.set_style(
-            //     ProgressStyle::default_bar()
-            //         .progress_chars(PROGRESS_CHARS)
-            //         .template(&format!(
-            //             "{} [{{bar:20.magenta/blue}}] {{pos}} / {{len}} {{msg:.yellow}}",
-            //             "Scanning Code".bright_cyan()
-            //         )),
-            // );
+            progress_bar.set_style(
+                ProgressStyle::default_bar()
+                    .progress_chars(PROGRESS_CHARS)
+                    .template(&format!(
+                        "{} [{{bar:20.magenta/blue}}] {{pos}} / {{len}} {{msg:.yellow}}",
+                        "Scanning Code".bright_cyan()
+                    )),
+            );
 
-            files.insert(0, files[0].clone());
-            let mut files_iter = files.into_iter();
-
-            while let Some(f) = files_iter.next() {
+            let mut files_message_vec = files.clone();
+            progress_bar.abandon();
+            for f in files {
                 // display next 3 files to be analyzed
                 let file_names;
-
-                file_names = get_top_elements(files_iter.as_slice());
+                // println!("{:?}", &files_message_vec);
+                file_names = get_top_elements(&files_message_vec.as_slice());
 
                 let message = file_names.join(", ");
                 // progress_bar.set_message(message);
-                println!("{}", &f);
-                let res = rslint_parser::parse_text_lossy(read_to_string(&f).unwrap().as_str(), 0);
+                // let res =
+                //     rslint_parser::parse_text_lossy(read_to_string(&f).unwrap().as_str().trim(), 0);
+                let mut syntax = Syntax::default();
+
+                if f.clone().ends_with(".ts") {
+                    syntax = syntax.typescript();
+                }
+
+                let res = rslint_parser::parse_with_syntax(
+                    read_to_string(&f).unwrap().as_str().trim(),
+                    0,
+                    syntax,
+                );
+
                 let errors = res.errors();
+
                 if errors != [] {
-                    // progress_bar.abandon();
+                    progress_bar.abandon();
                     for err in errors {
-                        // println!("{:?}", err);
+                        println!("{:?}", err);
                     }
                 }
 
-                sleep_ms(1000);
+                files_message_vec.remove(0);
                 // progress_bar.inc(1);
             }
 

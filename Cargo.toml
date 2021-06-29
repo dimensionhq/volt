@@ -32,8 +32,21 @@ members = [
   "volt_publish",
   "volt_tag",
   "volt_owner",
-  "volt_team"
+  "volt_team",
+  "rslint_parser",
+  "rslint_errors",
+  "rslint_lexer",
+  "rslint_rowan",
+  "rslint_syntax",
+  "rslint_core",
+  "rslint_macros",
+  "rslint_lsp",
+  "rslint_regex",
+  "rslint_text_edit",
+  "rslint_config",
+  "rslint_cli"
 ]
+
 
 [profile.release]
 opt-level = 'z'     # Optimize for size.
