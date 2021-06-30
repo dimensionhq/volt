@@ -148,6 +148,13 @@ impl Command for Watch {
                     modules.push(cap.get(3).unwrap().as_str().to_string());
                 }
 
+                let import_regex =
+                    Regex::new(r#"import\s+(\{?).*(\}?)(\s?)from(\s?)('|")(.*)('|");?"#).unwrap();
+
+                for cap in import_regex.captures_iter(&text.as_str()) {
+                    modules.push(cap.get(4).unwrap().as_str().to_string());
+                }
+
                 files_message_vec.remove(0);
                 progress_bar.inc(1);
             }
