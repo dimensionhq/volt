@@ -320,7 +320,6 @@ Options:
                 );
 
                 let response = volt_utils::get_volt_response(package.to_string()).await;
-
                 let progress_bar = &progress_bar;
 
                 progress_bar.finish_with_message("[OK]".bright_green().to_string());
@@ -332,7 +331,8 @@ Options:
                     .packages
                     .len();
 
-                if *length == 1 {
+                println!("{}", length);
+                if *length as u64 == 1 {
                     println!("Loaded 1 dependency");
                 } else {
                     println!("Loaded {} dependencies.", length);

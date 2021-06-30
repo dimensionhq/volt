@@ -16,7 +16,6 @@
 use rslint_parser::Syntax;
 use std::fs::{read_dir, read_to_string};
 use std::sync::Arc;
-use std::thread::sleep_ms;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -111,17 +110,14 @@ impl Command for Watch {
             );
 
             let mut files_message_vec = files.clone();
-            progress_bar.abandon();
             for f in files {
                 // display next 3 files to be analyzed
                 let file_names;
-                // println!("{:?}", &files_message_vec);
                 file_names = get_top_elements(&files_message_vec.as_slice());
 
                 let message = file_names.join(", ");
-                // progress_bar.set_message(message);
-                // let res =
-                //     rslint_parser::parse_text_lossy(read_to_string(&f).unwrap().as_str().trim(), 0);
+                progress_bar.set_message(message);
+
                 let mut syntax = Syntax::default();
 
                 if f.clone().ends_with(".ts") {
@@ -138,16 +134,17 @@ impl Command for Watch {
 
                 if errors != [] {
                     progress_bar.abandon();
+                    // println!("{}", &f);
                     for err in errors {
                         println!("{:?}", err);
                     }
                 }
 
                 files_message_vec.remove(0);
-                // progress_bar.inc(1);
+                progress_bar.inc(1);
             }
 
-            // progress_bar.finish();
+            progress_bar.finish_with_message("");
 
             // Set list of modules which are not found
             // let mut modules: Vec<String> = vec![];
