@@ -134,8 +134,9 @@ impl Command for Watch {
 
                 if errors != [] {
                     progress_bar.abandon();
-                    for _ in errors {
-                        std::process::exit(1);
+                    for err in errors {
+                        // println!("{:?}", err);
+                        // std::process::exit(1);
                     }
                 }
 
@@ -145,21 +146,46 @@ impl Command for Watch {
                 .unwrap();
 
                 for cap in require_regex.captures_iter(&text.as_str()) {
-                    modules.push(cap.get(3).unwrap().as_str().to_string());
+                    let element = cap.get(3).unwrap().as_str().to_string();
+
+                    if !modules.contains(&element) {
+                        modules.push(element);
+                    }
                 }
 
                 let import_regex =
                     Regex::new(r#"import\s+(\{?).*(\}?)(\s?)from(\s?)('|")(.*)('|");?"#).unwrap();
 
                 for cap in import_regex.captures_iter(&text.as_str()) {
-                    modules.push(cap.get(4).unwrap().as_str().to_string());
+                    let element = cap.get(6).unwrap().as_str().to_string();
+                    if !modules.contains(&element) {
+                        modules.push(element);
+                    }
                 }
 
                 files_message_vec.remove(0);
                 progress_bar.inc(1);
             }
             progress_bar.finish_with_message("");
-            println!("{:?}", modules);
+
+            let node_modules = read_dir("node_modules").unwrap();
+            let mut availiable_modules: Vec<String> = vec![];
+
+            for entry in node_modules {
+                let entry = entry.unwrap();
+                if entry.path().is_dir() {
+                    let path = entry.file_name().to_str().unwrap().to_string();
+                    availiable_modules.push(path);
+                }
+            }
+
+            let mut missing_modules: Vec<String> = vec![];
+
+            for module in modules {
+                if !availiable_modules.contains(&module) {
+                    missing_modules.push(module);
+                }
+            }
 
             // Set list of modules which are not found
             // let mut modules: Vec<String> = vec![];
