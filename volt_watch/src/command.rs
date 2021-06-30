@@ -13,6 +13,7 @@
 
 //! Handle an unknown command (can be listed in scripts).
 
+use regex::Regex;
 use rslint_parser::Syntax;
 use std::fs::{read_dir, read_to_string};
 use std::sync::Arc;
@@ -110,6 +111,8 @@ impl Command for Watch {
             );
 
             let mut files_message_vec = files.clone();
+            let mut modules: Vec<String> = vec![];
+
             for f in files {
                 // display next 3 files to be analyzed
                 let file_names;
@@ -124,27 +127,32 @@ impl Command for Watch {
                     syntax = syntax.typescript();
                 }
 
-                let res = rslint_parser::parse_with_syntax(
-                    read_to_string(&f).unwrap().as_str().trim(),
-                    0,
-                    syntax,
-                );
+                let text = read_to_string(&f).unwrap().trim().to_string();
+                let res = rslint_parser::parse_with_syntax(&text.as_str(), 0, syntax);
 
                 let errors = res.errors();
 
                 if errors != [] {
                     progress_bar.abandon();
-                    // println!("{}", &f);
-                    for err in errors {
-                        println!("{:?}", err);
+                    for _ in errors {
+                        std::process::exit(1);
                     }
+                }
+
+                let require_regex = Regex::new(
+                    r#"(const|let|var) [a-zA-Z0-9_]+\s?=\s?require\s?\(('|")(.*)('|")\)\s?;?"#,
+                )
+                .unwrap();
+
+                for cap in require_regex.captures_iter(&text.as_str()) {
+                    modules.push(cap.get(3).unwrap().as_str().to_string());
                 }
 
                 files_message_vec.remove(0);
                 progress_bar.inc(1);
             }
-
             progress_bar.finish_with_message("");
+            println!("{:?}", modules);
 
             // Set list of modules which are not found
             // let mut modules: Vec<String> = vec![];
