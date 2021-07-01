@@ -288,6 +288,8 @@ Options:
                             .insert(package.to_string(), response.clone().version);
                     }
 
+                    println!("pkg json file: {:?}", package_json_file);
+
                     package_json_file.save();
 
                     // Write to lock file
@@ -331,7 +333,7 @@ Options:
                     .packages
                     .len();
 
-                println!("{}", length);
+                // println!("{}", length);
                 if *length as u64 == 1 {
                     println!("Loaded 1 dependency");
                 } else {

@@ -121,20 +121,30 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
             .unwrap();
 
             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
-            hard_link(
-                format!("{}", &path),
-                format!(
-                    "node_modules{}",
-                    &path.replace(
-                        format!("{}", &app.volt_dir.display())
-                            .replace(r"\", "/")
-                            .as_str(),
-                        ""
-                    )
-                ),
-            )
-            .await
-            .unwrap();
+            if !Path::new(&format!(
+                "node_modules{}",
+                &path.replace(
+                    format!("{}", &app.volt_dir.display())
+                        .replace(r"\", "/")
+                        .as_str(),
+                    ""
+                )
+            )).exists() {
+                hard_link(
+                    format!("{}", &path),
+                    format!(
+                        "node_modules{}",
+                        &path.replace(
+                            format!("{}", &app.volt_dir.display())
+                                .replace(r"\", "/")
+                                .as_str(),
+                            ""
+                        )
+                    ),
+                )
+                .await
+                .unwrap();
+            }
         }
     }
 }
