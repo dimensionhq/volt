@@ -23,7 +23,12 @@
 ## 💾 Space
 (Coming Soon!)
 
+# Sponsors
+![5CentsCDN](https://user-images.githubusercontent.com/63039748/124123053-ddb50400-da87-11eb-91c4-8c7c56918180.png)
+
 
 **Credits**:
+Volt wouldn't be here if not for our amazing sponsors and [contributors](https://github.com/voltpkg/volt/contributors)!
 
 Volt uses third party code from different libraries. A list of them can be found [here](https://github.com/voltpkg/volt/blob/master/CREDITS.md).
+
