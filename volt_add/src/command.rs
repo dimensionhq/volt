@@ -288,7 +288,7 @@ Options:
                             .insert(package.to_string(), response.clone().version);
                     }
 
-                    println!("pkg json file: {:?}", package_json_file);
+                    // println!("pkg json file: {:?}", package_json_file);
 
                     package_json_file.save();
 
@@ -427,6 +427,23 @@ Options:
 
                 // Change package.json
                 // package_file.add_dependency(dep.name, dep.version);
+                let mut package_json_file = package_file.lock().await;
+
+                if app_instance.flags.contains(&"-D".to_string())
+                    || app_instance.flags.contains(&"--dev".to_string())
+                {
+                    package_json_file
+                        .dev_dependencies
+                        .insert(package.to_string(), response.clone().version);
+                } else {
+                    package_json_file
+                        .dependencies
+                        .insert(package.to_string(), response.clone().version);
+                }
+
+                // println!("pkg json file: {:?}", package_json_file);
+
+                package_json_file.save();
 
                 // Write to lock file
                 if verbose {
