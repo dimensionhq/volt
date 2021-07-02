@@ -13,8 +13,6 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
 use std::env::temp_dir;
 use std::fs::remove_dir_all;
-use std::fs::File;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
 use tar::Archive;
@@ -496,6 +494,9 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
     }
 }
 
+#[cfg(unix)]
+pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
+}
 // Unix functions
 #[cfg(unix)]
 pub fn enable_ansi_support() -> Result<(), u32> {
