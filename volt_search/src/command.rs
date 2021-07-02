@@ -13,18 +13,16 @@
 
 //! Search for a package.
 
-use std::sync::Arc;
 use crate::search::SearchData;
+use std::sync::Arc;
 
-use super::search;
 use anyhow::Result;
 use async_trait::async_trait;
 use chttp::ResponseExt;
-use cli_table::{WithTitle, print_stdout};
+use cli_table::{print_stdout, WithTitle};
 use colored::Colorize;
 // use search::SearchResp;
-use serde_json::Value;
-use volt_core::{VERSION, command::Command};
+use volt_core::{command::Command, VERSION};
 use volt_utils::app::App;
 
 pub struct Search {}
@@ -68,32 +66,34 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        if app.args.len() >= 2{
+        if app.args.len() >= 2 {
             let package_name = &app.args[1];
-        
-            let response = chttp::get_async(format!("https://www.npmjs.com/search/suggestions?q={}", package_name))
-                .await
-                .unwrap_or_else(|_| {
-                    println!("{}: package does not exist", "error".bright_red(),);
-                    std::process::exit(1);
-                })
-                .text_async()
-                .await
-                .unwrap_or_else(|_| {
-                    println!("{}: package does not exist", "error".bright_red());
-                    std::process::exit(1);
-                });
-                let s: Vec<SearchData> = serde_json::from_str(&response)
-                    .unwrap_or_else(|e| {
-                        println!(
-                            "{}: failed to parse response from server {} {}",
-                            "error".bright_red(),
-                            e.to_string().bright_red(),
-                            response
-                        );
-                        
-                        std::process::exit(1);
-                    });
+
+            let response = chttp::get_async(format!(
+                "https://www.npmjs.com/search/suggestions?q={}",
+                package_name
+            ))
+            .await
+            .unwrap_or_else(|_| {
+                println!("{}: package does not exist", "error".bright_red(),);
+                std::process::exit(1);
+            })
+            .text_async()
+            .await
+            .unwrap_or_else(|_| {
+                println!("{}: package does not exist", "error".bright_red());
+                std::process::exit(1);
+            });
+            let s: Vec<SearchData> = serde_json::from_str(&response).unwrap_or_else(|e| {
+                println!(
+                    "{}: failed to parse response from server {} {}",
+                    "error".bright_red(),
+                    e.to_string().bright_red(),
+                    response
+                );
+
+                std::process::exit(1);
+            });
             // let u: SearchResp = s;
             // panic!("{:#?}", s);
             print_stdout(s.with_title()).unwrap();

@@ -1,8 +1,6 @@
 pub mod app;
 pub mod package;
 pub mod volt_api;
-use std::sync::Arc;
-
 use anyhow::Context;
 use chttp::{self, ResponseExt};
 use colored::Colorize;
@@ -13,8 +11,10 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
 use std::env::temp_dir;
 use std::fs::remove_dir_all;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
+use std::sync::Arc;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use tokio::fs::hard_link;
@@ -457,6 +457,8 @@ pub fn create_symlink(original: String, link: String) -> Result<()> {
 
 #[cfg(windows)]
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
+    use std::fs::File;
+
     // Create node_modules/scripts if it doesn't exist
     if !Path::new("node_modules/scripts").exists() {
         std::fs::create_dir_all("node_modules/scripts").unwrap();
@@ -488,8 +490,7 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
 }
 
 #[cfg(unix)]
-pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
-}
+pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {}
 // Unix functions
 #[cfg(unix)]
 pub fn enable_ansi_support() -> Result<(), u32> {
