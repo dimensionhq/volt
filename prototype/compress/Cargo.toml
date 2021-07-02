@@ -8,4 +8,6 @@ edition = "2018"
 
 [dependencies]
 jwalk = "0.6.0"
-diskus = "0.6.0"
+indicatif = "0.16.2"
+colored = "2.0.0"
+minifier = "0.0.41"
