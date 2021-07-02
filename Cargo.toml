@@ -46,6 +46,10 @@ members = [
   "rslint_config",
   "rslint_cli"
 ]
+exclude = [
+  "prototype/compress"
+]
+
 
 
 [profile.release]
