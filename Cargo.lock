@@ -261,6 +261,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "cli-table"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84ed8652883003051b558c7f650be7668e68f73c9ef6574ba0be9119a2fec9d3"
+dependencies = [
+ "cli-table-derive",
+ "csv",
+ "termcolor",
+ "unicode-width",
+]
+
+[[package]]
+name = "cli-table-derive"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efe942512e068e15991cbcef4e8182884555febbb21b5b4faf5dd5561850141a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "colored"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3118,6 +3141,7 @@ dependencies = [
  "volt_remove",
  "volt_run",
  "volt_scripts",
+ "volt_search",
  "volt_upgrade",
  "volt_utils",
  "volt_watch",
@@ -3423,14 +3447,13 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "async-trait",
+ "chttp",
+ "cli-table",
  "colored",
- "dialoguer",
- "indicatif",
- "regex",
- "volt_add",
+ "serde",
+ "serde_json",
  "volt_core",
  "volt_utils",
- "walkdir",
 ]
 
 [[package]]
