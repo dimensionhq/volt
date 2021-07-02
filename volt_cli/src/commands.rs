@@ -25,6 +25,7 @@ use volt_utils::app::App;
 pub enum AppCommand {
     Add,
     Cache,
+    Search,
     Clone,
     Compress,
     Create,
@@ -63,6 +64,7 @@ impl FromStr for AppCommand {
             "fix" => Ok(Self::Fix),
             "watch" => Ok(Self::Watch),
             "upgrade" => Ok(Self::Upgrade),
+            "search" => Ok(Self::Search),
             _ => Err(()),
         }
     }
@@ -99,6 +101,7 @@ impl AppCommand {
             Self::Fix => volt_fix::command::Fix::help(),
             Self::Watch => volt_watch::command::Watch::help(),
             Self::Upgrade => volt_upgrade::command::Upgrade::help(),
+            Self::Search => volt_search::command::Search::help(),
         }
     }
 
@@ -122,6 +125,7 @@ impl AppCommand {
             Self::Fix => volt_fix::command::Fix::exec(app).await,
             Self::Watch => volt_watch::command::Watch::exec(app).await,
             Self::Upgrade => volt_upgrade::command::Upgrade::exec(app).await,
+            Self::Search => volt_search::command::Search::exec(app).await
         }
     }
 }
