@@ -12,7 +12,6 @@
 */
 
 //! Search for a package.
-extern crate prettytable;
 use std::sync::Arc;
 use crate::search::SearchData;
 use anyhow::Result;
@@ -72,7 +71,7 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        if app.args.len() >= 2{
+        if app.args.len() >= 2 {
             let package_name = &app.args[1];
         
             let response = chttp::get_async(format!("https://www.npmjs.com/search/suggestions?q={}", package_name))
