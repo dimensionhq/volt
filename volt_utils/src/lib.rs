@@ -1,8 +1,6 @@
 pub mod app;
 pub mod package;
 pub mod volt_api;
-use std::sync::Arc;
-
 use anyhow::Context;
 use chttp::{self, ResponseExt};
 use colored::Colorize;
@@ -13,8 +11,10 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
 use std::env::temp_dir;
 use std::fs::remove_dir_all;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
+use std::sync::Arc;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use tokio::fs::hard_link;
@@ -127,7 +127,9 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
                         .as_str(),
                     ""
                 )
-            )).exists() {
+            ))
+            .exists()
+            {
                 hard_link(
                     format!("{}", &path),
                     format!(
@@ -238,16 +240,16 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
                 .unpack(&extract_directory)
                 .context("Unable to unpack dependency")?;
 
+            let mut idx = 0;
+            let name = package.clone().name;
+
+            let split = name.split('/').collect::<Vec<&str>>();
+
+            if package.clone().name.contains('@') && package.clone().name.contains('/') {
+                idx = 1;
+            }
+
             if cfg!(target_os = "windows") {
-                let mut idx = 0;
-                let name = package.clone().name;
-
-                let split = name.split('/').collect::<Vec<&str>>();
-
-                if package.clone().name.contains('@') && package.clone().name.contains('/') {
-                    idx = 1;
-                }
-
                 if Path::new(format!(r"{}\package", &extract_directory.to_str().unwrap()).as_str())
                     .exists()
                 {
@@ -257,26 +259,19 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
                     )
                     .context("failed to rename dependency folder")
                     .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
-                }
-            } else {
-                let mut idx = 0;
-                let name = package.clone().name;
-
-                let split = name.split('/').collect::<Vec<&str>>();
-
-                if package.clone().name.contains('@') && package.clone().name.contains('/') {
-                    idx = 1;
-                }
-
-                if Path::new(format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str())
-                    .exists()
-                {
-                    std::fs::rename(
-                        format!(r"{}/package", &extract_directory.to_str().unwrap()),
-                        format!(r"{}/{}", &extract_directory.to_str().unwrap(), split[idx]),
+                } else {
+                    if Path::new(
+                        format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str(),
                     )
-                    .context("failed to rename dependency folder")
-                    .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+                    .exists()
+                    {
+                        std::fs::rename(
+                            format!(r"{}/package", &extract_directory.to_str().unwrap()),
+                            format!(r"{}/{}", &extract_directory.to_str().unwrap(), split[idx]),
+                        )
+                        .context("failed to rename dependency folder")
+                        .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+                    }
                 }
             }
             if let Some(parent) = node_modules_dep_path.parent() {
@@ -287,7 +282,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
         }
     }
 
-    // extract now
     Ok(loc)
 }
 
@@ -457,13 +451,14 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 /// Create a junction / hard symlink to a directory
 #[cfg(windows)]
 pub fn create_symlink(original: String, link: String) -> Result<()> {
-    println!("symlinking from {} to {}", original, link);
     junction::create(original, link)?;
     Ok(())
 }
 
 #[cfg(windows)]
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
+    use std::fs::File;
+
     // Create node_modules/scripts if it doesn't exist
     if !Path::new("node_modules/scripts").exists() {
         std::fs::create_dir_all("node_modules/scripts").unwrap();
@@ -495,16 +490,12 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
 }
 
 #[cfg(unix)]
-pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
-}
+pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {}
 // Unix functions
 #[cfg(unix)]
 pub fn enable_ansi_support() -> Result<(), u32> {
     Ok(())
 }
-
-// #[cfg(unix)]
-// pub fn generate_script(_package: &VoltPackage) {}
 
 pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
