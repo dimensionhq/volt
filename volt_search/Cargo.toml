@@ -12,6 +12,6 @@ volt_core = { path = "../volt_core" }
 colored = "2.0.0"
 volt_utils = {path="../volt_utils"}
 chttp = "0.5"
-cli-table = "0.4"
+prettytable-rs = "^0.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
