@@ -12,20 +12,24 @@
 */
 
 //! Search for a package.
-
+extern crate prettytable;
 use std::sync::Arc;
 use crate::search::SearchData;
-
-use super::search;
 use anyhow::Result;
 use async_trait::async_trait;
 use chttp::ResponseExt;
-use cli_table::{WithTitle, print_stdout};
 use colored::Colorize;
+use prettytable::row;
 // use search::SearchResp;
-use serde_json::Value;
 use volt_core::{VERSION, command::Command};
 use volt_utils::app::App;
+use prettytable::{Table, cell};
+fn truncate(s: &str, max_chars: usize) -> String {
+    match s.char_indices().nth(max_chars) {
+        None => s.to_string(),
+        Some((idx, _)) => (s[..idx].to_owned() + "...").to_string(),
+    }
+}
 
 pub struct Search {}
 #[async_trait]
@@ -86,18 +90,28 @@ Options:
                 let s: Vec<SearchData> = serde_json::from_str(&response)
                     .unwrap_or_else(|e| {
                         println!(
-                            "{}: failed to parse response from server {} {}",
+                            "{}: failed to parse response from server {}",
                             "error".bright_red(),
                             e.to_string().bright_red(),
-                            response
                         );
                         
                         std::process::exit(1);
                     });
+            
+
+
+                    let mut table = Table::new();
+                    table.add_row(row!["Name".green().bold(), "Version".green().bold(), "Description".green().bold()]);
+                    for i in s.iter(){
+                        
+                        table.add_row(row![i.name, i.version, truncate(&i.description, 20)]);
+                    }
+                    table.printstd();
+                
             // let u: SearchResp = s;
             // panic!("{:#?}", s);
-            print_stdout(s.with_title()).unwrap();
         }
         Ok(())
     }
+
 }
