@@ -125,7 +125,7 @@ impl AppCommand {
             Self::Fix => volt_fix::command::Fix::exec(app).await,
             Self::Watch => volt_watch::command::Watch::exec(app).await,
             Self::Upgrade => volt_upgrade::command::Upgrade::exec(app).await,
-            Self::Search => volt_search::command::Search::exec(app).await
+            Self::Search => volt_search::command::Search::exec(app).await,
         }
     }
 }
