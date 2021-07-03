@@ -3546,6 +3546,8 @@ dependencies = [
  "anyhow",
  "async-trait",
  "colored",
+ "reqwest",
+ "serde_json",
  "volt_core",
  "volt_utils",
 ]

@@ -33,6 +33,7 @@ members = [
   "volt_tag",
   "volt_owner",
   "volt_team",
+  "volt_stat",
   "rslint_parser",
   "rslint_errors",
   "rslint_lexer",
