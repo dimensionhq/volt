@@ -51,17 +51,24 @@ impl Command for Script {
         if package_json.scripts.contains_key(command) {
             let script = package_json.scripts.get(command).unwrap();
             let mut split: Vec<&str> = script.split_ascii_whitespace().into_iter().collect();
-            let bin_cmd = format!("{}.cmd", split[0]);
+            let mut bin_cmd = format!("{}.cmd", split[0]);
 
             split[0] = bin_cmd.as_str();
 
             let exec = format!("node_modules\\scripts\\{}", split.join(" "));
 
-            std::process::Command::new("cmd.exe")
-                .arg("/C")
-                .arg(exec)
-                .spawn()
-                .unwrap();
+            if cfg!(target_os = "unix") {
+                bin_cmd = format!("{}.sh", split[0])
+            }
+            if cfg!(target_os = "windows ") {
+                std::process::Command::new("cmd.exe")
+                    .arg("/C")
+                    .arg(exec)
+                    .spawn()
+                    .unwrap();
+            } else {
+                std::process::Command::new("sh").arg(exec).spawn().unwrap();
+            }
         } else {
             println!(
                 "{}: {} is not a valid command.",
