@@ -21,8 +21,12 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use reqwest::get;
+use serde_json::Value;
+use std::fs;
 use volt_core::{command::Command, VERSION};
 use volt_utils::app::App;
+
 /// Struct implementation for the `stat` command.
 pub struct Stat;
 
@@ -53,7 +57,36 @@ Usage: {} {} {}"#,
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {        
+    async fn exec(app: Arc<App>) -> Result<()> {
+        let args = &app.args;
+        let package = &args[1];
+
+        println!("{}\n", package.bright_cyan().bold());
+
+        // Get downloads for the past week
+        let url = format!(
+            "https://api.npmjs.org/downloads/point/last-week/{}",
+            package
+        );
+
+        let response = get(url).await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            std::process::exit(1)
+        });
+
+        let file_contents = response.text().await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            std::process::exit(1)
+        });
+
+        let data: Value = serde_json::from_str(&file_contents)?;
+
+        let downloads = &data["downloads"];
+        println!(
+            "{} {}",
+            downloads.to_string().bright_green(),
+            "downloads in the past week!".bright_green()
+        );
         Ok(())
     }
 }
