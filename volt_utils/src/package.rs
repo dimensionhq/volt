@@ -42,6 +42,7 @@ pub struct Package {
     pub homepage: Option<String>,
     pub repository: Option<Repository>,
     pub author: Option<Author>,
+    pub keywords: Option<Vec<String>>,
     pub bugs: Option<Bugs>,
     pub license: Option<String>,
 }

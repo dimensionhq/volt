@@ -93,7 +93,10 @@ impl std::fmt::Debug for ReparseGuidDataBuffer {
                 "reparse_guid",
                 &format_args!(
                     "{}:{}:{}:{:?}",
-                    self.reparse_guid.Data1, self.reparse_guid.Data2, self.reparse_guid.Data3, self.reparse_guid.Data4,
+                    self.reparse_guid.Data1,
+                    self.reparse_guid.Data2,
+                    self.reparse_guid.Data3,
+                    self.reparse_guid.Data4,
                 ),
             )
             .field("generic", &self.generic.data_buffer)

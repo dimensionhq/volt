@@ -30,7 +30,7 @@ use volt_core::{
     model::lock_file::{DependencyID, LockFile},
     VERSION,
 };
-use volt_utils::{get_volt_response, app::App, package::PackageJson};
+use volt_utils::{app::App, get_volt_response, package::PackageJson};
 /// Struct implementation for the `Remove` command.
 pub struct Remove;
 
