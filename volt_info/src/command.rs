@@ -17,15 +17,35 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use volt_core::command::Command;
-use volt_utils::app::App;
+use colored::Colorize;
+use volt_core::{command::Command, model::http_manager::get_package, VERSION};
+use volt_utils::{
+    app::App,
+    package::{Package, PackageJson, Version},
+};
 
 pub struct Info {}
 
 #[async_trait]
 impl Command for Info {
     fn help() -> String {
-        todo!()
+        format!(
+            r#"volt {}
+    
+Shows the information of a package 
+
+Usage: {} {} {}
+
+Options: 
+
+  {} {} Output verbose messages on internal operations."#,
+            VERSION.bright_green().bold(),
+            "volt".bright_green().bold(),
+            "deploy".bright_purple(),
+            "[commit]".white(),
+            "--verbose".blue(),
+            "(-v)".yellow()
+        )
     }
 
     /// Execute the `volt info` command
@@ -41,7 +61,67 @@ impl Command for Info {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
+        let mut name = String::new();
+        if !std::env::current_dir()?.join("package.json").exists() {
+            println!(
+                "{}: {}\n",
+                "Warning:".yellow().bold(),
+                "Could not find a package.json file in the current directory"
+            );
+            name = volt_utils::get_basename(app.current_dir.to_str().unwrap()).to_string()
+        } else {
+            let package_file = PackageJson::from("package.json");
+            name = package_file.name;
+        }
+        let package: Package = get_package(&name).await?.unwrap();
+        if package.description == None {
+            println!("{}", "<No description provided>".yellow().bold());
+        } else {
+            println!("{}\n", package.description.unwrap());
+        }
+        if package.keywords == None {
+            println!("{}", "<No Keyword provided>".yellow().bold());
+        } else {
+            print!("{}: ", "Keywords".blue().bold());
+            for keyword in package.keywords.unwrap().iter() {
+                print!("{} ", keyword.green())
+            }
+            print!("\n")
+        }
+        print!("\n");
+        let latest_version = package.dist_tags.latest;
+        println!("Latest Version: v{}\n", latest_version.blue());
+        let latestpackage: &Version = &package.versions[&latest_version];
+        println!("dist:");
+        println!("  tarball: {}", latestpackage.dist.tarball.blue().bold());
+        println!("  shasum: {}", latestpackage.dist.shasum.blue().bold());
+        if latestpackage.dist.integrity != "" {
+            println!(
+                "  integrity: {}",
+                latestpackage.dist.integrity.blue().bold()
+            );
+        }
+        if latestpackage.dist.unpacked_size != 0 {
+            println!(
+                "  unpackedSize: {}{}",
+                (latestpackage.dist.unpacked_size / 1024)
+                    .to_string()
+                    .blue()
+                    .bold(),
+                "kb".blue().bold()
+            );
+        }
+
+        // println!("{:#?}", latestpackage);
+        println!("{}", "\nmaintainers:");
+        for maintainer in latestpackage.maintainers.iter() {
+            println!(
+                "  - {}<{}>",
+                maintainer.email,
+                maintainer.name.yellow().bold()
+            )
+        }
         Ok(())
     }
 }
