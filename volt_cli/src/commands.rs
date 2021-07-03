@@ -42,6 +42,7 @@ pub enum AppCommand {
     Script,
     Upgrade,
     Info,
+    Stat,
 }
 
 impl FromStr for AppCommand {
@@ -67,6 +68,7 @@ impl FromStr for AppCommand {
             "upgrade" => Ok(Self::Upgrade),
             "search" => Ok(Self::Search),
             "info" => Ok(Self::Info),
+            "stat" => Ok(Self::Stat),
             _ => Err(()),
         }
     }
@@ -105,6 +107,7 @@ impl AppCommand {
             Self::Upgrade => volt_upgrade::command::Upgrade::help(),
             Self::Search => volt_search::command::Search::help(),
             Self::Info => volt_info::command::Info::help(),
+            Self::Stat => volt_stat::command::Stat::help(),
         }
     }
 
@@ -130,6 +133,7 @@ impl AppCommand {
             Self::Upgrade => volt_upgrade::command::Upgrade::exec(app).await,
             Self::Search => volt_search::command::Search::exec(app).await,
             Self::Info => volt_info::command::Info::exec(app).await,
+            Self::Stat => volt_stat::command::Stat::exec(app).await,
         }
     }
 }
