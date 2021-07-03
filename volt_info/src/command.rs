@@ -13,10 +13,7 @@
 
 //! Display info about a package.
 
-use std::{
-    process,
-    sync::{Arc, Mutex},
-};
+use std::sync::Arc;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -97,26 +94,30 @@ Options:
         println!("Latest Version: v{}\n", latest_version.blue());
         let latestpackage: &Version = &package.versions[&latest_version];
         println!("dist:");
-        println!("\ttarball: {}", latestpackage.dist.tarball.blue().bold());
-        println!("\tshasum: {}", latestpackage.dist.shasum.blue().bold());
-        println!(
-            "\tintegrity: {}",
-            latestpackage.dist.integrity.blue().bold()
-        );
-        println!(
-            "\tunpackedSize: {}{}",
-            (latestpackage.dist.unpacked_size / 1024)
-                .to_string()
-                .blue()
-                .bold(),
-            "kb".blue().bold()
-        );
+        println!("  tarball: {}", latestpackage.dist.tarball.blue().bold());
+        println!("  shasum: {}", latestpackage.dist.shasum.blue().bold());
+        if latestpackage.dist.integrity != "" {
+            println!(
+                "  integrity: {}",
+                latestpackage.dist.integrity.blue().bold()
+            );
+        }
+        if latestpackage.dist.unpacked_size != 0 {
+            println!(
+                "  unpackedSize: {}{}",
+                (latestpackage.dist.unpacked_size / 1024)
+                    .to_string()
+                    .blue()
+                    .bold(),
+                "kb".blue().bold()
+            );
+        }
 
         // println!("{:#?}", latestpackage);
         println!("{}", "\nmaintainers:");
         for maintainer in latestpackage.maintainers.iter() {
             println!(
-                "\t{}<{}>",
+                "  - {}<{}>",
                 maintainer.email,
                 maintainer.name.yellow().bold()
             )
