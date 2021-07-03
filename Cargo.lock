@@ -3210,6 +3210,7 @@ dependencies = [
  "volt_run",
  "volt_scripts",
  "volt_search",
+ "volt_stat",
  "volt_upgrade",
  "volt_utils",
  "volt_watch",
@@ -3534,6 +3535,17 @@ dependencies = [
  "dialoguer",
  "regex",
  "volt_add",
+ "volt_core",
+ "volt_utils",
+]
+
+[[package]]
+name = "volt_stat"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "colored",
  "volt_core",
  "volt_utils",
 ]
