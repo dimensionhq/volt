@@ -22,8 +22,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use volt_core::{
-   classes::package_manager::PackageManager, command::Command, prompt::prompts::Select,
-    VERSION,
+    classes::package_manager::PackageManager, command::Command, prompt::prompts::Select, VERSION,
 };
 use volt_utils::app::App;
 /// Struct implementation for the `Migrate` command.

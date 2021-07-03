@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 // }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct SearchData{
+pub struct SearchData {
     pub name: String,
     pub version: String,
-    pub description: String
+    pub description: String,
 }
