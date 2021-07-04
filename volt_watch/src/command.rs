@@ -36,6 +36,15 @@ use syntect::util::{as_24_bit_terminal_escaped, LinesWithEndings};
 const PROGRESS_CHARS: &str = "=> ";
 pub struct Watch {}
 
+fn gen_pointer_string(start: u128, end: u128) -> String {
+    if !start == end {
+        let range = end - start;
+        return format!("{}", "^".repeat(range as usize));
+    } else {
+        return format!("{}^", (" ".repeat((start - 1) as usize)));
+    }
+}
+
 fn src_folder_exists() -> bool {
     for f in read_dir(".").unwrap() {
         let f = f.unwrap();
@@ -118,9 +127,7 @@ impl Command for Watch {
 
             let mut files_message_vec = files.clone();
             let mut modules: Vec<String> = vec![];
-            let ps = SyntaxSet::load_defaults_newlines();
-            let ts = ThemeSet::get_theme("dracula.tmTheme").unwrap();
-
+            println!("press c to copy error, type ctrl+g to look up on google, type ctrl+o to look up on stackoverflow");
             for f in files {
                 // display next 3 files to be analyzed
                 let file_names;
@@ -141,24 +148,40 @@ impl Command for Watch {
                 let errors = res.errors();
 
                 if errors != [] {
-                    progress_bar.abandon();
+                    progress_bar.finish_and_clear();
                     for err in errors {
-                        // let file_name = Path::new(&f).file_name().unwrap().to_str().unwrap();
-                        // let code = &err.code.as_ref().unwrap();
-                        // let severity = &err.severity;
-                        // let title = &err.title;
-                        // println!(" {} {}", "-->".bright_black(), &file_name);
-                        // println!("  {}", "|".bright_black());
-                        // println!("{}", "1 |".bright_black());
-    
+                        let ps = SyntaxSet::load_defaults_newlines();
+                        let ts = ThemeSet::get_theme("dracula.tmTheme").unwrap();
+                        let file_name = Path::new(&f).file_name().unwrap().to_str().unwrap();
+                        let code = &err.code.as_ref().unwrap().to_lowercase().replace("error", "");
+                        let _severity = &err.severity;
+                        let title = &err.title;
+                        
+                        let start = *&err.primary.as_ref().unwrap().span.range.start as u128;
+                        let end = *&err.primary.as_ref().unwrap().span.range.end as u128;
+                        let chars = &text.chars().collect::<Vec<char>>()[0..(start - 1) as usize];
+                        let line_number = chars.iter().filter(|&n| *n == '\n').count() + 1;
+                        let line_error = text.lines().collect::<Vec<&str>>()[line_number - 1];
+                        
+                        
                         let syntax = ps.find_syntax_by_extension("js").unwrap();
                         let mut h = HighlightLines::new(syntax, &ts);
-                        let s = "const express = require('express'";
-                        for line in LinesWithEndings::from(s) { // LinesWithEndings enables use of newlines mode
+                        let mut colorized_line = String::new();
+
+                        for line in LinesWithEndings::from(line_error) {
                             let ranges: Vec<(Style, &str)> = h.highlight(line, &ps);
-                            let escaped = as_24_bit_terminal_escaped(&ranges[..], false);
-                            println!("{}", escaped);
+                            colorized_line = as_24_bit_terminal_escaped(&ranges[..], false);
                         }
+
+                        println!("{} {}", &start, &end);
+
+                        println!(" {} {}:{}", "-->".bright_black(), &file_name, line_number);
+                        println!("  {}", "|".bright_black());
+                        println!("{}{} {}", line_number.to_string().bright_black(), " |".bright_black(), colorized_line);
+                        println!("  {}{}", "|".bright_black(), gen_pointer_string(start, end).bright_green());
+                        println!("  {}", "|".bright_black());
+                        termimad::print_text(format!("error({}): {}", code.bright_yellow(), title).as_str());
+
                         std::process::exit(0);
                     }
                 }

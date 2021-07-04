@@ -316,7 +316,7 @@ impl<'t> Parser<'t> {
         } else {
             let err = if self.cur() == SyntaxKind::EOF {
                 self.err_builder(&format!(
-                    "expected `{}` but instead the file ends",
+                    "expected `{}`, reached end of file instead",
                     kind.to_string()
                         .map(|x| x.to_string())
                         .unwrap_or_else(|| format!("{:?}", kind))

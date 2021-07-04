@@ -1,9 +1,8 @@
 [workspace]
 members = [
-  "junction",
+  "volt",
   "volt_add",
   "volt_cache",
-  "volt_cli",
   "volt_clone",
   "volt_compress",
   "volt_core",
@@ -45,11 +44,14 @@ members = [
   "rslint_regex",
   "rslint_text_edit",
   "rslint_config",
-  "rslint_cli"
+  "rslint_cli",
+  "junction",
 ]
+
 exclude = [
   "prototype/compress",
-  "prototype/syntax"
+  "prototype/syntax",
+  "platforms/cargo"
 ]
 
 
