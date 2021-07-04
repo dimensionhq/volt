@@ -48,7 +48,8 @@ members = [
   "rslint_cli"
 ]
 exclude = [
-  "prototype/compress"
+  "prototype/compress",
+  "prototype/syntax"
 ]
 
 
