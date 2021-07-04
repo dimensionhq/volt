@@ -16,6 +16,7 @@
 use regex::Regex;
 use rslint_parser::Syntax;
 use std::fs::{read_dir, read_to_string};
+use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -26,6 +27,11 @@ use indicatif::ProgressStyle;
 use volt_core::command::Command;
 use volt_utils::app::App;
 use walkdir::WalkDir;
+
+use syntect::easy::HighlightLines;
+use syntect::parsing::SyntaxSet;
+use syntect::highlighting::{ThemeSet, Style};
+use syntect::util::{as_24_bit_terminal_escaped, LinesWithEndings};
 
 const PROGRESS_CHARS: &str = "=> ";
 pub struct Watch {}
@@ -112,6 +118,8 @@ impl Command for Watch {
 
             let mut files_message_vec = files.clone();
             let mut modules: Vec<String> = vec![];
+            let ps = SyntaxSet::load_defaults_newlines();
+            let ts = ThemeSet::get_theme("dracula.tmTheme").unwrap();
 
             for f in files {
                 // display next 3 files to be analyzed
@@ -127,7 +135,7 @@ impl Command for Watch {
                     syntax = syntax.typescript();
                 }
 
-                let text = read_to_string(&f).unwrap().trim().to_string();
+                let text = read_to_string(&f).unwrap();
                 let res = rslint_parser::parse_with_syntax(&text.as_str(), 0, syntax);
 
                 let errors = res.errors();
@@ -135,8 +143,23 @@ impl Command for Watch {
                 if errors != [] {
                     progress_bar.abandon();
                     for err in errors {
-                        // println!("{:?}", err);
-                        // std::process::exit(1);
+                        // let file_name = Path::new(&f).file_name().unwrap().to_str().unwrap();
+                        // let code = &err.code.as_ref().unwrap();
+                        // let severity = &err.severity;
+                        // let title = &err.title;
+                        // println!(" {} {}", "-->".bright_black(), &file_name);
+                        // println!("  {}", "|".bright_black());
+                        // println!("{}", "1 |".bright_black());
+    
+                        let syntax = ps.find_syntax_by_extension("js").unwrap();
+                        let mut h = HighlightLines::new(syntax, &ts);
+                        let s = "const express = require('express'";
+                        for line in LinesWithEndings::from(s) { // LinesWithEndings enables use of newlines mode
+                            let ranges: Vec<(Style, &str)> = h.highlight(line, &ps);
+                            let escaped = as_24_bit_terminal_escaped(&ranges[..], false);
+                            println!("{}", escaped);
+                        }
+                        std::process::exit(0);
                     }
                 }
 
@@ -234,28 +257,3 @@ impl Command for Watch {
         Ok(())
     }
 }
-
-/*
-            let split = &f.split(r"\").collect::<Vec<&str>>();
-            let file_name = split.last().unwrap();
-            let file_names = get_top_elements(files);
-            progress_bar.set_message(file_name.to_string());
-
-            let mut contents = read_to_string(f).unwrap();
-            contents = contents.trim().to_string();
-            let open_curly_count = contents.matches("{").count();
-            let close_curly_count = contents.matches("}").count();
-            let open_square_count = contents.matches("[").count();
-            let close_square_count = contents.matches("]").count();
-            let open_paren_count = contents.matches("(").count();
-            let close_paren_count = contents.matches(")").count();
-
-            if open_curly_count != close_curly_count {
-                todo!()
-            } else if open_square_count != close_square_count {
-                todo!()
-            } else if open_paren_count != close_paren_count {
-                todo!()
-            }
-
-*/

@@ -23,7 +23,6 @@ use async_trait::async_trait;
 use colored::Colorize;
 use reqwest::get;
 use serde_json::Value;
-use std::fs;
 use volt_core::{command::Command, VERSION};
 use volt_utils::app::App;
 
