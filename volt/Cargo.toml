@@ -1,10 +1,10 @@
 [package]
-name = "volt_cli"
+name = "volt"
 version = "0.0.1"
 authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
 description = "A fast, memory-safe package manager for the web."
 edition = "2018"
-default-run = "volt_cli"
+default-run = "volt"
 
 [dependencies]
 anyhow = "1.0"
