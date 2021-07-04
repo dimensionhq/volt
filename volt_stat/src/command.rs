@@ -22,9 +22,10 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use reqwest::get;
-use serde_json::Value;
+use serde_json::{Value, from_str};
 use volt_core::{command::Command, VERSION};
 use volt_utils::app::App;
+use std::process;
 
 /// Struct implementation for the `stat` command.
 pub struct Stat;
@@ -58,6 +59,12 @@ Usage: {} {} {}"#,
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         let args = &app.args;
+
+        if args.len() <= 1 {
+            println!("{}", "Missing Package Name!".bright_red());
+            process::exit(1);
+        }
+
         let package = &args[1];
 
         println!("{}\n", package.bright_cyan().bold());
@@ -78,7 +85,7 @@ Usage: {} {} {}"#,
             std::process::exit(1)
         });
 
-        let data: Value = serde_json::from_str(&file_contents)?;
+        let data: Value = from_str(&file_contents)?;
 
         let downloads = &data["downloads"];
         println!(
@@ -86,6 +93,57 @@ Usage: {} {} {}"#,
             downloads.to_string().bright_green(),
             "downloads in the past week!".bright_green()
         );
+
+        // Get downloads for the past month
+        let url = format!(
+            "https://api.npmjs.org/downloads/point/last-month/{}",
+            package
+        );
+
+        let response = get(url).await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            std::process::exit(1)
+        });
+
+        let file_contents = response.text().await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            std::process::exit(1)
+        });
+
+        let data: Value = serde_json::from_str(&file_contents)?;
+
+        let downloads = &data["downloads"];
+        println!(
+            "{} {}",
+            downloads.to_string().bright_green(),
+            "downloads in the past month!".bright_green()
+        );
+
+        // Get downloads for the past year
+        let url = format!(
+            "https://api.npmjs.org/downloads/point/last-year/{}",
+            package
+        );
+
+        let response = get(url).await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            process::exit(1)
+        });
+
+        let file_contents = response.text().await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            process::exit(1)
+        });
+
+        let data: Value = serde_json::from_str(&file_contents)?;
+
+        let downloads = &data["downloads"];
+        println!(
+            "{} {}",
+            downloads.to_string().bright_green(),
+            "downloads in the past year!".bright_green()
+        );
+
         Ok(())
     }
 }
