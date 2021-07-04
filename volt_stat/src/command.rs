@@ -86,6 +86,57 @@ Usage: {} {} {}"#,
             downloads.to_string().bright_green(),
             "downloads in the past week!".bright_green()
         );
+
+        // Get downloads for the past month
+        let url = format!(
+            "https://api.npmjs.org/downloads/point/last-month/{}",
+            package
+        );
+
+        let response = get(url).await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            std::process::exit(1)
+        });
+
+        let file_contents = response.text().await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            std::process::exit(1)
+        });
+
+        let data: Value = serde_json::from_str(&file_contents)?;
+
+        let downloads = &data["downloads"];
+        println!(
+            "{} {}",
+            downloads.to_string().bright_green(),
+            "downloads in the past month!".bright_green()
+        );
+
+        // Get downloads for the past year
+        let url = format!(
+            "https://api.npmjs.org/downloads/point/last-year/{}",
+            package
+        );
+
+        let response = get(url).await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            std::process::exit(1)
+        });
+
+        let file_contents = response.text().await.unwrap_or_else(|e| {
+            eprintln!("{}", e.to_string());
+            std::process::exit(1)
+        });
+
+        let data: Value = serde_json::from_str(&file_contents)?;
+
+        let downloads = &data["downloads"];
+        println!(
+            "{} {}",
+            downloads.to_string().bright_green(),
+            "downloads in the past year!".bright_green()
+        );
+
         Ok(())
     }
 }
