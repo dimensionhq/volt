@@ -45,7 +45,6 @@ members = [
   "src/rslint/rslint_text_edit",
   "src/rslint/rslint_config",
   "src/rslint/rslint_cli",
-  "src/junction",
 ]
 
 exclude = [
