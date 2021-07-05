@@ -1,0 +1,36 @@
+[package]
+name = "volt"
+version = "0.0.1"
+authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+description = "A fast, memory-safe package manager for the web."
+edition = "2018"
+default-run = "volt"
+
+[dependencies]
+anyhow = "1.0"
+colored = "2.0"
+tokio = { version = "1.5", features = ["full"] }
+volt_core = { path = "../volt_core" }
+add = { path = "../add" }
+cache = { path="../cache" }
+clone = { path= "../clone" }
+compress = { path= "../compress" }
+create = { path= "../create" }
+deploy = { path= "../deploy" }
+help = { path= "../help" }
+init = { path = "../init" }
+install = { path= "../install" }
+info = { path = "../info" }
+list = { path= "../list" }
+migrate = { path= "../migrate" }
+remove = { path= "../remove" }
+scripts = { path= "../scripts" }
+utils = { path = "../utils" }
+run = { path = "../run" }
+fix = { path= "../fix" }
+watch = { path= "../watch" }
+upgrade = { path = "../upgrade" }
+search = { path = "../search" }
+stat = { path = "../stat" }
+[target.'cfg(windows)'.dependencies]
+junction = { path = "../junction" }

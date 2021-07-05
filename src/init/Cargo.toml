@@ -1,0 +1,14 @@
+[package]
+name = "init"
+version = "0.0.1"
+authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+description = "The init command for volt cli."
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+colored = "2.0"
+regex = "1"
+volt_core = { path = "../volt_core" }
+utils = { path="../utils" }
