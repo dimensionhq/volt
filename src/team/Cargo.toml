@@ -1,0 +1,18 @@
+[package]
+name = "team"
+version = "0.0.1"
+authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+description = "The team command for volt cli."
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+regex = "1"
+volt_core = { path = "../volt_core" }
+colored = "2.0.0"
+dialoguer = "0.8.0"
+indicatif = "0.16.2"
+utils = { path="../utils" }
+add = { path = "../add" }
+walkdir = "2.3.2"
