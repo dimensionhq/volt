@@ -1,5 +1,5 @@
 [package]
-name = "upgrade"
+name = "update"
 version = "0.0.1"
 authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
 description = "A fast, memory-safe package manager for the web."

@@ -23,17 +23,17 @@ use volt_core::command::Command;
 use volt_core::VERSION;
 use utils::app::App;
 
-/// Struct implementation for the `Upgrade` command.
-pub struct Upgrade;
+/// Struct implementation for the `Update` command.
+pub struct Update;
 
 #[async_trait]
-impl Command for Upgrade {
-    /// Display a help menu for the `volt upgrade` command.
+impl Command for Update {
+    /// Display a help menu for the `volt update` command.
     fn help() -> String {
         format!(
             r#"volt {}
     
-Upgrade project dependencies
+Update project dependencies
 
 Usage: {} {} {}
     
@@ -42,25 +42,25 @@ Options:
   {} {} Output verbose messages on internal operations."#,
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
-            "upgrade".bright_purple(),
+            "update".bright_purple(),
             "file-name".white(),
             "--verbose".blue(),
             "(-v)".yellow()
         )
     }
 
-    /// Execute the `volt upgrade` command
+    /// Execute the `volt update` command
     ///
-    /// Upgrade project dependencies
+    /// update project dependencies
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)
     /// * `packages` - List of packages to add (`Vec<String>`)
     /// * `flags` - List of flags passed in through the CLI (`Vec<String>`)
     /// ## Examples
     /// ```
-    /// // Upgrade project dependencies
+    /// // update project dependencies
     /// // .exec() is an async call so you need to await it
-    /// Upgrade.exec(app, vec![], vec!["--yes"]).await;
+    /// update.exec(app, vec![], vec!["--yes"]).await;
     /// ```
     /// ## Returns
     /// * `Result<()>`

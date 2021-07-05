@@ -19,7 +19,7 @@ members = [
   "src/scripts",
   "src/fix",
   "src/watch",
-  "src/upgrade",
+  "src/update",
   "src/set",
   "src/audit",
   "src/check",
