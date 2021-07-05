@@ -1462,15 +1462,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "junction"
-version = "0.0.1"
-dependencies = [
- "scopeguard",
- "tempfile",
- "winapi",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2595,7 +2586,6 @@ dependencies = [
  "help",
  "init",
  "install",
- "junction",
  "list",
  "migrate",
  "remove",
@@ -3648,7 +3638,6 @@ dependencies = [
  "help",
  "init",
  "install",
- "junction",
  "list",
  "migrate",
  "remove",
@@ -3711,7 +3700,6 @@ dependencies = [
  "flate2",
  "futures-util",
  "indicatif",
- "junction",
  "lazy_static",
  "reqwest",
  "scopeguard",
@@ -3762,7 +3750,6 @@ dependencies = [
  "info",
  "init",
  "install",
- "junction",
  "list",
  "migrate",
  "remove",
@@ -3789,7 +3776,6 @@ dependencies = [
  "dialoguer",
  "dirs 3.0.2",
  "flate2",
- "junction",
  "lazy_static",
  "scopeguard",
  "serde",

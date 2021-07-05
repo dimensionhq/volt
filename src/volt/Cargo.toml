@@ -32,5 +32,3 @@ watch = { path= "../watch" }
 upgrade = { path = "../upgrade" }
 search = { path = "../search" }
 stat = { path = "../stat" }
-[target.'cfg(windows)'.dependencies]
-junction = { path = "../junction" }

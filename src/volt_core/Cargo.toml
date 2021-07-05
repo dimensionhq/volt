@@ -28,4 +28,3 @@ utils = { path = "../utils" }
 winapi = { version = "0.3", features = ["errhandlingapi", "fileapi", "guiddef", "handleapi", "ioapiset", "processthreadsapi", "securitybaseapi", "winbase", "winioctl", "winnt"]}
 tempfile = "3.2"
 scopeguard = "1.1"
-junction = { path = "../junction" }
