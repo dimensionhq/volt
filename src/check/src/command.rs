@@ -23,33 +23,32 @@ use async_trait::async_trait;
 use colored::Colorize;
 use volt_core::{command::Command, VERSION};
 use utils::app::App;
-/// Struct implementation for the `Deploy` command.
-pub struct Fix;
+/// Struct implementation for the `Check` command.
+pub struct Check;
 
 #[async_trait]
-impl Command for Fix {
-    /// Display a help menu for the `volt deploy` command.
+impl Command for Check {
+    /// Display a help menu for the `volt check` command.
     fn help() -> String {
         format!(
             r#"volt {}
     
 Checks for errors.
 
-Usage: {} {} {}
+Usage: {} {}
 
 Options: 
 
   {} {} Output verbose messages on internal operations."#,
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
-            "deploy".bright_purple(),
-            "[commit]".white(),
+            "check".bright_purple(),           
             "--verbose".blue(),
             "(-v)".yellow()
         )
     }
 
-    /// Execute the `volt fix` command
+    /// Execute the `volt Check` command
     ///
     /// Removes a package from your direct dependencies.
     /// ## Examples
