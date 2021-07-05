@@ -67,7 +67,7 @@ Usage: {} {} {}"#,
 
         let package = &args[1];
 
-        println!("{}\n", package.bright_cyan().bold());
+        println!("{}{}\n", "Download stats for ".bright_cyan().bold(), package.bright_cyan().bold());
 
         // Get downloads for the past week
         let url = format!(

@@ -29,6 +29,6 @@ utils = { path = "../utils" }
 run = { path = "../run" }
 fix = { path= "../fix" }
 watch = { path= "../watch" }
-upgrade = { path = "../upgrade" }
+update = { path = "../update" }
 search = { path = "../search" }
 stat = { path = "../stat" }
