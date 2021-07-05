@@ -576,13 +576,6 @@ pub fn enable_ansi_support() -> Result<(), u32> {
     Ok(())
 }
 
-/// Create a junction / hard symlink to a directory
-#[cfg(windows)]
-pub fn create_symlink(original: String, link: String) -> Result<()> {
-    junction::create(original, link)?;
-    Ok(())
-}
-
 #[cfg(windows)]
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
     use std::fs::File;

@@ -26,5 +26,3 @@ remove = { path= "../remove" }
 utils = { path = "../utils" }
 scripts = { path= "../scripts" }
 
-[target.'cfg(windows)'.dependencies]
-junction = { path = "../junction" }

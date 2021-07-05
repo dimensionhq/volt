@@ -28,5 +28,3 @@ scripts = { path= "../scripts" }
 fix = { path= "../fix" }
 watch = { path= "../watch" }
 
-[target.'cfg(windows)'.dependencies]
-junction = { path = "../junction" }
