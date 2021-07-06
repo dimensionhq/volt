@@ -33,31 +33,31 @@ lazy_static! {
     pub static ref ERROR_TAG: String = "error".red().bold().to_string();
 }
 
-pub async fn create_dependency_links(
-    app: Arc<App>,
-    packages: std::collections::HashMap<String, VoltPackage>,
-) -> Result<()> {
-    let mut workers = FuturesUnordered::new();
+// pub async fn create_dependency_links(
+//     app: Arc<App>,
+//     packages: std::collections::HashMap<String, VoltPackage>,
+// ) -> Result<()> {
+//     let mut workers = FuturesUnordered::new();
 
-    for package in packages {
-        let package_instance = package.clone();
-        let app_instance = app.clone();
-        let volt_directory_location = format!("{}", app.volt_dir.display());
+//     for package in packages {
+//         let package_instance = package.clone();
+//         let app_instance = app.clone();
+//         let volt_directory_location = format!("{}", app.volt_dir.display());
 
-        workers.push(async move {
-            // Hardlink Files
-            hardlink_files(
-                app_instance,
-                format!(r"{}\{}", volt_directory_location, package_instance.1.name),
-            )
-            .await;
-        });
-    }
+//         workers.push(async move {
+//             // Hardlink Files
+//             hardlink_files(
+//                 app_instance,
+//                 format!(r"{}\{}", volt_directory_location, package_instance.1.name),
+//             )
+//             .await;
+//         });
+//     }
 
-    while workers.next().await.is_some() {}
+//     while workers.next().await.is_some() {}
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 // Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
@@ -667,6 +667,22 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
     download_tarball(&app, &package).await?;
 
     generate_script(&app, package);
+
+    let directory;
+
+    if cfg!(target_os = "windows") {
+        directory = format!(
+            r"{}\{}",
+            &app.volt_dir.display(),
+            package.name.replace("/", r"\")
+        );
+    } else {
+        directory = format!(r"{}/{}", &app.volt_dir.display(), package.name);
+    }
+
+    let path = Path::new(directory.as_str());
+
+    hardlink_files(app.to_owned(), path.display().to_string()).await;
 
     Ok(())
 }
