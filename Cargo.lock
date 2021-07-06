@@ -3701,6 +3701,7 @@ dependencies = [
  "futures-util",
  "indicatif",
  "lazy_static",
+ "rand 0.8.4",
  "reqwest",
  "scopeguard",
  "serde",
