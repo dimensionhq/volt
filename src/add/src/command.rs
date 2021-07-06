@@ -21,7 +21,8 @@ use std::{process::exit, sync::atomic::AtomicI16};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
-use futures::{stream::FuturesUnordered, StreamExt};
+use futures::stream;
+use futures::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use tokio::sync::{mpsc, Mutex};
 use utils::app::App;
@@ -235,7 +236,8 @@ Options:
                         .collect();
 
                     progress_bar.finish_and_clear();
-                    let mut workers = FuturesUnordered::new();
+
+                    let mut workers = Vec::with_capacity(dependencies.len());
 
                     for dep in dependencies.clone() {
                         let app_instance = app_instance.clone();
@@ -246,8 +248,11 @@ Options:
                         });
                     }
 
+                    let stream = stream::iter(workers);
+                    let mut buffers = stream.buffer_unordered(23);
+
                     if pballowed {
-                        let progress_bar = ProgressBar::new(workers.len() as u64);
+                        let progress_bar = ProgressBar::new(dependencies.len() as u64);
 
                         progress_bar.set_style(
                             ProgressStyle::default_bar()
@@ -258,13 +263,13 @@ Options:
                                 )),
                         );
 
-                        while workers.next().await.is_some() {
+                        while buffers.next().await.is_some() {
                             progress_bar.inc(1);
                         }
 
                         progress_bar.finish();
                     } else {
-                        while workers.next().await.is_some() {}
+                        while buffers.next().await.is_some() {}
                     }
 
                     let mut package_json_file = package_file.lock().await;
@@ -379,7 +384,7 @@ Options:
 
                 progress_bar.finish_and_clear();
 
-                let mut workers = FuturesUnordered::new();
+                let mut workers = Vec::with_capacity(dependencies.len());
 
                 for dep in dependencies.clone() {
                     let app_instance = app_instance.clone();
@@ -390,8 +395,11 @@ Options:
                     });
                 }
 
+                let stream = stream::iter(workers);
+                let mut buffers = stream.buffer_unordered(23);
+
                 if pballowed {
-                    let progress_bar = ProgressBar::new(workers.len() as u64);
+                    let progress_bar = ProgressBar::new(dependencies.len() as u64);
 
                     progress_bar.set_style(
                         ProgressStyle::default_bar()
@@ -402,15 +410,13 @@ Options:
                             )),
                     );
 
-                    while workers.next().await.is_some() {
+                    while buffers.next().await.is_some() {
                         progress_bar.inc(1);
                     }
 
                     progress_bar.finish();
                 } else {
-                    while workers.next().await.is_some() {
-                        progress_bar.inc(1);
-                    }
+                    while buffers.next().await.is_some() {}
                 }
 
                 // Change package.json

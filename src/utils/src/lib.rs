@@ -6,6 +6,7 @@ use chttp::{self, ResponseExt};
 use colored::Colorize;
 use flate2::read::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
+use rand::prelude::SliceRandom;
 use std::borrow::Cow;
 use std::env::temp_dir;
 use std::fs::remove_dir_all;
@@ -13,6 +14,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::Arc;
+use std::time::Instant;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use tokio::fs::hard_link;
@@ -288,9 +290,13 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
     if !Path::new(&loc).exists() {
         // Url to download tarball code files from
         let mut url = package_instance.tarball;
+        let registries = vec!["npmjs.com", "yarnpkg.com"];
+        let random_registry = registries.choose(&mut rand::thread_rng()).unwrap();
+
+        url = url.replace("npmjs.com", random_registry);
 
         if !secure {
-            url = url.replace("https", "http");
+            url = url.replace("https", "http")
         }
 
         // Get Tarball File
@@ -694,6 +700,13 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
     let path = Path::new(directory.as_str());
     // println!("{}", path.display());
     hardlink_files(app.to_owned(), path.display().to_string()).await;
+    // if start.elapsed().as_secs_f32() > 1.00 {
+    //     println!(
+    //         "It's taking unusally long to link: {} => {}",
+    //         package.name,
+    //         start.elapsed().as_secs_f32()
+    //     );
+    // }
 
     Ok(())
 }
