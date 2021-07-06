@@ -24,16 +24,16 @@ use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use tokio::sync::{mpsc, Mutex};
-use volt_core::{
-    command::Command,
-    model::lock_file::{DependencyID, DependencyLock, LockFile},
-    VERSION,
-};
 use utils::app::App;
 use utils::{
     self,
     package::{Package, PackageJson, Version},
     PROGRESS_CHARS,
+};
+use volt_core::{
+    command::Command,
+    model::lock_file::{DependencyID, DependencyLock, LockFile},
+    VERSION,
 };
 // use crate::commands::init;
 
@@ -267,25 +267,20 @@ Options:
                         while workers.next().await.is_some() {}
                     }
 
-                    utils::create_dependency_links(
-                        app_instance.clone(),
-                        current_version.packages.clone(),
-                    )
-                    .await
-                    .unwrap();
-
                     let mut package_json_file = package_file.lock().await;
 
                     if app_instance.flags.contains(&"-D".to_string())
                         || app_instance.flags.contains(&"--dev".to_string())
                     {
-                        package_json_file
-                            .dev_dependencies
-                            .insert(package.to_string(), response.clone().version);
+                        package_json_file.dev_dependencies.insert(
+                            package.to_string(),
+                            format!("^{}", response.clone().version),
+                        );
                     } else {
-                        package_json_file
-                            .dependencies
-                            .insert(package.to_string(), response.clone().version);
+                        package_json_file.dependencies.insert(
+                            package.to_string(),
+                            format!("^{}", response.clone().version),
+                        );
                     }
 
                     // println!("pkg json file: {:?}", package_json_file);
@@ -417,13 +412,6 @@ Options:
                         progress_bar.inc(1);
                     }
                 }
-
-                utils::create_dependency_links(
-                    app_instance.clone(),
-                    current_version.packages.clone(),
-                )
-                .await
-                .unwrap();
 
                 // Change package.json
                 // package_file.add_dependency(dep.name, dep.version);
