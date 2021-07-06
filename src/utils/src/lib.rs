@@ -5,8 +5,6 @@ use anyhow::Context;
 use chttp::{self, ResponseExt};
 use colored::Colorize;
 use flate2::read::GzDecoder;
-use futures_util::stream::FuturesUnordered;
-use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::borrow::Cow;
 use std::env::temp_dir;
@@ -74,10 +72,6 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
             std::process::exit(1);
         });
 
-    // serde_json::from_str::<VoltResponse>(
-    //     r#"{"version": "2.0.116", "2.0.116": {"packages": {"swot-node": {"name": "swot-node", "version": "2.0.116", "tarball": "https://registry.npmjs.org/swot-node/-/swot-node-2.0.116.tgz", "sha1": "44cde2592f55b87c64d955fa0812e87998a18916", "dependencies": ["academic-tld", "tldjs"], "peerDependencies": []}, "academic-tld": {"name": "academic-tld", "version": "1.0.5", "tarball": "https://registry.npmjs.org/academic-tld/-/academic-tld-1.0.5.tgz", "sha1": "38bb955a41a7ee64f9d1fbed653fcb6110c4723d", "dependencies": [], "peerDependencies": []}, "tldjs": {"name": "tldjs", "version": "2.3.1", "tarball": "https://registry.npmjs.org/tldjs/-/tldjs-2.3.1.tgz", "sha1": "cf09c3eb5d7403a9e214b7d65f3cf9651c0ab039", "dependencies": ["punycode"], "peerDependencies": []}, "punycode": {"name": "punycode", "version": "1.4.1", "tarball": "https://registry.npmjs.org/punycode/-/punycode-1.4.1.tgz", "sha1": "c0d5a63b2718800ad8e1eb0fa5269c84dd41845e", "dependencies": [], "peerDependencies": []}}}}
-    // "#,
-    // ).unwrap()
     serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|_| {
         println!(
             "{}: failed to parse response from server",
@@ -147,7 +141,7 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
                     ),
                 )
                 .await
-                .unwrap_or_else(|e| {
+                .unwrap_or_else(|_e| {
                     panic!(
                         "{:#?}",
                         (
@@ -254,9 +248,10 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
 }
 
 /// downloads tarball file from package
-pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String> {
+pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) -> Result<()> {
+    let package_instance = package.clone();
     // @types/eslint
-    if package.clone().name.starts_with('@') && package.clone().name.contains("/") {
+    if package_instance.name.starts_with('@') && package_instance.name.contains("/") {
         let package_directory_location;
 
         if cfg!(target_os = "windows") {
@@ -292,7 +287,11 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
     // if package is not already installed
     if !Path::new(&loc).exists() {
         // Url to download tarball code files from
-        let url = package.tarball.replace("https", "http");
+        let mut url = package_instance.tarball;
+
+        if !secure {
+            url = url.replace("https", "http");
+        }
 
         // Get Tarball File
         let res = reqwest::get(url).await.unwrap();
@@ -302,6 +301,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
 
         // Verify If Bytes == Sha1
         if package.sha1 == App::calc_hash(&bytes).unwrap() {
+            // println!("{} => {}", url.clone(), loc);
             // Create node_modules
             create_dir_all(&app.node_modules_dir).await?;
 
@@ -343,6 +343,8 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
             archive
                 .unpack(&extract_directory)
                 .context("Unable to unpack dependency")?;
+
+            drop(bytes);
 
             let mut idx = 0;
             let name = package.clone().name;
@@ -407,10 +409,12 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<String
                     create_dir_all(&parent).await?;
                 }
             }
+        } else {
+            return Err(anyhow::Error::msg("failed to verify checksum"));
         }
     }
 
-    Ok(loc)
+    Ok(())
 }
 
 pub async fn download_tarball_create(
@@ -664,7 +668,14 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
             .tick_strings(&["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"]),
     );
 
-    download_tarball(&app, &package).await?;
+    if download_tarball(&app, &package, false).await.is_err() {
+        download_tarball(&app, &package, true)
+            .await
+            .unwrap_or_else(|_| {
+                println!("Failed");
+                std::process::exit(1);
+            });
+    }
 
     generate_script(&app, package);
 
@@ -681,7 +692,7 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
     }
 
     let path = Path::new(directory.as_str());
-
+    // println!("{}", path.display());
     hardlink_files(app.to_owned(), path.display().to_string()).await;
 
     Ok(())
