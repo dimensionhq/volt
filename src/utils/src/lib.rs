@@ -7,10 +7,11 @@ use colored::Colorize;
 use flate2::read::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::SliceRandom;
+use rand::Rng;
 use std::borrow::Cow;
 use std::env::temp_dir;
 use std::fs::remove_dir_all;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::Arc;
@@ -293,17 +294,25 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
         let registries = vec!["npmjs.com", "yarnpkg.com"];
         let random_registry = registries.choose(&mut rand::thread_rng()).unwrap();
 
-        url = url.replace("npmjs.com", random_registry);
+        url = url.replace("npmjs.org", random_registry);
 
         if !secure {
             url = url.replace("https", "http")
         }
-
         // Get Tarball File
-        let res = reqwest::get(url).await.unwrap();
 
-        // Recieve Bytes
-        let bytes: bytes::Bytes = res.bytes().await.unwrap();
+        let body = chttp::get_async(url)
+            .await
+            .unwrap_or_else(|_| {
+                println!("{}: package does not exist", "error".bright_red(),);
+                std::process::exit(1);
+            })
+            // .text_async()
+            .into_body()
+            .bytes();
+        let res = body.into_iter().map(|v| v.unwrap()).collect::<Vec<u8>>();
+
+        let bytes: bytes::Bytes = bytes::Bytes::from(res);
 
         // Verify If Bytes == Sha1
         if package.sha1 == App::calc_hash(&bytes).unwrap() {
