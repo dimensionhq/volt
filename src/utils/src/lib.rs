@@ -255,21 +255,9 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
     let package_instance = package.clone();
     // @types/eslint
     if package_instance.name.starts_with('@') && package_instance.name.contains("/") {
-        let package_directory_location;
-
-        if cfg!(target_os = "windows") {
-            package_directory_location = format!(
-                r"{}\.volt\{}",
-                std::env::var("USERPROFILE").unwrap(),
-                &package.name.split("/").collect::<Vec<&str>>()[0]
-            );
-        } else {
-            package_directory_location = format!(
-                r"{}/.volt/{}",
-                std::env::var("HOME").unwrap(),
-                &package.name.split("/").collect::<Vec<&str>>()[0]
-            );
-        }
+        let package_directory_location = app
+            .volt_dir
+            .join(&package.name.split("/").collect::<Vec<&str>>()[0]);
 
         if !Path::new(&package_directory_location).exists() {
             create_dir_all(&package_directory_location).await.unwrap();
@@ -277,15 +265,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
     }
 
     // location of extracted package
-    let loc;
-
-    if cfg!(target_os = "windows") {
-        // C:\Users\username\.volt/@types/eslint
-        loc = format!(r"{}\{}", &app.volt_dir.to_str().unwrap(), &package.name);
-    } else {
-        // ~/.volt/@types/eslint
-        loc = format!(r"{}/{}", &app.volt_dir.to_str().unwrap(), &package.name);
-    }
+    let loc = app.volt_dir.join(&package.name);
 
     // if package is not already installed
     if !Path::new(&loc).exists() {
@@ -694,19 +674,10 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
 
     generate_script(&app, package);
 
-    let directory;
+    let directory = &app.volt_dir.join(package.name.clone());
 
-    if cfg!(target_os = "windows") {
-        directory = format!(
-            r"{}\{}",
-            &app.volt_dir.display(),
-            package.name.replace("/", r"\")
-        );
-    } else {
-        directory = format!(r"{}/{}", &app.volt_dir.display(), package.name);
-    }
+    let path = Path::new(directory.as_os_str());
 
-    let path = Path::new(directory.as_str());
     // println!("{}", path.display());
     hardlink_files(app.to_owned(), path.display().to_string()).await;
     // if start.elapsed().as_secs_f32() > 1.00 {
