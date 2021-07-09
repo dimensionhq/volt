@@ -124,11 +124,10 @@ Options:
             }
         }
 
-        // // Load the existing package.json file
-
+        // Load the existing package.json file
         let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
 
-        // // Handles for multi-threaded operations
+        // Handles for multi-threaded operations
         let mut handles = vec![];
 
         // Iterate through each package
@@ -139,146 +138,145 @@ Options:
 
             let package_dir = std::path::Path::new(&package_dir_loc);
             let package_file = package_file.clone();
-            if package_dir.exists() {
-                handles.push(tokio::spawn(async move {
-                    let verbose = app_instance.has_flag(&["-v", "--verbose"]);
-                    let pballowed = !app_instance.has_flag(&["--no-progress", "-np"]);
-                    let lcp = app_instance.lock_file_path.to_path_buf();
-                    let mut lock_file =
-                        LockFile::load(lcp.clone()).unwrap_or_else(|_| LockFile::new(lcp));
 
-                    // TODO: Change this to handle multiple packages
-                    let progress_bar: ProgressBar = ProgressBar::new(1);
+            handles.push(tokio::spawn(async move {
+                let verbose = app_instance.has_flag(&["-v", "--verbose"]);
+                let pballowed = !app_instance.has_flag(&["--no-progress", "-np"]);
+                let lcp = app_instance.lock_file_path.to_path_buf();
+                let mut lock_file =
+                    LockFile::load(lcp.clone()).unwrap_or_else(|_| LockFile::new(lcp));
+
+                // TODO: Change this to handle multiple packages
+                let progress_bar: ProgressBar = ProgressBar::new(1);
+
+                progress_bar.set_style(
+                    ProgressStyle::default_bar()
+                        .progress_chars(PROGRESS_CHARS)
+                        .template(&format!(
+                            "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                            "Fetching dependencies".bright_blue()
+                        )),
+                );
+
+                let response = utils::get_volt_response(package.to_string()).await;
+
+                let progress_bar = &progress_bar;
+
+                progress_bar.finish_with_message("[OK]".bright_green().to_string());
+                let current_version = &response.versions.get(&response.version).unwrap();
+                let length = current_version.packages.len();
+
+                if length == 1 {
+                    println!("Loaded 1 dependency");
+                } else {
+                    println!("Loaded {} dependencies.", length);
+                }
+
+                let dependencies: Vec<_> = current_version
+                    .packages
+                    .iter()
+                    .map(|(version, object)| {
+                        let mut lock_dependencies: HashMap<String, String> = HashMap::new();
+                        object
+                            .clone()
+                            .peer_dependencies
+                            .into_iter()
+                            .for_each(|dep| {
+                                if !utils::check_peer_dependency(&dep) {
+                                    progress_bar.println(format!(
+                                        "{}{} {} has unmet peer dependency {}",
+                                        " warn ".black().on_bright_yellow(),
+                                        ":",
+                                        object.name.bright_cyan(),
+                                        &dep.bright_yellow()
+                                    ));
+                                }
+                            });
+                        if object.dependencies.is_some() {
+                            for dep in object.clone().dependencies.unwrap().iter() {
+                                // TODO: Change this to real version
+                                lock_dependencies.insert(dep.to_string(), version.to_owned());
+                            }
+                        }
+
+                        lock_file.dependencies.insert(
+                            DependencyID(object.clone().name, version.to_owned()),
+                            DependencyLock {
+                                name: object.clone().name,
+                                version: object.clone().version,
+                                tarball: object.clone().tarball,
+                                sha1: object.clone().sha1,
+                                dependencies: lock_dependencies,
+                            },
+                        );
+
+                        object
+                    })
+                    .collect();
+
+                progress_bar.finish_and_clear();
+
+                let mut workers = Vec::with_capacity(dependencies.len());
+
+                for dep in dependencies.clone() {
+                    let app_instance = app_instance.clone();
+                    workers.push(async move {
+                        utils::install_extract_package(&app_instance, &dep)
+                            .await
+                            .unwrap();
+                    });
+                }
+                let stream = stream::iter(workers);
+                let mut buffers = stream.buffer_unordered(23);
+
+                if pballowed {
+                    let progress_bar = ProgressBar::new(dependencies.len() as u64);
 
                     progress_bar.set_style(
                         ProgressStyle::default_bar()
                             .progress_chars(PROGRESS_CHARS)
                             .template(&format!(
-                                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
-                                "Fetching dependencies".bright_blue()
+                                "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
+                                "Installing packages".bright_blue()
                             )),
                     );
 
-                    let response = utils::get_volt_response(package.to_string()).await;
-
-                    let progress_bar = &progress_bar;
-
-                    progress_bar.finish_with_message("[OK]".bright_green().to_string());
-                    let current_version = &response.versions.get(&response.version).unwrap();
-                    let length = current_version.packages.len();
-
-                    if length == 1 {
-                        println!("Loaded 1 dependency");
-                    } else {
-                        println!("Loaded {} dependencies.", length);
-                    }
-                    let dependencies: Vec<_> = current_version
-                        .packages
-                        .iter()
-                        .map(|(_, object)| {
-                            let mut lock_dependencies: HashMap<String, String> = HashMap::new();
-                            object
-                                .clone()
-                                .peer_dependencies
-                                .into_iter()
-                                .for_each(|dep| {
-                                    if !utils::check_peer_dependency(&dep) {
-                                        progress_bar.println(format!(
-                                            "{}{} {} has unmet peer dependency {}",
-                                            " warn ".black().on_bright_yellow(),
-                                            ":",
-                                            object.name.bright_cyan(),
-                                            &dep.bright_yellow()
-                                        ));
-                                    }
-                                });
-                            if object.dependencies.is_some() {
-                                for dep in object.clone().dependencies.unwrap().iter() {
-                                    // TODO: Change this to real version
-                                    lock_dependencies.insert(dep.to_string(), String::new());
-                                }
-                            }
-
-                            lock_file.dependencies.insert(
-                                DependencyID(object.clone().name, object.clone().version),
-                                DependencyLock {
-                                    name: object.clone().name,
-                                    version: object.clone().version,
-                                    tarball: object.clone().tarball,
-                                    sha1: object.clone().sha1,
-                                    dependencies: lock_dependencies,
-                                },
-                            );
-
-                            object
-                        })
-                        .collect();
-                    progress_bar.finish_and_clear();
-
-                    let mut workers = Vec::with_capacity(dependencies.len());
-
-                    for dep in dependencies.clone() {
-                        let app_instance = app_instance.clone();
-                        workers.push(async move {
-                            utils::install_extract_package(&app_instance, &dep)
-                                .await
-                                .unwrap();
-                        });
-                    }
-                    let stream = stream::iter(workers);
-                    let mut buffers = stream.buffer_unordered(23);
-
-                    if pballowed {
-                        let progress_bar = ProgressBar::new(dependencies.len() as u64);
-
-                        progress_bar.set_style(
-                            ProgressStyle::default_bar()
-                                .progress_chars(PROGRESS_CHARS)
-                                .template(&format!(
-                                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
-                                    "Installing packages".bright_blue()
-                                )),
-                        );
-
-                        while buffers.next().await.is_some() {
-                            progress_bar.inc(1);
-                        }
-
-                        progress_bar.finish();
-                    } else {
-                        while buffers.next().await.is_some() {}
-                    }
-                    let mut package_json_file = package_file.lock().await;
-
-                    if app_instance.flags.contains(&"-D".to_string())
-                        || app_instance.flags.contains(&"--dev".to_string())
-                    {
-                        package_json_file.dev_dependencies.insert(
-                            package.to_string(),
-                            format!("^{}", response.clone().version),
-                        );
-                    } else {
-                        package_json_file.dependencies.insert(
-                            package.to_string(),
-                            format!("^{}", response.clone().version),
-                        );
+                    while buffers.next().await.is_some() {
+                        progress_bar.inc(1);
                     }
 
-                    // println!("pkg json file: {:?}", package_json_file);
+                    progress_bar.finish();
+                } else {
+                    while buffers.next().await.is_some() {}
+                }
+                let mut package_json_file = package_file.lock().await;
 
-                    package_json_file.save();
+                if app_instance.flags.contains(&"-D".to_string())
+                    || app_instance.flags.contains(&"--dev".to_string())
+                {
+                    package_json_file.dev_dependencies.insert(
+                        package.to_string(),
+                        format!("^{}", response.clone().version),
+                    );
+                } else {
+                    package_json_file.dependencies.insert(
+                        package.to_string(),
+                        format!("^{}", response.clone().version),
+                    );
+                }
 
-                    // Write to lock file
-                    if verbose {
-                        println!("info {}", "Writing to lock file".yellow());
-                    }
+                package_json_file.save();
 
-                    lock_file
-                        .save()
-                        .context("Failed to save lock file")
-                        .unwrap();
-                }))
-            }
+                // Write to lock file
+                if verbose {
+                    println!("info {}", "Writing to lock file".yellow());
+                }
+
+                lock_file
+                    .save()
+                    .context("Failed to save lock file")
+                    .unwrap();
+            }))
         }
         if !handles.is_empty() {
             for handle in handles {
