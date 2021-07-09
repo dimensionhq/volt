@@ -136,7 +136,6 @@ Options:
 
             let package_dir_loc = &app.volt_dir;
 
-            let package_dir = std::path::Path::new(&package_dir_loc);
             let package_file = package_file.clone();
 
             handles.push(tokio::spawn(async move {
@@ -177,8 +176,9 @@ Options:
                     .iter()
                     .map(|(version, object)| {
                         let mut lock_dependencies: HashMap<String, String> = HashMap::new();
-                        object
-                            .clone()
+                        let object_instance = object.clone();
+
+                        object_instance
                             .peer_dependencies
                             .into_iter()
                             .for_each(|dep| {
@@ -192,8 +192,9 @@ Options:
                                     ));
                                 }
                             });
+
                         if object.dependencies.is_some() {
-                            for dep in object.clone().dependencies.unwrap().iter() {
+                            for dep in object_instance.dependencies.unwrap().iter() {
                                 // TODO: Change this to real version
                                 lock_dependencies.insert(dep.to_string(), version.to_owned());
                             }
@@ -202,10 +203,10 @@ Options:
                         lock_file.dependencies.insert(
                             DependencyID(object.clone().name, version.to_owned()),
                             DependencyLock {
-                                name: object.clone().name,
-                                version: object.clone().version,
-                                tarball: object.clone().tarball,
-                                sha1: object.clone().sha1,
+                                name: object_instance.name,
+                                version: object_instance.version,
+                                tarball: object_instance.tarball,
+                                sha1: object_instance.sha1,
                                 dependencies: lock_dependencies,
                             },
                         );
