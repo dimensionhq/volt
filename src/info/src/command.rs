@@ -62,6 +62,7 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
+        #[allow(unused_assignments)]
         let mut name = String::new();
         if !std::env::current_dir()?.join("package.json").exists() {
             println!(
