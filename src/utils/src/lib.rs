@@ -279,20 +279,11 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
         if !secure {
             url = url.replace("https", "http")
         }
+        
         // Get Tarball File
+        let res = reqwest::get(url).await.unwrap();
 
-        let body = chttp::get_async(url)
-            .await
-            .unwrap_or_else(|_| {
-                println!("{}: package does not exist", "error".bright_red(),);
-                std::process::exit(1);
-            })
-            // .text_async()
-            .into_body()
-            .bytes();
-        let res = body.into_iter().map(|v| v.unwrap()).collect::<Vec<u8>>();
-
-        let bytes: bytes::Bytes = bytes::Bytes::from(res);
+        let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
         // Verify If Bytes == Sha1
         if package.sha1 == App::calc_hash(&bytes).unwrap() {
