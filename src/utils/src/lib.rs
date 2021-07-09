@@ -7,15 +7,13 @@ use colored::Colorize;
 use flate2::read::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::SliceRandom;
-use rand::Rng;
 use std::borrow::Cow;
 use std::env::temp_dir;
 use std::fs::remove_dir_all;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::Arc;
-use std::time::Instant;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use tokio::fs::hard_link;
@@ -279,8 +277,8 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
         if !secure {
             url = url.replace("https", "http")
         }
-        // Get Tarball File
 
+        // Get Tarball File
         let res = reqwest::get(url).await.unwrap();
 
         let bytes: bytes::Bytes = res.bytes().await.unwrap();
