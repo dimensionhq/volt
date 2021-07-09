@@ -157,11 +157,11 @@ Options:
                 let progress_bar: ProgressBar = ProgressBar::new(1);
 
                 progress_bar.set_style(
-                    ProgressStyle::default_spinner()
+                    ProgressStyle::default_bar()
                         .progress_chars(PROGRESS_CHARS)
                         .template(&format!(
-                            "{} {{msg:.blue}}",
-                            "Resolving Dependencies".bright_blue()
+                            "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                            "Resolving dependencies".bright_blue()
                         )),
                 );
 
