@@ -15,7 +15,9 @@ limitations under the License.
 
 use std::collections::HashMap;
 use std::io::Write;
+use std::path::Path;
 use std::sync::Arc;
+use std::time::Instant;
 use std::{process::exit, sync::atomic::AtomicI16};
 
 use anyhow::{Context, Result};
@@ -96,7 +98,7 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         // // Display help menu if `volt add` is run.
-        if app.args.len() == 1 {
+        if &app.args.len() == &1 {
             println!("{}", Self::help());
             exit(1);
         }
@@ -111,7 +113,7 @@ Options:
         }
 
         // Check if package.json exists, otherwise, handle it.
-        if !app.current_dir.join("package.json").exists() {
+        if !&app.current_dir.join("package.json").exists() {
             println!("{} no package.json found.", "error".bright_red());
             print!("Do you want to initialize package.json (Y/N): ");
             std::io::stdout().flush().expect("Could not flush stdout");
@@ -133,31 +135,39 @@ Options:
         // Iterate through each package
         for package in packages.clone() {
             let app_instance = app.clone();
-
-            let package_dir_loc = &app.volt_dir;
-
             let package_file = package_file.clone();
 
             handles.push(tokio::spawn(async move {
                 let verbose = app_instance.has_flag(&["-v", "--verbose"]);
                 let pballowed = !app_instance.has_flag(&["--no-progress", "-np"]);
                 let lcp = app_instance.lock_file_path.to_path_buf();
+                let global_lockfile = Path::new(&format!(
+                    r"{}/volt-global.lock",
+                    app_instance.home_dir.display()
+                ))
+                .to_path_buf();
+
                 let mut lock_file =
                     LockFile::load(lcp.clone()).unwrap_or_else(|_| LockFile::new(lcp));
+
+                let mut global_lockfile = LockFile::load(global_lockfile.clone())
+                    .unwrap_or_else(|_| LockFile::new(global_lockfile));
 
                 // TODO: Change this to handle multiple packages
                 let progress_bar: ProgressBar = ProgressBar::new(1);
 
                 progress_bar.set_style(
-                    ProgressStyle::default_bar()
+                    ProgressStyle::default_spinner()
                         .progress_chars(PROGRESS_CHARS)
                         .template(&format!(
-                            "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
-                            "Fetching dependencies".bright_blue()
+                            "{} {{msg:.blue}}",
+                            "Resolving Dependencies".bright_blue()
                         )),
                 );
 
+                let start = Instant::now();
                 let response = utils::get_volt_response(package.to_string()).await;
+                let end = Instant::now();
 
                 let progress_bar = &progress_bar;
 
@@ -166,9 +176,18 @@ Options:
                 let length = current_version.packages.len();
 
                 if length == 1 {
-                    println!("Loaded 1 dependency");
+                    println!(
+                        "{}: resolved 1 dependency in {:.2}s.\n",
+                        "success".bright_green(),
+                        (end - start).as_secs_f32()
+                    );
                 } else {
-                    println!("Loaded {} dependencies.", length);
+                    println!(
+                        "{}: resolved {} dependencies in {:.2}s.\n",
+                        "success".bright_green(),
+                        length,
+                        (end - start).as_secs_f32()
+                    );
                 }
 
                 let dependencies: Vec<_> = current_version
@@ -207,6 +226,19 @@ Options:
                                 version: object_instance.version,
                                 tarball: object_instance.tarball,
                                 sha1: object_instance.sha1,
+                                dependencies: lock_dependencies.clone(),
+                            },
+                        );
+
+                        let second_instance = object.clone();
+
+                        global_lockfile.dependencies.insert(
+                            DependencyID(object.clone().name, version.to_owned()),
+                            DependencyLock {
+                                name: second_instance.name,
+                                version: second_instance.version,
+                                tarball: second_instance.tarball,
+                                sha1: second_instance.sha1,
                                 dependencies: lock_dependencies,
                             },
                         );
@@ -238,7 +270,7 @@ Options:
                             .progress_chars(PROGRESS_CHARS)
                             .template(&format!(
                                 "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
-                                "Installing packages".bright_blue()
+                                "Installing Packages".bright_blue()
                             )),
                     );
 
@@ -276,6 +308,11 @@ Options:
                 lock_file
                     .save()
                     .context("Failed to save lock file")
+                    .unwrap();
+
+                global_lockfile
+                    .save()
+                    .context("Failed to save global lockfile")
                     .unwrap();
             }))
         }
