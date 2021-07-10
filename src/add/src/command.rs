@@ -13,7 +13,6 @@ limitations under the License.
 
 //! Add a package to your dependencies for your project.
 
-use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
 use std::sync::Arc;
@@ -173,6 +172,7 @@ Options:
 
                 progress_bar.finish_with_message("[OK]".bright_green().to_string());
                 let current_version = &response.versions.get(&response.version).unwrap();
+
                 let length = current_version.packages.len();
 
                 if length == 1 {
@@ -193,8 +193,8 @@ Options:
                 let dependencies: Vec<_> = current_version
                     .packages
                     .iter()
-                    .map(|(version, object)| {
-                        let mut lock_dependencies: HashMap<String, String> = HashMap::new();
+                    .map(|(_name, object)| {
+                        let mut lock_dependencies: Vec<String> = vec![];
                         let object_instance = object.clone();
 
                         object_instance
@@ -215,12 +215,12 @@ Options:
                         if object.dependencies.is_some() {
                             for dep in object_instance.dependencies.unwrap().iter() {
                                 // TODO: Change this to real version
-                                lock_dependencies.insert(dep.to_string(), version.to_owned());
+                                lock_dependencies.push(dep.to_string());
                             }
                         }
 
                         lock_file.dependencies.insert(
-                            DependencyID(object.clone().name, version.to_owned()),
+                            DependencyID(object.clone().name, object.clone().version.to_owned()),
                             DependencyLock {
                                 name: object_instance.name,
                                 version: object_instance.version,
@@ -233,7 +233,7 @@ Options:
                         let second_instance = object.clone();
 
                         global_lockfile.dependencies.insert(
-                            DependencyID(object.clone().name, version.to_owned()),
+                            DependencyID(object.clone().name, object.clone().version.to_owned()),
                             DependencyLock {
                                 name: second_instance.name,
                                 version: second_instance.version,
