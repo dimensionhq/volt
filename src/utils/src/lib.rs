@@ -5,6 +5,8 @@ use anyhow::Context;
 use chttp::{self, ResponseExt};
 use colored::Colorize;
 use flate2::read::GzDecoder;
+use futures_util::stream::FuturesUnordered;
+use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::SliceRandom;
 use std::borrow::Cow;
@@ -81,6 +83,16 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
         std::process::exit(1);
     })
 }
+
+pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<VoltResponse> {
+    packages
+        .into_iter()
+        .map(get_volt_response)
+        .collect::<FuturesUnordered<_>>()
+        .collect::<Vec<VoltResponse>>()
+        .await
+}
+
 #[cfg(windows)]
 pub async fn hardlink_files(app: Arc<App>, src: String) {
     let mut src = src;
@@ -667,15 +679,7 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
 
     let path = Path::new(directory.as_os_str());
 
-    // println!("{}", path.display());
     hardlink_files(app.to_owned(), path.display().to_string()).await;
-    // if start.elapsed().as_secs_f32() > 1.00 {
-    //     println!(
-    //         "It's taking unusally long to link: {} => {}",
-    //         package.name,
-    //         start.elapsed().as_secs_f32()
-    //     );
-    // }
 
     Ok(())
 }
