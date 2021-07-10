@@ -9,3 +9,4 @@ volt_test/*
 pnpm_test/*
 prototype/compress/target
 /tests
+server/target

@@ -89,7 +89,7 @@ Options:
     /// * `packages` - List of packages to add (`Vec<String>`)
     /// * `flags` - List of flags passed in through the CLI (`Vec<String>`)
     /// ## Examples
-    /// ```
+    /// ```rust
     /// // Add react to your dependencies with logging level verbose
     /// // .exec() is an async call so you need to await it
     /// Add.exec(app, vec!["react"], vec!["--verbose"]).await;
@@ -118,7 +118,8 @@ Options:
             print!("Do you want to initialize package.json (Y/N): ");
             std::io::stdout().flush().expect("Could not flush stdout");
             let mut string: String = String::new();
-            let _ = std::io::stdin().read_line(&mut string);
+            #[allow(unused_must_use)]
+            std::io::stdin().read_line(&mut string).unwrap();
             if string.trim().to_lowercase() != "y" {
                 exit(0);
             } else {
@@ -150,7 +151,6 @@ Options:
         let mut global_lockfile = LockFile::load(global_lockfile.clone())
             .unwrap_or_else(|_| LockFile::new(global_lockfile));
 
-        // TODO: Change this to handle multiple packages
         let progress_bar: ProgressBar = ProgressBar::new(1);
 
         progress_bar.set_style(
