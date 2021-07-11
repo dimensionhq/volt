@@ -74,9 +74,10 @@ async fn main() {
     );
 
     let mut done: i16 = 0;
-    while let Some(_) = rx.recv().await {
+    while let Some(v) = rx.recv().await {
         done += 1;
         let total = add.total_dependencies.load(Ordering::Relaxed);
+        println!("done: {} vs total: {}", done, total);
         if done == total {
             break;
         }
