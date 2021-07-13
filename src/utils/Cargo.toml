@@ -17,21 +17,22 @@ dialoguer = "0.8"
 dirs = "3.0"
 flate2 = "1.0"
 lazy_static = "1.4"
-serde = { version="1.0", features=["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha-1 = "0.9"
 structopt = "0.3"
 tar = "0.4"
 thiserror = "1.0"
-tokio = { version="1.5.0", features=["full"] }
+tokio = { version = "1.5.0", features = ["full"] }
 indicatif = "0.16"
 bytes = "1.0.1"
 walkdir = "2.3.2"
 futures-util = "0.3.15"
 rand = "0.8.4"
+futures = "0.3.15"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version="0.3", features=[
+winapi = { version = "0.3", features = [
     "errhandlingapi",
     "fileapi",
     "guiddef",

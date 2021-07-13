@@ -185,7 +185,6 @@ impl PackageJson {
     pub fn from(path: &str) -> Self {
         if std::path::Path::new(path).exists() {
             let data = read_to_string(path).unwrap();
-            // println!("data: {}", data);
             serde_json::from_str(data.as_str()).unwrap()
         } else {
             println!("{} No package.json found", "error".bright_red());
