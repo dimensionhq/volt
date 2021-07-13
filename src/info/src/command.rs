@@ -18,11 +18,11 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use volt_core::{command::Command, model::http_manager::get_package, VERSION};
 use utils::{
     app::App,
-    package::{Package, PackageJson, Version},
+    package::{Package, Version},
 };
+use volt_core::{command::Command, model::http_manager::get_package, VERSION};
 
 pub struct Info {}
 
@@ -43,7 +43,7 @@ Options:
             "volt".bright_green().bold(),
             "deploy".bright_purple(),
             "[commit]".white(),
-            "--verbose".blue(),
+            "--verbose".bright_blue(),
             "(-v)".yellow()
         )
     }
@@ -64,18 +64,22 @@ Options:
     async fn exec(app: Arc<App>) -> Result<()> {
         #[allow(unused_assignments)]
         let mut name = String::new();
+
         if !std::env::current_dir()?.join("package.json").exists() {
             println!(
                 "{}: {}\n",
-                "Warning:".yellow().bold(),
+                "warning".yellow().bold(),
                 "Could not find a package.json file in the current directory"
             );
             name = utils::get_basename(app.current_dir.to_str().unwrap()).to_string()
-        } else {
-            let package_file = PackageJson::from("package.json");
-            name = package_file.name;
         }
+
+        if app.args.len() == 2 {
+            name = String::from(&app.args[1]);
+        }
+
         let package: Package = get_package(&name).await?.unwrap();
+
         if package.description == None {
             println!("{}", "<No description provided>".yellow().bold());
         } else {
@@ -84,7 +88,7 @@ Options:
         if package.keywords == None {
             println!("{}", "<No Keyword provided>".yellow().bold());
         } else {
-            print!("{}: ", "Keywords".blue().bold());
+            print!("{}: ", "keywords".bright_blue().bold());
             for keyword in package.keywords.unwrap().iter() {
                 print!("{} ", keyword.green())
             }
@@ -92,15 +96,22 @@ Options:
         }
         print!("\n");
         let latest_version = package.dist_tags.latest;
-        println!("Latest Version: v{}\n", latest_version.blue());
+        println!(
+            "Latest Version: {}\n",
+            format!("v{}", latest_version).bright_blue()
+        );
+
         let latestpackage: &Version = &package.versions[&latest_version];
-        println!("dist:");
-        println!("  tarball: {}", latestpackage.dist.tarball.blue().bold());
-        println!("  shasum: {}", latestpackage.dist.shasum.blue().bold());
+        println!("distribution:");
+        println!(
+            "  tarball: {}",
+            latestpackage.dist.tarball.bright_blue().underline()
+        );
+        println!("  shasum: {}", latestpackage.dist.shasum.bright_blue());
         if latestpackage.dist.integrity != "" {
             println!(
                 "  integrity: {}",
-                latestpackage.dist.integrity.blue().bold()
+                latestpackage.dist.integrity.bright_blue()
             );
         }
         if latestpackage.dist.unpacked_size != 0 {
@@ -108,17 +119,31 @@ Options:
                 "  unpackedSize: {}{}",
                 (latestpackage.dist.unpacked_size / 1024)
                     .to_string()
-                    .blue()
+                    .bright_blue()
                     .bold(),
-                "kb".blue().bold()
+                "kb".bright_blue().bold()
             );
+        }
+
+        let dependencies = latestpackage
+            .dependencies
+            .keys()
+            .cloned()
+            .collect::<Vec<String>>();
+
+        if dependencies.len() != 0 {
+            println!("\ndependencies:");
+            for dep in dependencies.iter() {
+                println!("{}{}", "  - ".bright_magenta(), dep);
+            }
         }
 
         // println!("{:#?}", latestpackage);
         println!("{}", "\nmaintainers:");
         for maintainer in latestpackage.maintainers.iter() {
             println!(
-                "  - {}<{}>",
+                "  {} {}<{}>",
+                "-".bright_magenta(),
                 maintainer.email,
                 maintainer.name.yellow().bold()
             )

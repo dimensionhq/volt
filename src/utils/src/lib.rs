@@ -11,7 +11,8 @@ use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::SliceRandom;
 use std::borrow::Cow;
 use std::env::temp_dir;
-use std::fs::remove_dir_all;
+use std::fs::read_to_string;
+use std::fs::{remove_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
@@ -62,18 +63,20 @@ lazy_static! {
 
 // Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
-    let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
-        .await
-        .unwrap_or_else(|_| {
-            println!("{}: package does not exist", "error".bright_red(),);
-            std::process::exit(1);
-        })
-        .text_async()
-        .await
-        .unwrap_or_else(|_| {
-            println!("{}: package does not exist", "error".bright_red());
-            std::process::exit(1);
-        });
+    // let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
+    //     .await
+    //     .unwrap_or_else(|_| {
+    //         println!("{}: package does not exist", "error".bright_red(),);
+    //         std::process::exit(1);
+    //     })
+    //     .text_async()
+    //     .await
+    //     .unwrap_or_else(|_| {
+    //         println!("{}: package does not exist", "error".bright_red());
+    //         std::process::exit(1);
+    //     });
+
+    let response = read_to_string("next.json").unwrap();
 
     serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|_| {
         println!(
@@ -682,4 +685,67 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
     hardlink_files(app.to_owned(), path.display().to_string()).await;
 
     Ok(())
+}
+
+// Credit: @ZaphodElevated - https://gist.github.com/ZaphodElevated/059faa3c0c605f03369d0f84b9c8cfb9
+async fn threaded_download(threads: u64, url: &String, output: &str) {
+    let mut handles = vec![];
+
+    // Create response from url
+    let res = reqwest::get(url.to_string()).await.unwrap();
+
+    // Get the total bytes of the response
+    let total_length = res.content_length().unwrap();
+
+    // Create buffer for bytes
+    let mut buffer: Vec<u8> = vec![];
+
+    for index in 0..threads {
+        let mut buf: Vec<u8> = vec![];
+        let url = url.clone();
+
+        let (start, end) = get_splits(index + 1, total_length, threads);
+
+        handles.push(tokio::spawn(async move {
+            let client = reqwest::Client::new();
+
+            let mut response = client
+                .get(url)
+                .header("range", format!("bytes={}-{}", start, end))
+                .send()
+                .await
+                .unwrap();
+
+            while let Some(chunk) = response.chunk().await.unwrap() {
+                let _ = std::io::copy(&mut &*chunk, &mut buf);
+            }
+
+            buf
+        }))
+    }
+
+    // Join all handles
+    let result = futures::future::join_all(handles).await;
+    for res in result {
+        buffer.append(&mut res.unwrap().clone());
+    }
+
+    let mut file = File::create(output.clone()).unwrap();
+
+    let _ = file.write_all(&buffer);
+}
+
+fn get_splits(i: u64, total_length: u64, threads: u64) -> (u64, u64) {
+    let mut start = ((total_length / threads) * (i - 1)) + 1;
+    let mut end = (total_length / threads) * i;
+
+    if i == 1 {
+        start = 0;
+    }
+
+    if i == threads {
+        end = total_length;
+    }
+
+    (start, end)
 }
