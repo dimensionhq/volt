@@ -65,41 +65,39 @@ Options:
         #[allow(unused_assignments)]
         let mut name = String::new();
 
-        if !std::env::current_dir()?.join("package.json").exists() {
+        if !std::env::current_dir()?.join("package.json").exists() || app.args.len() == 1 {
             println!(
                 "{}: {}\n",
                 "warning".yellow().bold(),
                 "Could not find a package.json file in the current directory"
             );
-            name = utils::get_basename(app.current_dir.to_str().unwrap()).to_string()
+            name = utils::get_basename(app.current_dir.to_str().unwrap()).to_string();
         }
 
-        if app.args.len() == 2 {
+        let mut field: String = String::new();
+
+        if app.args.len() > 2 {
+            field = String::from(&app.args[2]);
+            name = String::from(&app.args[1]);
+        } else if app.args.len() == 2 {
             name = String::from(&app.args[1]);
         }
 
         let package: Package = get_package(&name).await?.unwrap();
 
-        if package.description == None {
-            println!("{}", "<No description provided>".yellow().bold());
-        } else {
+        let latest_version = package.dist_tags.latest;
+        println!("{}\n", format!("v{}", latest_version).bright_blue());
+
+        if package.description != None {
             println!("{}\n", package.description.unwrap());
         }
-        if package.keywords == None {
-            println!("{}", "<No Keyword provided>".yellow().bold());
-        } else {
+        if package.keywords != None {
             print!("{}: ", "keywords".bright_blue().bold());
             for keyword in package.keywords.unwrap().iter() {
                 print!("{} ", keyword.green())
             }
-            print!("\n")
+            print!("\n\n")
         }
-        print!("\n");
-        let latest_version = package.dist_tags.latest;
-        println!(
-            "Latest Version: {}\n",
-            format!("v{}", latest_version).bright_blue()
-        );
 
         let latestpackage: &Version = &package.versions[&latest_version];
         println!("distribution:");
@@ -107,7 +105,7 @@ Options:
             "  tarball: {}",
             latestpackage.dist.tarball.bright_blue().underline()
         );
-        println!("  shasum: {}", latestpackage.dist.shasum.bright_blue());
+        println!("  shasum: {}", latestpackage.dist.shasum.bright_green());
         if latestpackage.dist.integrity != "" {
             println!(
                 "  integrity: {}",
@@ -138,7 +136,6 @@ Options:
             }
         }
 
-        // println!("{:#?}", latestpackage);
         println!("{}", "\nmaintainers:");
         for maintainer in latestpackage.maintainers.iter() {
             println!(
@@ -148,6 +145,7 @@ Options:
                 maintainer.name.yellow().bold()
             )
         }
+        print!("\n");
         Ok(())
     }
 }

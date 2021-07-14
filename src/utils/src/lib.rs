@@ -581,8 +581,6 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 
 #[cfg(windows)]
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
-    use std::fs::File;
-
     // Create node_modules/scripts if it doesn't exist
     if !Path::new("node_modules/scripts").exists() {
         std::fs::create_dir_all("node_modules/scripts").unwrap();
