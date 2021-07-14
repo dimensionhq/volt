@@ -46,20 +46,19 @@ async fn main() {
     let mut packages: Vec<String> = std::env::args().collect();
 
     packages.remove(0);
-
     let (tx, mut rx) = mpsc::channel(100);
     let add = Add::new(tx);
 
     {
-        let mut add = add.clone();
         let packages = packages.clone();
-        tokio::spawn(async move {
-            for package_name in packages {
+        for package_name in packages {
+            let mut add = add.clone();
+            tokio::spawn(async move {
                 add.get_dependency_tree(package_name.clone(), None)
                     .await
                     .ok();
-            }
-        });
+            });
+        }
     }
 
     let progress_bar = ProgressBar::new(1);
@@ -74,6 +73,7 @@ async fn main() {
     );
 
     let mut done: i16 = 0;
+
     while let Some(v) = rx.recv().await {
         done += 1;
         let total = add.total_dependencies.load(Ordering::Relaxed);

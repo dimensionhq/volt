@@ -1353,6 +1353,7 @@ dependencies = [
  "dialoguer",
  "indicatif",
  "regex",
+ "termimad 0.14.0",
  "utils",
  "volt_core",
  "walkdir",
@@ -3235,6 +3236,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "termimad"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72cc07d71829847df3a04fe2341f0598676b1faf377d0965c48cb922241273d7"
+dependencies = [
+ "crossbeam",
+ "crossterm",
+ "minimad",
+ "thiserror",
+ "unicode-width",
+]
+
+[[package]]
 name = "terminal_size"
 version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3910,7 +3924,7 @@ dependencies = [
  "rslint_parser",
  "serde_json",
  "syntect",
- "termimad",
+ "termimad 0.13.0",
  "utils",
  "volt_core",
  "walkdir",

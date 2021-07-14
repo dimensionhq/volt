@@ -23,7 +23,7 @@ pub struct Package {
     #[serde(rename = "_id")]
     pub id: String,
     #[serde(rename = "_rev")]
-    pub rev: String,
+    pub rev: Option<String>,
     pub name: String,
     #[serde(rename = "dist-tags")]
     pub dist_tags: DistTags,
