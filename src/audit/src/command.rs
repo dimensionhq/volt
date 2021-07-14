@@ -29,9 +29,9 @@ impl Command for Audit {
         todo!()
     }
 
-    /// Execute the `volt watch` command
+    /// Execute the `volt audit` command
     ///
-    /// Execute a watch command
+    /// Execute a audit command
     /// ## Arguments
     /// * `error` - Instance of the command (`Arc<App>`)
     /// ## Examples
