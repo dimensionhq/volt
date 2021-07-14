@@ -3740,6 +3740,7 @@ version = "0.0.1"
 dependencies = [
  "add",
  "anyhow",
+ "audit",
  "cache",
  "clone",
  "colored",

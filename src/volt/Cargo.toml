@@ -12,6 +12,7 @@ colored = "2.0"
 tokio = { version = "1.5", features = ["full"] }
 volt_core = { path = "../volt_core" }
 add = { path = "../add" }
+audit = { path = "../audit" }
 cache = { path="../cache" }
 clone = { path= "../clone" }
 compress = { path= "../compress" }

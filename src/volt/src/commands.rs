@@ -24,6 +24,7 @@ use utils::app::App;
 #[derive(Debug)]
 pub enum AppCommand {
     Add,
+    Audit,
     Cache,
     Search,
     Clone,
@@ -51,6 +52,7 @@ impl FromStr for AppCommand {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "add" => Ok(Self::Add),
+            "audit" => Ok(Self::Audit),
             "cache" => Ok(Self::Cache),
             "clone" => Ok(Self::Clone),
             "compress" => Ok(Self::Compress),
@@ -89,6 +91,7 @@ impl AppCommand {
     pub fn help(&self) -> String {
         match self {
             Self::Add => add::command::Add::help(),
+            Self::Audit => audit::command::Audit::help(),
             Self::Cache => cache::command::Cache::help(),
             Self::Compress => compress::command::Compress::help(),
             Self::Clone => clone::command::Clone::help(),
@@ -115,6 +118,7 @@ impl AppCommand {
         let app = Arc::new(app);
         match self {
             Self::Add => add::command::Add::exec(app).await,
+            Self::Audit => audit::command::Audit::exec(app).await,
             Self::Cache => cache::command::Cache::exec(app).await,
             Self::Clone => clone::command::Clone::exec(app).await,
             Self::Compress => compress::command::Compress::exec(app).await,
