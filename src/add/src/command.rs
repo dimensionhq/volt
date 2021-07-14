@@ -215,7 +215,7 @@ Options:
                         if !utils::check_peer_dependency(&dep) {
                             progress_bar.println(format!(
                                 "{}{} {} has unmet peer dependency {}",
-                                " warn ".black().on_bright_yellow(),
+                                " warn ".black().bright_yellow(),
                                 ":",
                                 object.name.bright_cyan(),
                                 &dep.bright_yellow()

@@ -31,7 +31,7 @@ pub struct Package {
     #[serde(rename = "_id")]
     pub id: String,
     #[serde(rename = "_rev")]
-    pub rev: String,
+    pub rev: Option<String>,
     pub name: String,
     #[serde(rename = "dist-tags")]
     pub dist_tags: DistTags,
@@ -45,6 +45,7 @@ pub struct Package {
     pub keywords: Option<Vec<String>>,
     pub bugs: Option<Bugs>,
     pub license: Option<String>,
+    pub readme: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -85,6 +86,7 @@ pub struct Version {
     pub npm_operational_internal: NpmOperationalInternal,
     #[serde(rename = "_hasShrinkwrap")]
     pub has_shrinkwrap: bool,
+    pub readme: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

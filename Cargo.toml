@@ -56,7 +56,7 @@ exclude = [
 
 
 [profile.release]
-opt-level = 3     # Optimize for speed.
+opt-level = "s"
 lto = "fat"
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = 'abort'
