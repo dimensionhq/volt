@@ -34,7 +34,7 @@ pub struct Package {
     pub rev: Option<String>,
     pub name: String,
     #[serde(rename = "dist-tags")]
-    pub dist_tags: DistTags,
+    pub dist_tags: HashMap<String, String>,
     pub versions: HashMap<String, Version>,
     pub time: HashMap<String, String>,
     pub maintainers: Vec<Maintainer>,
@@ -48,11 +48,17 @@ pub struct Package {
     pub readme: Option<String>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
-pub struct DistTags {
-    pub latest: String,
-}
+// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+// #[serde(default, rename_all = "camelCase")]
+// pub struct DistTags {
+//     pub latest: String,
+//     pub stable: Option<String>,
+//     pub canary: Option<String>,
+//     pub dev: Option<String>,
+//     pub beta: Option<String>,
+//     pub alpha: Option<String>,
+//     pub experimental: Option<String>,
+// }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]

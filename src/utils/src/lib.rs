@@ -421,7 +421,7 @@ pub async fn download_tarball_create(
     package: &Package,
     name: &str,
 ) -> Result<String, Error> {
-    let file_name = format!("{}-{}.tgz", name, package.dist_tags.latest);
+    let file_name = format!("{}-{}.tgz", name, package.dist_tags.get("latest").unwrap());
     let temp_dir = temp_dir();
 
     if !Path::new(&temp_dir.join("volt")).exists() {
@@ -461,7 +461,10 @@ pub async fn download_tarball_create(
     }
 
     let path_str = path.to_string_lossy().to_string();
-    let package_version = package.versions.get(&package.dist_tags.latest).unwrap();
+    let package_version = package
+        .versions
+        .get(package.dist_tags.get("latest").unwrap())
+        .unwrap();
 
     let bytes = std::fs::read(path_str.clone()).unwrap();
 
@@ -471,7 +474,7 @@ pub async fn download_tarball_create(
         if hash
             == package
                 .versions
-                .get(&package.dist_tags.latest)
+                .get(package.dist_tags.get("latest").unwrap())
                 .unwrap()
                 .dist
                 .shasum

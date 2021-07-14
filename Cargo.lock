@@ -1573,6 +1573,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "prettytable-rs",
  "regex",
  "utils",
  "volt_core",

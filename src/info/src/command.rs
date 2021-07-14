@@ -13,12 +13,13 @@
 
 //! Display info about a package.
 
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
 use async_trait::async_trait;
 use bat::PrettyPrinter;
 use colored::Colorize;
+use prettytable::{Cell, Row, Table};
 use utils::{
     app::App,
     package::{Package, Version},
@@ -87,7 +88,7 @@ Options:
         let package: Package = get_package(&name).await?.unwrap();
 
         if field == String::new() {
-            let latest_version = package.dist_tags.latest;
+            let latest_version = package.dist_tags.get("latest").unwrap();
             println!("{}\n", format!("v{}", latest_version).bright_blue());
 
             if package.description != None {
@@ -101,7 +102,7 @@ Options:
                 print!("\n\n")
             }
 
-            let latestpackage: &Version = &package.versions[&latest_version];
+            let latestpackage: &Version = &package.versions[latest_version];
             println!("distribution:");
             println!(
                 "  tarball: {}",
@@ -156,8 +157,8 @@ Options:
                     if package.readme.is_some() && package.readme.as_ref().unwrap().trim() != "" {
                         text = package.readme.unwrap();
                     } else {
-                        let latest_version = package.dist_tags.latest;
-                        let current_version = package.versions.get(&latest_version).unwrap();
+                        let latest_version = package.dist_tags.get("latest").unwrap();
+                        let current_version = package.versions.get(latest_version).unwrap();
 
                         if current_version.readme.is_some() {
                             text = current_version.readme.as_ref().unwrap().to_string();
@@ -172,6 +173,8 @@ Options:
                             .language("markdown")
                             .print()
                             .unwrap();
+
+                        print!("\n");
                     } else {
                         println!(
                             "{}: {}",
@@ -180,6 +183,131 @@ Options:
                         )
                     }
                 }
+                "version" => {
+                    let mut table = Table::new();
+
+                    let versions: HashMap<String, String> = package.dist_tags;
+
+                    let mut labels: Vec<Cell> = vec![Cell::new("")];
+
+                    let mut values: Vec<Cell> =
+                        vec![Cell::new(&name.bright_blue().to_string().as_str())];
+
+                    for (k, v) in versions.iter() {
+                        labels.push(Cell::new(k.as_str()));
+                        values.push(Cell::new(v.bright_magenta().to_string().as_str()));
+                    }
+
+                    table.add_row(Row::new(labels));
+
+                    table.add_row(Row::new(values));
+
+                    table.printstd();
+                    print!("\n");
+                }
+                "versions" => {
+                    let versions = package.versions.keys().cloned().collect::<Vec<String>>();
+
+                    println!("{}{}", "versions".bright_cyan(), ":".bright_magenta());
+                    for v in versions {
+                        println!("  {} {}", "-".bright_magenta(), v.bright_green());
+                    }
+                    print!("\n");
+                }
+                "description" => {
+                    let description = package.description;
+
+                    if description.is_some() {
+                        println!("{}", description.unwrap());
+                        print!("\n");
+                    } else {
+                        println!(
+                            "{}: {}",
+                            "error".bright_red(),
+                            format!("could not find a description for {}", name)
+                        );
+                    }
+                }
+                "name" => {
+                    println!("{}", name);
+                    print!("\n");
+                }
+                "maintainers" => {
+                    for maintainer in package.maintainers.iter() {
+                        println!(
+                            "{} <{}>",
+                            maintainer.name.bright_green().bold(),
+                            maintainer.email.bright_magenta(),
+                        )
+                    }
+                    print!("\n");
+                }
+                "time" => {
+                    let times = package.time;
+
+                    for (version, time) in times {
+                        println!(
+                            "{} {} {}",
+                            version.bright_cyan(),
+                            ":".bright_magenta(),
+                            time.bright_black()
+                        );
+                    }
+
+                    print!("\n");
+                }
+                "repository" => {
+                    let repo = package.repository;
+
+                    if repo.is_some() {
+                        let data = repo.unwrap();
+
+                        println!("{}: {}", "provider".bright_yellow(), data.type_field);
+                        println!("{}: {}", "url".bright_purple(), data.url.underline());
+                        print!("\n");
+                    } else {
+                        println!(
+                            "{}: {}",
+                            "error".bright_red(),
+                            format!("could not find a repository for {}", name)
+                        );
+                    }
+                }
+                "homepage" => {
+                    let page = package.homepage;
+
+                    if page.is_some() {
+                        let data = page.unwrap();
+
+                        println!("{}", data);
+                        print!("\n");
+                    } else {
+                        println!(
+                            "{}: {}",
+                            "error".bright_red(),
+                            format!("could not find a homepage for {}", name)
+                        );
+                    }
+                }
+                "keywords" => {
+                    let keywords = package.keywords;
+                    println!("{}{}", "keywords".bright_cyan(), ":".bright_cyan());
+                    if keywords.is_some() {
+                        let keywords = keywords.unwrap();
+
+                        for kw in keywords {
+                            println!("{} {}", "-".bright_magenta(), kw);
+                        }
+                        print!("\n");
+                    } else {
+                        println!(
+                            "{}: {}",
+                            "error".bright_red(),
+                            format!("could not find keywords for {}", name)
+                        );
+                    }
+                }
+                "users" => {}
                 &_ => {}
             }
         }
