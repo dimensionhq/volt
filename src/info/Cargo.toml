@@ -18,4 +18,4 @@ indicatif = "0.16.2"
 utils = { path = "../utils" }
 add = { path = "../add" }
 walkdir = "2.3.2"
-termimad = "0.14.0"
+bat = "0.18.2"
