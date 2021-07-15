@@ -18,9 +18,9 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use volt_core::command::Command;
 use utils::app::App;
 use utils::package::PackageJson;
+use volt_core::command::Command;
 pub struct Script {}
 
 #[async_trait]
@@ -49,25 +49,27 @@ impl Command for Script {
         let command: &str = args[0].as_str();
 
         if package_json.scripts.contains_key(command) {
-            let script = package_json.scripts.get(command).unwrap();
-            let mut split: Vec<&str> = script.split_ascii_whitespace().into_iter().collect();
-            let mut bin_cmd = format!("{}.cmd", split[0]);
+            // let script = package_json.scripts.get(command).unwrap();
+            // let mut split: Vec<&str> = script.split_ascii_whitespace().into_iter().collect();
+            // let mut bin_cmd = format!("{}.cmd", split[0]);
 
-            split[0] = bin_cmd.as_str();
+            // split[0] = bin_cmd.as_str();
 
-            let exec = format!("node_modules\\scripts\\{}", split.join(" "));
+            // let exec = format!("node_modules\\scripts\\{}", split.join(" "));
 
-            if cfg!(target_os = "unix") {
-                bin_cmd = format!("{}.sh", split[0])
-            }
+            // if cfg!(target_os = "unix") {
+            // #[allow(unused_assignments)]
+            // bin_cmd = format!("{}.sh", split[0]);
+            // }
+
             if cfg!(target_os = "windows ") {
-                std::process::Command::new("cmd.exe")
-                    .arg("/C")
-                    .arg(exec)
-                    .spawn()
-                    .unwrap();
+                // std::process::Command::new("cmd.exe")
+                //     .arg("/C")
+                //     .arg(exec)
+                //     .spawn()
+                //     .unwrap();
             } else {
-                std::process::Command::new("sh").arg(exec).spawn().unwrap();
+                // std::process::Command::new("sh").arg(exec).spawn().unwrap();
             }
         } else {
             println!(

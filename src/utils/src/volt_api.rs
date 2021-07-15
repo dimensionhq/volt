@@ -35,6 +35,7 @@ pub struct VoltPackage {
     pub version: String,
     pub tarball: String,
     pub sha1: String,
+    pub threaded: Option<bool>,
     #[serde(rename = "peerDependencies")]
     pub peer_dependencies: Vec<String>,
     pub dependencies: Option<Vec<String>>,

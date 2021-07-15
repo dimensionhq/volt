@@ -31,10 +31,10 @@ pub struct Package {
     #[serde(rename = "_id")]
     pub id: String,
     #[serde(rename = "_rev")]
-    pub rev: String,
+    pub rev: Option<String>,
     pub name: String,
     #[serde(rename = "dist-tags")]
-    pub dist_tags: DistTags,
+    pub dist_tags: HashMap<String, String>,
     pub versions: HashMap<String, Version>,
     pub time: HashMap<String, String>,
     pub maintainers: Vec<Maintainer>,
@@ -45,13 +45,20 @@ pub struct Package {
     pub keywords: Option<Vec<String>>,
     pub bugs: Option<Bugs>,
     pub license: Option<String>,
+    pub readme: Option<String>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
-pub struct DistTags {
-    pub latest: String,
-}
+// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+// #[serde(default, rename_all = "camelCase")]
+// pub struct DistTags {
+//     pub latest: String,
+//     pub stable: Option<String>,
+//     pub canary: Option<String>,
+//     pub dev: Option<String>,
+//     pub beta: Option<String>,
+//     pub alpha: Option<String>,
+//     pub experimental: Option<String>,
+// }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -85,6 +92,7 @@ pub struct Version {
     pub npm_operational_internal: NpmOperationalInternal,
     #[serde(rename = "_hasShrinkwrap")]
     pub has_shrinkwrap: bool,
+    pub readme: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -185,7 +193,6 @@ impl PackageJson {
     pub fn from(path: &str) -> Self {
         if std::path::Path::new(path).exists() {
             let data = read_to_string(path).unwrap();
-            // println!("data: {}", data);
             serde_json::from_str(data.as_str()).unwrap()
         } else {
             println!("{} No package.json found", "error".bright_red());

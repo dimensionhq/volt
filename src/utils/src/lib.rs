@@ -5,17 +5,18 @@ use anyhow::Context;
 use chttp::{self, ResponseExt};
 use colored::Colorize;
 use flate2::read::GzDecoder;
+use futures_util::stream::FuturesUnordered;
+use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::SliceRandom;
-use rand::Rng;
 use std::borrow::Cow;
 use std::env::temp_dir;
-use std::fs::remove_dir_all;
-use std::io::{Read, Write};
+use std::fs::read_to_string;
+use std::fs::{remove_dir_all, File};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::Arc;
-use std::time::Instant;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use tokio::fs::hard_link;
@@ -62,18 +63,20 @@ lazy_static! {
 
 // Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
-    let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
-        .await
-        .unwrap_or_else(|_| {
-            println!("{}: package does not exist", "error".bright_red(),);
-            std::process::exit(1);
-        })
-        .text_async()
-        .await
-        .unwrap_or_else(|_| {
-            println!("{}: package does not exist", "error".bright_red());
-            std::process::exit(1);
-        });
+    // let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
+    //     .await
+    //     .unwrap_or_else(|_| {
+    //         println!("{}: package does not exist", "error".bright_red(),);
+    //         std::process::exit(1);
+    //     })
+    //     .text_async()
+    //     .await
+    //     .unwrap_or_else(|_| {
+    //         println!("{}: package does not exist", "error".bright_red());
+    //         std::process::exit(1);
+    //     });
+
+    let response = read_to_string("next.json").unwrap();
 
     serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|_| {
         println!(
@@ -83,6 +86,16 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
         std::process::exit(1);
     })
 }
+
+pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<VoltResponse> {
+    packages
+        .into_iter()
+        .map(get_volt_response)
+        .collect::<FuturesUnordered<_>>()
+        .collect::<Vec<VoltResponse>>()
+        .await
+}
+
 #[cfg(windows)]
 pub async fn hardlink_files(app: Arc<App>, src: String) {
     let mut src = src;
@@ -255,21 +268,9 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
     let package_instance = package.clone();
     // @types/eslint
     if package_instance.name.starts_with('@') && package_instance.name.contains("/") {
-        let package_directory_location;
-
-        if cfg!(target_os = "windows") {
-            package_directory_location = format!(
-                r"{}\.volt\{}",
-                std::env::var("USERPROFILE").unwrap(),
-                &package.name.split("/").collect::<Vec<&str>>()[0]
-            );
-        } else {
-            package_directory_location = format!(
-                r"{}/.volt/{}",
-                std::env::var("HOME").unwrap(),
-                &package.name.split("/").collect::<Vec<&str>>()[0]
-            );
-        }
+        let package_directory_location = app
+            .volt_dir
+            .join(&package.name.split("/").collect::<Vec<&str>>()[0]);
 
         if !Path::new(&package_directory_location).exists() {
             create_dir_all(&package_directory_location).await.unwrap();
@@ -277,15 +278,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
     }
 
     // location of extracted package
-    let loc;
-
-    if cfg!(target_os = "windows") {
-        // C:\Users\username\.volt/@types/eslint
-        loc = format!(r"{}\{}", &app.volt_dir.to_str().unwrap(), &package.name);
-    } else {
-        // ~/.volt/@types/eslint
-        loc = format!(r"{}/{}", &app.volt_dir.to_str().unwrap(), &package.name);
-    }
+    let loc = app.volt_dir.join(&package.name);
 
     // if package is not already installed
     if !Path::new(&loc).exists() {
@@ -299,20 +292,11 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
         if !secure {
             url = url.replace("https", "http")
         }
+
         // Get Tarball File
+        let res = reqwest::get(url).await.unwrap();
 
-        let body = chttp::get_async(url)
-            .await
-            .unwrap_or_else(|_| {
-                println!("{}: package does not exist", "error".bright_red(),);
-                std::process::exit(1);
-            })
-            // .text_async()
-            .into_body()
-            .bytes();
-        let res = body.into_iter().map(|v| v.unwrap()).collect::<Vec<u8>>();
-
-        let bytes: bytes::Bytes = bytes::Bytes::from(res);
+        let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
         // Verify If Bytes == Sha1
         if package.sha1 == App::calc_hash(&bytes).unwrap() {
@@ -437,7 +421,7 @@ pub async fn download_tarball_create(
     package: &Package,
     name: &str,
 ) -> Result<String, Error> {
-    let file_name = format!("{}-{}.tgz", name, package.dist_tags.latest);
+    let file_name = format!("{}-{}.tgz", name, package.dist_tags.get("latest").unwrap());
     let temp_dir = temp_dir();
 
     if !Path::new(&temp_dir.join("volt")).exists() {
@@ -477,7 +461,10 @@ pub async fn download_tarball_create(
     }
 
     let path_str = path.to_string_lossy().to_string();
-    let package_version = package.versions.get(&package.dist_tags.latest).unwrap();
+    let package_version = package
+        .versions
+        .get(package.dist_tags.get("latest").unwrap())
+        .unwrap();
 
     let bytes = std::fs::read(path_str.clone()).unwrap();
 
@@ -487,7 +474,7 @@ pub async fn download_tarball_create(
         if hash
             == package
                 .versions
-                .get(&package.dist_tags.latest)
+                .get(package.dist_tags.get("latest").unwrap())
                 .unwrap()
                 .dist
                 .shasum
@@ -597,8 +584,6 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 
 #[cfg(windows)]
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
-    use std::fs::File;
-
     // Create node_modules/scripts if it doesn't exist
     if !Path::new("node_modules/scripts").exists() {
         std::fs::create_dir_all("node_modules/scripts").unwrap();
@@ -694,28 +679,74 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
 
     generate_script(&app, package);
 
-    let directory;
+    let directory = &app.volt_dir.join(package.name.clone());
 
-    if cfg!(target_os = "windows") {
-        directory = format!(
-            r"{}\{}",
-            &app.volt_dir.display(),
-            package.name.replace("/", r"\")
-        );
-    } else {
-        directory = format!(r"{}/{}", &app.volt_dir.display(), package.name);
-    }
+    let path = Path::new(directory.as_os_str());
 
-    let path = Path::new(directory.as_str());
-    // println!("{}", path.display());
     hardlink_files(app.to_owned(), path.display().to_string()).await;
-    // if start.elapsed().as_secs_f32() > 1.00 {
-    //     println!(
-    //         "It's taking unusally long to link: {} => {}",
-    //         package.name,
-    //         start.elapsed().as_secs_f32()
-    //     );
-    // }
 
     Ok(())
+}
+
+// Credit: @ZaphodElevated - https://gist.github.com/ZaphodElevated/059faa3c0c605f03369d0f84b9c8cfb9
+async fn threaded_download(threads: u64, url: &String, output: &str) {
+    let mut handles = vec![];
+
+    // Create response from url
+    let res = reqwest::get(url.to_string()).await.unwrap();
+
+    // Get the total bytes of the response
+    let total_length = res.content_length().unwrap();
+
+    // Create buffer for bytes
+    let mut buffer: Vec<u8> = vec![];
+
+    for index in 0..threads {
+        let mut buf: Vec<u8> = vec![];
+        let url = url.clone();
+
+        let (start, end) = get_splits(index + 1, total_length, threads);
+
+        handles.push(tokio::spawn(async move {
+            let client = reqwest::Client::new();
+
+            let mut response = client
+                .get(url)
+                .header("range", format!("bytes={}-{}", start, end))
+                .send()
+                .await
+                .unwrap();
+
+            while let Some(chunk) = response.chunk().await.unwrap() {
+                let _ = std::io::copy(&mut &*chunk, &mut buf);
+            }
+
+            buf
+        }))
+    }
+
+    // Join all handles
+    let result = futures::future::join_all(handles).await;
+    for res in result {
+        buffer.append(&mut res.unwrap().clone());
+    }
+
+    let mut file = File::create(output.clone()).unwrap();
+
+    let _ = file.write_all(&buffer);
+}
+
+fn get_splits(i: u64, total_length: u64, threads: u64) -> (u64, u64) {
+    let mut start = ((total_length / threads) * (i - 1)) + 1;
+    let mut end = (total_length / threads) * i;
+
+    if i == 1 {
+        start = 0;
+    }
+
+    if i == threads {
+        end = total_length;
+    }
+
+    (start, end)
 }

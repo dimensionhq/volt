@@ -21,9 +21,9 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use volt_core::{command::Command, VERSION};
 use utils::app::App;
 use utils::package::PackageJson;
+use volt_core::{command::Command, VERSION};
 /// Struct implementation for the `Install` command.
 pub struct Install;
 
@@ -71,13 +71,21 @@ Options:
     async fn exec(_app: Arc<App>) -> Result<()> {
         let package_file = PackageJson::from("package.json");
         let dependencies = package_file.dependencies;
+        let dev_dependencies = package_file.dev_dependencies;
 
         let mut app = App::initialize();
+
+        let mut dev_deps = dev_dependencies
+            .into_iter()
+            .map(|value| value.0)
+            .collect::<Vec<String>>();
 
         let mut deps = dependencies
             .into_iter()
             .map(|value| value.0)
             .collect::<Vec<String>>();
+
+        deps.append(&mut dev_deps);
 
         deps.push(String::from("add"));
 

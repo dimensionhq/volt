@@ -141,7 +141,7 @@ pub struct DependencyLock {
     pub version: String,
     pub tarball: String,
     pub sha1: String,
-    pub dependencies: HashMap<String, String>,
+    pub dependencies: Vec<String>,
 }
 
 impl LockFile {
@@ -159,12 +159,6 @@ impl LockFile {
         let lock_file = std::fs::read_to_string(path.clone()).map_err(LockFileError::IO)?;
         let data =
             serde_json::from_str::<HashMap<DependencyID, DependencyLock>>(&lock_file).unwrap();
-        // let lock_file = File::open(&path).map_err(LockFileError::IO)?;
-        // let reader = BufReader::new(lock_file);
-
-        // let dependencies: HashMap<DependencyID, DependencyLock> = serde_json::from_reader(reader).unwrap();
-
-        // println!("reader: {:?}", data);
 
         Ok(LockFile {
             path,

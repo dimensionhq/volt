@@ -47,7 +47,6 @@ pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError>
     let resp = chttp::get_async(format!("http://registry.yarnpkg.com/{}", name))
         .await
         .map_err(GetPackageError::Request)?;
-
     if !resp.status().is_success() {
         match resp.status() {
             StatusCode::NOT_FOUND => {}
@@ -59,7 +58,6 @@ pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError>
 
     let mut body = resp.into_body();
     let body_string = body.text().map_err(GetPackageError::IO)?;
-
     let package: Package = serde_json::from_str(&body_string).map_err(GetPackageError::Json)?;
 
     Ok(Some(package))
