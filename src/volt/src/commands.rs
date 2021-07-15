@@ -18,8 +18,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::Result;
-use volt_core::command::Command;
 use utils::app::App;
+use volt_core::command::Command;
 
 #[derive(Debug)]
 pub enum AppCommand {
@@ -43,6 +43,7 @@ pub enum AppCommand {
     Update,
     Info,
     Stat,
+    Audit,
 }
 
 impl FromStr for AppCommand {
@@ -69,6 +70,7 @@ impl FromStr for AppCommand {
             "search" => Ok(Self::Search),
             "info" => Ok(Self::Info),
             "stat" => Ok(Self::Stat),
+            "audit" => Ok(Self::Audit),
             _ => Err(()),
         }
     }
@@ -108,6 +110,7 @@ impl AppCommand {
             Self::Search => search::command::Search::help(),
             Self::Info => info::command::Info::help(),
             Self::Stat => stat::command::Stat::help(),
+            Self::Audit => audit::command::Audit::help(),
         }
     }
 
@@ -134,6 +137,7 @@ impl AppCommand {
             Self::Search => search::command::Search::exec(app).await,
             Self::Info => info::command::Info::exec(app).await,
             Self::Stat => stat::command::Stat::exec(app).await,
+            Self::Audit => audit::command::Audit::exec(app).await,
         }
     }
 }
