@@ -27,7 +27,7 @@ pub enum AppCommand {
     Audit,
     Cache,
     Clone,
-    Compress, 
+    Compress,
     Create,
     Deploy,
     Fix,
