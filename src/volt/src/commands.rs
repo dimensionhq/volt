@@ -44,7 +44,6 @@ pub enum AppCommand {
     Update,
     Info,
     Stat,
-    Audit,
 }
 
 impl FromStr for AppCommand {
