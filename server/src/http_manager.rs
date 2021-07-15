@@ -14,23 +14,9 @@
     limitations under the License.
 */
 
-use std::io;
+// Crate Level Imports
+use crate::package::Package;
 
-use chttp::http::StatusCode;
-use thiserror::Error;
-use utils::package::Package;
-
-#[derive(Error, Debug)]
-pub enum GetPackageError {
-    #[error("network request failed with registry")]
-    Request(chttp::Error),
-    #[error("unable to read network response")]
-    IO(io::Error),
-    #[error("unable to deserialize network response: {0:?}")]
-    Json(serde_json::Error),
-}
-
-#[allow(dead_code)]
 /// Request a package from `registry.yarnpkg.com`
 ///
 /// Uses `chttp` async implementation to send a `get` request for the package
@@ -43,22 +29,14 @@ pub enum GetPackageError {
 /// ```
 /// ## Returns
 /// * `Result<Option<Package>, GetPackageError>`
-pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError> {
+pub async fn get_package(name: &str) -> Package {
+    println!("Querying: {}", name);
     let resp = chttp::get_async(format!("http://registry.yarnpkg.com/{}", name))
         .await
-        .map_err(GetPackageError::Request)?;
-    if !resp.status().is_success() {
-        match resp.status() {
-            StatusCode::NOT_FOUND => {}
-            StatusCode::INTERNAL_SERVER_ERROR => {}
-            StatusCode::METHOD_NOT_ALLOWED => {}
-            _ => {}
-        }
-    }
+        .unwrap();
 
     let mut body = resp.into_body();
-    let body_string = body.text().map_err(GetPackageError::IO)?;
-    let package: Package = serde_json::from_str(&body_string).map_err(GetPackageError::Json)?;
+    let body_string = body.text_async().await.unwrap();
 
-    Ok(Some(package))
+    serde_json::from_str(&body_string).unwrap()
 }

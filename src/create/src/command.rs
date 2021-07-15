@@ -28,11 +28,11 @@ use colored::Colorize;
 use dialoguer::Input;
 use flate2::read::GzDecoder;
 use tar::Archive;
+use utils::app::App;
 use volt_core::{
     classes::create_templates::Template, command::Command, model::http_manager::get_package,
     prompt::prompts::Select, VERSION,
 };
-use utils::app::App;
 /// Struct implementation for the `Remove` command.
 pub struct Create;
 
@@ -148,7 +148,7 @@ Options:
         // For dev checking
         let v = package_json
             .versions
-            .get(&package_json.dist_tags.latest)
+            .get(package_json.dist_tags.get("latest").unwrap())
             .unwrap_or_else(|| {
                 println!(
                     "{} Could not find template version for {}",

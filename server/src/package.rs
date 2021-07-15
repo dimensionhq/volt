@@ -1,12 +1,9 @@
 /*
     Copyright 2021 Volt Contributors
-
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
-
         http://www.apache.org/licenses/LICENSE-2.0
-
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,15 +11,10 @@
     limitations under the License.
 */
 
-use anyhow::Context;
+// Std Imports
+use std::collections::HashMap;
 
-use colored::Colorize;
-use std::io::Write;
-use std::{
-    collections::HashMap,
-    fs::{read_to_string, File},
-};
-
+// Library Imports
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -34,7 +26,7 @@ pub struct Package {
     pub rev: Option<String>,
     pub name: String,
     #[serde(rename = "dist-tags")]
-    pub dist_tags: HashMap<String, String>,
+    pub dist_tags: DistTags,
     pub versions: HashMap<String, Version>,
     pub time: HashMap<String, String>,
     pub maintainers: Vec<Maintainer>,
@@ -42,23 +34,15 @@ pub struct Package {
     pub homepage: Option<String>,
     pub repository: Option<Repository>,
     pub author: Option<Author>,
-    pub keywords: Option<Vec<String>>,
     pub bugs: Option<Bugs>,
     pub license: Option<String>,
-    pub readme: Option<String>,
 }
 
-// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-// #[serde(default, rename_all = "camelCase")]
-// pub struct DistTags {
-//     pub latest: String,
-//     pub stable: Option<String>,
-//     pub canary: Option<String>,
-//     pub dev: Option<String>,
-//     pub beta: Option<String>,
-//     pub alpha: Option<String>,
-//     pub experimental: Option<String>,
-// }
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct DistTags {
+    pub latest: String,
+}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -66,10 +50,14 @@ pub struct Version {
     pub name: String,
     pub version: String,
     pub description: String,
+    // pub author: Author,
+    // pub license: String,
+    // pub repository: Repository,
     pub main: String,
     pub module: String,
     #[serde(rename = "jsnext:main")]
     pub jsnext_main: String,
+    // pub engines: Option<Engines>,
     pub scripts: Scripts,
     pub dependencies: HashMap<String, String>,
     pub peer_dependencies: HashMap<String, String>,
@@ -92,7 +80,6 @@ pub struct Version {
     pub npm_operational_internal: NpmOperationalInternal,
     #[serde(rename = "_hasShrinkwrap")]
     pub has_shrinkwrap: bool,
-    pub readme: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -170,48 +157,4 @@ pub struct Directories {}
 pub struct NpmOperationalInternal {
     pub host: String,
     pub tmp: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PackageJson {
-    pub name: String,
-    pub version: String,
-    pub main: Option<String>,
-    pub repository: Option<String>,
-    pub author: Option<String>,
-    pub license: Option<String>,
-    #[serde(default)]
-    pub dependencies: HashMap<String, String>,
-    #[serde(rename = "devDependencies")]
-    #[serde(default)]
-    pub dev_dependencies: HashMap<String, String>,
-    #[serde(default)]
-    pub scripts: HashMap<String, String>,
-}
-
-impl PackageJson {
-    pub fn from(path: &str) -> Self {
-        if std::path::Path::new(path).exists() {
-            let data = read_to_string(path).unwrap();
-            serde_json::from_str(data.as_str()).unwrap()
-        } else {
-            println!("{} No package.json found", "error".bright_red());
-            std::process::exit(1);
-        }
-    }
-
-    pub fn save(&self) {
-        let mut file = File::create("package.json").unwrap();
-        file.write(serde_json::to_string_pretty(self).unwrap().as_bytes())
-            .context("failed to write to package.json")
-            .unwrap();
-    }
-
-    // pub fn add_dependency(&mut self, name: String, version: String) {
-    //     self.dependencies.unwrap().insert(name, version);
-    // }
-
-    // pub fn remove_dependency(&mut self, name: String, version: String) {
-    //     self.dependencies.unwrap().remove(&name);
-    // }
 }
