@@ -71,7 +71,6 @@ impl FromStr for AppCommand {
             "search" => Ok(Self::Search),
             "info" => Ok(Self::Info),
             "stat" => Ok(Self::Stat),
-            "audit" => Ok(Self::Audit),
             _ => Err(()),
         }
     }
@@ -112,7 +111,6 @@ impl AppCommand {
             Self::Search => search::command::Search::help(),
             Self::Info => info::command::Info::help(),
             Self::Stat => stat::command::Stat::help(),
-            Self::Audit => audit::command::Audit::help(),
         }
     }
 
@@ -135,12 +133,11 @@ impl AppCommand {
             Self::Run => run::command::Run::exec(app).await,
             Self::Script => scripts::command::Script::exec(app).await,
             Self::Fix => fix::command::Fix::exec(app).await,
-            Self::Watch => watch::command::Watch::exec(app).await,
             Self::Update => update::command::Update::exec(app).await,
             Self::Search => search::command::Search::exec(app).await,
             Self::Info => info::command::Info::exec(app).await,
             Self::Stat => stat::command::Stat::exec(app).await,
-            Self::Audit => audit::command::Audit::exec(app).await,
+            Self::Watch => watch::command::Watch::exec(app).await,
         }
     }
 }
