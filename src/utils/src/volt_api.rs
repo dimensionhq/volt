@@ -39,7 +39,7 @@ pub struct VoltPackage {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "bn")]
     pub bin: Option<HashMap<String, String>>,
-    #[serde(rename = "integrity")]
+    #[serde(rename = "ig")]
     pub integrity: String,
     #[serde(rename = "pd")]
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -13,15 +13,14 @@
 
 //! Handle an unknown command (can be listed in scripts).
 
-use std::{collections::HashMap, sync::Arc, time::Instant};
+use std::{collections::HashMap, sync::Arc};
 
 // Library Imports
 use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 use async_trait::async_trait;
-use chttp::ResponseExt;
-use utils::{app::App, package::PackageJson, volt_api::VoltPackage};
+use utils::app::App;
 use volt_core::command::Command;
 
 pub struct Audit {}
