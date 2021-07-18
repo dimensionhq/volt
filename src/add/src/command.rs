@@ -182,7 +182,7 @@ Options:
         for res in responses.iter() {
             let current_version = res.versions.get(&res.version).unwrap();
 
-            dependencies.extend(current_version.clone().packages);
+            dependencies.extend(current_version.clone());
         }
 
         let length = dependencies.len();
@@ -208,20 +208,23 @@ Options:
                 let mut lock_dependencies: Vec<String> = vec![];
                 let object_instance = object.clone();
 
-                object_instance
-                    .peer_dependencies
-                    .into_iter()
-                    .for_each(|dep| {
-                        if !utils::check_peer_dependency(&dep) {
-                            progress_bar.println(format!(
-                                "{}{} {} has unmet peer dependency {}",
-                                " warn ".black().bright_yellow(),
-                                ":",
-                                object.name.bright_cyan(),
-                                &dep.bright_yellow()
-                            ));
-                        }
-                    });
+                if object_instance.peer_dependencies.is_some() {
+                    object_instance
+                        .peer_dependencies
+                        .unwrap()
+                        .into_iter()
+                        .for_each(|dep| {
+                            if !utils::check_peer_dependency(&dep) {
+                                progress_bar.println(format!(
+                                    "{}{} {} has unmet peer dependency {}",
+                                    " warn ".black().bright_yellow(),
+                                    ":",
+                                    object.name.bright_cyan(),
+                                    &dep.bright_yellow()
+                                ));
+                            }
+                        });
+                }
 
                 if object.dependencies.is_some() {
                     for dep in object_instance.dependencies.unwrap().iter() {

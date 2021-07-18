@@ -25,12 +25,12 @@ use tokio::{
     fs::{remove_dir_all, remove_file},
     sync::Mutex,
 };
+use utils::{app::App, get_volt_response, package::PackageJson};
 use volt_core::{
     command::Command,
     model::lock_file::{DependencyID, LockFile},
     VERSION,
 };
-use utils::{app::App, get_volt_response, package::PackageJson};
 /// Struct implementation for the `Remove` command.
 pub struct Remove;
 
@@ -128,7 +128,7 @@ Options:
 
             let current_version = response.versions.get(&response.version).unwrap();
 
-            for object in current_version.packages.values() {
+            for object in current_version.values() {
                 // This is doing nothing? I guess it's still WIP?...
                 // let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 

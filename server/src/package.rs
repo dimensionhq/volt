@@ -33,8 +33,8 @@ pub struct Package {
     pub description: Option<String>,
     pub homepage: Option<String>,
     pub repository: Option<Repository>,
-    pub author: Option<Author>,
-    pub bugs: Option<Bugs>,
+    // pub author: Option<Author>,
+    // pub bugs: Option<Bugs>,
     pub license: Option<String>,
 }
 
@@ -63,7 +63,7 @@ pub struct Version {
     pub peer_dependencies: HashMap<String, String>,
     pub dev_dependencies: HashMap<String, String>,
     pub git_head: String,
-    pub bugs: Bugs,
+    // pub bugs: Bugs,
     pub homepage: String,
     #[serde(rename = "_id")]
     pub id: String,
@@ -82,11 +82,11 @@ pub struct Version {
     pub has_shrinkwrap: bool,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
-pub struct Author {
-    pub name: String,
-}
+// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+// #[serde(default, rename_all = "camelCase")]
+// pub struct Author {
+//     pub name: String,
+// }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -116,11 +116,11 @@ pub struct Scripts {
     pub deploy: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
-pub struct Bugs {
-    pub url: String,
-}
+// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+// #[serde(default, rename_all = "camelCase")]
+// pub struct Bugs {
+//     pub url: String,
+// }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -158,4 +158,3 @@ pub struct NpmOperationalInternal {
     pub host: String,
     pub tmp: String,
 }
-

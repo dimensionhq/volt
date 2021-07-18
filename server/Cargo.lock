@@ -1037,6 +1037,7 @@ dependencies = [
  "chttp",
  "colored",
  "futures",
+ "indexmap",
  "indicatif",
  "reqwest",
  "semver",

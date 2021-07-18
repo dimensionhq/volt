@@ -18,27 +18,35 @@ use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct VoltResponse {
-    pub v: String,
+    pub version: String,
     #[serde(flatten)]
-    pub vs: HashMap<String, HashMap<String, VoltPackage>>,
+    pub versions: HashMap<String, HashMap<String, VoltPackage>>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct VoltPackage {
-    pub n: String,
-    pub v: String,
-    pub tb: String,
-    pub s1: String,
+    #[serde(rename = "n")]
+    pub name: String,
+    #[serde(rename = "v")]
+    pub version: String,
+    #[serde(rename = "tb")]
+    pub tarball: String,
+    #[serde(rename = "s1")]
+    pub sha1: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub td: Option<bool>,
+    #[serde(rename = "td")]
+    pub threaded: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub b: Option<HashMap<String, String>>,
-    pub ig: String,
-    #[serde(rename = "peerDependencies")]
+    #[serde(rename = "bn")]
+    pub bin: Option<HashMap<String, String>>,
+    #[serde(rename = "integrity")]
+    pub integrity: String,
+    #[serde(rename = "pd")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pd: Option<Vec<String>>,
+    pub peer_dependencies: Option<Vec<String>>,
+    #[serde(rename = "dp")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dp: Option<Vec<String>>,
+    pub dependencies: Option<Vec<String>>,
 }
 
 impl VoltResponse {

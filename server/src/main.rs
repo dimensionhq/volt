@@ -99,15 +99,15 @@ async fn main() {
     );
 
     let mut selected_version: VoltPackage = VoltPackage {
-        n: String::new(),
-        v: String::new(),
-        tb: String::new(),
-        s1: String::new(),
-        td: Some(false),
-        pd: None,
-        dp: None,
-        b: None,
-        ig: String::new(),
+        name: String::new(),
+        version: String::new(),
+        tarball: String::new(),
+        sha1: String::new(),
+        threaded: Some(false),
+        peer_dependencies: None,
+        dependencies: None,
+        bin: None,
+        integrity: String::new(),
     };
     let dependencies = Arc::try_unwrap(add.dependencies).unwrap().into_inner();
 
@@ -148,31 +148,31 @@ async fn main() {
         }
 
         let package = VoltPackage {
-            n: d0.name,
-            v: d1.version,
-            tb: d1.dist.tarball.replace("https", "http"),
-            s1: d1.dist.shasum,
-            td: None,
-            pd: pds,
-            dp: deps,
-            ig: integrity,
-            b: None,
+            name: d0.name,
+            version: d1.version,
+            tarball: d1.dist.tarball.replace("https", "http"),
+            sha1: d1.dist.shasum,
+            threaded: None,
+            peer_dependencies: pds,
+            dependencies: deps,
+            integrity,
+            bin: None,
         };
 
         if dependency.1.clone().name == input_packages.clone()[0].to_string() {
             selected_version = package.clone();
         }
 
-        version_data.insert(package.clone().v, package);
+        version_data.insert(package.clone().version, package);
     }
 
     let mut map = HashMap::new();
 
-    map.insert(selected_version.clone().v, version_data);
+    map.insert(selected_version.clone().version, version_data);
 
     let res: VoltResponse = VoltResponse {
-        v: selected_version.v,
-        vs: map,
+        version: selected_version.version,
+        versions: map,
     };
 
     res.save(format!("{}.json", input_packages.clone()[0].to_string()));

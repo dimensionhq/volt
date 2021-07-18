@@ -11,7 +11,6 @@ use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::SliceRandom;
 use std::borrow::Cow;
 use std::env::temp_dir;
-use std::fs::read_to_string;
 use std::fs::{remove_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -687,7 +686,7 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
     Ok(())
 }
 
-// Credit: @ZaphodElevated - https://gist.github.com/ZaphodElevated/059faa3c0c605f03369d0f84b9c8cfb9
+// Credit: https://gist.github.com/ZaphodElevated/059faa3c0c605f03369d0f84b9c8cfb9
 async fn threaded_download(threads: u64, url: &String, output: &str) {
     let mut handles = vec![];
 
