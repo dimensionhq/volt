@@ -18,33 +18,33 @@ use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct VoltResponse {
-    pub version: String,
+    pub v: String,
     #[serde(flatten)]
-    pub versions: HashMap<String, HashMap<String, VoltPackage>>,
+    pub vs: HashMap<String, HashMap<String, VoltPackage>>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct VoltPackage {
-    pub name: String,
-    pub version: String,
-    pub tarball: String,
-    pub sha1: String,
+    pub n: String,
+    pub v: String,
+    pub tb: String,
+    pub s1: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub threaded: Option<bool>,
+    pub td: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub bin: Option<HashMap<String, String>>,
-    pub integrity: String,
+    pub b: Option<HashMap<String, String>>,
+    pub ig: String,
     #[serde(rename = "peerDependencies")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub peer_dependencies: Option<Vec<String>>,
+    pub pd: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dependencies: Option<Vec<String>>,
+    pub dp: Option<Vec<String>>,
 }
 
 impl VoltResponse {
     pub fn save(self, path: String) {
         let mut file = std::fs::File::create(path).unwrap();
-        file.write_all(serde_json::to_string_pretty(&self).unwrap().as_bytes())
+        file.write_all(serde_json::to_string(&self).unwrap().as_bytes())
             .unwrap();
     }
 }
