@@ -155,22 +155,8 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
                     ),
                 )
                 .await
-                .unwrap_or_else(|_e| {
-                    panic!(
-                        "{:#?}",
-                        (
-                            format!("{}", &path),
-                            format!(
-                                "node_modules{}",
-                                &path.replace(
-                                    format!("{}", &app.volt_dir.display())
-                                        .replace(r"\", "/")
-                                        .as_str(),
-                                    ""
-                                )
-                            ),
-                        )
-                    )
+                .unwrap_or_else(|_| {
+                    0;
                 });
             }
         }
@@ -264,6 +250,7 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
 /// downloads tarball file from package
 pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) -> Result<()> {
     let package_instance = package.clone();
+    println!("{}", package.name);
     // @types/eslint
     if package_instance.name.starts_with('@') && package_instance.name.contains("/") {
         let package_directory_location = app
