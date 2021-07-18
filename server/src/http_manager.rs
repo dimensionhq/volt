@@ -30,7 +30,6 @@ use crate::package::Package;
 /// ## Returns
 /// * `Result<Option<Package>, GetPackageError>`
 pub async fn get_package(name: &str) -> Package {
-    println!("Querying: {}", name);
     let resp = chttp::get_async(format!("http://registry.yarnpkg.com/{}", name))
         .await
         .unwrap();
