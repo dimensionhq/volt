@@ -97,10 +97,13 @@ pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<VoltResponse>
 #[cfg(windows)]
 pub async fn hardlink_files(app: Arc<App>, src: String) {
     let mut src = src;
+
     let volt_directory = format!("{}", app.volt_dir.display());
 
     if !cfg!(target_os = "windows") {
         src = src.replace(r"\", "/");
+    } else {
+        src = src.replace(r"/", r"\");
     }
 
     for entry in WalkDir::new(src) {
@@ -250,7 +253,7 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
 /// downloads tarball file from package
 pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) -> Result<()> {
     let package_instance = package.clone();
-    println!("{}", package.name);
+
     // @types/eslint
     if package_instance.name.starts_with('@') && package_instance.name.contains("/") {
         let package_directory_location = app
