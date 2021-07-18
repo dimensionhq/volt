@@ -28,14 +28,13 @@ pub struct Package {
     #[serde(rename = "dist-tags")]
     pub dist_tags: DistTags,
     pub versions: HashMap<String, Version>,
-    pub time: HashMap<String, String>,
-    pub maintainers: Vec<Maintainer>,
-    pub description: Option<String>,
-    pub homepage: Option<String>,
-    pub repository: Option<Repository>,
+    // pub time: HashMap<String, String>,
+    // pub maintainers: Vec<Maintainer>,
+    // pub description: Option<String>,
+    // pub homepage: Option<String>,
     // pub author: Option<Author>,
     // pub bugs: Option<Bugs>,
-    pub license: Option<String>,
+    // pub license: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -53,18 +52,18 @@ pub struct Version {
     // pub author: Author,
     // pub license: String,
     // pub repository: Repository,
-    pub main: String,
-    pub module: String,
-    #[serde(rename = "jsnext:main")]
-    pub jsnext_main: String,
+    // pub main: String,
+    // pub module: String,
+    // #[serde(rename = "jsnext:main")]
+    // pub jsnext_main: String,
     // pub engines: Option<Engines>,
-    pub scripts: Scripts,
+    // pub scripts: Scripts,
     pub dependencies: HashMap<String, String>,
     pub peer_dependencies: HashMap<String, String>,
     pub dev_dependencies: HashMap<String, String>,
-    pub git_head: String,
+    // pub git_head: String,
     // pub bugs: Bugs,
-    pub homepage: String,
+    // pub homepage: String,
     #[serde(rename = "_id")]
     pub id: String,
     #[serde(rename = "_nodeVersion")]
@@ -72,14 +71,14 @@ pub struct Version {
     #[serde(rename = "_npmVersion")]
     pub npm_version: String,
     pub dist: Dist,
-    pub maintainers: Vec<Maintainer>,
-    #[serde(rename = "_npmUser")]
-    pub npm_user: NpmUser,
-    pub directories: Directories,
-    #[serde(rename = "_npmOperationalInternal")]
-    pub npm_operational_internal: NpmOperationalInternal,
-    #[serde(rename = "_hasShrinkwrap")]
-    pub has_shrinkwrap: bool,
+    // pub maintainers: Vec<Maintainer>,
+    // #[serde(rename = "_npmUser")]
+    // pub npm_user: NpmUser,
+    // pub directories: Directories,
+    // #[serde(rename = "_npmOperationalInternal")]
+    // pub npm_operational_internal: NpmOperationalInternal,
+    // #[serde(rename = "_hasShrinkwrap")]
+    // pub has_shrinkwrap: bool,
 }
 
 // #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -88,13 +87,13 @@ pub struct Version {
 //     pub name: String,
 // }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
-pub struct Repository {
-    #[serde(rename = "type")]
-    pub type_field: String,
-    pub url: String,
-}
+// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+// #[serde(default, rename_all = "camelCase")]
+// pub struct Repository {
+//     #[serde(rename = "type")]
+//     pub type_field: String,
+//     pub url: String,
+// }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]

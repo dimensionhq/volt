@@ -175,7 +175,7 @@ async fn main() {
         versions: map,
     };
 
-    res.save(format!("{}.json", input_packages.clone()[0].to_string()));
+    res.save(format!("packages/{}.json", input_packages.clone()[0].to_string()));
 }
 
 impl Main {
