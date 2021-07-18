@@ -40,4 +40,5 @@ pub struct VoltPackage {
     pub peer_dependencies: Vec<String>,
     pub dependencies: Option<Vec<String>>,
     pub bin: Option<HashMap<String, String>>,
+    pub integrity: String,
 }

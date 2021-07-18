@@ -13,7 +13,7 @@
 
 //! Handle an unknown command (can be listed in scripts).
 
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Instant};
 
 // Library Imports
 use serde::{Deserialize, Serialize};
@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 use async_trait::async_trait;
 use chttp::ResponseExt;
-use utils::{app::App, package::PackageJson};
+use utils::{app::App, package::PackageJson, volt_api::VoltPackage};
 use volt_core::command::Command;
 
 pub struct Audit {}
@@ -41,7 +41,7 @@ pub struct AuditObject {
 pub struct AuditDependency {
     version: String,
     integrity: String,
-    requires: Vec<String>,
+    requires: HashMap<String, String>,
     dependencies: HashMap<String, AuditDependency>,
     dev: bool,
 }
@@ -73,6 +73,45 @@ pub struct AuditMetadata {
     total_dependencies: u128,
 }
 
+// pub fn flatten_dependency_tree(
+//     package: &VoltPackage,
+//     volt_packages: &HashMap<String, VoltPackage>,
+// ) -> Vec<AuditDependency> {
+//     let mut packages: Vec<AuditDependency> = vec![];
+
+//     if package.dependencies.is_some() {
+//         for dep in package.dependencies.as_ref().unwrap().iter() {
+//             let dependency = volt_packages.get(dep).unwrap();
+
+//             let mut requires: HashMap<String, String> = HashMap::new();
+
+//             if dependency.dependencies.is_some() {
+//                 for de in dependency.dependencies.as_ref().unwrap() {
+//                     let pkg = volt_packages.get(de).unwrap();
+//                     requires.insert(de.to_owned(), pkg.version.clone());
+//                 }
+//             }
+
+//             let fdt = &mut flatten_dependency_tree(dependency, volt_packages);
+
+//             packages.push(AuditDependency {
+//                 version: dependency.version,
+//                 integrity: dependency.integrity,
+//                 requires: requires,
+//                 dependencies: HashMap::new()
+//                     .insert(
+//                         dep.to_owned(),
+//                         ,
+//                     )
+//                     .unwrap(),
+//                 dev: false,
+//             });
+//         }
+//     }
+
+//     packages
+// }
+
 #[async_trait]
 impl Command for Audit {
     fn help() -> String {
@@ -93,31 +132,53 @@ impl Command for Audit {
     /// ## Returns
     /// * `Result<()>`
     async fn exec(_app: Arc<App>) -> Result<()> {
-        let package_json = PackageJson::from("package.json");
+        // let package_json = PackageJson::from("package.json");
 
-        let mut requires = package_json.dependencies;
-        requires.extend(package_json.dev_dependencies);
+        // let mut requires = package_json.dependencies;
+        // requires.extend(package_json.dev_dependencies);
 
-        let audit = AuditObject {
-            name: package_json.name,
-            version: package_json.version,
-            install: vec![],
-            remove: vec![],
-            metadata: HashMap::new(),
-            requires: requires,
-            dependencies: HashMap::new(),
-        };
+        // let responses =
+        //     utils::get_volt_response_multi(requires.keys().cloned().collect::<Vec<String>>()).await;
 
-        let mut response = chttp::post_async(
-            "http://registry.npmjs.org/-/npm/v1/security/audits",
-            format!("{:?}", audit),
-        )
-        .await
-        .unwrap();
+        // let mut dependencies: HashMap<String, AuditDependency> = HashMap::new();
 
-        let text = response.text_async().await.unwrap();
+        // let start = Instant::now();
 
-        let response: AuditResponse = serde_json::from_str(text.as_str()).unwrap();
+        // for res in responses {
+        //     let version = res.version;
+
+        //     let packages = &res.versions.get(&version).unwrap().packages;
+
+        //     for package in packages {
+        //         let flattened_dependency_tree: Vec<AuditDependency> =
+        //             flatten_dependency_tree(package.1, packages);
+
+        //         for dp in flattened_dependency_tree {
+        //             dependencies.insert(package.0.to_owned(), dp);
+        //         }
+        //     }
+        // }
+
+        // let audit = AuditObject {
+        //     name: package_json.name,
+        //     version: package_json.version,
+        //     install: vec![],
+        //     remove: vec![],
+        //     metadata: HashMap::new(),
+        //     requires: requires,
+        //     dependencies: dependencies,
+        // };
+
+        // let mut response = chttp::post_async(
+        //     "http://registry.npmjs.org/-/npm/v1/security/audits",
+        //     format!("{:?}", audit),
+        // )
+        // .await
+        // .unwrap();
+
+        // let text = response.text_async().await.unwrap();
+
+        // let response: AuditResponse = serde_json::from_str(text.as_str()).unwrap();
 
         Ok(())
     }
