@@ -62,18 +62,21 @@ lazy_static! {
 
 // Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
-    let response = chttp::get_async(format!("http://volt-api.b-cdn.net/{}.json", package_name))
-        .await
-        .unwrap_or_else(|_| {
-            println!("{}: package does not exist", "error".bright_red(),);
-            std::process::exit(1);
-        })
-        .text_async()
-        .await
-        .unwrap_or_else(|_| {
-            println!("{}: package does not exist", "error".bright_red());
-            std::process::exit(1);
-        });
+    let response = chttp::get_async(format!(
+        "http://push-2105.5centscdn.com/{}.json",
+        package_name
+    ))
+    .await
+    .unwrap_or_else(|_| {
+        println!("{}: package does not exist", "error".bright_red(),);
+        std::process::exit(1);
+    })
+    .text_async()
+    .await
+    .unwrap_or_else(|_| {
+        println!("{}: package does not exist", "error".bright_red());
+        std::process::exit(1);
+    });
 
     serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|e| {
         println!(
