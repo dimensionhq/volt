@@ -63,7 +63,7 @@ lazy_static! {
 // Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
     let response = chttp::get_async(format!(
-        "http://push-2105.5centscdn.com/{}.json",
+        "http://registry-19d90.kxcdn.com/{}.json",
         package_name
     ))
     .await
@@ -245,6 +245,7 @@ pub async fn hardlink_files(app: Arc<App>, src: String) {
                                     ""
                                 )
                             ),
+                            e
                         )
                     )
                 });
@@ -316,13 +317,21 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                     extract_directory = extract_directory.join(split[0]);
                 } else {
                     let name = package.clone().name;
-
                     let split = name.split('/').collect::<Vec<&str>>();
 
                     // ~/.volt/@types
                     extract_directory = extract_directory.join(split[0]);
                 }
             }
+
+            // if !package.clone().name.starts_with("@") && !package.clone().name.contains("/") {
+            extract_directory = extract_directory.join(package.clone().name);
+            // } else {
+            //     let name = package.clone().name;
+            //     let split = name.split("/").collect::<Vec<&str>>();
+            //     extract_directory = extract_directory.join(split[1]);
+            // }
+            // println!("{}", extract_directory.display());
 
             // Initialize tarfile decoder while directly passing in bytes
             let gz_decoder = GzDecoder::new(&*bytes);
@@ -336,22 +345,17 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
 
             drop(bytes);
 
-            let mut idx = 0;
-            let name = package.clone().name;
-
-            let split = name.split('/').collect::<Vec<&str>>();
-
-            if package.clone().name.contains('@') && package.clone().name.contains('/') {
-                idx = 1;
-            }
-
             if cfg!(target_os = "windows") {
                 if Path::new(format!(r"{}\package", &extract_directory.to_str().unwrap()).as_str())
                     .exists()
                 {
                     std::fs::rename(
                         format!(r"{}\package", &extract_directory.to_str().unwrap()),
-                        format!(r"{}\{}", &extract_directory.to_str().unwrap(), split[idx]),
+                        format!(
+                            r"{}\{}",
+                            &extract_directory.to_str().unwrap(),
+                            package.clone().version
+                        ),
                     )
                     .context("failed to rename dependency folder")
                     .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
@@ -363,7 +367,11 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                     {
                         std::fs::rename(
                             format!(r"{}/package", &extract_directory.to_str().unwrap()),
-                            format!(r"{}/{}", &extract_directory.to_str().unwrap(), split[idx]),
+                            format!(
+                                r"{}/{}",
+                                &extract_directory.to_str().unwrap(),
+                                package.clone().version
+                            ),
                         )
                         .context("failed to rename dependency folder")
                         .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
@@ -375,23 +383,14 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                 {
                     std::fs::rename(
                         format!(r"{}/package", &extract_directory.to_str().unwrap()),
-                        format!(r"{}/{}", &extract_directory.to_str().unwrap(), split[idx]),
+                        format!(
+                            r"{}/{}",
+                            &extract_directory.to_str().unwrap(),
+                            package.clone().version
+                        ),
                     )
                     .context("failed to rename dependency folder")
                     .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
-                } else {
-                    if Path::new(
-                        format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str(),
-                    )
-                    .exists()
-                    {
-                        std::fs::rename(
-                            format!(r"{}/package", &extract_directory.to_str().unwrap()),
-                            format!(r"{}/{}", &extract_directory.to_str().unwrap(), split[idx]),
-                        )
-                        .context("failed to rename dependency folder")
-                        .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
-                    }
                 }
             }
             if let Some(parent) = node_modules_dep_path.parent() {
@@ -607,8 +606,6 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
 
 #[cfg(unix)]
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
-    use std::fs::File;
-
     // Create node_modules/scripts if it doesn't exist
     if !Path::new("node_modules/scripts").exists() {
         std::fs::create_dir_all("node_modules/scripts").unwrap();
