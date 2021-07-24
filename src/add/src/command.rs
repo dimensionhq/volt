@@ -141,7 +141,7 @@ Options:
         let lcp = app_instance.lock_file_path.to_path_buf();
 
         let global_lockfile = Path::new(&format!(
-            r"{}/volt-global.lock",
+            r"{}/.global.lock",
             app_instance.home_dir.display()
         ))
         .to_path_buf();
