@@ -166,10 +166,17 @@ impl LockFile {
         })
     }
 
+    /// Saves a lock file dumping pretty, formatted json
+    pub fn save_pretty(&self) -> Result<(), LockFileError> {
+        let lock_file = File::create(&self.path).map_err(LockFileError::IO)?;
+        let writer = BufWriter::new(lock_file);
+        serde_json::to_writer_pretty(writer, &self.dependencies).map_err(LockFileError::Encode)
+    }
+
     /// Saves a lock file to the same path it was opened from.
     pub fn save(&self) -> Result<(), LockFileError> {
         let lock_file = File::create(&self.path).map_err(LockFileError::IO)?;
         let writer = BufWriter::new(lock_file);
-        serde_json::to_writer_pretty(writer, &self.dependencies).map_err(LockFileError::Encode)
+        serde_json::to_writer(writer, &self.dependencies).map_err(LockFileError::Encode)
     }
 }

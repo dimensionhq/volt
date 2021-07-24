@@ -324,7 +324,7 @@ Options:
         }
 
         lock_file
-            .save()
+            .save_pretty()
             .context("Failed to save lock file")
             .unwrap();
 
