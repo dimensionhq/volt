@@ -2,7 +2,7 @@ pub mod app;
 pub mod package;
 pub mod volt_api;
 use anyhow::Context;
-use chttp::{self, ResponseExt};
+use chttp::{self, http::StatusCode, ResponseExt};
 use colored::Colorize;
 use flate2::read::GzDecoder;
 use futures_util::stream::FuturesUnordered;
@@ -62,7 +62,7 @@ lazy_static! {
 
 // Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {
-    let response = chttp::get_async(format!(
+    let mut response = chttp::get_async(format!(
         "http://registry-19d90.kxcdn.com/{}.json",
         package_name
     ))
@@ -70,22 +70,156 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
     .unwrap_or_else(|_| {
         println!("{}: package does not exist", "error".bright_red(),);
         std::process::exit(1);
-    })
-    .text_async()
-    .await
-    .unwrap_or_else(|_| {
-        println!("{}: package does not exist", "error".bright_red());
-        std::process::exit(1);
     });
 
-    serde_json::from_str::<VoltResponse>(&response).unwrap_or_else(|e| {
-        println!(
-            "{}: failed to parse response from server",
-            "error".bright_red()
-        );
-        eprintln!("{}", e);
-        std::process::exit(1);
-    })
+    match response.status() {
+        StatusCode::OK => {
+            return serde_json::from_str::<VoltResponse>(
+                &response.text_async().await.unwrap_or_else(|e| {
+                    println!("{}: {}", "error".bright_red().bold(), e);
+                    std::process::exit(1);
+                }),
+            )
+            .unwrap_or_else(|e| {
+                println!(
+                    "{}: failed to parse response from server",
+                    "error".bright_red()
+                );
+                eprintln!("{}", e);
+                std::process::exit(1);
+            })
+        }
+        StatusCode::BAD_REQUEST => {
+            let mut response = chttp::get_async(format!(
+                "http://registry-19d90.kxcdn.com/{}.json",
+                package_name
+            ))
+            .await
+            .unwrap_or_else(|_| {
+                println!("{}: package does not exist", "error".bright_red(),);
+                std::process::exit(1);
+            });
+
+            return serde_json::from_str::<VoltResponse>(
+                &response.text_async().await.unwrap_or_else(|e| {
+                    println!("{}: {}", "error".bright_red().bold(), e);
+                    std::process::exit(1);
+                }),
+            )
+            .unwrap_or_else(|e| {
+                println!(
+                    "{}: failed to parse response from server",
+                    "error".bright_red()
+                );
+                eprintln!("{}", e);
+                std::process::exit(1);
+            });
+        }
+        StatusCode::NOT_FOUND => {
+            let mut response = chttp::get_async(format!(
+                "http://registry-19d90.kxcdn.com/{}.json",
+                package_name
+            ))
+            .await
+            .unwrap_or_else(|_| {
+                println!("{}: package does not exist", "error".bright_red(),);
+                std::process::exit(1);
+            });
+
+            return serde_json::from_str::<VoltResponse>(
+                &response.text_async().await.unwrap_or_else(|e| {
+                    println!("{}: {}", "error".bright_red().bold(), e);
+                    std::process::exit(1);
+                }),
+            )
+            .unwrap_or_else(|e| {
+                println!(
+                    "{}: failed to parse response from server",
+                    "error".bright_red()
+                );
+                eprintln!("{}", e);
+                std::process::exit(1);
+            });
+        }
+        StatusCode::INTERNAL_SERVER_ERROR => {
+            let mut response = chttp::get_async(format!(
+                "http://registry-19d90.kxcdn.com/{}.json",
+                package_name
+            ))
+            .await
+            .unwrap_or_else(|_| {
+                println!("{}: package does not exist", "error".bright_red(),);
+                std::process::exit(1);
+            });
+
+            return serde_json::from_str::<VoltResponse>(
+                &response.text_async().await.unwrap_or_else(|e| {
+                    println!("{}: {}", "error".bright_red().bold(), e);
+                    std::process::exit(1);
+                }),
+            )
+            .unwrap_or_else(|e| {
+                println!(
+                    "{}: failed to parse response from server",
+                    "error".bright_red()
+                );
+                eprintln!("{}", e);
+                std::process::exit(1);
+            });
+        }
+        StatusCode::SERVICE_UNAVAILABLE => {
+            let mut response = chttp::get_async(format!(
+                "http://registry-19d90.kxcdn.com/{}.json",
+                package_name
+            ))
+            .await
+            .unwrap_or_else(|_| {
+                println!("{}: package does not exist", "error".bright_red(),);
+                std::process::exit(1);
+            });
+
+            return serde_json::from_str::<VoltResponse>(
+                &response.text_async().await.unwrap_or_else(|e| {
+                    println!("{}: {}", "error".bright_red().bold(), e);
+                    std::process::exit(1);
+                }),
+            )
+            .unwrap_or_else(|e| {
+                println!(
+                    "{}: failed to parse response from server",
+                    "error".bright_red()
+                );
+                eprintln!("{}", e);
+                std::process::exit(1);
+            });
+        }
+        StatusCode::GATEWAY_TIMEOUT => {
+            let mut response = chttp::get_async(format!(
+                "http://registry-19d90.kxcdn.com/{}.json",
+                package_name
+            ))
+            .await
+            .unwrap_or_else(|_| {
+                println!("{}: package does not exist", "error".bright_red(),);
+                std::process::exit(1);
+            });
+
+            return serde_json::from_str::<VoltResponse>(
+                &response.text_async().await.unwrap_or_else(|e| {
+                    println!("{}: {}", "error".bright_red().bold(), e);
+                    std::process::exit(1);
+                }),
+            )
+            .unwrap_or_else(|e| {
+                println!(
+                    "{}: failed to parse response from server",
+                    "error".bright_red()
+                );
+                eprintln!("{}", e);
+                std::process::exit(1);
+            });
+        }
+    }
 }
 
 pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<VoltResponse> {
