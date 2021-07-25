@@ -219,6 +219,7 @@ pub async fn get_volt_response(package_name: String) -> VoltResponse {
                 std::process::exit(1);
             });
         }
+        _ => {}
     }
 }
 
