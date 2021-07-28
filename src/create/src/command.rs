@@ -28,7 +28,7 @@ use colored::Colorize;
 use dialoguer::Input;
 use flate2::read::GzDecoder;
 use tar::Archive;
-use utils::app::App;
+use utils::app::{App, CustomColorize};
 use volt_core::{
     classes::create_templates::Template, command::Command, model::http_manager::get_package,
     prompt::prompts::Select, VERSION,
@@ -98,7 +98,7 @@ Options:
             let selected = select.run().unwrap_or_else(|err| {
                 eprintln!(
                     "{}: {}",
-                    "error".bright_red().bold(),
+                    "error".error_style(),
                     err.to_string().bright_yellow()
                 );
                 process::exit(1);
@@ -112,7 +112,7 @@ Options:
             } else {
                 println!(
                     "{} Template {} doesn't exist!",
-                    "error".bright_red(),
+                    "error".error_style(),
                     _template.bright_blue()
                 );
                 process::exit(1);
@@ -127,7 +127,7 @@ Options:
                 .interact_text()?;
 
             if app_name.is_empty() {
-                println!("{} Invalid app name!", "error".bright_red());
+                println!("{} Invalid app name!", "error".error_style());
                 process::exit(1);
             }
         } else {

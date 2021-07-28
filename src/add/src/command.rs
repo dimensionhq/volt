@@ -27,13 +27,11 @@ use futures::stream;
 use futures::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use tokio::sync::{mpsc, Mutex};
-use utils::app::{App, AppFlag};
+use utils::app::{App, AppFlag, CustomColorize};
+use utils::constants::PROGRESS_CHARS;
+use utils::package::{Package, PackageJson, Version};
 use utils::volt_api::{VoltPackage, VoltResponse};
-use utils::{
-    self,
-    package::{Package, PackageJson, Version},
-    PROGRESS_CHARS,
-};
+
 use volt_core::{
     command::Command,
     model::lock_file::{DependencyID, DependencyLock, LockFile},
@@ -114,7 +112,7 @@ Options:
 
         // Check if package.json exists, otherwise, handle it.
         if !&app.current_dir.join("package.json").exists() {
-            println!("{} no package.json found.", "error".bright_red());
+            println!("{} no package.json found.", "error".error_style());
             print!("Do you want to initialize package.json (Y/N): ");
             std::io::stdout().flush().expect("Could not flush stdout");
             let mut string: String = String::new();

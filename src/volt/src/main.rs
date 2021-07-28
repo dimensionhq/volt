@@ -23,19 +23,19 @@ use colored::Colorize;
 use tokio::time::Instant;
 use utils::{
     app::{App, AppFlag, CustomColorize},
-    ERROR_TAG,
+    display_error,
 };
 use volt_core::VERSION;
 
 #[tokio::main]
 async fn main() {
     if let Err(err) = try_main().await {
-        eprintln!("{} {}", ERROR_TAG.clone(), err);
+        display_error(&err);
         let err_chain = err.chain().skip(1);
         if err_chain.clone().next().is_some() {
-            eprintln!("{}", "\nCaused by:".italic().error_color());
+            eprintln!("{}", "\nCaused by:".caused_by_style());
         }
-        err_chain.for_each(|cause| eprintln!(" - {}", cause.to_string().truecolor(190, 190, 190)));
+        err_chain.for_each(display_error);
 
         #[cfg(not(debug_assertions))]
         eprintln!(

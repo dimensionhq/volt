@@ -1,6 +1,8 @@
 pub mod app;
+pub mod constants;
 pub mod package;
 pub mod volt_api;
+
 use anyhow::Context;
 use chttp::ResponseExt;
 use colored::Colorize;
@@ -11,6 +13,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::SliceRandom;
 use std::borrow::Cow;
 use std::env::temp_dir;
+use std::fmt::Display;
 use std::fs::{remove_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -21,17 +24,15 @@ use tokio::fs::create_dir_all;
 use tokio::fs::hard_link;
 use walkdir::WalkDir;
 
+use crate::app::CustomColorize;
 use anyhow::Error;
 use anyhow::Result;
 use app::App;
-use lazy_static::lazy_static;
 use package::Package;
 use volt_api::{VoltPackage, VoltResponse};
 
-pub static PROGRESS_CHARS: &str = "=> ";
-
-lazy_static! {
-    pub static ref ERROR_TAG: String = "error".red().bold().to_string();
+pub fn display_error(e: impl Display) {
+    eprintln!("{} {}", "error".error_style(), e);
 }
 
 // pub async fn create_dependency_links(
