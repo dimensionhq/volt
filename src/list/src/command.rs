@@ -19,8 +19,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use std::fs::read_dir;
-use volt_core::{command::Command, VERSION};
 use utils::app::App;
+use volt_core::{command::Command, VERSION};
 use walkdir::WalkDir;
 
 use std::path::PathBuf;
@@ -67,9 +67,9 @@ Options:
 
         let mut depth: u64 = 2;
 
-        if flags.contains(&"--depth".to_string()) {
-            depth = app.args.iter().find_map(|s| s.parse().ok()).unwrap_or(2);
-        }
+        // if flags.contains(&"--depth".to_string()) {
+        //     depth = app.args.iter().find_map(|s| s.parse().ok()).unwrap_or(2);
+        // }
 
         let dirs = WalkDir::new("node_modules");
 

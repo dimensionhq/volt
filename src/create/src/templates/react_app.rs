@@ -1,7 +1,7 @@
 use colored::Colorize;
 use tokio::fs;
+use utils::app::{App, AppFlag};
 use volt_core::command::Command;
-use utils::app::App;
 
 #[allow(dead_code)]
 pub async fn create_react_app(app_name: String) {
@@ -19,7 +19,8 @@ pub async fn create_react_app(app_name: String) {
     let dir = std::env::current_dir().unwrap().join(&app_name);
     let _ = std::env::set_current_dir(&dir); // Set current directory to $dir as init depends on it
     let mut app = App::initialize();
-    app.flags = vec![String::from("-y")];
+    app.flags = vec![AppFlag::Yes];
+
     init::command::Init::exec(std::sync::Arc::new(app))
         .await
         .unwrap();

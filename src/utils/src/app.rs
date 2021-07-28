@@ -1,8 +1,51 @@
 use crate::enable_ansi_support;
 use anyhow::Result;
+use colored::{ColoredString, Colorize};
 use dirs::home_dir;
 use sha1::{Digest, Sha1};
 use std::{env, io, path::PathBuf};
+
+#[derive(Debug, PartialEq)]
+pub enum AppFlag {
+    Help,
+    Version,
+    Yes,
+    Depth,
+    Verbose,
+    NoProgress,
+    Dev,
+}
+
+pub trait CustomColorize: Colorize {
+    fn error_color(self) -> ColoredString
+    where
+        Self: Sized,
+    {
+        self.truecolor(190, 190, 190)
+    }
+}
+impl<T: Colorize> CustomColorize for T {}
+
+impl AppFlag {
+    pub fn get(arg: &String) -> Option<AppFlag> {
+        let mut flag = arg.to_string();
+
+        while flag.starts_with("-") {
+            flag.remove(0);
+        }
+
+        match flag.to_lowercase().as_str() {
+            "help" => Some(AppFlag::Help),
+            "h" => Some(AppFlag::Help),
+            "version" => Some(AppFlag::Version),
+            "yes" => Some(AppFlag::Yes),
+            "depth" => Some(AppFlag::Depth),
+            "verbose" => Some(AppFlag::Verbose),
+            "no-progress" => Some(AppFlag::NoProgress),
+            &_ => None,
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct App {
@@ -12,7 +55,8 @@ pub struct App {
     pub volt_dir: PathBuf,
     pub lock_file_path: PathBuf,
     pub args: Vec<String>,
-    pub flags: Vec<String>,
+    pub flags: Vec<AppFlag>,
+    pub unknown_flags: Vec<String>,
 }
 
 impl App {
@@ -41,11 +85,15 @@ impl App {
 
         let mut refined_args: Vec<String> = Vec::new();
 
-        let mut flags: Vec<String> = Vec::new();
+        let mut flags: Vec<AppFlag> = Vec::new();
+        let mut unknown_flags: Vec<String> = Vec::new();
 
         for arg in cli_args.into_iter().skip(1) {
             if arg.starts_with("--") || arg.starts_with('-') {
-                flags.push(arg);
+                match AppFlag::get(&arg) {
+                    Some(flag) => flags.push(flag),
+                    None => unknown_flags.push(arg),
+                }
             } else {
                 refined_args.push(arg);
             }
@@ -59,14 +107,13 @@ impl App {
             lock_file_path,
             args: refined_args,
             flags,
+            unknown_flags,
         }
     }
 
     /// Check if the app arguments contain the flags specified
-    pub fn has_flag(&self, flags: &[&str]) -> bool {
-        self.flags
-            .iter()
-            .any(|flag| flags.iter().any(|search_flag| flag == search_flag))
+    pub fn has_flags(&self, flag: AppFlag) -> bool {
+        self.flags.contains(&flag)
     }
 
     pub fn calc_hash(data: &bytes::Bytes) -> Result<String> {

@@ -2,7 +2,7 @@ pub mod app;
 pub mod package;
 pub mod volt_api;
 use anyhow::Context;
-use chttp::{self, ResponseExt};
+use chttp::ResponseExt;
 use colored::Colorize;
 use flate2::read::GzDecoder;
 use futures_util::stream::FuturesUnordered;
