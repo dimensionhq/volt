@@ -23,10 +23,10 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
+use utils::app::App;
+use utils::constants::PROGRESS_CHARS;
 use volt_core::command::Command;
 use volt_core::VERSION;
-use utils::app::App;
-use utils::PROGRESS_CHARS;
 
 /// Struct implementation for the `Add` command.
 #[derive(Clone)]

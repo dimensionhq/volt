@@ -17,13 +17,28 @@ pub enum AppFlag {
 }
 
 pub trait CustomColorize: Colorize {
-    fn error_color(self) -> ColoredString
+    fn caused_by_style(self) -> ColoredString
     where
         Self: Sized,
     {
-        self.truecolor(190, 190, 190)
+        self.italic().truecolor(190, 190, 190)
+    }
+
+    fn error_style(self) -> ColoredString
+    where
+        Self: Sized,
+    {
+        self.bright_red().bold()
+    }
+
+    fn warning_style(self) -> ColoredString
+    where
+        Self: Sized,
+    {
+        self.bright_yellow().bold()
     }
 }
+
 impl<T: Colorize> CustomColorize for T {}
 
 impl AppFlag {

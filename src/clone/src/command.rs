@@ -19,9 +19,9 @@ use std::sync::Arc;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use colored::Colorize;
+use utils::app::{App, CustomColorize};
 use volt_core::command::Command;
 use volt_core::VERSION;
-use utils::app::App;
 
 pub struct Clone {}
 
@@ -65,9 +65,11 @@ Options:
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         let args: Vec<String> = app.args.clone();
+
         if args.is_empty() {
-            println!("{} expected repository url", "error".bright_red());
+            println!("{} expected repository url", "error".error_style());
         }
+
         let exit_code = process::Command::new("cmd")
             .arg(format!("/C git clone {} --depth=1", args[0]).as_str())
             .status()
