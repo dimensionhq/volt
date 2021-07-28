@@ -16,15 +16,16 @@
 
 mod commands;
 
-use std::process::exit;
-
 use crate::commands::AppCommand;
 
 use anyhow::Result;
 use colored::Colorize;
 use tokio::time::Instant;
+use utils::{
+    app::{App, AppFlag, CustomColorize},
+    ERROR_TAG,
+};
 use volt_core::VERSION;
-use utils::{app::App, ERROR_TAG};
 
 #[tokio::main]
 async fn main() {
@@ -32,7 +33,7 @@ async fn main() {
         eprintln!("{} {}", ERROR_TAG.clone(), err);
         let err_chain = err.chain().skip(1);
         if err_chain.clone().next().is_some() {
-            eprintln!("{}", "\nCaused by:".italic().truecolor(190, 190, 190));
+            eprintln!("{}", "\nCaused by:".italic().error_color());
         }
         err_chain.for_each(|cause| eprintln!(" - {}", cause.to_string().truecolor(190, 190, 190)));
 
@@ -41,6 +42,7 @@ async fn main() {
             "\nIf the problem persists, please submit an issue on the Github repository.\n{}",
             "https://github.com/voltpkg/volt/issues/new".underline()
         );
+
         std::process::exit(1);
     }
 }
@@ -49,18 +51,20 @@ async fn try_main() -> Result<()> {
     let app = App::initialize();
     let cmd = AppCommand::current().unwrap_or(AppCommand::Script); // Default command is help
 
-    if app.has_flag(&["--help", "-h"]) {
+    if app.has_flags(AppFlag::Help) {
+        // Display help message
         println!("{}", cmd.help());
         return Ok(());
     }
 
-    if app.has_flag(&["--version"]) {
+    if app.has_flags(AppFlag::Version) {
+        // Display version message
         println!(
             "volt v{}{}",
             "::".bright_magenta(),
             VERSION.bright_green().bold()
         );
-        exit(0);
+        return Ok(());
     }
 
     let time = Instant::now();

@@ -27,7 +27,7 @@ use futures::stream;
 use futures::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use tokio::sync::{mpsc, Mutex};
-use utils::app::App;
+use utils::app::{App, AppFlag};
 use utils::volt_api::{VoltPackage, VoltResponse};
 use utils::{
     self,
@@ -134,9 +134,9 @@ Options:
         let app_instance = app.clone();
         let package_file = package_file.clone();
 
-        let verbose = app_instance.has_flag(&["-v", "--verbose"]);
+        let verbose = app_instance.has_flags(AppFlag::Verbose);
 
-        let pballowed = !app_instance.has_flag(&["--no-progress", "-np"]);
+        let pballowed = !app_instance.has_flags(AppFlag::NoProgress);
 
         let lcp = app_instance.lock_file_path.to_path_buf();
 
@@ -300,9 +300,7 @@ Options:
 
         let mut package_json_file = package_file.lock().await;
 
-        if app_instance.flags.contains(&"-D".to_string())
-            || app_instance.flags.contains(&"--dev".to_string())
-        {
+        if app_instance.has_flags(AppFlag::Dev) {
             for (idx, package) in packages.clone().into_iter().enumerate() {
                 package_json_file
                     .dev_dependencies
