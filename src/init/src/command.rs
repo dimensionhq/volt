@@ -83,7 +83,7 @@ Options:
         let split: Vec<&str> = temp.split('\\').collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();
 
-        let data = if app.has_flags(AppFlag::Yes) {
+        let data = if app.has_flag(AppFlag::Yes) {
             // Set name to current directory name
             let name = env::current_dir()
                 .map(|dir| {
