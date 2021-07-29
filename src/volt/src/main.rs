@@ -21,21 +21,23 @@ use crate::commands::AppCommand;
 use anyhow::Result;
 use colored::Colorize;
 use tokio::time::Instant;
-use utils::{
-    app::{App, AppFlag, CustomColorize},
-    display_error,
-};
+use utils::app::{App, AppFlag};
+use utils::error;
+use utils::helper::CustomColorize;
 use volt_core::VERSION;
 
 #[tokio::main]
 async fn main() {
     if let Err(err) = try_main().await {
-        display_error(&err);
+        error!("{}", &err);
+
         let err_chain = err.chain().skip(1);
+
         if err_chain.clone().next().is_some() {
             eprintln!("{}", "\nCaused by:".caused_by_style());
         }
-        err_chain.for_each(display_error);
+
+        err_chain.for_each(|e| error!("{}", e));
 
         #[cfg(not(debug_assertions))]
         eprintln!(
@@ -51,19 +53,15 @@ async fn try_main() -> Result<()> {
     let app = App::initialize();
     let cmd = AppCommand::current().unwrap_or(AppCommand::Script); // Default command is help
 
-    if app.has_flags(AppFlag::Help) {
+    if app.has_flag(AppFlag::Help) {
         // Display help message
         println!("{}", cmd.help());
         return Ok(());
     }
 
-    if app.has_flags(AppFlag::Version) {
+    if app.has_flag(AppFlag::Version) {
         // Display version message
-        println!(
-            "volt v{}{}",
-            "::".bright_magenta(),
-            VERSION.bright_green().bold()
-        );
+        println!("volt v{}{}", "::".bright_magenta(), VERSION.success_style());
         return Ok(());
     }
 

@@ -19,7 +19,8 @@ use std::sync::Arc;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use colored::Colorize;
-use utils::app::{App, CustomColorize};
+use utils::app::App;
+use utils::helper::CustomColorize;
 use volt_core::command::Command;
 use volt_core::VERSION;
 

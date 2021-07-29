@@ -1,19 +1,23 @@
 pub mod app;
 pub mod constants;
+pub mod helper;
 pub mod package;
 pub mod volt_api;
 
 use anyhow::Context;
+use anyhow::Error;
+use anyhow::Result;
+use app::App;
 use chttp::ResponseExt;
 use colored::Colorize;
 use flate2::read::GzDecoder;
 use futures_util::stream::FuturesUnordered;
 use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
+use package::Package;
 use rand::prelude::SliceRandom;
 use std::borrow::Cow;
 use std::env::temp_dir;
-use std::fmt::Display;
 use std::fs::{remove_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -22,44 +26,8 @@ use std::sync::Arc;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use tokio::fs::hard_link;
-use walkdir::WalkDir;
-
-use crate::app::CustomColorize;
-use anyhow::Error;
-use anyhow::Result;
-use app::App;
-use package::Package;
 use volt_api::{VoltPackage, VoltResponse};
-
-pub fn display_error(e: impl Display) {
-    eprintln!("{} {}", "error".error_style(), e);
-}
-
-// pub async fn create_dependency_links(
-//     app: Arc<App>,
-//     packages: std::collections::HashMap<String, VoltPackage>,
-// ) -> Result<()> {
-//     let mut workers = FuturesUnordered::new();
-
-//     for package in packages {
-//         let package_instance = package.clone();
-//         let app_instance = app.clone();
-//         let volt_directory_location = format!("{}", app.volt_dir.display());
-
-//         workers.push(async move {
-//             // Hardlink Files
-//             hardlink_files(
-//                 app_instance,
-//                 format!(r"{}\{}", volt_directory_location, package_instance.1.name),
-//             )
-//             .await;
-//         });
-//     }
-
-//     while workers.next().await.is_some() {}
-
-//     Ok(())
-// }
+use walkdir::WalkDir;
 
 // Get response from volt CDN
 pub async fn get_volt_response(package_name: String) -> VoltResponse {

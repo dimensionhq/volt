@@ -51,6 +51,7 @@ exclude = [
   "src/prototype/compress",
   "src/prototype/syntax",
   "platforms/cargo",
+  "prototype/bincode-server",
   "server",
 ]
 

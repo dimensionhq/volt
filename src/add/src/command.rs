@@ -27,8 +27,10 @@ use futures::stream;
 use futures::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use tokio::sync::{mpsc, Mutex};
-use utils::app::{App, AppFlag, CustomColorize};
+use utils::app::{App, AppFlag};
 use utils::constants::PROGRESS_CHARS;
+use utils::error;
+
 use utils::package::{Package, PackageJson, Version};
 use utils::volt_api::{VoltPackage, VoltResponse};
 
@@ -112,7 +114,7 @@ Options:
 
         // Check if package.json exists, otherwise, handle it.
         if !&app.current_dir.join("package.json").exists() {
-            println!("{} no package.json found.", "error".error_style());
+            error!("no package.json found.");
             print!("Do you want to initialize package.json (Y/N): ");
             std::io::stdout().flush().expect("Could not flush stdout");
             let mut string: String = String::new();
@@ -132,9 +134,9 @@ Options:
         let app_instance = app.clone();
         let package_file = package_file.clone();
 
-        let verbose = app_instance.has_flags(AppFlag::Verbose);
+        let verbose = app_instance.has_flag(AppFlag::Verbose);
 
-        let pballowed = !app_instance.has_flags(AppFlag::NoProgress);
+        let pballowed = !app_instance.has_flag(AppFlag::NoProgress);
 
         let lcp = app_instance.lock_file_path.to_path_buf();
 
@@ -298,7 +300,7 @@ Options:
 
         let mut package_json_file = package_file.lock().await;
 
-        if app_instance.has_flags(AppFlag::Dev) {
+        if app_instance.has_flag(AppFlag::Dev) {
             for (idx, package) in packages.clone().into_iter().enumerate() {
                 package_json_file
                     .dev_dependencies

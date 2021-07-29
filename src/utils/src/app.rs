@@ -1,6 +1,5 @@
 use crate::enable_ansi_support;
 use anyhow::Result;
-use colored::{ColoredString, Colorize};
 use dirs::home_dir;
 use sha1::{Digest, Sha1};
 use std::{env, io, path::PathBuf};
@@ -15,31 +14,6 @@ pub enum AppFlag {
     NoProgress,
     Dev,
 }
-
-pub trait CustomColorize: Colorize {
-    fn caused_by_style(self) -> ColoredString
-    where
-        Self: Sized,
-    {
-        self.italic().truecolor(190, 190, 190)
-    }
-
-    fn error_style(self) -> ColoredString
-    where
-        Self: Sized,
-    {
-        self.bright_red().bold()
-    }
-
-    fn warning_style(self) -> ColoredString
-    where
-        Self: Sized,
-    {
-        self.bright_yellow().bold()
-    }
-}
-
-impl<T: Colorize> CustomColorize for T {}
 
 impl AppFlag {
     pub fn get(arg: &String) -> Option<AppFlag> {
@@ -127,7 +101,7 @@ impl App {
     }
 
     /// Check if the app arguments contain the flags specified
-    pub fn has_flags(&self, flag: AppFlag) -> bool {
+    pub fn has_flag(&self, flag: AppFlag) -> bool {
         self.flags.contains(&flag)
     }
 
