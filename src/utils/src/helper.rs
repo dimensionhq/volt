@@ -23,6 +23,13 @@ pub trait CustomColorize: Colorize {
         self.bright_yellow().bold()
     }
 
+    fn info_style(self) -> ColoredString
+    where
+        Self: Sized,
+    {
+        self.bright_purple().bold()
+    }
+
     fn success_style(self) -> ColoredString
     where
         Self: Sized,
@@ -53,4 +60,9 @@ macro_rules! error {
 #[macro_export]
 macro_rules! warning {
     ($($tt:tt)*) => { print!("{}", utils::helper::CustomColorize::warning_style("warning: ")); println!($($tt)*); };
+}
+
+#[macro_export]
+macro_rules! info {
+    ($($tt:tt)*) => { print!("{}", utils::helper::CustomColorize::info_style("info: ")); println!($($tt)*); };
 }

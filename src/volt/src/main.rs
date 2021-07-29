@@ -37,7 +37,7 @@ async fn main() {
             eprintln!("{}", "\nCaused by:".caused_by_style());
         }
 
-        err_chain.for_each(|e| error!("{}", e));
+        err_chain.for_each(|e| eprintln!("{}", e));
 
         #[cfg(not(debug_assertions))]
         eprintln!(
