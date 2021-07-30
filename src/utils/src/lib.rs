@@ -4,10 +4,12 @@ pub mod helper;
 pub mod package;
 pub mod volt_api;
 
+use anyhow::anyhow;
 use anyhow::Context;
 use anyhow::Error;
 use anyhow::Result;
 use app::App;
+use chttp::http::StatusCode;
 use chttp::ResponseExt;
 use colored::Colorize;
 use flate2::read::GzDecoder;
@@ -29,38 +31,64 @@ use tokio::fs::hard_link;
 use volt_api::{VoltPackage, VoltResponse};
 use walkdir::WalkDir;
 
-// Get response from volt CDN
-pub async fn get_volt_response(package_name: String) -> VoltResponse {
-    let mut response = chttp::get_async(format!(
-        "http://registry-19d90.kxcdn.com/{}.json",
-        package_name
-    ))
-    .await
-    .unwrap_or_else(|_| {
-        println!("{}: package does not exist", "error".bright_red(),);
-        std::process::exit(1);
-    });
+use crate::constants::MAX_RETRIES;
+use crate::helper::ResultLogErrorExt;
 
-    serde_json::from_str::<VoltResponse>(&response.text_async().await.unwrap_or_else(|e| {
-        println!("{}: {}", "error".bright_red().bold(), e);
-        std::process::exit(1);
-    }))
-    .unwrap_or_else(|e| {
-        println!(
-            "{}: failed to parse response from server",
-            "error".bright_red()
-        );
-        eprintln!("{}", e);
-        std::process::exit(1);
-    })
+// Get response from volt CDN
+pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
+    let mut retries = 0;
+
+    loop {
+        let mut response = chttp::get_async(format!(
+            "http://registry-19d90.kxcdn.com/{}.json",
+            package_name
+        ))
+        .await
+        .with_context(|| format!("failed to fetch {}", package_name.bright_yellow().bold()))?;
+
+        match response.status_mut() {
+            &mut StatusCode::OK => {
+                let text = response.text_async().await.context(format!(
+                    "failed to deserialize response for {}",
+                    package_name.bright_yellow().bold()
+                ))?;
+
+                return Ok(serde_json::from_str(&text)?);
+            }
+            &mut StatusCode::NOT_FOUND => {
+                if retries == MAX_RETRIES {
+                    return Err(anyhow!(
+                        "GET {} - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.\n\n{}: {}",
+                        format!("http://registry.voltpkg.com/{}", package_name).underline(),
+                        format!("Not Found ({})", "404".bright_yellow().bold()),
+                        package_name,
+                        "help".bright_blue(),
+                        "https://voltpkg.com/error/ne404",
+                    ));
+                }
+            }
+            _ => {
+                if retries == MAX_RETRIES {
+                    return Err(anyhow!(
+                        "{} {}: Not Found - 404\n\n{} was not found on the volt registry, or you don't have the permission to request it.",
+                        "GET".bright_green(),
+                        format!("http://registry.voltpkg.com/{}", package_name).underline(),
+                        package_name
+                    ));
+                }
+            }
+        }
+
+        retries += 1;
+    }
 }
 
-pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<VoltResponse> {
+pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<Result<VoltResponse>> {
     packages
         .into_iter()
         .map(get_volt_response)
         .collect::<FuturesUnordered<_>>()
-        .collect::<Vec<VoltResponse>>()
+        .collect::<Vec<Result<VoltResponse>>>()
         .await
 }
 
@@ -325,7 +353,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                         ),
                     )
                     .context("failed to rename dependency folder")
-                    .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+                    .unwrap_and_handle_error();
                 } else {
                     if Path::new(
                         format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str(),
@@ -341,7 +369,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                             ),
                         )
                         .context("failed to rename dependency folder")
-                        .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+                        .unwrap_and_handle_error();
                     }
                 }
             } else {
@@ -357,7 +385,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                         ),
                     )
                     .context("failed to rename dependency folder")
-                    .unwrap_or_else(|e| println!("{} {}", "error".bright_red(), e));
+                    .unwrap_and_handle_error();
                 }
             }
             if let Some(parent) = node_modules_dep_path.parent() {

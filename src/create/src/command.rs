@@ -153,12 +153,14 @@ Options:
         println!("HANDLE THIS");
         let tarball_file = utils::download_tarball_create(&app, &package_json, &version)
             .await
-            .unwrap();
+            .unwrap()
+;
         let gz_decoder = GzDecoder::new(
             File::open(tarball_file)
                 .context("Unable to open tar file")
                 .unwrap(),
         );
+
         let mut archive = Archive::new(gz_decoder);
         let mut dir = std::env::current_dir().unwrap();
 

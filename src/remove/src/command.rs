@@ -25,7 +25,7 @@ use tokio::{
     fs::{remove_dir_all, remove_file},
     sync::Mutex,
 };
-use utils::{app::App, get_volt_response, package::PackageJson};
+use utils::{app::App, error, get_volt_response, helper::ResultLogErrorExt, package::PackageJson};
 use volt_core::{
     command::Command,
     model::lock_file::{DependencyID, LockFile},
@@ -92,7 +92,7 @@ Options:
         let package_json_dir = std::env::current_dir()?.join("package.json");
 
         if !package_json_dir.exists() {
-            println!("{} no package.json found", "error".bright_red());
+            error!("no package.json found");
             print!("Do you want to initialize package.json (Y/N): ");
             std::io::stdout().flush().expect("Could not flush stdout");
             let mut string: String = String::new();
@@ -124,7 +124,7 @@ Options:
             let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
                 .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
 
-            let response = get_volt_response(package.to_string()).await;
+            let response = get_volt_response(package.to_string()).await?;
 
             let current_version = response.versions.get(&response.version).unwrap();
 
@@ -152,12 +152,7 @@ Options:
                         scripts.file_name().unwrap().to_str().unwrap()
                     ))
                     .await
-                    .unwrap_or_else(|err| {
-                        println!(
-                            "Failed to delete scripts file in node_modules/scripts: {}",
-                            err
-                        );
-                    });
+                    .unwrap_and_handle_error();
                 }
             }
 
@@ -166,9 +161,7 @@ Options:
             let node_modules_dir = std::env::current_dir().unwrap().join("node_modules");
             let dep_dir = node_modules_dir.join(&package);
             if dep_dir.exists() {
-                remove_dir_all(dep_dir).await.unwrap_or_else(|_| {
-                    println!("Failed to delete dependency dir in node_modules")
-                });
+                remove_dir_all(dep_dir).await.unwrap_and_handle_error();
             }
         }
 

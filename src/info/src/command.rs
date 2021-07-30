@@ -22,6 +22,7 @@ use colored::Colorize;
 use prettytable::{Cell, Row, Table};
 use utils::{
     app::App,
+    error,
     package::{Package, Version},
 };
 use volt_core::{command::Command, model::http_manager::get_package, VERSION};
@@ -176,11 +177,7 @@ Options:
 
                         print!("\n");
                     } else {
-                        println!(
-                            "{}: {}",
-                            "error".bright_red(),
-                            format!("could not find a readme for {}", name)
-                        )
+                        error!("could not find a readme for {}", name);
                     }
                 }
                 "version" => {
@@ -221,11 +218,7 @@ Options:
                         println!("{}", description.unwrap());
                         print!("\n");
                     } else {
-                        println!(
-                            "{}: {}",
-                            "error".bright_red(),
-                            format!("could not find a description for {}", name)
-                        );
+                        error!("could not find a description for {}", name);
                     }
                 }
                 "name" => {
@@ -266,11 +259,7 @@ Options:
                         println!("{}: {}", "url".bright_purple(), data.url.underline());
                         print!("\n");
                     } else {
-                        println!(
-                            "{}: {}",
-                            "error".bright_red(),
-                            format!("could not find a repository for {}", name)
-                        );
+                        error!("could not find a repository for {}", name);
                     }
                 }
                 "homepage" => {
@@ -282,11 +271,7 @@ Options:
                         println!("{}", data);
                         print!("\n");
                     } else {
-                        println!(
-                            "{}: {}",
-                            "error".bright_red(),
-                            format!("could not find a homepage for {}", name)
-                        );
+                        error!("could not find a homepage for {}", name);
                     }
                 }
                 "keywords" => {
@@ -300,11 +285,7 @@ Options:
                         }
                         print!("\n");
                     } else {
-                        println!(
-                            "{}: {}",
-                            "error".bright_red(),
-                            format!("could not find keywords for {}", name)
-                        );
+                        error!("could not find keywords for {}", name);
                     }
                 }
                 "users" => {}

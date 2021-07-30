@@ -32,18 +32,11 @@ async fn main() {
         error!("{}", &err);
 
         let err_chain = err.chain().skip(1);
-
         if err_chain.clone().next().is_some() {
-            eprintln!("{}", "\nCaused by:".caused_by_style());
+            error!("{}", "\nCaused by:".caused_by_style());
         }
 
         err_chain.for_each(|e| eprintln!("{}", e));
-
-        #[cfg(not(debug_assertions))]
-        eprintln!(
-            "\nIf the problem persists, please submit an issue on the Github repository.\n{}",
-            "https://github.com/voltpkg/volt/issues/new".underline()
-        );
 
         std::process::exit(1);
     }

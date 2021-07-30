@@ -19,6 +19,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use utils::app::App;
+use utils::error;
 use utils::package::PackageJson;
 use volt_core::command::Command;
 pub struct Script {}
@@ -72,11 +73,7 @@ impl Command for Script {
                 // std::process::Command::new("sh").arg(exec).spawn().unwrap();
             }
         } else {
-            println!(
-                "{}: {} is not a valid command.",
-                "error".bright_red().bold(),
-                command.bright_yellow().bold()
-            );
+            error!("{} is not a valid command.", command.bright_yellow().bold());
         }
 
         Ok(())

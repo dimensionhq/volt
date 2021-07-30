@@ -21,9 +21,8 @@ use prettytable::row;
 use std::sync::Arc;
 // use search::SearchResp;
 use prettytable::{cell, Table};
+use utils::{app::App, error};
 use volt_core::{command::Command, VERSION};
-use utils::app::App;
-
 
 fn truncate(s: &str, max_chars: usize) -> String {
     match s.char_indices().nth(max_chars) {
@@ -82,21 +81,17 @@ Options:
             ))
             .await
             .unwrap_or_else(|_| {
-                println!("{}: package does not exist", "error".bright_red(),);
+                error!("package does not exist");
                 std::process::exit(1);
             })
             .text_async()
             .await
             .unwrap_or_else(|_| {
-                println!("{}: package does not exist", "error".bright_red());
+                error!("package does not exist");
                 std::process::exit(1);
             });
             let s: Vec<SearchData> = serde_json::from_str(&response).unwrap_or_else(|e| {
-                println!(
-                    "{}: failed to parse response from server {}",
-                    "error".bright_red(),
-                    e.to_string().bright_red(),
-                );
+                error!("failed to parse response from server {}", e.to_string());
 
                 std::process::exit(1);
             });

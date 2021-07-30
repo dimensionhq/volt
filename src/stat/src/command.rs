@@ -22,10 +22,10 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use reqwest::get;
-use serde_json::{Value, from_str};
-use volt_core::{command::Command, VERSION};
-use utils::app::App;
+use serde_json::{from_str, Value};
 use std::process;
+use utils::{app::App, error};
+use volt_core::{command::Command, VERSION};
 
 /// Struct implementation for the `stat` command.
 pub struct Stat;
@@ -61,13 +61,17 @@ Usage: {} {} {}"#,
         let args = &app.args;
 
         if args.len() <= 1 {
-            println!("{}", "Missing Package Name!".bright_red());
+            error!("Missing Package Name!");
             process::exit(1);
         }
 
         let package = &args[1];
 
-        println!("{}{}\n", "Download stats for ".bright_cyan().bold(), package.bright_cyan().bold());
+        println!(
+            "{}{}\n",
+            "Download stats for ".bright_cyan().bold(),
+            package.bright_cyan().bold()
+        );
 
         // Get downloads for the past week
         let url = format!(
