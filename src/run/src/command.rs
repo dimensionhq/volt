@@ -21,11 +21,12 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use volt_core::command::Command;
-use volt_core::VERSION;
 use scripts::command::Script;
 use utils::app::App;
+use utils::error;
 use utils::package::PackageJson;
+use volt_core::command::Command;
+use volt_core::VERSION;
 
 /// Struct implementation for the `Run` command.
 pub struct Run;
@@ -119,9 +120,8 @@ Options:
                     .spawn()
                     .unwrap();
             } else {
-                println!(
-                    "{}: {} 'is not a valid script.'",
-                    "error".bright_red().bold(),
+                error!(
+                    "{} 'is not a valid script.'",
                     &app.args[1].bright_yellow().bold(),
                 );
             }

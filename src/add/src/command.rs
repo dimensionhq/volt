@@ -162,29 +162,35 @@ Options:
                 )),
         );
 
-        let responses: Vec<VoltResponse>;
+        let responses: Result<Vec<VoltResponse>>;
 
         let start = Instant::now();
 
         if packages.len() > 1 {
-            responses = utils::get_volt_response_multi(packages.clone()).await;
+            responses = utils::get_volt_response_multi(packages.clone())
+                .await
+                .into_iter()
+                .collect();
         } else {
-            responses = vec![utils::get_volt_response(packages[0].to_string()).await];
+            responses = vec![utils::get_volt_response(packages[0].to_string()).await]
+                .into_iter()
+                .collect();
         }
 
         let end = Instant::now();
 
-        progress_bar.finish_with_message("[OK]".bright_green().to_string());
-        let progress_bar = &progress_bar;
-
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
+
+        let responses = responses?;
 
         for res in responses.iter() {
             let current_version = res.versions.get(&res.version).unwrap();
-
             dependencies.extend(current_version.clone());
         }
 
+        progress_bar.finish_with_message("[OK]".bright_green().to_string());
+
+        let progress_bar = &progress_bar;
         let length = dependencies.len();
 
         if length == 1 {

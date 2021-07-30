@@ -16,7 +16,6 @@
 
 use anyhow::Context;
 
-use colored::Colorize;
 use std::io::Write;
 use std::{
     collections::HashMap,
@@ -24,6 +23,8 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+
+use crate::error;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -195,7 +196,7 @@ impl PackageJson {
             let data = read_to_string(path).unwrap();
             serde_json::from_str(data.as_str()).unwrap()
         } else {
-            println!("{} No package.json found", "error".bright_red());
+            error!("No package.json found");
             std::process::exit(1);
         }
     }

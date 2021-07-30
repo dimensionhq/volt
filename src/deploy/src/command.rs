@@ -21,8 +21,8 @@ use std::{env, process, sync::Arc};
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use utils::{app::App, error};
 use volt_core::{command::Command, VERSION};
-use utils::app::App;
 /// Struct implementation for the `Deploy` command.
 pub struct Deploy;
 
@@ -64,7 +64,7 @@ Options:
     async fn exec(app: Arc<App>) -> Result<()> {
         let args: Vec<String> = app.args.clone();
         if args.is_empty() {
-            println!("{} expected commit name", "error".bright_red());
+            error!("expected commit name");
             process::exit(1);
         } else {
             let commit_msg = &args[0];

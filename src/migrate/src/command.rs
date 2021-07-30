@@ -21,10 +21,10 @@ use std::{env, fs, process, sync::Arc};
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use utils::{app::App, error};
 use volt_core::{
     classes::package_manager::PackageManager, command::Command, prompt::prompts::Select, VERSION,
 };
-use utils::app::App;
 /// Struct implementation for the `Migrate` command.
 pub struct Migrate;
 
@@ -83,17 +83,13 @@ Options:
                 items: packagemanagers.clone(),
             };
             let selected = select.run().unwrap_or_else(|err| {
-                eprintln!(
-                    "{}: {}",
-                    "error".bright_red().bold(),
-                    err.to_string().bright_yellow()
-                );
+                error!("{}", err.to_string());
                 process::exit(1);
             });
 
             packagemanager = PackageManager::from_index(selected).unwrap().to_string();
         } else {
-            println!("{}", "volt migrate only takes 1 argument".bright_red());
+            error!("{}", "volt migrate only takes 1 argument");
         }
 
         if packagemanager.eq_ignore_ascii_case("volt") {

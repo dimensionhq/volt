@@ -13,7 +13,7 @@ pub trait CustomColorize: Colorize {
     where
         Self: Sized,
     {
-        self.bright_red().bold()
+        self.on_bright_red().black()
     }
 
     fn warning_style(self) -> ColoredString
@@ -54,15 +54,15 @@ impl<E: Display> ResultLogErrorExt for Result<(), E> {
 
 #[macro_export]
 macro_rules! error {
-    ($($tt:tt)*) => { print!("{}", utils::helper::CustomColorize::error_style("error: ")); println!($($tt)*); };
+    ($($tt:tt)*) => { print!("{} ", $crate::helper::CustomColorize::error_style(" ERROR ")); println!($($tt)*); };
 }
 
 #[macro_export]
 macro_rules! warning {
-    ($($tt:tt)*) => { print!("{}", utils::helper::CustomColorize::warning_style("warning: ")); println!($($tt)*); };
+    ($($tt:tt)*) => { print!("{}", $crate::helper::CustomColorize::warning_style("warning: ")); println!($($tt)*); };
 }
 
 #[macro_export]
 macro_rules! info {
-    ($($tt:tt)*) => { print!("{}", utils::helper::CustomColorize::info_style("info: ")); println!($($tt)*); };
+    ($($tt:tt)*) => { print!("{}", $crate::helper::CustomColorize::info_style("info: ")); println!($($tt)*); };
 }

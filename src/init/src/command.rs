@@ -31,7 +31,7 @@ use volt_core::prompt::prompts::Confirm;
 use volt_core::prompt::prompts::Input;
 use volt_core::prompt::prompts::Select;
 // use volt_core::utils;
-use utils::get_git_config;
+use utils::{error, get_git_config};
 use volt_core::VERSION;
 
 /// Struct implementation for the `Init` command.
@@ -178,11 +178,7 @@ Options:
                 allow_empty: false,
             };
             let version = input.run().unwrap_or_else(|err| {
-                eprintln!(
-                    "{}: {}",
-                    "error".bright_red().bold(),
-                    err.to_string().bright_yellow()
-                );
+                error!("{}", err.to_string());
                 process::exit(1);
             });
 
@@ -194,11 +190,7 @@ Options:
             };
 
             let description = input.run().unwrap_or_else(|err| {
-                eprintln!(
-                    "{}: {}",
-                    "error".bright_red().bold(),
-                    err.to_string().bright_yellow()
-                );
+                error!("{}", err.to_string());
                 process::exit(1);
             });
 
@@ -210,11 +202,7 @@ Options:
             };
 
             let main = input.run().unwrap_or_else(|err| {
-                eprintln!(
-                    "{}: {}",
-                    "error".bright_red().bold(),
-                    err.to_string().bright_yellow()
-                );
+                error!("{}", err.to_string());
                 process::exit(1);
             });
 
@@ -239,11 +227,7 @@ Options:
                     allow_empty: true,
                 };
                 author = input.run().unwrap_or_else(|err| {
-                    eprintln!(
-                        "{}: {}",
-                        "error".bright_red().bold(),
-                        err.to_string().bright_yellow()
-                    );
+                    error!("{}", err.to_string());
                     process::exit(1);
                 });
             } else {
@@ -253,11 +237,7 @@ Options:
                     allow_empty: true,
                 };
                 author = input.run().unwrap_or_else(|err| {
-                    eprintln!(
-                        "{}: {}",
-                        "error".bright_red().bold(),
-                        err.to_string().bright_yellow()
-                    );
+                    error!("{}", err.to_string());
                     process::exit(1);
                 });
             }
@@ -270,11 +250,7 @@ Options:
             };
 
             let repository = input.run().unwrap_or_else(|err| {
-                eprintln!(
-                    "{}: {}",
-                    "error".bright_red().bold(),
-                    err.to_string().bright_yellow()
-                );
+                error!("{}", err.to_string());
                 process::exit(1);
             });
 
@@ -288,11 +264,7 @@ Options:
             };
 
             select.run().unwrap_or_else(|err| {
-                eprintln!(
-                    "{}: {}",
-                    "error".bright_red().bold(),
-                    err.to_string().bright_yellow()
-                );
+                error!("{}", err.to_string());
                 process::exit(1);
             });
 
@@ -304,11 +276,7 @@ Options:
             };
 
             let private = input.run().unwrap_or_else(|err| {
-                eprintln!(
-                    "{}: {}",
-                    "error".bright_red().bold(),
-                    err.to_string().bright_yellow()
-                );
+                error!("{}", err.to_string());
                 process::exit(1);
             });
 
@@ -326,10 +294,9 @@ Options:
 
         let mut file = File::create(r"package.json").unwrap();
         if let Err(error) = file.write(data.dump().as_bytes()) {
-            eprintln!(
-                "{} : {} {}",
-                "error:".bright_red().bold(),
-                "Failed To Create package.json -".bright_red(),
+            error!(
+                "{} {}",
+                "Failed to create package.json -",
                 error.to_string().bright_yellow().bold()
             );
             process::exit(1);
