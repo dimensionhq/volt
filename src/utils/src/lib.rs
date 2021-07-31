@@ -59,7 +59,7 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
                 if retries == MAX_RETRIES {
                     return Err(anyhow!(
                         "GET {} - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.\n\n{}: {}",
-                        format!("http://registry.voltpkg.com/{}", package_name).underline(),
+                        format!("http://registry.voltpkg.com/{}", package_name),
                         format!("Not Found ({})", "404".bright_yellow().bold()),
                         package_name,
                         "help".bright_blue(),
@@ -93,79 +93,71 @@ pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<Result<VoltRe
 }
 
 #[cfg(windows)]
-pub async fn hardlink_files(app: Arc<App>, src: String) {
-    let mut src = src;
+pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
+    println!("{}", app.volt_dir.display());
 
-    let volt_directory = format!("{}", app.volt_dir.display());
+    // for entry in WalkDir::new(src) {
+    //     let entry = entry.unwrap();
 
-    if !cfg!(target_os = "windows") {
-        src = src.replace(r"\", "/");
-    } else {
-        src = src.replace(r"/", r"\");
-    }
+    //     if !entry.path().is_dir() {
+    //         // index.js
+    //         let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
 
-    for entry in WalkDir::new(src) {
-        let entry = entry.unwrap();
+    //         // lib/index.js
+    //         let path = format!("{}", &entry.path().display())
+    //             .replace(r"\", "/")
+    //             .replace(&volt_directory, "");
 
-        if !entry.path().is_dir() {
-            // index.js
-            let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
+    //         // node_modules/lib
+    //         create_dir_all(format!(
+    //             "node_modules/{}",
+    //             &path
+    //                 .replace(
+    //                     format!("{}", &app.volt_dir.display())
+    //                         .replace(r"\", "/")
+    //                         .as_str(),
+    //                     ""
+    //                 )
+    //                 .trim_end_matches(file_name)
+    //         ))
+    //         .await
+    //         .unwrap();
 
-            // lib/index.js
-            let path = format!("{}", &entry.path().display())
-                .replace(r"\", "/")
-                .replace(&volt_directory, "");
-
-            // node_modules/lib
-            create_dir_all(format!(
-                "node_modules/{}",
-                &path
-                    .replace(
-                        format!("{}", &app.volt_dir.display())
-                            .replace(r"\", "/")
-                            .as_str(),
-                        ""
-                    )
-                    .trim_end_matches(file_name)
-            ))
-            .await
-            .unwrap();
-
-            // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
-            if !Path::new(&format!(
-                "node_modules{}",
-                &path.replace(
-                    format!("{}", &app.volt_dir.display())
-                        .replace(r"\", "/")
-                        .as_str(),
-                    ""
-                )
-            ))
-            .exists()
-            {
-                hard_link(
-                    format!("{}", &path),
-                    format!(
-                        "node_modules{}",
-                        &path.replace(
-                            format!("{}", &app.volt_dir.display())
-                                .replace(r"\", "/")
-                                .as_str(),
-                            ""
-                        )
-                    ),
-                )
-                .await
-                .unwrap_or_else(|_| {
-                    0;
-                });
-            }
-        }
-    }
+    //         // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
+    //         if !Path::new(&format!(
+    //             "node_modules{}",
+    //             &path.replace(
+    //                 format!("{}", &app.volt_dir.display())
+    //                     .replace(r"\", "/")
+    //                     .as_str(),
+    //                 ""
+    //             )
+    //         ))
+    //         .exists()
+    //         {
+    //             hard_link(
+    //                 format!("{}", &path),
+    //                 format!(
+    //                     "node_modules{}",
+    //                     &path.replace(
+    //                         format!("{}", &app.volt_dir.display())
+    //                             .replace(r"\", "/")
+    //                             .as_str(),
+    //                         ""
+    //                     )
+    //                 ),
+    //             )
+    //             .await
+    //             .unwrap_or_else(|_| {
+    //                 0;
+    //             });
+    //         }
+    //     }
+    // }
 }
 
 #[cfg(unix)]
-pub async fn hardlink_files(app: Arc<App>, src: String) {
+pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
     let mut src = src;
     let volt_directory = format!("{}", app.volt_dir.display());
 
@@ -271,7 +263,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
     if !Path::new(&loc).exists() {
         // Url to download tarball code files from
         let mut url = package_instance.tarball;
-        let registries = vec!["npmjs.com", "yarnpkg.com"];
+        let registries = vec!["npmjs.org", "yarnpkg.com"];
         let random_registry = registries.choose(&mut rand::thread_rng()).unwrap();
 
         url = url.replace("npmjs.org", random_registry);
@@ -666,7 +658,7 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
 
     let path = Path::new(directory.as_os_str());
 
-    hardlink_files(app.to_owned(), path.display().to_string()).await;
+    hardlink_files(app.to_owned(), &path).await;
 
     Ok(())
 }
