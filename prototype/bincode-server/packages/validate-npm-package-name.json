@@ -1,1 +1,0 @@
-{"latest":"3.0.0","schema":0,"versions":{"3.0.0":{"builtins@1.0.3":{"sha1":"cb94faeb61c8696451db36534e1422f94f0aee88","integrity":"sha1-cb94faeb61c8696451db36534e1422f94f0aee88="},"validate-npm-package-name@3.0.0":{"sha1":"5fa912d81eb7d0c74afc140de7317f0ca7df437e","integrity":"sha1-5fa912d81eb7d0c74afc140de7317f0ca7df437e=","dependencies":["builtins"]}}}}

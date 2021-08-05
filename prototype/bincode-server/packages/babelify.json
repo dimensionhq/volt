@@ -1,1 +1,0 @@
-{"latest":"10.0.0","schema":0,"versions":{"10.0.0":{"babelify@10.0.0":{"sha1":"fe73b1a22583f06680d8d072e25a1e0d1d1d7fb5","integrity":"sha512-X40FaxyH7t3X+JFAKvb1H9wooWKLRCi8pg3m8poqtdZaIng+bjzp9RvKQCvRjF9isHiPkXspbbXT/zwXLtwgwg==","peer_dependencies":["@babel/core"]}}}}

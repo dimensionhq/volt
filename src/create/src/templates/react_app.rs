@@ -22,7 +22,7 @@ pub async fn create_react_app(app_name: String) {
 
     let dir = std::env::current_dir().unwrap().join(&app_name);
     let _ = std::env::set_current_dir(&dir); // Set current directory to $dir as init depends on it
-    let mut app = App::initialize();
+    let mut app = App::initialize().unwrap();
     app.flags = vec![AppFlag::Yes];
 
     init::command::Init::exec(std::sync::Arc::new(app))

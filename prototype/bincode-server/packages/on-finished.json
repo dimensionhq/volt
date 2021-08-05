@@ -1,1 +1,0 @@
-{"latest":"2.3.0","schema":0,"versions":{"2.3.0":{"on-finished@2.3.0":{"sha1":"20f1336481b083cd75337992a16971aa2d906947","integrity":"sha1-20f1336481b083cd75337992a16971aa2d906947=","dependencies":["ee-first"]},"ee-first@1.1.1":{"sha1":"590c61156b0ae2f4f0255732a158b266bc56b21d","integrity":"sha1-590c61156b0ae2f4f0255732a158b266bc56b21d="}}}}

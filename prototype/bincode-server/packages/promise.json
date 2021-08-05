@@ -1,1 +1,0 @@
-{"latest":"8.1.0","schema":0,"versions":{"8.1.0":{"asap@2.0.6":{"sha1":"e50347611d7e690943208bbdafebcbc2fb866d46","integrity":"sha1-e50347611d7e690943208bbdafebcbc2fb866d46="},"promise@8.1.0":{"sha1":"697c25c3dfe7435dd79fcd58c38a135888eaf05e","integrity":"sha512-W04AqnILOL/sPRXziNicCjSNRruLAuIHEOVBazepu0545DDNGYHz7ar9ZgZ1fMU8/MA4mVxp5rkBWRi6OXIy3Q==","dependencies":["asap"]}}}}

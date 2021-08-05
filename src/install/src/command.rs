@@ -73,7 +73,7 @@ Options:
         let dependencies = package_file.dependencies;
         let dev_dependencies = package_file.dev_dependencies;
 
-        let mut app = App::initialize();
+        let mut app = App::initialize().unwrap();
 
         let mut dev_deps = dev_dependencies
             .into_iter()

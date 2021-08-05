@@ -1,5 +1,5 @@
 use crate::enable_ansi_support;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use dirs::home_dir;
 use sha1::{Digest, Sha1};
 use std::{env, io, path::PathBuf};
@@ -49,14 +49,14 @@ pub struct App {
 }
 
 impl App {
-    pub fn initialize() -> Self {
+    pub fn initialize() -> Result<App> {
         enable_ansi_support().unwrap();
 
         // Current Directory
         let current_directory = env::current_dir().unwrap();
 
         // Home Directory: /username or C:\Users\username
-        let home_directory = home_dir().unwrap_or_else(|| current_directory.clone());
+        let home_directory = home_dir().context("Failed to detect $HOME environment variable.")?;
 
         // node_modules/
         let node_modules_directory = current_directory.join("node_modules");
@@ -88,7 +88,7 @@ impl App {
             }
         }
 
-        App {
+        Ok(App {
             current_dir: current_directory,
             home_dir: home_directory,
             node_modules_dir: node_modules_directory,
@@ -97,7 +97,7 @@ impl App {
             args: refined_args,
             flags,
             unknown_flags,
-        }
+        })
     }
 
     /// Check if the app arguments contain the flags specified

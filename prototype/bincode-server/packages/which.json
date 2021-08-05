@@ -1,1 +1,0 @@
-{"latest":"2.0.2","schema":0,"versions":{"2.0.2":{"which@2.0.2":{"sha1":"7c6a8dd0a636a0327e10b59c9286eee93f3f51b1","integrity":"sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==","dependencies":["isexe"]},"isexe@2.0.0":{"sha1":"e8fbf374dc556ff8947a10dcb0572d633f2cfa10","integrity":"sha1-e8fbf374dc556ff8947a10dcb0572d633f2cfa10="}}}}

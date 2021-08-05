@@ -1,1 +1,0 @@
-{"latest":"1.0.0","schema":0,"versions":{"1.0.0":{"passport-strategy@1.0.0":{"sha1":"b5539aa8fc225a3d1ad179476ddf236b440f52e4","integrity":"sha1-b5539aa8fc225a3d1ad179476ddf236b440f52e4="},"passport-local@1.0.0":{"sha1":"1fe63268c92e75606626437e3b906662c15ba6ee","integrity":"sha1-1fe63268c92e75606626437e3b906662c15ba6ee=","dependencies":["passport-strategy"]}}}}

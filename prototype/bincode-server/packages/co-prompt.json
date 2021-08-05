@@ -1,1 +1,0 @@
-{"latest":"1.0.0","schema":0,"versions":{"1.0.0":{"keypress@0.2.1":{"sha1":"1e80454250018dbad4c3fe94497d6e67b6269c77","integrity":"sha1-1e80454250018dbad4c3fe94497d6e67b6269c77="},"co-prompt@1.0.0":{"sha1":"fb370e9edac48576b27a732fe5d7f21d9fc6e6f6","integrity":"sha1-fb370e9edac48576b27a732fe5d7f21d9fc6e6f6=","dependencies":["keypress"]}}}}
