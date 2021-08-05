@@ -38,12 +38,17 @@ async fn main() {
 
         err_chain.for_each(|e| eprintln!("{}", e));
 
+        println!(
+            "Need help? Check out {} for help",
+            "https://voltpkg.com/support".truecolor(155, 255, 171)
+        );
+
         std::process::exit(1);
     }
 }
 
 async fn try_main() -> Result<()> {
-    let app = App::initialize();
+    let app = App::initialize().unwrap();
     let cmd = AppCommand::current().unwrap_or(AppCommand::Script); // Default command is help
 
     if app.has_flag(AppFlag::Help) {

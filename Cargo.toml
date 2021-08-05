@@ -50,6 +50,7 @@ members = [
 exclude = [
   "src/prototype/compress",
   "src/prototype/syntax",
+  "registry",
   "platforms/cargo",
   "prototype/bincode-server",
   "server",

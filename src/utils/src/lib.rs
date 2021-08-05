@@ -40,7 +40,7 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
 
     loop {
         let mut response = chttp::get_async(format!(
-            "http://registry-19d90.kxcdn.com/{}.json",
+            "http://push-2105.5centscdn.com/{}.bin",
             package_name
         ))
         .await
@@ -70,9 +70,10 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
             _ => {
                 if retries == MAX_RETRIES {
                     return Err(anyhow!(
-                        "{} {}: Not Found - 404\n\n{} was not found on the volt registry, or you don't have the permission to request it.",
+                        "{} {}: Not Found - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.",
                         "GET".bright_green(),
                         format!("http://registry.voltpkg.com/{}", package_name).underline(),
+                        response.status().as_str(),
                         package_name
                     ));
                 }
@@ -658,7 +659,7 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
 
     let path = Path::new(directory.as_os_str());
 
-    hardlink_files(app.to_owned(), &path).await;
+    // hardlink_files(app.to_owned(), &path).await;
 
     Ok(())
 }
