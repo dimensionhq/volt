@@ -16,9 +16,9 @@ limitations under the License.
 use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
+use std::process::exit;
 use std::sync::Arc;
 use std::time::Instant;
-use std::{process::exit, sync::atomic::AtomicI16};
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -26,12 +26,12 @@ use colored::Colorize;
 use futures::stream;
 use futures::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::Mutex;
 use utils::app::{App, AppFlag};
 use utils::constants::PROGRESS_CHARS;
 use utils::error;
 
-use utils::package::{Package, PackageJson, Version};
+use utils::package::PackageJson;
 use utils::volt_api::{VoltPackage, VoltResponse};
 
 use volt_core::{
@@ -42,13 +42,7 @@ use volt_core::{
 
 /// Struct implementation for the `Add` command.
 #[derive(Clone)]
-pub struct Add {
-    lock_file: LockFile,
-    dependencies: Arc<Mutex<Vec<(Package, Version)>>>,
-    dev_dependencies: Arc<Mutex<Vec<(Package, Version)>>>,
-    total_dependencies: Arc<AtomicI16>,
-    progress_sender: mpsc::Sender<()>,
-}
+pub struct Add {}
 
 #[async_trait]
 impl Command for Add {
