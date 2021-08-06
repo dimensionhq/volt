@@ -58,7 +58,7 @@ async fn try_main() -> Result<()> {
     }
 
     if app.has_flag(AppFlag::Version) {
-        // Display version message
+        // Display version
         println!("volt v{}{}", "::".bright_magenta(), VERSION.success_style());
         return Ok(());
     }

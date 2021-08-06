@@ -58,12 +58,10 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
             &mut StatusCode::NOT_FOUND => {
                 if retries == MAX_RETRIES {
                     return Err(anyhow!(
-                        "GET {} - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.\n\n{}: {}",
+                        "GET {} - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.\n",
                         format!("http://registry.voltpkg.com/{}", package_name),
                         format!("Not Found ({})", "404".bright_yellow().bold()),
                         package_name,
-                        "help".bright_blue(),
-                        "https://voltpkg.com/error/ne404",
                     ));
                 }
             }
