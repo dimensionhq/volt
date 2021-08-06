@@ -51,7 +51,7 @@ impl Command for Add {
         format!(
             r#"volt {}
     
-Add a package to your dependencies for your project.
+Add a package to your project's dependencies.
 Usage: {} {} {} {}
 Options: 
     
@@ -91,29 +91,32 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        // // Display help menu if `volt add` is run.
-        if &app.args.len() == &1 {
+        // Display help menu if `volt add` is run.
+        if app.args.len() == 1 {
             println!("{}", Self::help());
-            exit(1);
+            exit(0);
         }
 
         let mut packages = vec![];
 
         // Add packages to the packages vec.
-        for arg in &app.args {
+        for arg in app.args.iter() {
             if arg != "add" {
                 packages.push(arg.clone());
             }
         }
 
         // Check if package.json exists, otherwise, handle it.
-        if !&app.current_dir.join("package.json").exists() {
+        if !app.current_dir.join("package.json").exists() {
             error!("no package.json found.");
             print!("Do you want to initialize package.json (Y/N): ");
+
             std::io::stdout().flush().expect("Could not flush stdout");
+
             let mut string: String = String::new();
-            #[allow(unused_must_use)]
+
             std::io::stdin().read_line(&mut string).unwrap();
+
             if string.trim().to_lowercase() != "y" {
                 exit(0);
             } else {
@@ -125,20 +128,17 @@ Options:
         let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
 
         // Iterate through each package
-        let app_instance = app.clone();
+
         let package_file = package_file.clone();
 
-        let verbose = app_instance.has_flag(AppFlag::Verbose);
+        let verbose = app.has_flag(AppFlag::Verbose);
 
-        let pballowed = !app_instance.has_flag(AppFlag::NoProgress);
+        let pballowed = !app.has_flag(AppFlag::NoProgress);
 
-        let lcp = app_instance.lock_file_path.to_path_buf();
+        let lcp = app.lock_file_path.to_path_buf();
 
-        let global_lockfile = Path::new(&format!(
-            r"{}/.global.lock",
-            app_instance.home_dir.display()
-        ))
-        .to_path_buf();
+        let global_lockfile =
+            Path::new(&format!(r"{}/.global.lock", app.home_dir.display())).to_path_buf();
 
         let mut lock_file = LockFile::load(lcp.clone()).unwrap_or_else(|_| LockFile::new(lcp));
 
@@ -266,7 +266,7 @@ Options:
         let mut workers = Vec::with_capacity(dependencies.len());
 
         for dep in dependencies.iter() {
-            let app_instance = app_instance.clone();
+            let app_instance = app.clone();
             workers.push(async move {
                 utils::install_extract_package(&app_instance, &dep)
                     .await
@@ -300,7 +300,7 @@ Options:
 
         let mut package_json_file = package_file.lock().await;
 
-        if app_instance.has_flag(AppFlag::Dev) {
+        if app.has_flag(AppFlag::Dev) {
             for (idx, package) in packages.clone().into_iter().enumerate() {
                 package_json_file
                     .dev_dependencies
