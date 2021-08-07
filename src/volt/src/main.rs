@@ -39,7 +39,7 @@ async fn main() {
         err_chain.for_each(|e| eprintln!("{}", e));
 
         println!(
-            "Need help? Check out {} for help",
+            "\nNeed help? Check out {} for help",
             "https://voltpkg.com/support".truecolor(155, 255, 171)
         );
 
