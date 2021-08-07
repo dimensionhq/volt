@@ -1,11 +1,12 @@
 use crate::constants::MAX_RETRIES;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, ensure, Context, Result};
 use chttp::prelude::Request;
 use chttp::RequestExt;
 use chttp::{http::StatusCode, ResponseExt};
 use colored::Colorize;
 use futures::stream::FuturesOrdered;
 use futures::TryStreamExt;
+use semver_rs::Version;
 use serde_json::Value;
 
 // Get version from NPM
@@ -75,12 +76,16 @@ pub async fn get_version(package_name: String) -> Result<String> {
         }
     } else {
         if count == 2 && package_name.contains("/") {
-            let version_requirement = package_name.split("@").collect::<Vec<&str>>()[2];
+            let input_version = package_name.split("@").collect::<Vec<&str>>()[2].to_string();
+
+            let version_requirement = semver_rs::Range::new(&input_version).parse().unwrap();
 
             loop {
+                let name = format!("@{}", input_version);
+
                 let client: Request<&str> = Request::get(format!(
                     "http://registry.npmjs.org/{}",
-                    package_name
+                    package_name.replace(&name, "")
                 ))
                 .header(
                     "Accept",
@@ -102,9 +107,29 @@ pub async fn get_version(package_name: String) -> Result<String> {
                         match serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object()
                         {
                             Some(value) => {
-                                let versions = value.keys().cloned().collect::<Vec<String>>();
+                                let mut available_versions = value
+                                    .keys()
+                                    .filter_map(|k| Version::new(k).parse().ok())
+                                    .filter(|v| version_requirement.test(&v))
+                                    .collect::<Vec<_>>();
 
-                                
+                                ensure!(
+                                    !available_versions.is_empty(),
+                                    "Failed to find a version that matches the specified requirement: {}",
+                                    name.bright_cyan().bold(),
+                                );
+
+                                available_versions
+                                    .sort_unstable_by(|a, b| a.partial_cmp(b).unwrap().reverse());
+
+                                if available_versions.is_empty() {
+                                    return Err(anyhow!(
+                                        "Failed to find a version that matches the specified requirement: {}",
+                                        name.bright_cyan().bold()
+                                    ));
+                                }
+
+                                return Ok(available_versions[0].to_string());
                             }
                             None => {
                                 return Err(anyhow!(
@@ -138,16 +163,11 @@ pub async fn get_version(package_name: String) -> Result<String> {
 
                 retries += 1;
             }
-
-            return Err(anyhow!(
-                "{} {}: Not Found - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
-                "GET".bright_green(),
-                format!("http://registry.npmjs.org/{}", package_name).underline(),
-                404,
-                package_name
-            ));
         } else if count == 1 && !package_name.contains("/") {
-            let version_requirement = package_name.split("@").collect::<Vec<&str>>()[1];
+            let version_requirement =
+                semver_rs::Range::new(package_name.split("@").collect::<Vec<&str>>()[1])
+                    .parse()
+                    .unwrap();
 
             return Err(anyhow!(
                 "{} {}: Not Found - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",

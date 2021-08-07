@@ -117,6 +117,8 @@ Options:
 
         let versions = get_versions(&packages).await?;
 
+        println!("{:?}", versions);
+
         Ok(())
     }
 }
