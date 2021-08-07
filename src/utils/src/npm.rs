@@ -164,18 +164,93 @@ pub async fn get_version(package_name: String) -> Result<String> {
                 retries += 1;
             }
         } else if count == 1 && !package_name.contains("/") {
-            let version_requirement =
-                semver_rs::Range::new(package_name.split("@").collect::<Vec<&str>>()[1])
-                    .parse()
-                    .unwrap();
+            let input_version = package_name.split("@").collect::<Vec<&str>>()[1].to_string();
 
-            return Err(anyhow!(
-                "{} {}: Not Found - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
-                "GET".bright_cyan(),
-                format!("http://registry.npmjs.org/{}", package_name).underline(),
-                404,
-                package_name
-            ));
+            let version_requirement = semver_rs::Range::new(&input_version).parse().unwrap();
+
+            loop {
+                let name = format!("@{}", input_version);
+
+                let client: Request<&str> = Request::get(format!(
+                    "http://registry.npmjs.org/{}",
+                    package_name.replace(&name, "")
+                ))
+                .header(
+                    "Accept",
+                    "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
+                )
+                .body("")?;
+
+                let mut response = client.send_async().await.with_context(|| {
+                    format!("failed to fetch {}", package_name.bright_cyan().bold())
+                })?;
+
+                match response.status_mut() {
+                    &mut StatusCode::OK => {
+                        let text = response.text_async().await.context(format!(
+                            "failed to deserialize response for {}",
+                            package_name.bright_cyan().bold()
+                        ))?;
+
+                        match serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object()
+                        {
+                            Some(value) => {
+                                let mut available_versions = value
+                                    .keys()
+                                    .filter_map(|k| Version::new(k).parse().ok())
+                                    .filter(|v| version_requirement.test(&v))
+                                    .collect::<Vec<_>>();
+
+                                ensure!(
+                                    !available_versions.is_empty(),
+                                    "Failed to find a version that matches the specified requirement: {}",
+                                    name.bright_cyan().bold(),
+                                );
+
+                                available_versions
+                                    .sort_unstable_by(|a, b| a.partial_cmp(b).unwrap().reverse());
+
+                                if available_versions.is_empty() {
+                                    return Err(anyhow!(
+                                        "Failed to find a version that matches the specified requirement: {}",
+                                        name.bright_cyan().bold()
+                                    ));
+                                }
+
+                                return Ok(available_versions[0].to_string());
+                            }
+                            None => {
+                                return Err(anyhow!(
+                                    "Failed to request versions for {}.",
+                                    package_name.bright_cyan()
+                                ));
+                            }
+                        }
+                    }
+                    &mut StatusCode::NOT_FOUND => {
+                        if retries == MAX_RETRIES {
+                            return Err(anyhow!(
+                                    "GET {} - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
+                                    format!("http://registry.npmjs.org/{}", package_name),
+                                    format!("Not Found ({})", "404".bright_yellow().bold()),
+                                    package_name,
+                                ));
+                        }
+                    }
+                    _ => {
+                        if retries == MAX_RETRIES {
+                            return Err(anyhow!(
+                                    "GET {}: Not Found - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
+                                    format!("http://registry.npmjs.org/{}", package_name).underline(),
+                                    response.status().as_str(),
+                                    package_name
+                                ));
+                        }
+                    }
+                }
+
+                retries += 1;
+            }
         } else {
             return Err(anyhow!("something very bad happened lol"));
         }
