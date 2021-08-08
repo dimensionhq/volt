@@ -15,16 +15,13 @@ limitations under the License.
 
 use std::collections::HashMap;
 use std::io::Write;
-use std::path::Path;
 use std::process::exit;
 use std::sync::Arc;
 use std::time::Instant;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use futures::stream;
-use futures::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use tokio::sync::Mutex;
 use utils::app::{App, AppFlag};
@@ -32,8 +29,8 @@ use utils::constants::PROGRESS_CHARS;
 use utils::error;
 
 use utils::package::PackageJson;
-use utils::volt_api::{VoltPackage, VoltResponse};
 
+use utils::volt_api::{VoltPackage, VoltResponse};
 use volt_core::{
     command::Command,
     model::lock_file::{DependencyID, DependencyLock, LockFile},
@@ -127,25 +124,10 @@ Options:
         // Load the existing package.json file
         let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
 
-        // Iterate through each package
-
-        let package_file = package_file.clone();
-
         let verbose = app.has_flag(AppFlag::Verbose);
+        let pb_allowed = app.has_flag(AppFlag::NoProgress);
 
-        let pballowed = !app.has_flag(AppFlag::NoProgress);
-
-        let lcp = app.lock_file_path.to_path_buf();
-
-        let global_lockfile =
-            Path::new(&format!(r"{}/.global.lock", app.home_dir.display())).to_path_buf();
-
-        let mut lock_file = LockFile::load(lcp.clone()).unwrap_or_else(|_| LockFile::new(lcp));
-
-        let mut global_lockfile = LockFile::load(global_lockfile.clone())
-            .unwrap_or_else(|_| LockFile::new(global_lockfile));
-
-        let progress_bar: ProgressBar = ProgressBar::new(1);
+        let progress_bar = ProgressBar::new(1);
 
         progress_bar.set_style(
             ProgressStyle::default_bar()
@@ -201,135 +183,6 @@ Options:
                 (end - start).as_secs_f32()
             );
         }
-
-        let dependencies: Vec<_> = dependencies
-            .iter()
-            .map(|(_name, object)| {
-                let mut lock_dependencies: Vec<String> = vec![];
-                let object_instance = object.clone();
-
-                if object_instance.peer_dependencies.is_some() {
-                    object_instance
-                        .peer_dependencies
-                        .unwrap()
-                        .into_iter()
-                        .for_each(|dep| {
-                            if !utils::check_peer_dependency(&dep) {
-                                progress_bar.println(format!(
-                                    "{}{} {} has unmet peer dependency {}",
-                                    " warn ".black().bright_yellow(),
-                                    ":",
-                                    object.name.bright_cyan(),
-                                    &dep.bright_yellow()
-                                ));
-                            }
-                        });
-                }
-
-                if object.dependencies.is_some() {
-                    for dep in object_instance.dependencies.unwrap().iter() {
-                        // TODO: Change this to real version
-                        lock_dependencies.push(dep.to_string());
-                    }
-                }
-
-                lock_file.dependencies.insert(
-                    DependencyID(object.clone().name, object.clone().version.to_owned()),
-                    DependencyLock {
-                        name: object_instance.name,
-                        version: object_instance.version,
-                        tarball: object_instance.tarball,
-                        sha1: object_instance.sha1,
-                        dependencies: lock_dependencies.clone(),
-                    },
-                );
-
-                let second_instance = object.clone();
-
-                global_lockfile.dependencies.insert(
-                    DependencyID(object.clone().name, object.clone().version.to_owned()),
-                    DependencyLock {
-                        name: second_instance.name,
-                        version: second_instance.version,
-                        tarball: second_instance.tarball,
-                        sha1: second_instance.sha1,
-                        dependencies: lock_dependencies,
-                    },
-                );
-
-                object
-            })
-            .collect();
-
-        progress_bar.finish_and_clear();
-
-        let mut workers = Vec::with_capacity(dependencies.len());
-
-        for dep in dependencies.iter() {
-            let app_instance = app.clone();
-            workers.push(async move {
-                utils::install_extract_package(&app_instance, &dep)
-                    .await
-                    .unwrap();
-            });
-        }
-
-        let stream = stream::iter(workers);
-        let mut buffers = stream.buffer_unordered(23);
-
-        if pballowed {
-            let progress_bar = ProgressBar::new(dependencies.len() as u64);
-
-            progress_bar.set_style(
-                ProgressStyle::default_bar()
-                    .progress_chars(PROGRESS_CHARS)
-                    .template(&format!(
-                        "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{pos}} / {{len}}",
-                        "Installing Packages".bright_blue()
-                    )),
-            );
-
-            while buffers.next().await.is_some() {
-                progress_bar.inc(1);
-            }
-
-            progress_bar.finish();
-        } else {
-            while buffers.next().await.is_some() {}
-        }
-
-        let mut package_json_file = package_file.lock().await;
-
-        if app.has_flag(AppFlag::Dev) {
-            for (idx, package) in packages.clone().into_iter().enumerate() {
-                package_json_file
-                    .dev_dependencies
-                    .insert(package.to_string(), format!("^{}", &responses[idx].version));
-            }
-        } else {
-            for (idx, package) in packages.clone().into_iter().enumerate() {
-                package_json_file
-                    .dev_dependencies
-                    .insert(package.to_string(), format!("^{}", &responses[idx].version));
-            }
-        }
-
-        package_json_file.save();
-
-        // Write to lock file
-        if verbose {
-            println!("info {}", "Writing to lock file".yellow());
-        }
-
-        lock_file
-            .save_pretty()
-            .context("Failed to save lock file")
-            .unwrap();
-
-        global_lockfile
-            .save()
-            .context("Failed to save global lockfile")
-            .unwrap();
 
         Ok(())
     }
