@@ -27,9 +27,7 @@ use std::process;
 use std::sync::Arc;
 use tar::Archive;
 use tokio::fs::create_dir_all;
-use tokio::fs::hard_link;
 use volt_api::{VoltPackage, VoltResponse};
-use walkdir::WalkDir;
 
 use crate::constants::MAX_RETRIES;
 use crate::helper::ResultLogErrorExt;

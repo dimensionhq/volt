@@ -33,7 +33,7 @@ async fn main() {
 
         let err_chain = err.chain().skip(1);
         if err_chain.clone().next().is_some() {
-            error!("{}", "\nCaused by:".caused_by_style());
+            println!("{}", "\nCaused by:".caused_by_style());
         }
 
         err_chain.for_each(|e| eprintln!("{}", e));
