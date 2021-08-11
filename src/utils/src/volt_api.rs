@@ -25,31 +25,31 @@ pub struct VoltResponse {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct VoltPackage {
-    #[serde(rename = "n")]
     pub name: String,
-    #[serde(rename = "v")]
     pub version: String,
-    #[serde(rename = "tb")]
     pub tarball: String,
-    #[serde(rename = "s1")]
-    pub sha1: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "td")]
-    pub threaded: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "bn")]
     pub bin: Option<HashMap<String, String>>,
-    #[serde(rename = "ig")]
     pub integrity: String,
-    #[serde(rename = "pd")]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_dependencies: Option<Vec<String>>,
-    #[serde(rename = "dp")]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<Vec<String>>,
 }
 
-impl VoltResponse {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BinVoltResponse {
+    latest: String,
+    schema: u8,
+    versions: HashMap<String, HashMap<String, BinVoltPackage>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BinVoltPackage {
+    sha1: Vec<u8>,
+    sha512: Option<Vec<u8>>,
+    dependencies: Option<Vec<String>>,
+    peer_dependencies: Option<Vec<String>>,
+}
+
+impl BinVoltResponse {
     pub fn save(self, path: String) {
         let mut file = std::fs::File::create(path).unwrap();
         file.write_all(serde_json::to_string(&self).unwrap().as_bytes())

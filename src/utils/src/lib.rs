@@ -9,51 +9,71 @@ use anyhow::Context;
 use anyhow::Error;
 use anyhow::Result;
 use app::App;
-use chttp::http::StatusCode;
-use chttp::ResponseExt;
+use bytes::Bytes;
 use colored::Colorize;
-use flate2::read::GzDecoder;
 use futures_util::stream::FuturesUnordered;
 use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
+use lz4::Decoder;
 use package::Package;
 use rand::prelude::SliceRandom;
+use reqwest::StatusCode;
 use std::borrow::Cow;
 use std::env::temp_dir;
-use std::fs::{remove_dir_all, File};
+use std::fs::File;
+use std::io::Cursor;
+use std::io::Read;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::Arc;
-use tar::Archive;
+use std::time::Instant;
 use tokio::fs::create_dir_all;
-use volt_api::{VoltPackage, VoltResponse};
+use volt_api::VoltPackage;
 
 use crate::constants::MAX_RETRIES;
-use crate::helper::ResultLogErrorExt;
+use crate::volt_api::BinVoltResponse;
+
+pub fn decompress(data: Bytes) -> Result<Vec<u8>> {
+    // initialize decoded data
+    let mut decoded: Vec<u8> = Vec::new();
+
+    // generate cursor (impl `Read`)
+    let cursor = Cursor::new(data);
+
+    // initialize a decoder
+    let mut decoder = Decoder::new(cursor).context("failed to initialize lz4 decoder")?;
+
+    // decode and return data
+    decoder.read_to_end(&mut decoded).unwrap();
+
+    Ok(decoded)
+}
 
 // Get response from volt CDN
-pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
+pub async fn get_volt_response(package_name: String) -> Result<BinVoltResponse> {
+    // number of retries
     let mut retries = 0;
 
     loop {
-        let mut response = chttp::get_async(format!(
+        let response = reqwest::get(format!(
             "http://push-2105.5centscdn.com/{}.bin",
             package_name
         ))
         .await
         .with_context(|| format!("failed to fetch {}", package_name.bright_yellow().bold()))?;
 
-        match response.status_mut() {
-            &mut StatusCode::OK => {
-                let text = response.text_async().await.context(format!(
-                    "failed to deserialize response for {}",
-                    package_name.bright_yellow().bold()
-                ))?;
+        match response.status() {
+            StatusCode::OK => {
+                // decompress using lz4
 
-                return Ok(serde_json::from_str(&text)?);
+                let decoded = decompress(response.bytes().await?)?;
+
+                let deserialized: BinVoltResponse = bincode::deserialize(&decoded).unwrap();
+
+                return Ok(deserialized);
             }
-            &mut StatusCode::NOT_FOUND => {
+            StatusCode::NOT_FOUND => {
                 if retries == MAX_RETRIES {
                     return Err(anyhow!(
                         "GET {} - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.\n",
@@ -80,12 +100,12 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
     }
 }
 
-pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<Result<VoltResponse>> {
+pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<Result<BinVoltResponse>> {
     packages
         .into_iter()
         .map(get_volt_response)
         .collect::<FuturesUnordered<_>>()
-        .collect::<Vec<Result<VoltResponse>>>()
+        .collect::<Vec<Result<BinVoltResponse>>>()
         .await
 }
 
@@ -275,116 +295,116 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
         let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
         // Verify If Bytes == Sha1
-        if package.sha1 == App::calc_hash(&bytes).unwrap() {
-            // println!("{} => {}", url.clone(), loc);
-            // Create node_modules
-            create_dir_all(&app.node_modules_dir).await?;
+        // if package.sha1 == App::calc_hash(&bytes).unwrap() {
+        //     // println!("{} => {}", url.clone(), loc);
+        //     // Create node_modules
+        //     create_dir_all(&app.node_modules_dir).await?;
 
-            // Delete package from node_modules
-            let node_modules_dep_path = app.node_modules_dir.join(&package.name);
+        //     // Delete package from node_modules
+        //     let node_modules_dep_path = app.node_modules_dir.join(&package.name);
 
-            if node_modules_dep_path.exists() {
-                remove_dir_all(&node_modules_dep_path)?;
-            }
+        //     if node_modules_dep_path.exists() {
+        //         remove_dir_all(&node_modules_dep_path)?;
+        //     }
 
-            // Directory to extract tarball to
-            let mut extract_directory = PathBuf::from(&app.volt_dir);
+        //     // Directory to extract tarball to
+        //     let mut extract_directory = PathBuf::from(&app.volt_dir);
 
-            // @types/eslint
-            if package.clone().name.starts_with('@') && package.clone().name.contains("/") {
-                if cfg!(target_os = "windows") {
-                    let name = package.clone().name.replace(r"/", r"\");
+        //     // @types/eslint
+        //     if package.clone().name.starts_with('@') && package.clone().name.contains("/") {
+        //         if cfg!(target_os = "windows") {
+        //             let name = package.clone().name.replace(r"/", r"\");
 
-                    let split = name.split(r"\").collect::<Vec<&str>>();
+        //             let split = name.split(r"\").collect::<Vec<&str>>();
 
-                    // C:\Users\xtrem\.volt\@types
-                    extract_directory = extract_directory.join(split[0]);
-                } else {
-                    let name = package.clone().name;
-                    let split = name.split('/').collect::<Vec<&str>>();
+        //             // C:\Users\xtrem\.volt\@types
+        //             extract_directory = extract_directory.join(split[0]);
+        //         } else {
+        //             let name = package.clone().name;
+        //             let split = name.split('/').collect::<Vec<&str>>();
 
-                    // ~/.volt/@types
-                    extract_directory = extract_directory.join(split[0]);
-                }
-            }
+        //             // ~/.volt/@types
+        //             extract_directory = extract_directory.join(split[0]);
+        //         }
+        //     }
 
-            // if !package.clone().name.starts_with("@") && !package.clone().name.contains("/") {
-            extract_directory = extract_directory.join(package.clone().name);
-            // } else {
-            //     let name = package.clone().name;
-            //     let split = name.split("/").collect::<Vec<&str>>();
-            //     extract_directory = extract_directory.join(split[1]);
-            // }
-            // println!("{}", extract_directory.display());
+        //     // if !package.clone().name.starts_with("@") && !package.clone().name.contains("/") {
+        //     extract_directory = extract_directory.join(package.clone().name);
+        //     // } else {
+        //     //     let name = package.clone().name;
+        //     //     let split = name.split("/").collect::<Vec<&str>>();
+        //     //     extract_directory = extract_directory.join(split[1]);
+        //     // }
+        //     // println!("{}", extract_directory.display());
 
-            // Initialize tarfile decoder while directly passing in bytes
-            let gz_decoder = GzDecoder::new(&*bytes);
+        //     // Initialize tarfile decoder while directly passing in bytes
+        //     let gz_decoder = GzDecoder::new(&*bytes);
 
-            let mut archive = Archive::new(gz_decoder);
+        //     let mut archive = Archive::new(gz_decoder);
 
-            // Extract the data into extract_directory
-            archive
-                .unpack(&extract_directory)
-                .context("Unable to unpack dependency")?;
+        //     // Extract the data into extract_directory
+        //     archive
+        //         .unpack(&extract_directory)
+        //         .context("Unable to unpack dependency")?;
 
-            drop(bytes);
+        //     drop(bytes);
 
-            if cfg!(target_os = "windows") {
-                if Path::new(format!(r"{}\package", &extract_directory.to_str().unwrap()).as_str())
-                    .exists()
-                {
-                    std::fs::rename(
-                        format!(r"{}\package", &extract_directory.to_str().unwrap()),
-                        format!(
-                            r"{}\{}",
-                            &extract_directory.to_str().unwrap(),
-                            package.clone().version
-                        ),
-                    )
-                    .context("failed to rename dependency folder")
-                    .unwrap_and_handle_error();
-                } else {
-                    if Path::new(
-                        format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str(),
-                    )
-                    .exists()
-                    {
-                        std::fs::rename(
-                            format!(r"{}/package", &extract_directory.to_str().unwrap()),
-                            format!(
-                                r"{}/{}",
-                                &extract_directory.to_str().unwrap(),
-                                package.clone().version
-                            ),
-                        )
-                        .context("failed to rename dependency folder")
-                        .unwrap_and_handle_error();
-                    }
-                }
-            } else {
-                if Path::new(format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str())
-                    .exists()
-                {
-                    std::fs::rename(
-                        format!(r"{}/package", &extract_directory.to_str().unwrap()),
-                        format!(
-                            r"{}/{}",
-                            &extract_directory.to_str().unwrap(),
-                            package.clone().version
-                        ),
-                    )
-                    .context("failed to rename dependency folder")
-                    .unwrap_and_handle_error();
-                }
-            }
-            if let Some(parent) = node_modules_dep_path.parent() {
-                if !parent.exists() {
-                    create_dir_all(&parent).await?;
-                }
-            }
-        } else {
-            return Err(anyhow::Error::msg("failed to verify checksum"));
-        }
+        //     if cfg!(target_os = "windows") {
+        //         if Path::new(format!(r"{}\package", &extract_directory.to_str().unwrap()).as_str())
+        //             .exists()
+        //         {
+        //             std::fs::rename(
+        //                 format!(r"{}\package", &extract_directory.to_str().unwrap()),
+        //                 format!(
+        //                     r"{}\{}",
+        //                     &extract_directory.to_str().unwrap(),
+        //                     package.clone().version
+        //                 ),
+        //             )
+        //             .context("failed to rename dependency folder")
+        //             .unwrap_and_handle_error();
+        //         } else {
+        //             if Path::new(
+        //                 format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str(),
+        //             )
+        //             .exists()
+        //             {
+        //                 std::fs::rename(
+        //                     format!(r"{}/package", &extract_directory.to_str().unwrap()),
+        //                     format!(
+        //                         r"{}/{}",
+        //                         &extract_directory.to_str().unwrap(),
+        //                         package.clone().version
+        //                     ),
+        //                 )
+        //                 .context("failed to rename dependency folder")
+        //                 .unwrap_and_handle_error();
+        //             }
+        //         }
+        //     } else {
+        //         if Path::new(format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str())
+        //             .exists()
+        //         {
+        //             std::fs::rename(
+        //                 format!(r"{}/package", &extract_directory.to_str().unwrap()),
+        //                 format!(
+        //                     r"{}/{}",
+        //                     &extract_directory.to_str().unwrap(),
+        //                     package.clone().version
+        //                 ),
+        //             )
+        //             .context("failed to rename dependency folder")
+        //             .unwrap_and_handle_error();
+        //         }
+        //     }
+        //     if let Some(parent) = node_modules_dep_path.parent() {
+        //         if !parent.exists() {
+        //             create_dir_all(&parent).await?;
+        //         }
+        //     }
+        // } else {
+        //     return Err(anyhow::Error::msg("failed to verify checksum"));
+        // }
     }
 
     Ok(())
