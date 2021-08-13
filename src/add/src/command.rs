@@ -15,6 +15,7 @@ limitations under the License.
 
 use std::collections::HashMap;
 use std::io::Write;
+use std::path::Path;
 use std::process::exit;
 use std::sync::Arc;
 use std::time::Instant;
@@ -31,6 +32,7 @@ use utils::error;
 use utils::package::PackageJson;
 
 use utils::volt_api::{VoltPackage, VoltResponse};
+use volt_core::model::lock_file::{DependencyID, DependencyLock, LockFile};
 use volt_core::{command::Command, VERSION};
 
 /// Struct implementation for the `Add` command.
@@ -117,11 +119,21 @@ Options:
             }
         }
 
+        let lockfile_path = &app.lock_file_path;
+
+        let global_lockfile = &app.home_dir.join(".global.lock");
+
+        let mut lock_file =
+            LockFile::load(lockfile_path).unwrap_or_else(|_| LockFile::new(lockfile_path));
+
+        let mut global_lock_file =
+            LockFile::load(global_lockfile).unwrap_or_else(|_| LockFile::new(global_lockfile));
+
         // Load the existing package.json file
         let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
 
-        let verbose = app.has_flag(AppFlag::Verbose);
-        let pb_allowed = app.has_flag(AppFlag::NoProgress);
+        // let verbose = app.has_flag(AppFlag::Verbose);
+        // let pb_allowed = app.has_flag(AppFlag::NoProgress);
 
         let progress_bar = ProgressBar::new(1);
 
@@ -176,6 +188,65 @@ Options:
                 start.elapsed().as_secs_f32()
             );
         }
+
+        let dependencies: Vec<_> = dependencies
+            .iter()
+            .map(|(_name, object)| {
+                let mut lock_dependencies: Vec<String> = vec![];
+                let object_instance = object.clone();
+
+                if object_instance.peer_dependencies.is_some() {
+                    object_instance
+                        .peer_dependencies
+                        .unwrap()
+                        .into_iter()
+                        .for_each(|dep| {
+                            if !utils::check_peer_dependency(&dep) {
+                                progress_bar.println(format!(
+                                    "{}{} {} has unmet peer dependency {}",
+                                    " warn ".black().bright_yellow(),
+                                    ":",
+                                    object.name.bright_cyan(),
+                                    &dep.bright_yellow()
+                                ));
+                            }
+                        });
+                }
+
+                if object.dependencies.is_some() {
+                    for dep in object_instance.dependencies.unwrap().iter() {
+                        // TODO: Change this to real version
+                        lock_dependencies.push(dep.to_string());
+                    }
+                }
+
+                lock_file.dependencies.insert(
+                    DependencyID(object.clone().name, object.clone().version.to_owned()),
+                    DependencyLock {
+                        name: object_instance.name,
+                        version: object_instance.version,
+                        tarball: object_instance.tarball,
+                        integrity: object_instance.integrity,
+                        dependencies: lock_dependencies.clone(),
+                    },
+                );
+
+                let second_instance = object.clone();
+
+                global_lock_file.dependencies.insert(
+                    DependencyID(object.clone().name, object.clone().version.to_owned()),
+                    DependencyLock {
+                        name: second_instance.name,
+                        version: second_instance.version,
+                        tarball: second_instance.tarball,
+                        integrity: second_instance.integrity,
+                        dependencies: lock_dependencies,
+                    },
+                );
+
+                object
+            })
+            .collect();
 
         Ok(())
     }
