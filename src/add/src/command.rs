@@ -30,7 +30,7 @@ use utils::error;
 
 use utils::package::PackageJson;
 
-use utils::volt_api::{BinVoltResponse, VoltPackage};
+use utils::volt_api::{VoltPackage, VoltResponse};
 use volt_core::{command::Command, VERSION};
 
 /// Struct implementation for the `Add` command.
@@ -134,7 +134,7 @@ Options:
                 )),
         );
 
-        let responses: Result<Vec<BinVoltResponse>>;
+        let responses: Result<Vec<VoltResponse>>;
 
         let start = Instant::now();
 
@@ -155,31 +155,29 @@ Options:
 
         let responses = responses?;
 
-        // convert to VoltResponse struct
-
-        // for res in responses.iter() {
-        //     let current_version = res.versions.get(&res.version).unwrap();
-        //     dependencies.extend(current_version.clone());
-        // }
+        for res in responses.iter() {
+            let current_version = res.versions.get(&res.version).unwrap();
+            dependencies.extend(current_version.clone());
+        }
 
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
-        // let length = dependencies.len();
+        let length = dependencies.len();
 
-        // if length == 1 {
-        //     println!(
-        //         "{}: resolved 1 dependency in {:.2}s.\n",
-        //         "success".bright_green(),
-        //         (end - start).as_secs_f32()
-        //     );
-        // } else {
-        //     println!(
-        //         "{}: resolved {} dependencies in {:.2}s.\n",
-        //         "success".bright_green(),
-        //         length,
-        //         (end - start).as_secs_f32()
-        //     );
-        // }
+        if length == 1 {
+            println!(
+                "{}: resolved 1 dependency in {:.2}s.",
+                "success".bright_green(),
+                (end - start).as_secs_f32()
+            );
+        } else {
+            println!(
+                "{}: resolved {} dependencies in {:.2}s.",
+                "success".bright_green(),
+                length,
+                (end - start).as_secs_f32()
+            );
+        }
 
         Ok(())
     }

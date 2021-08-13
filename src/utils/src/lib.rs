@@ -19,6 +19,7 @@ use package::Package;
 use rand::prelude::SliceRandom;
 use reqwest::StatusCode;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::env::temp_dir;
 use std::fs::File;
 use std::io::Cursor;
@@ -30,6 +31,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio::fs::create_dir_all;
 use volt_api::VoltPackage;
+use volt_api::VoltResponse;
 
 use crate::constants::MAX_RETRIES;
 use crate::volt_api::BinVoltResponse;
@@ -50,8 +52,46 @@ pub fn decompress(data: Bytes) -> Result<Vec<u8>> {
     Ok(decoded)
 }
 
+pub fn convert(deserialized: BinVoltResponse) -> VoltResponse {
+    let mut converted_versions: HashMap<String, VoltPackage> = HashMap::new();
+
+    for version in deserialized.versions.get(&deserialized.latest).unwrap() {
+        let data = version.1;
+        let package_name = version
+            .0
+            .split("@")
+            .filter(|s| !s.is_empty())
+            .nth(1)
+            .unwrap();
+
+        let package_version = version.0.split("@").last().unwrap();
+
+        converted_versions.insert(
+            version.0.to_string(),
+            VoltPackage {
+                name: package_name.to_string(),
+                version: package_version.to_string(),
+                tarball: data.clone().tarball,
+                bin: data.clone().bin,
+                integrity: base64::encode(data.clone().integrity),
+                peer_dependencies: data.clone().peer_dependencies,
+                dependencies: data.clone().dependencies,
+            },
+        );
+    }
+
+    let mut final_res: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
+
+    final_res.insert(deserialized.latest.to_string(), converted_versions);
+
+    VoltResponse {
+        version: deserialized.latest,
+        versions: final_res,
+    }
+}
+
 // Get response from volt CDN
-pub async fn get_volt_response(package_name: String) -> Result<BinVoltResponse> {
+pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
@@ -71,7 +111,9 @@ pub async fn get_volt_response(package_name: String) -> Result<BinVoltResponse> 
 
                 let deserialized: BinVoltResponse = bincode::deserialize(&decoded).unwrap();
 
-                return Ok(deserialized);
+                let converted = convert(deserialized);
+
+                return Ok(converted);
             }
             StatusCode::NOT_FOUND => {
                 if retries == MAX_RETRIES {
@@ -100,12 +142,12 @@ pub async fn get_volt_response(package_name: String) -> Result<BinVoltResponse> 
     }
 }
 
-pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<Result<BinVoltResponse>> {
+pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<Result<VoltResponse>> {
     packages
         .into_iter()
         .map(get_volt_response)
         .collect::<FuturesUnordered<_>>()
-        .collect::<Vec<Result<BinVoltResponse>>>()
+        .collect::<Vec<Result<VoltResponse>>>()
         .await
 }
 
