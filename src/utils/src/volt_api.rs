@@ -35,15 +35,16 @@ pub struct VoltPackage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BinVoltResponse {
+pub struct JSONVoltResponse {
     pub latest: String,
     pub schema: u8,
-    pub versions: HashMap<String, HashMap<String, BinVoltPackage>>,
+    #[serde(flatten)]
+    pub versions: HashMap<String, HashMap<String, JSONVoltPackage>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BinVoltPackage {
-    pub integrity: Vec<u8>,
+pub struct JSONVoltPackage {
+    pub integrity: String,
     pub tarball: String,
     pub bin: Option<HashMap<String, String>>,
     pub dependencies: Option<Vec<String>>,
