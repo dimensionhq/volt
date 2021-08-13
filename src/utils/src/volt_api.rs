@@ -36,20 +36,21 @@ pub struct VoltPackage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BinVoltResponse {
-    latest: String,
-    schema: u8,
-    versions: HashMap<String, HashMap<String, BinVoltPackage>>,
+    pub latest: String,
+    pub schema: u8,
+    pub versions: HashMap<String, HashMap<String, BinVoltPackage>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BinVoltPackage {
-    sha1: Vec<u8>,
-    sha512: Option<Vec<u8>>,
-    dependencies: Option<Vec<String>>,
-    peer_dependencies: Option<Vec<String>>,
+    pub integrity: Vec<u8>,
+    pub tarball: String,
+    pub bin: Option<HashMap<String, String>>,
+    pub dependencies: Option<Vec<String>>,
+    pub peer_dependencies: Option<Vec<String>>,
 }
 
-impl BinVoltResponse {
+impl VoltResponse {
     pub fn save(self, path: String) {
         let mut file = std::fs::File::create(path).unwrap();
         file.write_all(serde_json::to_string(&self).unwrap().as_bytes())
