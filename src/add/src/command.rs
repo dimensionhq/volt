@@ -193,53 +193,48 @@ Options:
             .iter()
             .map(|(_name, object)| {
                 let mut lock_dependencies: Vec<String> = vec![];
-                let object_instance = object.clone();
 
-                if object_instance.peer_dependencies.is_some() {
-                    object_instance
-                        .peer_dependencies
-                        .unwrap()
-                        .into_iter()
-                        .for_each(|dep| {
-                            if !utils::check_peer_dependency(&dep) {
-                                progress_bar.println(format!(
-                                    "{}{} {} has unmet peer dependency {}",
-                                    " warn ".black().bright_yellow(),
-                                    ":",
-                                    object.name.bright_cyan(),
-                                    &dep.bright_yellow()
-                                ));
-                            }
-                        });
+                if let Some(peer_deps) = &object.peer_dependencies {
+                    for dep in peer_deps {
+                        if !utils::check_peer_dependency(&dep) {
+                            progress_bar.println(format!(
+                                "{}{} {} has unmet peer dependency {}",
+                                " warn ".black().bright_yellow(),
+                                ":",
+                                object.name.bright_cyan(),
+                                &dep.bright_yellow()
+                            ));
+                        }
+                    }
                 }
 
-                if object.dependencies.is_some() {
-                    for dep in object_instance.dependencies.unwrap().iter() {
+                if let Some(dependencies) = &object.dependencies {
+                    for dep in dependencies {
                         // TODO: Change this to real version
                         lock_dependencies.push(dep.to_string());
                     }
                 }
 
+                let object_instance = object.clone();
+
                 lock_file.dependencies.insert(
-                    DependencyID(object.clone().name, object.clone().version.to_owned()),
+                    DependencyID(object_instance.name, object_instance.version),
                     DependencyLock {
-                        name: object_instance.name,
-                        version: object_instance.version,
-                        tarball: object_instance.tarball,
-                        integrity: object_instance.integrity,
+                        name: object.name.clone(),
+                        version: object.version.clone(),
+                        tarball: object.tarball.clone(),
+                        integrity: object.integrity.clone(),
                         dependencies: lock_dependencies.clone(),
                     },
                 );
 
-                let second_instance = object.clone();
-
                 global_lock_file.dependencies.insert(
                     DependencyID(object.clone().name, object.clone().version.to_owned()),
                     DependencyLock {
-                        name: second_instance.name,
-                        version: second_instance.version,
-                        tarball: second_instance.tarball,
-                        integrity: second_instance.integrity,
+                        name: object.name.clone(),
+                        version: object.version.clone(),
+                        tarball: object.tarball.clone(),
+                        integrity: object.integrity.clone(),
                         dependencies: lock_dependencies,
                     },
                 );
