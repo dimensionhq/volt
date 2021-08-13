@@ -34,7 +34,7 @@ use volt_api::VoltPackage;
 use volt_api::VoltResponse;
 
 use crate::constants::MAX_RETRIES;
-use crate::volt_api::BinVoltResponse;
+use crate::volt_api::JSONVoltResponse;
 
 pub fn decompress(data: Bytes) -> Result<Vec<u8>> {
     // initialize decoded data
@@ -52,33 +52,43 @@ pub fn decompress(data: Bytes) -> Result<Vec<u8>> {
     Ok(decoded)
 }
 
-pub fn convert(deserialized: BinVoltResponse) -> VoltResponse {
+pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
+    // initialize a hashmap to store the converted versions
     let mut converted_versions: HashMap<String, VoltPackage> = HashMap::new();
 
+    // iterate through all listed dependencies of the latest version of the response
     for version in deserialized.versions.get(&deserialized.latest).unwrap() {
+        // access data in the hashmap, not name@version
         let data = version.1;
-        let package_name = version
-            .0
-            .split("@")
-            .filter(|s| !s.is_empty())
-            .nth(1)
-            .unwrap();
 
+        // @codemirror/state -> state
+        let mut filter = version.0.split("@").filter(|s| !s.is_empty());
+        let package_name;
+
+        if filter.clone().count() == 1 {
+            package_name = filter.nth(0).unwrap();
+        } else {
+            package_name = filter.nth(1).unwrap();
+        }
+
+        // @codemirror/state@1.2.3 -> 1.2.3
         let package_version = version.0.split("@").last().unwrap();
 
         converted_versions.insert(
-            version.0.to_string(),
+            version.0.to_string(), // name@version
             VoltPackage {
                 name: package_name.to_string(),
                 version: package_version.to_string(),
                 tarball: data.clone().tarball,
                 bin: data.clone().bin,
-                integrity: base64::encode(data.clone().integrity),
+                integrity: data.clone().integrity,
                 peer_dependencies: data.clone().peer_dependencies,
                 dependencies: data.clone().dependencies,
             },
         );
     }
+
+    // create a final hashmap
 
     let mut final_res: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
 
@@ -96,25 +106,28 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
     let mut retries = 0;
 
     loop {
+        // get a response
         let response = reqwest::get(format!(
-            "http://push-2105.5centscdn.com/{}.bin",
+            "http://push-2105.5centscdn.com/{}.json",
             package_name
         ))
         .await
         .with_context(|| format!("failed to fetch {}", package_name.bright_yellow().bold()))?;
 
+        // check the status of the response
         match response.status() {
+            // 200 (OK)
             StatusCode::OK => {
                 // decompress using lz4
-
                 let decoded = decompress(response.bytes().await?)?;
 
-                let deserialized: BinVoltResponse = bincode::deserialize(&decoded).unwrap();
+                let deserialized: JSONVoltResponse = serde_json::from_slice(&decoded).unwrap();
 
                 let converted = convert(deserialized);
 
                 return Ok(converted);
             }
+            // 404 (NOT_FOUND)
             StatusCode::NOT_FOUND => {
                 if retries == MAX_RETRIES {
                     return Err(anyhow!(
@@ -125,10 +138,12 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
                     ));
                 }
             }
+            // Other Errors
             _ => {
+                // Stop at MAX_RETRIES
                 if retries == MAX_RETRIES {
                     return Err(anyhow!(
-                        "{} {}: Not Found - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.",
+                        "{} {}: Failed - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.",
                         "GET".bright_green(),
                         format!("http://registry.voltpkg.com/{}", package_name).underline(),
                         response.status().as_str(),
@@ -138,6 +153,7 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
             }
         }
 
+        // Increment no. retries
         retries += 1;
     }
 }

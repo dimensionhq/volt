@@ -134,9 +134,9 @@ Options:
                 )),
         );
 
-        let responses: Result<Vec<VoltResponse>>;
-
         let start = Instant::now();
+
+        let responses: Result<Vec<VoltResponse>>;
 
         if packages.len() > 1 {
             responses = utils::get_volt_response_multi(packages.clone())
@@ -148,8 +148,6 @@ Options:
                 .into_iter()
                 .collect();
         }
-
-        let end = Instant::now();
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
 
@@ -168,14 +166,14 @@ Options:
             println!(
                 "{}: resolved 1 dependency in {:.2}s.",
                 "success".bright_green(),
-                (end - start).as_secs_f32()
+                start.elapsed().as_secs_f32()
             );
         } else {
             println!(
                 "{}: resolved {} dependencies in {:.2}s.",
                 "success".bright_green(),
                 length,
-                (end - start).as_secs_f32()
+                start.elapsed().as_secs_f32()
             );
         }
 
