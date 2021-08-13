@@ -228,8 +228,10 @@ Options:
                     },
                 );
 
+                let second_instance = object.clone();
+
                 global_lock_file.dependencies.insert(
-                    DependencyID(object.clone().name, object.clone().version.to_owned()),
+                    DependencyID(second_instance.name, second_instance.version.to_owned()),
                     DependencyLock {
                         name: object.name.clone(),
                         version: object.version.clone(),
