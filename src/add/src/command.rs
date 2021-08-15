@@ -21,11 +21,17 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use tokio::sync::Mutex;
+use indicatif::{ProgressBar, ProgressStyle};
+use smol::lock::Mutex;
+use utils::app::App;
+use utils::constants::PROGRESS_CHARS;
 use utils::error;
 use utils::{app::App, npm::get_versions};
 
 use utils::package::PackageJson;
 
+use utils::volt_api::{VoltPackage, VoltResponse};
+use volt_core::model::lock_file::{DependencyID, DependencyLock, LockFile};
 use volt_core::{command::Command, VERSION};
 
 /// Struct implementation for the `Add` command.
@@ -117,7 +123,128 @@ Options:
 
         let versions = get_versions(&packages).await?;
 
-        println!("{:?}", versions);
+        let lockfile_path = &app.lock_file_path;
+
+        let global_lockfile = &app.home_dir.join(".global.lock");
+
+        let mut lock_file =
+            LockFile::load(lockfile_path).unwrap_or_else(|_| LockFile::new(lockfile_path));
+
+        let mut global_lock_file =
+            LockFile::load(global_lockfile).unwrap_or_else(|_| LockFile::new(global_lockfile));
+
+        // let verbose = app.has_flag(AppFlag::Verbose);
+        // let pb_allowed = app.has_flag(AppFlag::NoProgress);
+
+        let progress_bar = ProgressBar::new(1);
+
+        progress_bar.set_style(
+            ProgressStyle::default_bar()
+                .progress_chars(PROGRESS_CHARS)
+                .template(&format!(
+                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                    "Resolving dependencies".bright_blue()
+                )),
+        );
+
+        let start = Instant::now();
+
+        let responses: Result<Vec<VoltResponse>>;
+
+        if packages.len() > 1 {
+            responses = utils::get_volt_response_multi(packages.clone())
+                .await
+                .into_iter()
+                .collect();
+        } else {
+            responses = vec![utils::get_volt_response(packages[0].to_string()).await]
+                .into_iter()
+                .collect();
+        }
+
+        let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
+
+        let responses = responses?;
+
+        for res in responses.iter() {
+            let current_version = res.versions.get(&res.version).unwrap();
+            dependencies.extend(current_version.clone());
+        }
+
+        progress_bar.finish_with_message("[OK]".bright_green().to_string());
+
+        let length = dependencies.len();
+
+        if length == 1 {
+            println!(
+                "{}: resolved 1 dependency in {:.2}s.",
+                "success".bright_green(),
+                start.elapsed().as_secs_f32()
+            );
+        } else {
+            println!(
+                "{}: resolved {} dependencies in {:.2}s.",
+                "success".bright_green(),
+                length,
+                start.elapsed().as_secs_f32()
+            );
+        }
+
+        let dependencies: Vec<_> = dependencies
+            .iter()
+            .map(|(_name, object)| {
+                let mut lock_dependencies: Vec<String> = vec![];
+
+                if let Some(peer_deps) = &object.peer_dependencies {
+                    for dep in peer_deps {
+                        if !utils::check_peer_dependency(&dep) {
+                            progress_bar.println(format!(
+                                "{}{} {} has unmet peer dependency {}",
+                                " warn ".black().bright_yellow(),
+                                ":",
+                                object.name.bright_cyan(),
+                                &dep.bright_yellow()
+                            ));
+                        }
+                    }
+                }
+
+                if let Some(dependencies) = &object.dependencies {
+                    for dep in dependencies {
+                        // TODO: Change this to real version
+                        lock_dependencies.push(dep.to_string());
+                    }
+                }
+
+                let object_instance = object.clone();
+
+                lock_file.dependencies.insert(
+                    DependencyID(object_instance.name, object_instance.version),
+                    DependencyLock {
+                        name: object.name.clone(),
+                        version: object.version.clone(),
+                        tarball: object.tarball.clone(),
+                        integrity: object.integrity.clone(),
+                        dependencies: lock_dependencies.clone(),
+                    },
+                );
+
+                let second_instance = object.clone();
+
+                global_lock_file.dependencies.insert(
+                    DependencyID(second_instance.name, second_instance.version.to_owned()),
+                    DependencyLock {
+                        name: object.name.clone(),
+                        version: object.version.clone(),
+                        tarball: object.tarball.clone(),
+                        integrity: object.integrity.clone(),
+                        dependencies: lock_dependencies,
+                    },
+                );
+
+                object
+            })
+            .collect();
 
         Ok(())
     }

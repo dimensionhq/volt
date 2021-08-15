@@ -20,31 +20,39 @@ use crate::commands::AppCommand;
 
 use anyhow::Result;
 use colored::Colorize;
-use tokio::time::Instant;
+use std::time::Instant;
 use utils::app::{App, AppFlag};
 use utils::error;
 use utils::helper::CustomColorize;
 use volt_core::VERSION;
 
-#[tokio::main]
-async fn main() {
-    if let Err(err) = try_main().await {
-        error!("{}", &err);
+fn main() {
+    smol::block_on(async {
+        if let Err(err) = try_main().await {
+            error!("{}", &err);
 
-        let err_chain = err.chain().skip(1);
-        if err_chain.clone().next().is_some() {
-            error!("{}", "\nCaused by:".caused_by_style());
-        }
+            let err_chain = err.chain().skip(1);
+            if err_chain.clone().next().is_some() {
+                println!("{}", "\nCaused by:".caused_by_style());
+            }
 
-        err_chain.for_each(|e| eprintln!("{}", e));
+            err_chain.for_each(|e| eprintln!("{}", e));
 
+<<<<<<< HEAD
         println!(
             "\nNeed help? Check out {} for help",
             "https://voltpkg.com/support".truecolor(155, 255, 171)
         );
+=======
+            println!(
+                "Need help? Check out {} for help",
+                "https://voltpkg.com/support".truecolor(155, 255, 171)
+            );
+>>>>>>> 146ebe20374ec174a335c7222c5f3cf39fba35da
 
-        std::process::exit(1);
-    }
+            std::process::exit(1);
+        }
+    });
 }
 
 async fn try_main() -> Result<()> {
