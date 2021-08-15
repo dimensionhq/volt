@@ -20,7 +20,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::{self, BufWriter};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{de, ser, Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
@@ -140,29 +140,34 @@ pub struct DependencyLock {
     pub name: String,
     pub version: String,
     pub tarball: String,
-    pub sha1: String,
+    pub integrity: String,
     pub dependencies: Vec<String>,
 }
 
 impl LockFile {
     /// Creates a new instance of a lock file with a path it should be saved at.
     /// It can be saved to the file by calling [`Self::save()`].
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
-            path,
+            path: path.as_ref().to_owned(),
             dependencies: HashMap::with_capacity(1), // We will be installing at least 1 dependency
         }
     }
 
     /// Loads a lock file from the given path.
-    pub fn load(path: PathBuf) -> Result<Self, LockFileError> {
-        let lock_file = std::fs::read_to_string(path.clone()).map_err(LockFileError::IO)?;
-        let data =
-            serde_json::from_str::<HashMap<DependencyID, DependencyLock>>(&lock_file).unwrap();
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, LockFileError> {
+        let path = path.as_ref();
 
-        Ok(LockFile {
-            path,
-            dependencies: data,
+        let dependencies = if path.exists() {
+            let f = File::open(path).map_err(LockFileError::IO)?;
+            serde_json::from_reader(f).map_err(LockFileError::Decode)?
+        } else {
+            HashMap::with_capacity(1)
+        };
+
+        Ok(Self {
+            path: path.to_owned(),
+            dependencies,
         })
     }
 

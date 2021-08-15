@@ -16,21 +16,14 @@
 
 //! Remove a package from your direct dependencies.
 
-use std::{io::Write, path::Path, process, sync::Arc};
+use std::{io::Write, process, sync::Arc};
 
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use tokio::{
-    fs::{remove_dir_all, remove_file},
-    sync::Mutex,
-};
-use utils::{app::App, error, get_volt_response, helper::ResultLogErrorExt, package::PackageJson};
-use volt_core::{
-    command::Command,
-    model::lock_file::{DependencyID, LockFile},
-    VERSION,
-};
+use smol::lock::Mutex;
+use utils::{app::App, error, get_volt_response, package::PackageJson};
+use volt_core::{command::Command, model::lock_file::LockFile, VERSION};
 /// Struct implementation for the `Remove` command.
 pub struct Remove;
 
@@ -126,43 +119,43 @@ Options:
 
             let response = get_volt_response(package.to_string()).await?;
 
-            let current_version = response.versions.get(&response.version).unwrap();
+            // let current_version = response.versions.get(&response.version).unwrap();
 
-            for object in current_version.values() {
-                // This is doing nothing? I guess it's still WIP?...
-                // let mut lock_dependencies: HashMap<String, String> = HashMap::new();
+            // for object in current_version.values() {
+            //     // This is doing nothing? I guess it's still WIP?...
+            //     // let mut lock_dependencies: HashMap<String, String> = HashMap::new();
 
-                // if object.dependencies.is_some() {
-                //     for dep in object.clone().dependencies.unwrap().iter() {
-                //         // TODO: Change this to real version
-                //         lock_dependencies.insert(dep.clone(), String::new());
-                //     }
-                // }
+            //     // if object.dependencies.is_some() {
+            //     //     for dep in object.clone().dependencies.unwrap().iter() {
+            //     //         // TODO: Change this to real version
+            //     //         lock_dependencies.insert(dep.clone(), String::new());
+            //     //     }
+            //     // }
 
-                lock_file
-                    .dependencies
-                    .remove(&DependencyID(object.clone().name, object.clone().version));
+            //     lock_file
+            //         .dependencies
+            //         .remove(&DependencyID(object.clone().name, object.clone().version));
 
-                let scripts = Path::new("node_modules/scripts")
-                    .join(format!("{}.cmd", object.clone().name).as_str());
+            //     let scripts = Path::new("node_modules/scripts")
+            //         .join(format!("{}.cmd", object.clone().name).as_str());
 
-                if scripts.exists() {
-                    remove_file(format!(
-                        "node_modules/scripts/{}",
-                        scripts.file_name().unwrap().to_str().unwrap()
-                    ))
-                    .await
-                    .unwrap_and_handle_error();
-                }
-            }
+            //     if scripts.exists() {
+            //         remove_file(format!(
+            //             "node_modules/scripts/{}",
+            //             scripts.file_name().unwrap().to_str().unwrap()
+            //         ))
+            //         .await
+            //         .unwrap_and_handle_error();
+            //     }
+            // }
 
-            lock_file.save().unwrap();
+            // lock_file.save().unwrap();
 
-            let node_modules_dir = std::env::current_dir().unwrap().join("node_modules");
-            let dep_dir = node_modules_dir.join(&package);
-            if dep_dir.exists() {
-                remove_dir_all(dep_dir).await.unwrap_and_handle_error();
-            }
+            // let node_modules_dir = std::env::current_dir().unwrap().join("node_modules");
+            // let dep_dir = node_modules_dir.join(&package);
+            // if dep_dir.exists() {
+            //     remove_dir_all(dep_dir).await.unwrap_and_handle_error();
+            // }
         }
 
         // if handles.len() > 0 {

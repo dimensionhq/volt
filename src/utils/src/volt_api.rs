@@ -25,28 +25,30 @@ pub struct VoltResponse {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct VoltPackage {
-    #[serde(rename = "n")]
     pub name: String,
-    #[serde(rename = "v")]
     pub version: String,
-    #[serde(rename = "tb")]
     pub tarball: String,
-    #[serde(rename = "s1")]
-    pub sha1: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "td")]
-    pub threaded: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "bn")]
     pub bin: Option<HashMap<String, String>>,
-    #[serde(rename = "ig")]
     pub integrity: String,
-    #[serde(rename = "pd")]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_dependencies: Option<Vec<String>>,
-    #[serde(rename = "dp")]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JSONVoltResponse {
+    pub latest: String,
+    pub schema: u8,
+    #[serde(flatten)]
+    pub versions: HashMap<String, HashMap<String, JSONVoltPackage>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JSONVoltPackage {
+    pub integrity: String,
+    pub tarball: String,
+    pub bin: Option<HashMap<String, String>>,
+    pub dependencies: Option<Vec<String>>,
+    pub peer_dependencies: Option<Vec<String>>,
 }
 
 impl VoltResponse {
