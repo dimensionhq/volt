@@ -40,7 +40,6 @@ members = [
   "src/rslint/rslint_syntax",
   "src/rslint/rslint_core",
   "src/rslint/rslint_macros",
-  "src/rslint/rslint_lsp",
   "src/rslint/rslint_regex",
   "src/rslint/rslint_text_edit",
   "src/rslint/rslint_config",

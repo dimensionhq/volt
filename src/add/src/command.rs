@@ -15,7 +15,6 @@ limitations under the License.
 
 use std::collections::HashMap;
 use std::io::Write;
-use std::path::Path;
 use std::process::exit;
 use std::sync::Arc;
 use std::time::Instant;
@@ -24,8 +23,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
-use tokio::sync::Mutex;
-use utils::app::{App, AppFlag};
+use smol::lock::Mutex;
+use utils::app::App;
 use utils::constants::PROGRESS_CHARS;
 use utils::error;
 

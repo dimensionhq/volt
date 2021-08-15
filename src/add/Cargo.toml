@@ -11,7 +11,7 @@ async-trait = "0.1"
 colored = "2.0"
 futures = "0.3"
 indicatif = "0.16"
-tokio = { version = "1.5.0", features = ["full"] }
+smol = "1.2.5"
 volt_core = { path = "../volt_core" }
 init = { path = "../init" }
 utils = { path="../utils" }
