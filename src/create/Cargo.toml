@@ -10,9 +10,9 @@ anyhow = "1.0"
 async-trait = "0.1"
 colored = "2.0"
 dialoguer = "0.8"
-smol = "1.2.5"
 volt_core = { path = "../volt_core" }
 init = { path = "../init" }
 flate2 = "1.0"
 tar = "0.4"
 utils = { path="../utils" }
+tokio = { version = "1.9.0", features = ["fs"] }

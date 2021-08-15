@@ -13,20 +13,21 @@ limitations under the License.
 
 //! Add a package to your dependencies for your project.
 
+use std::collections::HashMap;
 use std::io::Write;
 use std::process::exit;
 use std::sync::Arc;
+use std::time::Instant;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use tokio::sync::Mutex;
 use indicatif::{ProgressBar, ProgressStyle};
-use smol::lock::Mutex;
+use tokio::sync::Mutex;
 use utils::app::App;
 use utils::constants::PROGRESS_CHARS;
 use utils::error;
-use utils::{app::App, npm::get_versions};
+use utils::npm::get_versions;
 
 use utils::package::PackageJson;
 

@@ -19,7 +19,6 @@ use lz4::Decoder;
 use package::Package;
 use rand::prelude::SliceRandom;
 use reqwest::StatusCode;
-use smol::fs::create_dir_all;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::env::temp_dir;
@@ -30,14 +29,9 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::Arc;
-<<<<<<< HEAD
-use tar::Archive;
 use tokio::fs::create_dir_all;
-use volt_api::{VoltPackage, VoltResponse};
-=======
 use volt_api::VoltPackage;
 use volt_api::VoltResponse;
->>>>>>> 146ebe20374ec174a335c7222c5f3cf39fba35da
 
 use crate::constants::MAX_RETRIES;
 use crate::volt_api::JSONVoltResponse;
@@ -763,7 +757,7 @@ async fn threaded_download(threads: u64, url: &String, output: &str) {
 
         let (start, end) = get_splits(index + 1, total_length, threads);
 
-        handles.push(smol::spawn(async move {
+        handles.push(tokio::spawn(async move {
             let client = reqwest::Client::new();
 
             let mut response = client
@@ -784,7 +778,7 @@ async fn threaded_download(threads: u64, url: &String, output: &str) {
     // Join all handles
     let result = futures::future::join_all(handles).await;
     for res in result {
-        buffer.append(&mut res.clone());
+        buffer.append(&mut res.unwrap());
     }
 
     let mut file = File::create(output.clone()).unwrap();

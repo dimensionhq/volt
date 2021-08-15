@@ -21,7 +21,7 @@ use std::{io::Write, process, sync::Arc};
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use smol::lock::Mutex;
+use tokio::sync::Mutex;
 use utils::{app::App, error, get_volt_response, package::PackageJson};
 use volt_core::{command::Command, model::lock_file::LockFile, VERSION};
 /// Struct implementation for the `Remove` command.

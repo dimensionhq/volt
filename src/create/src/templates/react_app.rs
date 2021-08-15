@@ -1,5 +1,5 @@
 use colored::Colorize;
-use smol::fs;
+use tokio::fs;
 use utils::app::{App, AppFlag};
 use utils::helper::ResultLogErrorExt;
 use volt_core::command::Command;

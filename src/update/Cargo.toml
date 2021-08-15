@@ -9,7 +9,6 @@ edition = "2018"
 async-trait = "0.1.50"
 anyhow = "1.0"
 colored = "2.0"
-smol = "1.2.5"
 volt_core = { path = "../volt_core" }
 add = { path = "../add" }
 cache = { path="../cache" }
