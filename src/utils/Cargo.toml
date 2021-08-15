@@ -22,18 +22,15 @@ sha-1 = "0.9"
 structopt = "0.3"
 tar = "0.4"
 thiserror = "1.0"
-smol = "1.2.5"
+tokio = { version = "*", features = ["fs"] }
 indicatif = "0.16"
 bytes = "1.0.1"
 walkdir = "2.3.2"
 futures-util = "0.3.15"
 rand = "0.8.4"
 futures = "0.3.15"
-<<<<<<< HEAD
 semver_rs = "0.1.3"
-=======
 lz4 = "1.23.2"
->>>>>>> 146ebe20374ec174a335c7222c5f3cf39fba35da
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [
