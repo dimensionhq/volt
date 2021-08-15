@@ -252,7 +252,7 @@ pub async fn get_version(package_name: String) -> Result<String> {
                 retries += 1;
             }
         } else {
-            return Err(anyhow!("something very bad happened lol"));
+            return Err(anyhow!("an unexpected error happened"));
         }
     }
 }
