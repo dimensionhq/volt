@@ -10,7 +10,7 @@ use semver_rs::Version;
 use serde_json::Value;
 
 // Get version from NPM
-pub async fn get_version(package_name: String) -> Result<String> {
+pub async fn get_version(package_name: String) -> Result<(String, String)> {
     let mut retries = 0;
 
     let count = package_name.matches("@").count();
@@ -39,8 +39,32 @@ pub async fn get_version(package_name: String) -> Result<String> {
                     match serde_json::from_str::<Value>(&text).unwrap()["dist-tags"]["latest"]
                         .as_str()
                     {
-                        Some(value) => {
-                            return Ok(value.to_string());
+                        Some(latest) => {
+                            match serde_json::from_str::<Value>(&text).unwrap()["versions"][latest]
+                                ["dist"]
+                                .as_object()
+                            {
+                                Some(value) => {
+                                    let integrity: String;
+                                    if value.contains_key("integrity") {
+                                        integrity =
+                                            value["integrity"].to_string().replace("\"", "");
+                                    } else {
+                                        integrity = format!(
+                                            "sha1-{}",
+                                            base64::encode(value["sha1"].to_string())
+                                        );
+                                    }
+
+                                    return Ok((latest.to_string(), integrity));
+                                }
+                                None => {
+                                    return Err(anyhow!(
+                                        "Failed to find a hash that matches the specified requirement: {}",
+                                        package_name.bright_cyan().bold()
+                                    ));
+                                }
+                            }
                         }
                         None => {
                             return Err(anyhow!(
@@ -129,7 +153,31 @@ pub async fn get_version(package_name: String) -> Result<String> {
                                     ));
                                 }
 
-                                return Ok(available_versions[0].to_string());
+                                match serde_json::from_str::<Value>(&text).unwrap()["versions"]
+                                    [available_versions[0].to_string()]["dist"]
+                                    .as_object()
+                                {
+                                    Some(value) => {
+                                        let integrity: String;
+                                        if value.contains_key("integrity") {
+                                            integrity =
+                                                value["integrity"].to_string().replace("\"", "");
+                                        } else {
+                                            integrity = format!(
+                                                "sha1-{}",
+                                                base64::encode(value["sha1"].to_string())
+                                            );
+                                        }
+
+                                        return Ok((available_versions[0].to_string(), integrity));
+                                    }
+                                    None => {
+                                        return Err(anyhow!(
+                                            "Failed to find a hash that matches the specified requirement: {}",
+                                            name.bright_cyan().bold()
+                                        ));
+                                    }
+                                }
                             }
                             None => {
                                 return Err(anyhow!(
@@ -217,7 +265,31 @@ pub async fn get_version(package_name: String) -> Result<String> {
                                     ));
                                 }
 
-                                return Ok(available_versions[0].to_string());
+                                match serde_json::from_str::<Value>(&text).unwrap()["versions"]
+                                    [available_versions[0].to_string()]["dist"]
+                                    .as_object()
+                                {
+                                    Some(value) => {
+                                        let integrity: String;
+                                        if value.contains_key("integrity") {
+                                            integrity =
+                                                value["integrity"].to_string().replace("\"", "");
+                                        } else {
+                                            integrity = format!(
+                                                "sha1-{}",
+                                                base64::encode(value["sha1"].to_string())
+                                            );
+                                        }
+
+                                        return Ok((available_versions[0].to_string(), integrity));
+                                    }
+                                    None => {
+                                        return Err(anyhow!(
+                                            "Failed to find a hash that matches the specified requirement: {}",
+                                            name.bright_cyan().bold()
+                                        ));
+                                    }
+                                }
                             }
                             None => {
                                 return Err(anyhow!(
@@ -257,12 +329,12 @@ pub async fn get_version(package_name: String) -> Result<String> {
     }
 }
 
-pub async fn get_versions(packages: &Vec<String>) -> Result<Vec<String>> {
+pub async fn get_versions(packages: &Vec<String>) -> Result<Vec<(String, String)>> {
     packages
         .to_owned()
         .into_iter()
         .map(get_version)
         .collect::<FuturesOrdered<_>>()
-        .try_collect::<Vec<String>>()
+        .try_collect::<Vec<(String, String)>>()
         .await
 }
