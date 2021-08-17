@@ -8,6 +8,7 @@ use futures::stream::FuturesOrdered;
 use futures::TryStreamExt;
 use semver_rs::Version;
 use serde_json::Value;
+use ssri::Integrity;
 
 // Get version from NPM
 pub async fn get_version(package_name: String) -> Result<(String, String)> {
@@ -45,18 +46,31 @@ pub async fn get_version(package_name: String) -> Result<(String, String)> {
                                 .as_object()
                             {
                                 Some(value) => {
-                                    let integrity: String;
+                                    let hash_string: String;
+
                                     if value.contains_key("integrity") {
-                                        integrity =
+                                        hash_string =
                                             value["integrity"].to_string().replace("\"", "");
                                     } else {
-                                        integrity = format!(
+                                        hash_string = format!(
                                             "sha1-{}",
                                             base64::encode(value["sha1"].to_string())
                                         );
                                     }
 
-                                    return Ok((latest.to_string(), integrity));
+                                    let integrity: Integrity = hash_string.parse().unwrap();
+
+                                    let algo = integrity.pick_algorithm();
+
+                                    let hash = integrity
+                                        .hashes
+                                        .into_iter()
+                                        .find(|h| h.algorithm == algo)
+                                        .map(|h| Integrity { hashes: vec![h] })
+                                        .map(|i| i.to_hex().1)
+                                        .unwrap();
+
+                                    return Ok((latest.to_string(), hash));
                                 }
                                 None => {
                                     return Err(anyhow!(
@@ -158,18 +172,30 @@ pub async fn get_version(package_name: String) -> Result<(String, String)> {
                                     .as_object()
                                 {
                                     Some(value) => {
-                                        let integrity: String;
+                                        let hash_string: String;
                                         if value.contains_key("integrity") {
-                                            integrity =
+                                            hash_string =
                                                 value["integrity"].to_string().replace("\"", "");
                                         } else {
-                                            integrity = format!(
+                                            hash_string = format!(
                                                 "sha1-{}",
                                                 base64::encode(value["sha1"].to_string())
                                             );
                                         }
 
-                                        return Ok((available_versions[0].to_string(), integrity));
+                                        let integrity: Integrity = hash_string.parse().unwrap();
+
+                                        let algo = integrity.pick_algorithm();
+
+                                        let hash = integrity
+                                            .hashes
+                                            .into_iter()
+                                            .find(|h| h.algorithm == algo)
+                                            .map(|h| Integrity { hashes: vec![h] })
+                                            .map(|i| i.to_hex().1)
+                                            .unwrap();
+
+                                        return Ok((available_versions[0].to_string(), hash));
                                     }
                                     None => {
                                         return Err(anyhow!(
@@ -270,18 +296,31 @@ pub async fn get_version(package_name: String) -> Result<(String, String)> {
                                     .as_object()
                                 {
                                     Some(value) => {
-                                        let integrity: String;
+                                        let hash_string: String;
+
                                         if value.contains_key("integrity") {
-                                            integrity =
+                                            hash_string =
                                                 value["integrity"].to_string().replace("\"", "");
                                         } else {
-                                            integrity = format!(
+                                            hash_string = format!(
                                                 "sha1-{}",
                                                 base64::encode(value["sha1"].to_string())
                                             );
                                         }
 
-                                        return Ok((available_versions[0].to_string(), integrity));
+                                        let integrity: Integrity = hash_string.parse().unwrap();
+
+                                        let algo = integrity.pick_algorithm();
+
+                                        let hash = integrity
+                                            .hashes
+                                            .into_iter()
+                                            .find(|h| h.algorithm == algo)
+                                            .map(|h| Integrity { hashes: vec![h] })
+                                            .map(|i| i.to_hex().1)
+                                            .unwrap();
+
+                                        return Ok((available_versions[0].to_string(), hash));
                                     }
                                     None => {
                                         return Err(anyhow!(
@@ -302,7 +341,7 @@ pub async fn get_version(package_name: String) -> Result<(String, String)> {
                     &mut StatusCode::NOT_FOUND => {
                         if retries == MAX_RETRIES {
                             return Err(anyhow!(
-                                    "GET {} - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
+                                    "GET {} - {}\n\n{} npm registry, or you don't have the permission to request it.",
                                     format!("http://registry.npmjs.org/{}", package_name),
                                     format!("Not Found ({})", "404".bright_yellow().bold()),
                                     package_name,

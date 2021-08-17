@@ -23,7 +23,6 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
-use tokio::sync::Mutex;
 use utils::app::App;
 use utils::constants::PROGRESS_CHARS;
 use utils::error;
@@ -101,7 +100,7 @@ Options:
             }
         }
 
-        // Check if package.json exists, otherwise, handle it.
+        // Check if package.json exists, otherwise, let the user know.
         if !app.current_dir.join("package.json").exists() {
             error!("no package.json found.");
             print!("Do you want to initialize package.json (Y/N): ");
@@ -120,13 +119,16 @@ Options:
         }
 
         // Load the existing package.json file
-        let package_file = Arc::new(Mutex::new(PackageJson::from("package.json")));
+        let package_file = PackageJson::from("package.json");
 
+        // Get the integrity hash and version of the requested package.
         let versions = get_versions(&packages).await?;
 
         let lockfile_path = &app.lock_file_path;
 
         let global_lockfile = &app.home_dir.join(".global.lock");
+
+        // Load global and local lock files.
 
         let mut lock_file =
             LockFile::load(lockfile_path).unwrap_or_else(|_| LockFile::new(lockfile_path));
@@ -134,10 +136,9 @@ Options:
         let mut global_lock_file =
             LockFile::load(global_lockfile).unwrap_or_else(|_| LockFile::new(global_lockfile));
 
-        // let verbose = app.has_flag(AppFlag::Verbose);
-        // let pb_allowed = app.has_flag(AppFlag::NoProgress);
+        // Create progress bar for resolving dependencies.
 
-        let progress_bar = ProgressBar::new(1);
+        let progress_bar = ProgressBar::new(packages.len() as u64);
 
         progress_bar.set_style(
             ProgressStyle::default_bar()
@@ -150,18 +151,16 @@ Options:
 
         let start = Instant::now();
 
-        let responses: Result<Vec<VoltResponse>>;
-
-        if packages.len() > 1 {
-            responses = utils::get_volt_response_multi(packages.clone())
+        let responses: Result<Vec<VoltResponse>> = if packages.len() > 1 {
+            utils::get_volt_response_multi(&packages, &progress_bar)
                 .await
                 .into_iter()
-                .collect();
+                .collect()
         } else {
-            responses = vec![utils::get_volt_response(packages[0].to_string()).await]
+            vec![utils::get_volt_response(&packages[0]).await]
                 .into_iter()
-                .collect();
-        }
+                .collect()
+        };
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
 
