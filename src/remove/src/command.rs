@@ -117,7 +117,7 @@ Options:
             let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
                 .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
 
-            let response = get_volt_response(package.to_string()).await?;
+            let response = get_volt_response(&package).await?;
 
             // let current_version = response.versions.get(&response.version).unwrap();
 

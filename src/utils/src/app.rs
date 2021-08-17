@@ -28,6 +28,7 @@ impl AppFlag {
             "h" => Some(AppFlag::Help),
             "version" => Some(AppFlag::Version),
             "yes" => Some(AppFlag::Yes),
+            "y" => Some(AppFlag::Yes),
             "depth" => Some(AppFlag::Depth),
             "verbose" => Some(AppFlag::Verbose),
             "no-progress" => Some(AppFlag::NoProgress),

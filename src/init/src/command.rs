@@ -17,6 +17,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
+use std::time::Instant;
 use std::{env, process};
 
 use anyhow::Result;
@@ -82,7 +83,6 @@ Options:
         let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
         let split: Vec<&str> = temp.split('\\').collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();
-
         let data = if app.has_flag(AppFlag::Yes) {
             // Set name to current directory name
             let name = env::current_dir()
@@ -101,28 +101,20 @@ Options:
             let main = "index.js".to_string();
 
             let author = {
-                let git_user_name = get_git_config("user.name")
-                    .ok()
-                    .flatten()
-                    .unwrap_or_else(String::new);
+                let git_user_name = get_git_config(&app, "user.name").unwrap_or_else(String::new);
 
-                let git_email = get_git_config("user.email")
-                    .ok()
-                    .flatten()
-                    .map(|email| format!("<{}>", email))
-                    .unwrap_or_else(String::new);
+                let git_email = get_git_config(&app, "user.email").unwrap_or_else(String::new);
 
                 if git_user_name.is_empty() && git_email.is_empty() {
                     None
                 } else {
-                    Some([git_user_name, git_email].join(" "))
+                    Some([git_user_name, format!("<{}>", git_email)].join(" "))
                 }
             };
 
-            let repository = get_git_config("remote.origin.url").ok().flatten();
+            let repository = get_git_config(&app, "remote.origin.url");
 
             let license = License::default();
-
             InitData {
                 name,
                 version,
@@ -207,16 +199,12 @@ Options:
             });
 
             // Get "author"
-            let git_user_name = get_git_config("user.name")
-                .ok()
-                .flatten()
-                .unwrap_or_else(String::new);
+            let git_user_name = get_git_config(&app, "user.name").unwrap_or_else(String::new);
 
-            let git_email = get_git_config("user.email")
-                .ok()
-                .flatten()
-                .map(|email| format!("<{}>", email))
-                .unwrap_or_else(String::new);
+            let git_email = format!(
+                "<{}>",
+                get_git_config(&app, "user.email").unwrap_or_else(String::new)
+            );
 
             let author;
 

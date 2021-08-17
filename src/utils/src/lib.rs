@@ -14,6 +14,8 @@ use bytes::Bytes;
 use colored::Colorize;
 use futures_util::stream::FuturesUnordered;
 use futures_util::StreamExt;
+use git_config::file::GitConfig;
+use git_config::parser::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use lz4::Decoder;
 use package::Package;
@@ -21,13 +23,14 @@ use rand::prelude::SliceRandom;
 use reqwest::StatusCode;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::env::temp_dir;
+use std::fs::read_to_string;
 use std::fs::File;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process;
 use std::sync::Arc;
 use tokio::fs::create_dir_all;
 use volt_api::VoltPackage;
@@ -101,7 +104,7 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
+pub async fn get_volt_response(package_name: &String) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
@@ -158,11 +161,15 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
     }
 }
 
-pub async fn get_volt_response_multi(packages: Vec<String>) -> Vec<Result<VoltResponse>> {
+pub async fn get_volt_response_multi(
+    packages: &Vec<String>,
+    pb: &ProgressBar,
+) -> Vec<Result<VoltResponse>> {
     packages
         .into_iter()
         .map(get_volt_response)
         .collect::<FuturesUnordered<_>>()
+        .inspect(|_| pb.inc(1))
         .collect::<Vec<Result<VoltResponse>>>()
         .await
 }
@@ -562,19 +569,53 @@ pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
 }
 
 /// Gets a config key from git using the git cli.
-pub fn get_git_config(key: &str) -> std::io::Result<Option<String>> {
-    process::Command::new("git")
-        .arg("config")
-        .arg("--get")
-        .arg(key)
-        .output()
-        .map(|output| {
-            if output.status.success() {
-                String::from_utf8(output.stdout[..output.stdout.len() - 1].to_vec()).ok()
+pub fn get_git_config(app: &App, key: &str) -> Option<String> {
+    println!("{}", key);
+    match key {
+        "user.name" => {
+            let config_path = app.home_dir.join(".gitconfig");
+
+            if !config_path.exists() {
+                return None;
             } else {
-                None
+                let data = read_to_string(config_path).ok()?;
+
+                let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
+                let value = config.get_raw_value("user", None, "name").ok()?;
+
+                return Some(String::from_utf8_lossy(&value).to_owned().to_string());
             }
-        })
+        }
+        "user.email" => {
+            let config_path = app.home_dir.join(".gitconfig");
+
+            if !config_path.exists() {
+                return None;
+            } else {
+                let data = read_to_string(config_path).ok()?;
+
+                let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
+                let value = config.get_raw_value("user", None, "email").ok()?;
+
+                return Some(String::from_utf8_lossy(&value).to_owned().to_string());
+            }
+        }
+        "repository.url" => {
+            let remote_config_path = app.current_dir.join(".git").join("config");
+
+            if !remote_config_path.exists() {
+                let data = read_to_string(remote_config_path).ok()?;
+
+                let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
+                let value = config.get_raw_value("remote", Some("origin"), "url").ok()?;
+
+                return Some(String::from_utf8_lossy(&value).to_owned().to_string());
+            } else {
+                return None;
+            }
+        }
+        _ => None,
+    }
 }
 
 // Windows Function
