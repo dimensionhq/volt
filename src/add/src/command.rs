@@ -22,11 +22,13 @@ use std::time::Instant;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use futures::stream::FuturesUnordered;
+use futures::{StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use utils::app::App;
 use utils::constants::PROGRESS_CHARS;
-use utils::error;
 use utils::npm::get_versions;
+use utils::{error, install_extract_package};
 
 use utils::package::PackageJson;
 
@@ -245,6 +247,28 @@ Options:
                 object
             })
             .collect();
+
+        let progress_bar = ProgressBar::new(dependencies.len() as u64);
+
+        progress_bar.set_style(
+            ProgressStyle::default_bar()
+                .progress_chars(PROGRESS_CHARS)
+                .template(&format!(
+                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                    "Installing Packages".bright_blue()
+                )),
+        );
+
+        dependencies
+            .into_iter()
+            .map(|v| install_extract_package(&app, &v))
+            .collect::<FuturesUnordered<_>>()
+            .inspect(|_| progress_bar.inc(1))
+            .try_collect::<()>()
+            .await
+            .unwrap();
+
+        progress_bar.finish();
 
         Ok(())
     }
