@@ -154,12 +154,12 @@ Options:
         let start = Instant::now();
 
         let responses: Result<Vec<VoltResponse>> = if packages.len() > 1 {
-            utils::get_volt_response_multi(&packages, &progress_bar)
+            utils::get_volt_response_multi(&versions, &progress_bar)
                 .await
                 .into_iter()
                 .collect()
         } else {
-            vec![utils::get_volt_response(&packages[0]).await]
+            vec![utils::get_volt_response(&packages[0], &versions[0].2).await]
                 .into_iter()
                 .collect()
         };

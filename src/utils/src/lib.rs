@@ -10,14 +10,13 @@ use anyhow::Context;
 use anyhow::Error;
 use anyhow::Result;
 use app::App;
-use bytes::Bytes;
 use colored::Colorize;
 use flate2::read::GzDecoder;
 use futures_util::stream::FuturesUnordered;
 use futures_util::StreamExt;
 use git_config::file::GitConfig;
 use git_config::parser::Parser;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use lz4::Decoder;
 use package::Package;
@@ -69,13 +68,19 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
         let data = version.1;
 
         // @codemirror/state -> state
-        let mut filter = version.0.split("@").filter(|s| !s.is_empty());
-        let package_name;
+        let split = version
+            .0
+            .split("@")
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<&str>>();
 
-        if filter.clone().count() == 1 {
-            package_name = filter.nth(0).unwrap();
-        } else {
-            package_name = filter.nth(1).unwrap();
+        let mut package_name = String::new();
+
+        if split.len() == 2 {
+            package_name = split[0].to_string();
+            if package_name.contains("/") {
+                package_name = format!("@{}", package_name);
+            }
         }
 
         // @codemirror/state@1.2.3 -> 1.2.3
@@ -86,11 +91,11 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
             VoltPackage {
                 name: package_name.to_string(),
                 version: package_version.to_string(),
-                tarball: data.clone().tarball,
-                bin: data.clone().bin,
-                integrity: data.clone().integrity,
-                peer_dependencies: data.clone().peer_dependencies,
-                dependencies: data.clone().dependencies,
+                tarball: data.tarball.clone(),
+                bin: data.bin.clone(),
+                integrity: data.integrity.clone(),
+                peer_dependencies: data.peer_dependencies.clone(),
+                dependencies: data.dependencies.clone(),
             },
         );
     }
@@ -108,18 +113,18 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(package_name: &String) -> Result<VoltResponse> {
+pub async fn get_volt_response(package_name: &String, hash: &String) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
     loop {
         // get a response
-        let mut response = isahc::get_async(format!(
-            "http://push-2105.5centscdn.com/{}.json",
-            package_name
-        ))
-        .await
-        .with_context(|| format!("failed to fetch {}", package_name.bright_yellow().bold()))?;
+        let mut response =
+            isahc::get_async(format!("http://push-2105.5centscdn.com/{}.json", hash))
+                .await
+                .with_context(|| {
+                    format!("failed to fetch {}", package_name.bright_yellow().bold())
+                })?;
 
         // check the status of the response
         match response.status() {
@@ -170,12 +175,12 @@ pub async fn get_volt_response(package_name: &String) -> Result<VoltResponse> {
 }
 
 pub async fn get_volt_response_multi(
-    packages: &Vec<String>,
+    versions: &Vec<(String, String, String)>,
     pb: &ProgressBar,
 ) -> Vec<Result<VoltResponse>> {
-    packages
+    versions
         .into_iter()
-        .map(get_volt_response)
+        .map(|(name, _, hash)| get_volt_response(&name, &hash))
         .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
         .collect::<Vec<Result<VoltResponse>>>()
@@ -367,7 +372,9 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
 
         let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
-        // Verify If Bytes == Sha1
+        println!("{:?}", package);
+
+        // Verify If Bytes == Sha1 of Tarball
         if package.integrity == App::calc_hash(&bytes).unwrap() {
             // println!("{} => {}", url.clone(), loc);
             // Create node_modules

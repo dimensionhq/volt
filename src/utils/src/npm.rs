@@ -11,7 +11,7 @@ use serde_json::Value;
 use ssri::Integrity;
 
 // Get version from NPM
-pub async fn get_version(package_name: String) -> Result<(String, String)> {
+pub async fn get_version(package_name: String) -> Result<(String, String, String)> {
     let mut retries = 0;
 
     let count = package_name.matches("@").count();
@@ -70,7 +70,7 @@ pub async fn get_version(package_name: String) -> Result<(String, String)> {
                                         .map(|i| i.to_hex().1)
                                         .unwrap();
 
-                                    return Ok((latest.to_string(), hash));
+                                    return Ok((package_name, latest.to_string(), hash));
                                 }
                                 None => {
                                     return Err(anyhow!(
@@ -195,7 +195,11 @@ pub async fn get_version(package_name: String) -> Result<(String, String)> {
                                             .map(|i| i.to_hex().1)
                                             .unwrap();
 
-                                        return Ok((available_versions[0].to_string(), hash));
+                                        return Ok((
+                                            package_name,
+                                            available_versions[0].to_string(),
+                                            hash,
+                                        ));
                                     }
                                     None => {
                                         return Err(anyhow!(
@@ -320,7 +324,11 @@ pub async fn get_version(package_name: String) -> Result<(String, String)> {
                                             .map(|i| i.to_hex().1)
                                             .unwrap();
 
-                                        return Ok((available_versions[0].to_string(), hash));
+                                        return Ok((
+                                            package_name,
+                                            available_versions[0].to_string(),
+                                            hash,
+                                        ));
                                     }
                                     None => {
                                         return Err(anyhow!(
@@ -368,12 +376,12 @@ pub async fn get_version(package_name: String) -> Result<(String, String)> {
     }
 }
 
-pub async fn get_versions(packages: &Vec<String>) -> Result<Vec<(String, String)>> {
+pub async fn get_versions(packages: &Vec<String>) -> Result<Vec<(String, String, String)>> {
     packages
         .to_owned()
         .into_iter()
         .map(get_version)
         .collect::<FuturesOrdered<_>>()
-        .try_collect::<Vec<(String, String)>>()
+        .try_collect::<Vec<(String, String, String)>>()
         .await
 }
