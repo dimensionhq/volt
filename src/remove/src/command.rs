@@ -22,7 +22,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use tokio::sync::Mutex;
-use utils::{app::App, error, get_volt_response, package::PackageJson};
+use utils::{app::App, error, package::PackageJson};
 use volt_core::{command::Command, model::lock_file::LockFile, VERSION};
 /// Struct implementation for the `Remove` command.
 pub struct Remove;
@@ -117,7 +117,7 @@ Options:
             let mut lock_file = LockFile::load(app_new.lock_file_path.to_path_buf())
                 .unwrap_or_else(|_| LockFile::new(app_new.lock_file_path.to_path_buf()));
 
-            let response = get_volt_response(&package).await?;
+            // let response = get_volt_response(&package).await?;
 
             // let current_version = response.versions.get(&response.version).unwrap();
 
