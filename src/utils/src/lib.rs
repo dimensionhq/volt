@@ -1,3 +1,4 @@
+// TODO: BENCHMARK COPYING VS HARD LINKING.
 pub mod app;
 pub mod constants;
 pub mod helper;
@@ -83,6 +84,8 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
             }
         }
 
+        let integrity = base64::encode(hex::decode(data.integrity.clone()).unwrap());
+
         // @codemirror/state@1.2.3 -> 1.2.3
         let package_version = version.0.split("@").last().unwrap();
 
@@ -93,7 +96,7 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
                 version: package_version.to_string(),
                 tarball: data.tarball.clone(),
                 bin: data.bin.clone(),
-                integrity: data.integrity.clone(),
+                integrity,
                 peer_dependencies: data.peer_dependencies.clone(),
                 dependencies: data.dependencies.clone(),
             },
@@ -372,7 +375,16 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
 
         let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
-        println!("{:?}", package);
+        let prefix;
+
+        if package.integrity.len() == 88 {
+            prefix = "sha512-";
+        } else {
+            prefix = "sha1-";
+        }
+
+        let integrity = format!("{}{}", prefix, package.integrity);
+        println!("{}", integrity);
 
         // Verify If Bytes == Sha1 of Tarball
         if package.integrity == App::calc_hash(&bytes).unwrap() {

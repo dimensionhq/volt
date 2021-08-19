@@ -15,8 +15,9 @@
 use crate::search::SearchData;
 use anyhow::Result;
 use async_trait::async_trait;
-use chttp::ResponseExt;
 use colored::Colorize;
+use isahc::AsyncReadResponseExt;
+
 use prettytable::row;
 use std::sync::Arc;
 // use search::SearchResp;
@@ -75,8 +76,8 @@ Options:
         if app.args.len() >= 2 {
             let package_name = &app.args[1];
 
-            let response = chttp::get_async(format!(
-                "https://www.npmjs.com/search/suggestions?q={}",
+            let response = isahc::get_async(format!(
+                "http://www.npmjs.com/search/suggestions?q={}",
                 package_name
             ))
             .await
@@ -84,7 +85,7 @@ Options:
                 error!("package does not exist");
                 std::process::exit(1);
             })
-            .text_async()
+            .text()
             .await
             .unwrap_or_else(|_| {
                 error!("package does not exist");

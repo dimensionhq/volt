@@ -107,9 +107,9 @@ impl App {
     }
 
     pub fn calc_hash(data: &bytes::Bytes) -> Result<String> {
-        let mut hasher = Sha1::new();
-        io::copy(&mut &**data, &mut hasher)?;
+        // let mut hasher = Sha1::new();
+        // io::copy(&mut &**data, &mut hasher)?;
 
-        Ok(format!("{:x}", hasher.finalize()))
+        Ok(String::new())
     }
 }
