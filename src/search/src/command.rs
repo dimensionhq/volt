@@ -33,6 +33,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
 }
 
 pub struct Search {}
+
 #[async_trait]
 impl Command for Search {
     fn help() -> String {

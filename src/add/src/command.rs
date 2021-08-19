@@ -93,6 +93,23 @@ Options:
             exit(0);
         }
 
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: Skip ping to volt registry if package has zero deps
+        // TODO: BENCHMARK COPYING VS HARD LINKING.
+        // TODO: BENCHMARK COPYING VS HARD LINKING.
+        // TODO: BENCHMARK COPYING VS HARD LINKING.
+        // TODO: BENCHMARK COPYING VS HARD LINKING.
+        // TODO: BENCHMARK COPYING VS HARD LINKING.
+
         let mut packages = vec![];
 
         // Add packages to the packages vec.
@@ -123,9 +140,10 @@ Options:
         // Load the existing package.json file
         let package_file = PackageJson::from("package.json");
 
+        let start = Instant::now();
         // Get the integrity hash and version of the requested package.
         let versions = get_versions(&packages).await?;
-
+        println!("{}", start.elapsed().as_secs_f32());
         let lockfile_path = &app.lock_file_path;
 
         let global_lockfile = &app.home_dir.join(".global.lock");
@@ -258,7 +276,7 @@ Options:
                     "Installing Packages".bright_blue()
                 )),
         );
-
+        let start = Instant::now();
         dependencies
             .into_iter()
             .map(|v| install_extract_package(&app, &v))
@@ -269,7 +287,7 @@ Options:
             .unwrap();
 
         progress_bar.finish();
-
+        println!("{}", start.elapsed().as_secs_f32());
         Ok(())
     }
 }
