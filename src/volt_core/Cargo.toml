@@ -10,7 +10,6 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-chttp = "0.5"
 colored = "2.0"
 console = "0.14"
 dialoguer = "0.8"
@@ -21,6 +20,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha-1 = "0.9"
 structopt = "0.3"
+isahc = '1.4.1'
 tar = "0.4"
 thiserror = "1.0"
 utils = { path = "../utils" }

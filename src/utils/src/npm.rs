@@ -1,14 +1,15 @@
 use crate::constants::MAX_RETRIES;
 use anyhow::{anyhow, ensure, Context, Result};
-use chttp::prelude::Request;
-use chttp::RequestExt;
-use chttp::{http::StatusCode, ResponseExt};
 use colored::Colorize;
 use futures::stream::FuturesOrdered;
 use futures::TryStreamExt;
+use isahc::http::StatusCode;
+use isahc::AsyncReadResponseExt;
+use isahc::Request;
+use isahc::RequestExt;
 use semver_rs::Version;
 use serde_json::Value;
-use ssri::Integrity;
+use ssri::{Algorithm, Integrity};
 
 // Get version from NPM
 pub async fn get_version(package_name: String) -> Result<(String, String, String)> {
@@ -32,7 +33,7 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
 
             match response.status_mut() {
                 &mut StatusCode::OK => {
-                    let text = response.text_async().await.context(format!(
+                    let text = response.text().await.context(format!(
                         "failed to deserialize response for {}",
                         package_name.bright_cyan().bold()
                     ))?;
@@ -62,13 +63,23 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
 
                                     let algo = integrity.pick_algorithm();
 
-                                    let hash = integrity
+                                    let mut hash = integrity
                                         .hashes
                                         .into_iter()
                                         .find(|h| h.algorithm == algo)
                                         .map(|h| Integrity { hashes: vec![h] })
                                         .map(|i| i.to_hex().1)
                                         .unwrap();
+
+                                    match algo {
+                                        Algorithm::Sha1 => {
+                                            hash = format!("sha1-{}", hash);
+                                        }
+                                        Algorithm::Sha512 => {
+                                            hash = format!("sha512-{}", hash);
+                                        }
+                                        _ => {}
+                                    }
 
                                     return Ok((package_name, latest.to_string(), hash));
                                 }
@@ -137,7 +148,7 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
 
                 match response.status_mut() {
                     &mut StatusCode::OK => {
-                        let text = response.text_async().await.context(format!(
+                        let text = response.text().await.context(format!(
                             "failed to deserialize response for {}",
                             package_name.bright_cyan().bold()
                         ))?;
@@ -187,13 +198,23 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
 
                                         let algo = integrity.pick_algorithm();
 
-                                        let hash = integrity
+                                        let mut hash = integrity
                                             .hashes
                                             .into_iter()
                                             .find(|h| h.algorithm == algo)
                                             .map(|h| Integrity { hashes: vec![h] })
                                             .map(|i| i.to_hex().1)
                                             .unwrap();
+
+                                        match algo {
+                                            Algorithm::Sha1 => {
+                                                hash = format!("sha1-{}", hash);
+                                            }
+                                            Algorithm::Sha512 => {
+                                                hash = format!("sha512-{}", hash);
+                                            }
+                                            _ => {}
+                                        }
 
                                         return Ok((
                                             package_name,
@@ -265,7 +286,7 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
 
                 match response.status_mut() {
                     &mut StatusCode::OK => {
-                        let text = response.text_async().await.context(format!(
+                        let text = response.text().await.context(format!(
                             "failed to deserialize response for {}",
                             package_name.bright_cyan().bold()
                         ))?;
@@ -316,13 +337,23 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
 
                                         let algo = integrity.pick_algorithm();
 
-                                        let hash = integrity
+                                        let mut hash = integrity
                                             .hashes
                                             .into_iter()
                                             .find(|h| h.algorithm == algo)
                                             .map(|h| Integrity { hashes: vec![h] })
                                             .map(|i| i.to_hex().1)
                                             .unwrap();
+
+                                        match algo {
+                                            Algorithm::Sha1 => {
+                                                hash = format!("sha1-{}", hash);
+                                            }
+                                            Algorithm::Sha512 => {
+                                                hash = format!("sha512-{}", hash);
+                                            }
+                                            _ => {}
+                                        }
 
                                         return Ok((
                                             package_name,

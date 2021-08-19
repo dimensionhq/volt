@@ -18,6 +18,5 @@ indicatif = "0.16.2"
 utils = { path = "../utils" }
 add = { path = "../add" }
 walkdir = "2.3.2"
-chttp = "0.5.5"
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0.64"
