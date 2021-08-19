@@ -3198,6 +3198,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha2"
+version = "0.9.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b362ae5752fd2137731f9fa25fd4d9058af34666ca1966fb969119cc35719f12"
+dependencies = [
+ "block-buffer 0.9.0",
+ "cfg-if",
+ "cpufeatures",
+ "digest 0.9.0",
+ "opaque-debug 0.3.0",
+]
+
+[[package]]
 name = "shell-escape"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3304,7 +3317,7 @@ dependencies = [
  "hex 0.3.2",
  "serde",
  "sha-1 0.8.2",
- "sha2",
+ "sha2 0.8.2",
  "thiserror",
 ]
 
@@ -3565,9 +3578,9 @@ dependencies = [
 
 [[package]]
 name = "termimad"
-version = "0.13.0"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a09f249613ba31188fd902030fcbc94bbdebb5e881fe7fcb58be16fb50e0d77a"
+checksum = "f97a06798c64fce2120a9a89413c33c55e9c6ad85654774aaf7c1d279018c639"
 dependencies = [
  "crossbeam",
  "crossterm",
@@ -3980,6 +3993,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha-1 0.9.6",
+ "sha2 0.9.5",
  "ssri",
  "tar",
  "tempfile",

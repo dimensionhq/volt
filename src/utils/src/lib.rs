@@ -1,4 +1,3 @@
-// TODO: BENCHMARK COPYING VS HARD LINKING.
 pub mod app;
 pub mod constants;
 pub mod helper;
@@ -23,6 +22,8 @@ use lz4::Decoder;
 use package::Package;
 use rand::prelude::SliceRandom;
 use reqwest::StatusCode;
+use ssri::Algorithm;
+use ssri::Integrity;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -84,10 +85,30 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
             }
         }
 
-        let integrity = base64::encode(hex::decode(data.integrity.clone()).unwrap());
-
         // @codemirror/state@1.2.3 -> 1.2.3
         let package_version = version.0.split("@").last().unwrap();
+
+        let integrity: Integrity = data.integrity.clone().parse().unwrap();
+
+        let algo = integrity.pick_algorithm();
+
+        let mut hash = integrity
+            .hashes
+            .into_iter()
+            .find(|h| h.algorithm == algo)
+            .map(|h| Integrity { hashes: vec![h] })
+            .map(|i| i.to_hex().1)
+            .unwrap();
+
+        match algo {
+            Algorithm::Sha1 => {
+                hash = format!("sha1-{}", hash);
+            }
+            Algorithm::Sha512 => {
+                hash = format!("sha512-{}", hash);
+            }
+            _ => {}
+        }
 
         converted_versions.insert(
             version.0.to_string(), // name@version
@@ -96,7 +117,7 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
                 version: package_version.to_string(),
                 tarball: data.tarball.clone(),
                 bin: data.bin.clone(),
-                integrity,
+                integrity: hash,
                 peer_dependencies: data.peer_dependencies.clone(),
                 dependencies: data.dependencies.clone(),
             },
@@ -375,19 +396,16 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
 
         let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
-        let prefix;
+        let algorithm;
 
-        if package.integrity.len() == 88 {
-            prefix = "sha512-";
+        if package.integrity.starts_with("sha1") {
+            algorithm = Algorithm::Sha1;
         } else {
-            prefix = "sha1-";
+            algorithm = Algorithm::Sha512;
         }
 
-        let integrity = format!("{}{}", prefix, package.integrity);
-        println!("{}", integrity);
-
-        // Verify If Bytes == Sha1 of Tarball
-        if package.integrity == App::calc_hash(&bytes).unwrap() {
+        // Verify If Bytes == Sha512 of Tarball
+        if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
             // println!("{} => {}", url.clone(), loc);
             // Create node_modules
             create_dir_all(&app.node_modules_dir).await?;
@@ -555,19 +573,19 @@ pub async fn download_tarball_create(
     let bytes = std::fs::read(path_str.clone()).unwrap();
 
     // Corrupt tar files may cause issues
-    if let Ok(hash) = App::calc_hash(&bytes::Bytes::from(bytes)) {
-        // File exists, make sure it's not corrupted
-        if hash
-            == package
-                .versions
-                .get(package.dist_tags.get("latest").unwrap())
-                .unwrap()
-                .dist
-                .shasum
-        {
-            return Ok(path_str);
-        }
-    }
+    // if let Ok(hash) = App::calc_hash(&bytes::Bytes::from(bytes)) {
+    //     // File exists, make sure it's not corrupted
+    //     if hash
+    //         == package
+    //             .versions
+    //             .get(package.dist_tags.get("latest").unwrap())
+    //             .unwrap()
+    //             .dist
+    //             .shasum
+    //     {
+    //         return Ok(path_str);
+    //     }
+    // }
 
     let tarball = package_version.dist.tarball.replace("https", "http");
 
@@ -575,7 +593,7 @@ pub async fn download_tarball_create(
 
     let bytes = res.bytes().await.unwrap();
 
-    App::calc_hash(&bytes)?;
+    // App::calc_hash(&bytes)?;
 
     Ok(path_str)
 }

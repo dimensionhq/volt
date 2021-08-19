@@ -1,8 +1,10 @@
 use crate::enable_ansi_support;
 use anyhow::{Context, Result};
 use dirs::home_dir;
-use sha1::{Digest, Sha1};
-use std::{env, io, path::PathBuf};
+use sha1::Digest;
+use sha2::Sha512;
+use ssri::Algorithm;
+use std::{env, path::PathBuf};
 
 #[derive(Debug, PartialEq)]
 pub enum AppFlag {
@@ -106,10 +108,19 @@ impl App {
         self.flags.contains(&flag)
     }
 
-    pub fn calc_hash(data: &bytes::Bytes) -> Result<String> {
-        // let mut hasher = Sha1::new();
-        // io::copy(&mut &**data, &mut hasher)?;
-
-        Ok(String::new())
+    pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> Result<String> {
+        match algorithm {
+            Algorithm::Sha1 => {
+                let mut hasher = sha1::Sha1::new();
+                std::io::copy(&mut &**data, &mut hasher)?;
+                return Ok(format!("sha1-{:x}", hasher.finalize()));
+            }
+            Algorithm::Sha512 => {
+                let mut hasher = Sha512::new();
+                std::io::copy(&mut &**data, &mut hasher)?;
+                return Ok(format!("sha512-{:x}", hasher.finalize()));
+            }
+            _ => Ok(String::new()),
+        }
     }
 }
