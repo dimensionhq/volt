@@ -1,4 +1,5 @@
 use crate::constants::MAX_RETRIES;
+use crate::volt_api::VoltPackage;
 use anyhow::{anyhow, ensure, Context, Result};
 use colored::Colorize;
 use futures::stream::FuturesOrdered;
@@ -12,7 +13,9 @@ use serde_json::Value;
 use ssri::{Algorithm, Integrity};
 
 // Get version from NPM
-pub async fn get_version(package_name: String) -> Result<(String, String, String)> {
+pub async fn get_version(
+    package_name: String,
+) -> Result<(String, String, String, Option<VoltPackage>)> {
     let mut retries = 0;
 
     let count = package_name.matches("@").count();
@@ -42,6 +45,22 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
                         .as_str()
                     {
                         Some(latest) => {
+                            let num_deps;
+
+                            match serde_json::from_str::<Value>(&text).unwrap()["versions"]
+                                ["dependencies"][latest.to_string()]
+                            .as_array()
+                            {
+                                Some(value) => {
+                                    num_deps = value.len();
+                                }
+                                None => {
+                                    num_deps = 0;
+                                }
+                            }
+
+                            let mut package: Option<VoltPackage> = None;
+
                             match serde_json::from_str::<Value>(&text).unwrap()["versions"][latest]
                                 ["dist"]
                                 .as_object()
@@ -81,7 +100,19 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
                                         _ => {}
                                     }
 
-                                    return Ok((package_name, latest.to_string(), hash));
+                                    if num_deps == 0 {
+                                        package = Some(VoltPackage {
+                                            name: package_name.clone(),
+                                            version: latest.to_string(),
+                                            tarball: value["tarball"].to_string().replace("\"", ""),
+                                            bin: None,
+                                            integrity: hash.clone(),
+                                            peer_dependencies: None,
+                                            dependencies: None,
+                                        })
+                                    }
+
+                                    return Ok((package_name, latest.to_string(), hash, package));
                                 }
                                 None => {
                                     return Err(anyhow!(
@@ -178,12 +209,29 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
                                     ));
                                 }
 
+                                let num_deps;
+
+                                match serde_json::from_str::<Value>(&text).unwrap()["versions"]
+                                    ["dependencies"][available_versions[0].to_string()]
+                                .as_array()
+                                {
+                                    Some(value) => {
+                                        num_deps = value.len();
+                                    }
+                                    None => {
+                                        num_deps = 0;
+                                    }
+                                }
+
+                                let mut package: Option<VoltPackage> = None;
+
                                 match serde_json::from_str::<Value>(&text).unwrap()["versions"]
                                     [available_versions[0].to_string()]["dist"]
                                     .as_object()
                                 {
                                     Some(value) => {
                                         let hash_string: String;
+
                                         if value.contains_key("integrity") {
                                             hash_string =
                                                 value["integrity"].to_string().replace("\"", "");
@@ -216,10 +264,24 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
                                             _ => {}
                                         }
 
+                                        if num_deps == 0 {
+                                            package = Some(VoltPackage {
+                                                name: package_name.replace(&name, ""),
+                                                version: input_version,
+                                                tarball: value["tarball"]
+                                                    .to_string()
+                                                    .replace("\"", ""),
+                                                bin: None,
+                                                integrity: hash.clone(),
+                                                peer_dependencies: None,
+                                                dependencies: None,
+                                            })
+                                        }
                                         return Ok((
                                             package_name,
                                             available_versions[0].to_string(),
                                             hash,
+                                            package,
                                         ));
                                     }
                                     None => {
@@ -316,6 +378,22 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
                                     ));
                                 }
 
+                                let num_deps;
+
+                                match serde_json::from_str::<Value>(&text).unwrap()["versions"]
+                                    ["dependencies"][available_versions[0].to_string()]
+                                .as_array()
+                                {
+                                    Some(value) => {
+                                        num_deps = value.len();
+                                    }
+                                    None => {
+                                        num_deps = 0;
+                                    }
+                                }
+
+                                let mut package: Option<VoltPackage> = None;
+
                                 match serde_json::from_str::<Value>(&text).unwrap()["versions"]
                                     [available_versions[0].to_string()]["dist"]
                                     .as_object()
@@ -355,10 +433,25 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
                                             _ => {}
                                         }
 
+                                        if num_deps == 0 {
+                                            package = Some(VoltPackage {
+                                                name: package_name.replace(&name, ""),
+                                                version: input_version,
+                                                tarball: value["tarball"]
+                                                    .to_string()
+                                                    .replace("\"", ""),
+                                                bin: None,
+                                                integrity: hash.clone(),
+                                                peer_dependencies: None,
+                                                dependencies: None,
+                                            })
+                                        }
+
                                         return Ok((
                                             package_name,
                                             available_versions[0].to_string(),
                                             hash,
+                                            package,
                                         ));
                                     }
                                     None => {
@@ -407,12 +500,14 @@ pub async fn get_version(package_name: String) -> Result<(String, String, String
     }
 }
 
-pub async fn get_versions(packages: &Vec<String>) -> Result<Vec<(String, String, String)>> {
+pub async fn get_versions(
+    packages: &Vec<String>,
+) -> Result<Vec<(String, String, String, Option<VoltPackage>)>> {
     packages
         .to_owned()
         .into_iter()
         .map(get_version)
         .collect::<FuturesOrdered<_>>()
-        .try_collect::<Vec<(String, String, String)>>()
+        .try_collect::<Vec<(String, String, String, Option<VoltPackage>)>>()
         .await
 }
