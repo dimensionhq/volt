@@ -36,6 +36,7 @@ use std::io::Read;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Instant;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use volt_api::VoltPackage;
@@ -137,9 +138,33 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(package_name: &String, hash: &String) -> Result<VoltResponse> {
+pub async fn get_volt_response(
+    package_name: &String,
+    hash: &String,
+    package: &Option<VoltPackage>,
+) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
+
+    if package.is_some() {
+        let package = package.as_ref().unwrap();
+
+        let mut versions: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
+
+        let mut nested_versions: HashMap<String, VoltPackage> = HashMap::new();
+
+        nested_versions.insert(
+            format!("{}{}", package.name, package.version),
+            package.clone(),
+        );
+
+        versions.insert(package.clone().version, nested_versions);
+
+        return Ok(VoltResponse {
+            version: package.clone().version,
+            versions,
+        });
+    }
 
     loop {
         // get a response
@@ -199,12 +224,12 @@ pub async fn get_volt_response(package_name: &String, hash: &String) -> Result<V
 }
 
 pub async fn get_volt_response_multi(
-    versions: &Vec<(String, String, String)>,
+    versions: &Vec<(String, String, String, Option<VoltPackage>)>,
     pb: &ProgressBar,
 ) -> Vec<Result<VoltResponse>> {
     versions
         .into_iter()
-        .map(|(name, _, hash)| get_volt_response(&name, &hash))
+        .map(|(name, _, hash, package)| get_volt_response(&name, &hash, package))
         .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
         .collect::<Vec<Result<VoltResponse>>>()

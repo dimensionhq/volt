@@ -93,22 +93,15 @@ Options:
             exit(0);
         }
 
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
-        // TODO: Skip ping to volt registry if package has zero deps
         // TODO: BENCHMARK COPYING VS HARD LINKING.
         // TODO: BENCHMARK COPYING VS HARD LINKING.
         // TODO: BENCHMARK COPYING VS HARD LINKING.
         // TODO: BENCHMARK COPYING VS HARD LINKING.
-        // TODO: BENCHMARK COPYING VS HARD LINKING.
+        // TODO: Move to miette + thiserror.
+        // TODO: Move to miette + thiserror.
+        // TODO: Move to miette + thiserror.
+        // TODO: Move to miette + thiserror.
+        // TODO: Move to miette + thiserror.
 
         let mut packages = vec![];
 
@@ -140,10 +133,9 @@ Options:
         // Load the existing package.json file
         let package_file = PackageJson::from("package.json");
 
-        let start = Instant::now();
         // Get the integrity hash and version of the requested package.
         let versions = get_versions(&packages).await?;
-        println!("{}", start.elapsed().as_secs_f32());
+
         let lockfile_path = &app.lock_file_path;
 
         let global_lockfile = &app.home_dir.join(".global.lock");
@@ -177,7 +169,7 @@ Options:
                 .into_iter()
                 .collect()
         } else {
-            vec![utils::get_volt_response(&packages[0], &versions[0].2).await]
+            vec![utils::get_volt_response(&packages[0], &versions[0].2, &versions[0].3).await]
                 .into_iter()
                 .collect()
         };
@@ -190,24 +182,46 @@ Options:
             let current_version = res.versions.get(&res.version).unwrap();
             dependencies.extend(current_version.clone());
         }
+        let end = Instant::now();
 
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
         let length = dependencies.len();
 
         if length == 1 {
-            println!(
-                "{}: resolved 1 dependency in {:.2}s.",
-                "success".bright_green(),
-                start.elapsed().as_secs_f32()
-            );
+            let duration = (end - start).as_secs_f32();
+
+            if duration < 0.001 {
+                println!(
+                    "{}: resolved 1 dependency in {:.5}s.",
+                    "success".bright_green(),
+                    duration
+                );
+            } else {
+                println!(
+                    "{}: resolved 1 dependency in {:.2}s.",
+                    "success".bright_green(),
+                    duration
+                );
+            }
         } else {
-            println!(
-                "{}: resolved {} dependencies in {:.2}s.",
-                "success".bright_green(),
-                length,
-                start.elapsed().as_secs_f32()
-            );
+            let duration = (end - start).as_secs_f32();
+
+            if duration < 0.001 {
+                println!(
+                    "{}: resolved {} dependencies in {:.4}s.",
+                    "success".bright_green(),
+                    length,
+                    duration
+                );
+            } else {
+                println!(
+                    "{}: resolved {} dependencies in {:.2}s.",
+                    "success".bright_green(),
+                    length,
+                    duration
+                );
+            }
         }
 
         let dependencies: Vec<_> = dependencies
