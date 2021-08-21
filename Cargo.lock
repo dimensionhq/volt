@@ -1678,6 +1678,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "jwalk"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "172752e853a067cbce46427de8470ddf308af7fd8ceaf9b682ef31a5021b6bb9"
+dependencies = [
+ "crossbeam",
+ "rayon",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3985,6 +3995,7 @@ dependencies = [
  "hex 0.4.3",
  "indicatif",
  "isahc",
+ "jwalk",
  "lz4",
  "rand 0.8.4",
  "reqwest",
@@ -3999,7 +4010,6 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tokio",
- "walkdir",
  "winapi",
 ]
 

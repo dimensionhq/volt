@@ -157,7 +157,7 @@ Options:
                 .progress_chars(PROGRESS_CHARS)
                 .template(&format!(
                     "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
-                    "Resolving dependencies".bright_blue()
+                    "Resolving Dependencies".bright_blue()
                 )),
         );
 
@@ -245,7 +245,6 @@ Options:
 
                 if let Some(dependencies) = &object.dependencies {
                     for dep in dependencies {
-                        // TODO: Change this to real version
                         lock_dependencies.push(dep.to_string());
                     }
                 }
@@ -290,7 +289,7 @@ Options:
                     "Installing Packages".bright_blue()
                 )),
         );
-        let start = Instant::now();
+
         dependencies
             .into_iter()
             .map(|v| install_extract_package(&app, &v))
@@ -301,7 +300,7 @@ Options:
             .unwrap();
 
         progress_bar.finish();
-        println!("{}", start.elapsed().as_secs_f32());
+
         Ok(())
     }
 }
