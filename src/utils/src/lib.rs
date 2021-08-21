@@ -509,15 +509,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                         )
                         .unwrap();
 
-                        println!(
-                            "Extracting {} -> {}",
-                            path.display(),
-                            node_modules_dep_path_instance
-                                .to_path_buf()
-                                .join(new_path.clone())
-                                .display()
-                        );
-
                         entry
                             .unpack(node_modules_dep_path_instance.to_path_buf().join(new_path))
                             .unwrap_or_else(|e| {
@@ -809,7 +800,6 @@ pub fn get_git_config(app: &App, key: &str) -> Option<String> {
 pub fn enable_ansi_support() -> Result<(), u32> {
     // ref: https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#EXAMPLE_OF_ENABLING_VIRTUAL_TERMINAL_PROCESSING @@ https://archive.is/L7wRJ#76%
 
-    use std::ffi::OsStr;
     use std::iter::once;
     use std::os::windows::ffi::OsStrExt;
     use std::ptr::null_mut;
