@@ -17,7 +17,6 @@
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
-use std::time::Instant;
 use std::{env, process};
 
 use anyhow::Result;

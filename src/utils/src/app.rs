@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use dirs::home_dir;
 use sha1::Digest;
 use sha2::Sha512;
-use ssri::Algorithm;
+use ssri::{Algorithm, Integrity};
 use std::{env, path::PathBuf};
 
 #[derive(Debug, PartialEq)]
@@ -113,7 +113,23 @@ impl App {
             Algorithm::Sha1 => {
                 let mut hasher = sha1::Sha1::new();
                 std::io::copy(&mut &**data, &mut hasher)?;
-                return Ok(format!("sha1-{:x}", hasher.finalize()));
+
+                let integrity: Integrity = format!(
+                    "sha1-{}",
+                    base64::encode(format!("{:x}", hasher.clone().finalize()))
+                )
+                .parse()
+                .unwrap();
+
+                let hash = integrity
+                    .hashes
+                    .into_iter()
+                    .find(|h| h.algorithm == algorithm)
+                    .map(|h| Integrity { hashes: vec![h] })
+                    .map(|i| i.to_hex().1)
+                    .unwrap();
+
+                return Ok(hash);
             }
             Algorithm::Sha512 => {
                 let mut hasher = Sha512::new();

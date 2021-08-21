@@ -47,12 +47,12 @@ pub async fn get_version(
                         Some(latest) => {
                             let num_deps;
 
-                            match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                                ["dependencies"][latest.to_string()]
-                            .as_array()
+                            match serde_json::from_str::<Value>(&text).unwrap()["versions"][latest]
+                                ["dependencies"]
+                                .as_object()
                             {
                                 Some(value) => {
-                                    num_deps = value.len();
+                                    num_deps = value.keys().count();
                                 }
                                 None => {
                                     num_deps = 0;
@@ -74,10 +74,9 @@ pub async fn get_version(
                                     } else {
                                         hash_string = format!(
                                             "sha1-{}",
-                                            base64::encode(value["sha1"].to_string())
+                                            base64::encode(value["shasum"].to_string())
                                         );
                                     }
-
                                     let integrity: Integrity = hash_string.parse().unwrap();
 
                                     let algo = integrity.pick_algorithm();
@@ -212,11 +211,11 @@ pub async fn get_version(
                                 let num_deps;
 
                                 match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                                    ["dependencies"][available_versions[0].to_string()]
-                                .as_array()
+                                    [available_versions[0].to_string()]["dependencies"]
+                                    .as_object()
                                 {
                                     Some(value) => {
-                                        num_deps = value.len();
+                                        num_deps = value.keys().count();
                                     }
                                     None => {
                                         num_deps = 0;
@@ -238,7 +237,7 @@ pub async fn get_version(
                                         } else {
                                             hash_string = format!(
                                                 "sha1-{}",
-                                                base64::encode(value["sha1"].to_string())
+                                                base64::encode(value["shasum"].to_string())
                                             );
                                         }
 
@@ -381,11 +380,11 @@ pub async fn get_version(
                                 let num_deps;
 
                                 match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                                    ["dependencies"][available_versions[0].to_string()]
-                                .as_array()
+                                    [available_versions[0].to_string()]["dependencies"]
+                                    .as_object()
                                 {
                                     Some(value) => {
-                                        num_deps = value.len();
+                                        num_deps = value.keys().count();
                                     }
                                     None => {
                                         num_deps = 0;
@@ -407,7 +406,7 @@ pub async fn get_version(
                                         } else {
                                             hash_string = format!(
                                                 "sha1-{}",
-                                                base64::encode(value["sha1"].to_string())
+                                                base64::encode(value["shasum"].to_string())
                                             );
                                         }
 

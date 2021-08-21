@@ -28,15 +28,16 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::env::temp_dir;
+use std::ffi::OsStr;
 use std::fs::read_to_string;
 use std::fs::remove_dir_all;
 use std::fs::File;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Write;
+use std::path::Component;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Instant;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use volt_api::VoltPackage;
@@ -238,66 +239,69 @@ pub async fn get_volt_response_multi(
 
 #[cfg(windows)]
 pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
-    println!("{}", app.volt_dir.display());
+    use jwalk::WalkDir;
+    use tokio::fs::hard_link;
 
-    // for entry in WalkDir::new(src) {
-    //     let entry = entry.unwrap();
+    for entry in WalkDir::new(src) {
+        let entry = entry.unwrap();
 
-    //     if !entry.path().is_dir() {
-    //         // index.js
-    //         let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
+        if !entry.path().is_dir() {
+            // index.js
+            let entry = entry.path();
 
-    //         // lib/index.js
-    //         let path = format!("{}", &entry.path().display())
-    //             .replace(r"\", "/")
-    //             .replace(&volt_directory, "");
+            let file_name = entry.file_name().unwrap().to_str().unwrap();
 
-    //         // node_modules/lib
-    //         create_dir_all(format!(
-    //             "node_modules/{}",
-    //             &path
-    //                 .replace(
-    //                     format!("{}", &app.volt_dir.display())
-    //                         .replace(r"\", "/")
-    //                         .as_str(),
-    //                     ""
-    //                 )
-    //                 .trim_end_matches(file_name)
-    //         ))
-    //         .await
-    //         .unwrap();
+            // lib/index.js
+            let path = format!("{}", &entry.display())
+                .replace(r"\", "/")
+                .replace(&app.volt_dir.display().to_string(), "");
 
-    //         // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
-    //         if !Path::new(&format!(
-    //             "node_modules{}",
-    //             &path.replace(
-    //                 format!("{}", &app.volt_dir.display())
-    //                     .replace(r"\", "/")
-    //                     .as_str(),
-    //                 ""
-    //             )
-    //         ))
-    //         .exists()
-    //         {
-    //             hard_link(
-    //                 format!("{}", &path),
-    //                 format!(
-    //                     "node_modules{}",
-    //                     &path.replace(
-    //                         format!("{}", &app.volt_dir.display())
-    //                             .replace(r"\", "/")
-    //                             .as_str(),
-    //                         ""
-    //                     )
-    //                 ),
-    //             )
-    //             .await
-    //             .unwrap_or_else(|_| {
-    //                 0;
-    //             });
-    //         }
-    //     }
-    // }
+            // node_modules/lib
+            create_dir_all(format!(
+                "node_modules/{}",
+                &path
+                    .replace(
+                        format!("{}", &app.volt_dir.display())
+                            .replace(r"\", "/")
+                            .as_str(),
+                        ""
+                    )
+                    .trim_end_matches(file_name)
+            ))
+            .await
+            .unwrap();
+
+            // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
+            if !Path::new(&format!(
+                "node_modules{}",
+                &path.replace(
+                    format!("{}", &app.volt_dir.display())
+                        .replace(r"\", "/")
+                        .as_str(),
+                    ""
+                )
+            ))
+            .exists()
+            {
+                hard_link(
+                    format!("{}", &path),
+                    format!(
+                        "node_modules{}",
+                        &path.replace(
+                            format!("{}", &app.volt_dir.display())
+                                .replace(r"\", "/")
+                                .as_str(),
+                            ""
+                        )
+                    ),
+                )
+                .await
+                .unwrap_or_else(|_| {
+                    0;
+                });
+            }
+        }
+    }
 }
 
 #[cfg(unix)]
@@ -429,9 +433,8 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
             algorithm = Algorithm::Sha512;
         }
 
-        // Verify If Bytes == Sha512 of Tarball
+        // Verify If Bytes == (Sha 512 | Sha 1) of Tarball
         if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
-            // println!("{} => {}", url.clone(), loc);
             // Create node_modules
             create_dir_all(&app.node_modules_dir).await?;
 
@@ -463,80 +466,192 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                 }
             }
 
-            // if !package.clone().name.starts_with("@") && !package.clone().name.contains("/") {
             extract_directory = extract_directory.join(package.clone().name);
-            // } else {
-            //     let name = package.clone().name;
-            //     let split = name.split("/").collect::<Vec<&str>>();
-            //     extract_directory = extract_directory.join(split[1]);
-            // }
-            // println!("{}", extract_directory.display());
 
             // Initialize tarfile decoder while directly passing in bytes
-            let gz_decoder = GzDecoder::new(&*bytes);
 
-            let mut archive = Archive::new(gz_decoder);
+            let bytes = Arc::new(bytes);
 
-            // Extract the data into extract_directory
-            archive
-                .unpack(&extract_directory)
-                .context("Unable to unpack dependency")?;
+            let bytes_ref = bytes.clone();
 
-            drop(bytes);
+            let extract_directory_instance = extract_directory.clone();
 
-            if cfg!(target_os = "windows") {
-                if Path::new(format!(r"{}\package", &extract_directory.to_str().unwrap()).as_str())
-                    .exists()
-                {
-                    std::fs::rename(
-                        format!(r"{}\package", &extract_directory.to_str().unwrap()),
-                        format!(
-                            r"{}\{}",
-                            &extract_directory.to_str().unwrap(),
-                            package.clone().version
-                        ),
-                    )
-                    .context("failed to rename dependency folder")
-                    .unwrap();
-                } else {
-                    if Path::new(
-                        format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str(),
-                    )
-                    .exists()
-                    {
-                        std::fs::rename(
-                            format!(r"{}/package", &extract_directory.to_str().unwrap()),
-                            format!(
-                                r"{}/{}",
-                                &extract_directory.to_str().unwrap(),
-                                package.clone().version
-                            ),
+            let node_modules_dep_path_instance = app.clone().node_modules_dir.clone();
+            let pkg_name = package.clone().name;
+
+            futures::try_join!(
+                tokio::task::spawn_blocking(move || {
+                    // Extract the data into extract_directory
+
+                    let node_gz_decoder = GzDecoder::new(&**bytes_ref);
+
+                    let mut node_archive = Archive::new(node_gz_decoder);
+
+                    for entry in node_archive.entries().unwrap() {
+                        let mut entry = entry.unwrap();
+                        let path = entry.path().unwrap();
+                        let mut new_path = PathBuf::new();
+
+                        for component in path.components() {
+                            if component.as_os_str() == "package" {
+                                new_path.push(Component::Normal(OsStr::new(&pkg_name)));
+                            } else {
+                                new_path.push(component)
+                            }
+                        }
+
+                        std::fs::create_dir_all(
+                            node_modules_dep_path_instance
+                                .to_path_buf()
+                                .join(new_path.clone())
+                                .parent()
+                                .unwrap(),
                         )
-                        .context("failed to rename dependency folder")
                         .unwrap();
+
+                        println!(
+                            "Extracting {} -> {}",
+                            path.display(),
+                            node_modules_dep_path_instance
+                                .to_path_buf()
+                                .join(new_path.clone())
+                                .display()
+                        );
+
+                        entry
+                            .unpack(node_modules_dep_path_instance.to_path_buf().join(new_path))
+                            .unwrap_or_else(|e| {
+                                println!("{:?}", e);
+                                std::process::exit(1);
+                            });
                     }
-                }
-            } else {
-                if Path::new(format!(r"{}/package", &extract_directory.to_str().unwrap()).as_str())
-                    .exists()
-                {
-                    std::fs::rename(
-                        format!(r"{}/package", &extract_directory.to_str().unwrap()),
-                        format!(
-                            r"{}/{}",
-                            &extract_directory.to_str().unwrap(),
-                            package.clone().version
-                        ),
-                    )
-                    .context("failed to rename dependency folder")
-                    .unwrap();
-                }
-            }
-            if let Some(parent) = node_modules_dep_path.parent() {
-                if !parent.exists() {
-                    create_dir_all(&parent).await?;
-                }
-            }
+                    // archive.unpack(extract_directory.clone()).unwrap();
+                }),
+                tokio::task::spawn_blocking(move || {
+                    let gz_decoder = GzDecoder::new(&**bytes);
+
+                    let mut archive = Archive::new(gz_decoder);
+
+                    archive
+                        .unpack(&extract_directory)
+                        .context("Unable to unpack dependency")
+                        .unwrap();
+                })
+            )
+            .expect("Failed");
+
+            // if cfg!(target_os = "windows") {
+            //     if Path::new(
+            //         format!(r"{}\package", &extract_directory_instance.to_str().unwrap()).as_str(),
+            //     )
+            //     .exists()
+            //     {
+            //         std::fs::rename(
+            //             format!(r"{}\package", &extract_directory_instance.to_str().unwrap()),
+            //             format!(
+            //                 r"{}\{}",
+            //                 &extract_directory_instance.to_str().unwrap(),
+            //                 package.clone().version
+            //             ),
+            //         )
+            //         .context("failed to rename dependency folder")
+            //         .unwrap();
+            //     } else {
+            //         if Path::new(
+            //             format!(r"{}/package", &extract_directory_instance.to_str().unwrap())
+            //                 .as_str(),
+            //         )
+            //         .exists()
+            //         {
+            //             std::fs::rename(
+            //                 format!(r"{}/package", &extract_directory_instance.to_str().unwrap()),
+            //                 format!(
+            //                     r"{}/{}",
+            //                     &extract_directory_instance.to_str().unwrap(),
+            //                     package.clone().version
+            //                 ),
+            //             )
+            //             .context("failed to rename dependency folder")
+            //             .unwrap();
+            //         }
+            //     }
+            //     if Path::new(
+            //         format!(
+            //             r"{}\package",
+            //             &node_modules_dep_path_instance.to_str().unwrap()
+            //         )
+            //         .as_str(),
+            //     )
+            //     .exists()
+            //     {
+            //         std::fs::rename(
+            //             format!(
+            //                 r"{}\package",
+            //                 &node_modules_dep_path_instance.to_str().unwrap()
+            //             ),
+            //             format!(
+            //                 r"{}\{}",
+            //                 &node_modules_dep_path_instance.to_str().unwrap(),
+            //                 package.clone().version
+            //             ),
+            //         )
+            //         .context("failed to rename dependency folder")
+            //         .unwrap();
+            //     } else {
+            //         if Path::new(
+            //             format!(
+            //                 r"{}/package",
+            //                 &node_modules_dep_path_instance.to_str().unwrap()
+            //             )
+            //             .as_str(),
+            //         )
+            //         .exists()
+            //         {
+            //             std::fs::rename(
+            //                 format!(
+            //                     r"{}/package",
+            //                     &node_modules_dep_path_instance.to_str().unwrap()
+            //                 ),
+            //                 format!(
+            //                     r"{}/{}",
+            //                     &node_modules_dep_path_instance.to_str().unwrap(),
+            //                     package.clone().version
+            //                 ),
+            //             )
+            //             .context("failed to rename dependency folder")
+            //             .unwrap();
+            //         }
+            //     }
+            // } else {
+            //     if Path::new(
+            //         format!(
+            //             r"{}/package",
+            //             &node_modules_dep_path_instance.to_str().unwrap()
+            //         )
+            //         .as_str(),
+            //     )
+            //     .exists()
+            //     {
+            //         std::fs::rename(
+            //             format!(
+            //                 r"{}/package",
+            //                 &node_modules_dep_path_instance.to_str().unwrap()
+            //             ),
+            //             format!(
+            //                 r"{}/{}",
+            //                 &node_modules_dep_path_instance.to_str().unwrap(),
+            //                 package.clone().version
+            //             ),
+            //         )
+            //         .context("failed to rename dependency folder")
+            //         .unwrap();
+            //     }
+            // }
+            // if let Some(parent) = node_modules_dep_path_instance.parent() {
+            //     if !parent.exists() {
+            //         create_dir_all(&parent).await?;
+            //     }
+            // }
         } else {
             return Err(anyhow::Error::msg("failed to verify checksum"));
         }
@@ -748,8 +863,8 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 #[cfg(windows)]
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
     // Create node_modules/scripts if it doesn't exist
-    if !Path::new("node_modules/scripts").exists() {
-        std::fs::create_dir_all("node_modules/scripts").unwrap();
+    if !Path::new("node_modules/.bin").exists() {
+        std::fs::create_dir_all("node_modules/.bin").unwrap();
     }
 
     // If the package has binary scripts, create them
@@ -772,7 +887,7 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
         )
         .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
 
-        let mut f = File::create(format!(r"node_modules/scripts/{}.cmd", k)).unwrap();
+        let mut f = File::create(format!(r"node_modules/.bin/{}.cmd", k)).unwrap();
         f.write_all(command.as_bytes()).unwrap();
     }
 }
@@ -831,74 +946,11 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
 
     generate_script(&app, package);
 
-    let directory = &app.volt_dir.join(package.name.clone());
+    // let directory = &app.volt_dir.join(package.name.clone());
 
-    let path = Path::new(directory.as_os_str());
+    // let path = Path::new(directory.as_os_str());
 
-    // hardlink_files(app.to_owned(), &path).await;
+    // hardlink_files(app.to_owned(), (&path).to_path_buf()).await;
 
     Ok(())
-}
-
-// Credit: https://gist.github.com/ZaphodElevated/059faa3c0c605f03369d0f84b9c8cfb9
-async fn threaded_download(threads: u64, url: &String, output: &str) {
-    let mut handles = vec![];
-
-    // Create response from url
-    let res = reqwest::get(url.to_string()).await.unwrap();
-
-    // Get the total bytes of the response
-    let total_length = res.content_length().unwrap();
-
-    // Create buffer for bytes
-    let mut buffer: Vec<u8> = vec![];
-
-    for index in 0..threads {
-        let mut buf: Vec<u8> = vec![];
-        let url = url.clone();
-
-        let (start, end) = get_splits(index + 1, total_length, threads);
-
-        handles.push(tokio::spawn(async move {
-            let client = reqwest::Client::new();
-
-            let mut response = client
-                .get(url)
-                .header("range", format!("bytes={}-{}", start, end))
-                .send()
-                .await
-                .unwrap();
-
-            while let Some(chunk) = response.chunk().await.unwrap() {
-                let _ = std::io::copy(&mut &*chunk, &mut buf);
-            }
-
-            buf
-        }))
-    }
-
-    // Join all handles
-    let result = futures::future::join_all(handles).await;
-    for res in result {
-        buffer.append(&mut res.unwrap());
-    }
-
-    let mut file = File::create(output.clone()).unwrap();
-
-    let _ = file.write_all(&buffer);
-}
-
-fn get_splits(i: u64, total_length: u64, threads: u64) -> (u64, u64) {
-    let mut start = ((total_length / threads) * (i - 1)) + 1;
-    let mut end = (total_length / threads) * i;
-
-    if i == 1 {
-        start = 0;
-    }
-
-    if i == threads {
-        end = total_length;
-    }
-
-    (start, end)
 }
