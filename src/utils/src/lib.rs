@@ -38,6 +38,7 @@ use std::io::Write;
 use std::path::Component;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Instant;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use volt_api::VoltPackage;
@@ -411,10 +412,10 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
     if !Path::new(&loc).exists() {
         // Url to download tarball code files from
         let mut url = package_instance.tarball;
-        let registries = vec!["npmjs.org", "yarnpkg.com"];
-        let random_registry = registries.choose(&mut rand::thread_rng()).unwrap();
+        // let registries = vec!["yarnpkg.com"];
+        // let random_registry = registries.choose(&mut rand::thread_rng()).unwrap();
 
-        url = url.replace("npmjs.org", random_registry);
+        // url = url.replace("npmjs.org", random_registry);
 
         if !secure {
             url = url.replace("https", "http")
@@ -436,13 +437,13 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
         // Verify If Bytes == (Sha 512 | Sha 1) of Tarball
         if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
             // Create node_modules
-            create_dir_all(&app.node_modules_dir).await?;
+            create_dir_all(&app.node_modules_dir).await.unwrap();
 
             // Delete package from node_modules
             let node_modules_dep_path = app.node_modules_dir.join(&package.name);
 
             if node_modules_dep_path.exists() {
-                remove_dir_all(&node_modules_dep_path)?;
+                remove_dir_all(&node_modules_dep_path).unwrap();
             }
 
             // Directory to extract tarball to
@@ -478,6 +479,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
 
             let node_modules_dep_path_instance = app.clone().node_modules_dir.clone();
             let pkg_name = package.clone().name;
+            let pkg_name_instance = package.clone().name;
 
             futures::try_join!(
                 tokio::task::spawn_blocking(move || {
@@ -516,20 +518,52 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                                 std::process::exit(1);
                             });
                     }
-                    // archive.unpack(extract_directory.clone()).unwrap();
                 }),
                 tokio::task::spawn_blocking(move || {
                     let gz_decoder = GzDecoder::new(&**bytes);
 
                     let mut archive = Archive::new(gz_decoder);
 
-                    archive
-                        .unpack(&extract_directory)
-                        .context("Unable to unpack dependency")
+                    for entry in archive.entries().unwrap() {
+                        let mut entry = entry.unwrap();
+                        let path = entry.path().unwrap();
+                        let mut new_path = PathBuf::new();
+
+                        for component in path.components() {
+                            if component.as_os_str() == "package" {
+                                new_path.push(Component::Normal(OsStr::new(&pkg_name_instance)));
+                            } else {
+                                new_path.push(component)
+                            }
+                        }
+
+                        std::fs::create_dir_all(
+                            extract_directory_instance
+                                .to_path_buf()
+                                .join(new_path.clone())
+                                .parent()
+                                .unwrap(),
+                        )
                         .unwrap();
+
+                        println!(
+                            "{}",
+                            extract_directory_instance
+                                .to_path_buf()
+                                .join(new_path.clone())
+                                .display()
+                        );
+
+                        entry
+                            .unpack(extract_directory_instance.to_path_buf().join(new_path))
+                            .unwrap_or_else(|e| {
+                                println!("{:?}", e);
+                                std::process::exit(1);
+                            });
+                    }
                 })
             )
-            .expect("Failed");
+            .unwrap();
 
             // if cfg!(target_os = "windows") {
             //     if Path::new(
@@ -746,7 +780,6 @@ pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
 
 /// Gets a config key from git using the git cli.
 pub fn get_git_config(app: &App, key: &str) -> Option<String> {
-    println!("{}", key);
     match key {
         "user.name" => {
             let config_path = app.home_dir.join(".gitconfig");
@@ -929,7 +962,7 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
         download_tarball(&app, &package, true)
             .await
             .unwrap_or_else(|_| {
-                println!("Failed");
+                println!("failed to download tarball");
                 std::process::exit(1);
             });
     }
