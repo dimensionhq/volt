@@ -129,7 +129,7 @@ impl App {
                     .map(|i| i.to_hex().1)
                     .unwrap();
 
-                return Ok(hash);
+                return Ok(format!("sha1-{}", hash));
             }
             Algorithm::Sha512 => {
                 let mut hasher = Sha512::new();
