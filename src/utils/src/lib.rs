@@ -546,14 +546,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                         )
                         .unwrap();
 
-                        println!(
-                            "{}",
-                            extract_directory_instance
-                                .to_path_buf()
-                                .join(new_path.clone())
-                                .display()
-                        );
-
                         entry
                             .unpack(extract_directory_instance.to_path_buf().join(new_path))
                             .unwrap_or_else(|e| {
