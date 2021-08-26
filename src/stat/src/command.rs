@@ -21,6 +21,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use reqwest::get;
 use serde_json::{from_str, Value};
 use std::process;
@@ -57,7 +58,7 @@ Usage: {} {} {}"#,
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         let args = &app.args;
 
         if args.len() <= 1 {
@@ -89,7 +90,7 @@ Usage: {} {} {}"#,
             std::process::exit(1)
         });
 
-        let data: Value = from_str(&file_contents)?;
+        let data: Value = from_str(&file_contents).unwrap();
 
         let downloads = &data["downloads"];
         println!(
@@ -114,7 +115,7 @@ Usage: {} {} {}"#,
             std::process::exit(1)
         });
 
-        let data: Value = serde_json::from_str(&file_contents)?;
+        let data: Value = serde_json::from_str(&file_contents).unwrap();
 
         let downloads = &data["downloads"];
         println!(
@@ -139,7 +140,7 @@ Usage: {} {} {}"#,
             process::exit(1)
         });
 
-        let data: Value = serde_json::from_str(&file_contents)?;
+        let data: Value = serde_json::from_str(&file_contents).unwrap();
 
         let downloads = &data["downloads"];
         println!(

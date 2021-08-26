@@ -18,6 +18,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use utils::app::App;
 use utils::error;
 use utils::package::PackageJson;
@@ -43,7 +44,7 @@ impl Command for Script {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         let package_json = PackageJson::from("package.json");
 
         let args = app.args.clone();

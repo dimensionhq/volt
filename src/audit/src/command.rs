@@ -15,6 +15,7 @@
 
 use std::{collections::HashMap, sync::Arc};
 
+use miette::DiagnosticResult;
 // Library Imports
 use serde::{Deserialize, Serialize};
 
@@ -130,7 +131,7 @@ impl Command for Audit {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         // let package_json = PackageJson::from("package.json");
 
         // let mut requires = package_json.dependencies;

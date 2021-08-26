@@ -18,3 +18,4 @@ volt_core = { path = "../volt_core" }
 utils = { path = "../utils" }
 add = { path = "../add" }
 walkdir = "2.3.2"
+miette = "1.0.1"

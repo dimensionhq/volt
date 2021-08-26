@@ -8,7 +8,6 @@ description = "The add command for volt cli."
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
 async-trait = "0.1"
 colored = "2.0"
 futures = "0.3"
@@ -17,3 +16,4 @@ tokio = { version = "*", features = ["rt-multi-thread"] }
 volt_core = { path = "../volt_core" }
 init = { path = "../init" }
 utils = { path = "../utils" }
+miette = "1.0.1"

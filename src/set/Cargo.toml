@@ -14,3 +14,4 @@ colored = "2.0.0"
 dialoguer = "0.8.0"
 utils = { path="../utils" }
 add = { path = "../add" }
+miette = "1.0.1"

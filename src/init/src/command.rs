@@ -19,9 +19,9 @@ use std::io::Write;
 use std::sync::Arc;
 use std::{env, process};
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use regex::Regex;
 use utils::app::{App, AppFlag};
 use volt_core::classes::init_data::InitData;
@@ -78,7 +78,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
         let split: Vec<&str> = temp.split('\\').collect::<Vec<&str>>();
         let cwd: String = split[split.len() - 1].to_string();

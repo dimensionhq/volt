@@ -13,11 +13,11 @@
 
 //! Search for a package.
 use crate::search::SearchData;
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use isahc::AsyncReadResponseExt;
 
+use miette::DiagnosticResult;
 use prettytable::row;
 use std::sync::Arc;
 // use search::SearchResp;
@@ -73,7 +73,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         if app.args.len() >= 2 {
             let package_name = &app.args[1];
 

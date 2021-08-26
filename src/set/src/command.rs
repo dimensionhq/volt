@@ -15,8 +15,8 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
+use miette::DiagnosticResult;
 use volt_core::command::Command;
 
 use utils::app::App;
@@ -42,7 +42,7 @@ impl Command for Set {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         Ok(())
     }
 }

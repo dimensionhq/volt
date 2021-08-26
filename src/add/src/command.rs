@@ -19,12 +19,12 @@ use std::process::exit;
 use std::sync::Arc;
 use std::time::Instant;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use futures::stream::FuturesUnordered;
 use futures::{StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
+use miette::DiagnosticResult;
 use utils::app::App;
 use utils::constants::PROGRESS_CHARS;
 use utils::npm::get_versions;
@@ -86,7 +86,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         // Display help menu if `volt add` is run.
         if app.args.len() == 1 {
             println!("{}", Self::help());
@@ -97,11 +97,6 @@ Options:
         // TODO: BENCHMARK COPYING VS HARD LINKING.
         // TODO: BENCHMARK COPYING VS HARD LINKING.
         // TODO: BENCHMARK COPYING VS HARD LINKING.
-        // TODO: Move to miette + thiserror.
-        // TODO: Move to miette + thiserror.
-        // TODO: Move to miette + thiserror.
-        // TODO: Move to miette + thiserror.
-        // TODO: Move to miette + thiserror.
 
         let mut packages = vec![];
 
@@ -164,15 +159,17 @@ Options:
 
         let start = Instant::now();
 
-        let responses: Result<Vec<VoltResponse>> = if packages.len() > 1 {
+        let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
             utils::get_volt_response_multi(&versions, &progress_bar)
                 .await
                 .into_iter()
                 .collect()
         } else {
-            vec![utils::get_volt_response(&packages[0], &versions[0].2, &versions[0].3).await]
-                .into_iter()
-                .collect()
+            vec![
+                utils::get_volt_response(&packages[0], &versions[0].2, versions[0].3.clone()).await,
+            ]
+            .into_iter()
+            .collect()
         };
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();

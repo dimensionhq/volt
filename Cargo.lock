@@ -6,12 +6,12 @@ version = 3
 name = "add"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "futures",
  "indicatif",
  "init",
+ "miette",
  "tokio",
  "utils",
  "volt_core",
@@ -120,6 +120,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "regex",
  "serde",
  "serde_json",
@@ -311,10 +312,10 @@ checksum = "b700ce4376041dcd0a327fd0097c41095743c4c8af8887265942faf1100bd040"
 name = "cache"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "indicatif",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -353,9 +354,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 name = "check"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -375,6 +376,15 @@ name = "chunked_transfer"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fff857943da45f546682664a79488be82e69e43c1a7a2307679ab9afb3a66d2e"
+
+[[package]]
+name = "ci_info"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "98f1c9ee4939df5d42c01815f1fb783ab203c1dea7cee5e051ede261c4049b1f"
+dependencies = [
+ "envmnt",
+]
 
 [[package]]
 name = "clap"
@@ -408,9 +418,9 @@ dependencies = [
 name = "clone"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -430,9 +440,9 @@ dependencies = [
 name = "compress"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -547,12 +557,12 @@ dependencies = [
 name = "create"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
  "flate2",
  "init",
+ "miette",
  "tar",
  "tokio",
  "utils",
@@ -755,9 +765,9 @@ dependencies = [
 name = "deploy"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -964,6 +974,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "envmnt"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbfac51e9996e41d78a943227b7f313efcebf545b21584a0e213b956a062e11e"
+dependencies = [
+ "fsio",
+ "indexmap",
+]
+
+[[package]]
 name = "erased-serde"
 version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1028,9 +1048,9 @@ dependencies = [
 name = "fix"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -1086,6 +1106,12 @@ dependencies = [
  "matches",
  "percent-encoding",
 ]
+
+[[package]]
+name = "fsio"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a50045aa8931ae01afbc5d72439e8f57f326becb8c70d07dfc816778eff3d167"
 
 [[package]]
 name = "funty"
@@ -1392,6 +1418,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -1410,12 +1437,6 @@ name = "hex"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "805026a5d0141ffc30abb3be3173848ad46a1b1664fe632428479619a3644d77"
-
-[[package]]
-name = "hex"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "http"
@@ -1541,6 +1562,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "prettytable-rs",
  "regex",
  "utils",
@@ -1552,9 +1574,9 @@ dependencies = [
 name = "init"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "regex",
  "utils",
  "volt_core",
@@ -1568,6 +1590,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -1784,6 +1807,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "utils",
  "volt_core",
  "walkdir",
@@ -1812,11 +1836,11 @@ name = "login"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "regex",
  "utils",
  "volt_core",
@@ -1833,6 +1857,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "regex",
  "utils",
  "volt_core",
@@ -1904,6 +1929,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "miette"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6617ced9b6d061e15fa6d6ba87e60839f190ecc3ba4f7f25fb2540a1541e3e59"
+dependencies = [
+ "atty",
+ "ci_info",
+ "miette-derive",
+ "once_cell",
+ "owo-colors",
+ "thiserror",
+]
+
+[[package]]
+name = "miette-derive"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "804556d7185abb24b7cd8819cebccfcaf32bcc6dd5046ec940251dd3f54adee8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "migrate"
 version = "0.0.1"
 dependencies = [
@@ -1911,6 +1961,7 @@ dependencies = [
  "async-trait",
  "colored",
  "install",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -2142,6 +2193,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "regex",
  "utils",
  "volt_core",
@@ -2158,11 +2210,18 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "regex",
  "utils",
  "volt_core",
  "walkdir",
 ]
+
+[[package]]
+name = "owo-colors"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2fe43bf372b08cc9ccee5144715db59c79ab00168bbe4cf0d274dc0d5f64d7f"
 
 [[package]]
 name = "parking"
@@ -2397,6 +2456,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "regex",
  "utils",
  "volt_core",
@@ -2623,6 +2683,7 @@ dependencies = [
  "async-trait",
  "colored",
  "init",
+ "miette",
  "tokio",
  "utils",
  "volt_core",
@@ -2842,6 +2903,7 @@ dependencies = [
  "init",
  "install",
  "list",
+ "miette",
  "migrate",
  "remove",
  "scripts",
@@ -2961,6 +3023,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "utils",
  "volt_core",
 ]
@@ -2983,6 +3046,7 @@ dependencies = [
  "async-trait",
  "colored",
  "isahc",
+ "miette",
  "prettytable-rs",
  "serde",
  "serde_json",
@@ -3159,6 +3223,7 @@ dependencies = [
  "async-trait",
  "colored",
  "dialoguer",
+ "miette",
  "regex",
  "utils",
  "volt_core",
@@ -3324,7 +3389,7 @@ checksum = "f4f8005e5f8b04b5bb0dbf97d3ef4869395d70039ce61479d5ea401ba53dd597"
 dependencies = [
  "base64 0.10.1",
  "digest 0.8.1",
- "hex 0.3.2",
+ "hex",
  "serde",
  "sha-1 0.8.2",
  "sha2 0.8.2",
@@ -3353,6 +3418,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "colored",
+ "miette",
  "reqwest",
  "serde_json",
  "utils",
@@ -3503,6 +3569,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "regex",
  "utils",
  "volt_core",
@@ -3536,6 +3603,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "regex",
  "utils",
  "volt_core",
@@ -3937,6 +4005,7 @@ dependencies = [
  "init",
  "install",
  "list",
+ "miette",
  "migrate",
  "remove",
  "scripts",
@@ -3980,7 +4049,6 @@ dependencies = [
 name = "utils"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "base64 0.13.0",
  "bytes",
@@ -3992,11 +4060,11 @@ dependencies = [
  "futures",
  "futures-util",
  "git-config",
- "hex 0.4.3",
  "indicatif",
  "isahc",
  "jwalk",
  "lz4",
+ "miette",
  "rand 0.8.4",
  "reqwest",
  "scopeguard",
@@ -4036,7 +4104,6 @@ name = "volt"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "audit",
  "cache",
  "clone",
@@ -4050,6 +4117,7 @@ dependencies = [
  "init",
  "install",
  "list",
+ "miette",
  "migrate",
  "remove",
  "run",
@@ -4076,6 +4144,7 @@ dependencies = [
  "flate2",
  "isahc",
  "lazy_static",
+ "miette",
  "scopeguard",
  "serde",
  "serde_json",
@@ -4205,6 +4274,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "indicatif",
+ "miette",
  "regex",
  "rslint_cli",
  "rslint_config",

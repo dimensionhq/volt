@@ -1,7 +1,9 @@
 [package]
 name = "update"
 version = "0.0.1"
-authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+authors = [
+    "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
+]
 description = "A fast, memory-safe package manager for the web."
 edition = "2018"
 
@@ -11,17 +13,17 @@ anyhow = "1.0"
 colored = "2.0"
 volt_core = { path = "../volt_core" }
 add = { path = "../add" }
-cache = { path="../cache" }
-clone = { path= "../clone" }
-compress = { path= "../compress" }
-create = { path= "../create" }
-deploy = { path= "../deploy" }
-help = { path= "../help" }
+cache = { path = "../cache" }
+clone = { path = "../clone" }
+compress = { path = "../compress" }
+create = { path = "../create" }
+deploy = { path = "../deploy" }
+help = { path = "../help" }
 init = { path = "../init" }
-install = { path= "../install" }
-list = { path= "../list" }
-migrate = { path= "../migrate" }
-remove = { path= "../remove" }
+install = { path = "../install" }
+list = { path = "../list" }
+migrate = { path = "../migrate" }
+remove = { path = "../remove" }
 utils = { path = "../utils" }
-scripts = { path= "../scripts" }
-
+scripts = { path = "../scripts" }
+miette = "1.0.1"

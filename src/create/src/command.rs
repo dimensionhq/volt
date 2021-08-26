@@ -22,11 +22,11 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::{Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
 use dialoguer::Input;
 use flate2::read::GzDecoder;
+use miette::DiagnosticResult;
 use tar::Archive;
 use utils::{app::App, error};
 use volt_core::{
@@ -80,7 +80,7 @@ Options:
     /// * `Result<()>`
 
     #[allow(unused)]
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         let args = app.args.clone();
         let templates: Vec<String> = Template::options();
 
@@ -116,7 +116,8 @@ Options:
                 .with_prompt("App name")
                 .with_initial_text("")
                 .default("my-app".into())
-                .interact_text()?;
+                .interact_text()
+                .unwrap();
 
             if app_name.is_empty() {
                 error!("Invalid app name!");
@@ -129,7 +130,7 @@ Options:
 
         let template_name = template.split('-').collect::<Vec<&str>>()[0];
         let version = "create-".to_owned() + template_name;
-        let package_json = get_package(&version).await?.unwrap_or_else(|| {
+        let package_json = get_package(&version).await.unwrap().unwrap_or_else(|| {
             println!(
                 "{} Could not find template for {}",
                 "error".red().bold(),
@@ -153,20 +154,14 @@ Options:
         println!("HANDLE THIS");
         let tarball_file = utils::download_tarball_create(&app, &package_json, &version)
             .await
-            .unwrap()
-;
-        let gz_decoder = GzDecoder::new(
-            File::open(tarball_file)
-                .context("Unable to open tar file")
-                .unwrap(),
-        );
+            .unwrap();
+        let gz_decoder = GzDecoder::new(File::open(tarball_file).unwrap());
 
         let mut archive = Archive::new(gz_decoder);
         let mut dir = std::env::current_dir().unwrap();
 
-        archive
-            .unpack(&dir.join(app_name))
-            .context("Unable to unpack dependency")?;
+        archive.unpack(&dir.join(app_name)).unwrap();
+
         Ok(())
     }
 }
