@@ -460,9 +460,9 @@ pub async fn download_tarball(
             // Delete package from node_modules
             let node_modules_dep_path = app.node_modules_dir.join(&package.name);
 
-            if node_modules_dep_path.exists() {
-                remove_dir_all(&node_modules_dep_path).unwrap();
-            }
+            // if node_modules_dep_path.exists() {
+            //     remove_dir_all(&node_modules_dep_path).unwrap();
+            // }
 
             // Directory to extract tarball to
             let mut extract_directory = PathBuf::from(&app.volt_dir);
@@ -986,11 +986,11 @@ pub async fn install_extract_package(
 
     generate_script(&app, package);
 
-    // let directory = &app.volt_dir.join(package.name.clone());
+    let directory = &app.volt_dir.join(package.version.clone()).join(package.name.clone());
 
-    // let path = Path::new(directory.as_os_str());
+    let path = Path::new(directory.as_os_str());
 
-    // hardlink_files(app.to_owned(), (&path).to_path_buf()).await;
+    hardlink_files(app.to_owned(), (&path).to_path_buf()).await;
 
     Ok(())
 }

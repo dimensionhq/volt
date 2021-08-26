@@ -21,7 +21,6 @@ use crate::commands::AppCommand;
 use colored::Colorize;
 use std::time::Instant;
 use utils::app::{App, AppFlag};
-use utils::error;
 use utils::helper::CustomColorize;
 use volt_core::VERSION;
 
