@@ -9,7 +9,6 @@ edition = "2018"
 
 [dependencies]
 miette = "1.0.1"
-anyhow = "1.0"
 async-trait = "0.1"
 colored = "2.0"
 console = "0.14"

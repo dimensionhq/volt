@@ -60,12 +60,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.41"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15af2628f6890fe2609a3b91bef4c83450512802e59489f9c1cb1fa5df064a61"
-
-[[package]]
 name = "arrayref"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -90,9 +84,9 @@ dependencies = [
 
 [[package]]
 name = "async-trait"
-version = "0.1.50"
+version = "0.1.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b98e84bbb4cbcdd97da190ba0c58a1bb0de2c1fdf67d159e192ed766aeca722"
+checksum = "44318e776df68115a881de9a8fd1b9e53368d7a4a5ce4cc48517da3393233a5e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -115,7 +109,6 @@ name = "audit"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
@@ -1415,7 +1408,6 @@ dependencies = [
 name = "help"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "miette",
@@ -1556,7 +1548,6 @@ name = "info"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "bat",
  "colored",
@@ -1587,7 +1578,6 @@ name = "install"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "miette",
@@ -1804,7 +1794,6 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 name = "list"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "miette",
@@ -1852,7 +1841,6 @@ name = "logout"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
@@ -1957,7 +1945,6 @@ dependencies = [
 name = "migrate"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "install",
@@ -2188,7 +2175,6 @@ name = "outdated"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
@@ -2205,7 +2191,6 @@ name = "owner"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
@@ -2451,7 +2436,6 @@ name = "publish"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
@@ -2679,7 +2663,6 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 name = "remove"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "init",
@@ -2890,7 +2873,6 @@ name = "run"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "cache",
  "clone",
@@ -3020,7 +3002,6 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 name = "scripts"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "miette",
@@ -3042,7 +3023,6 @@ dependencies = [
 name = "search"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "isahc",
@@ -3219,7 +3199,6 @@ name = "set"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
@@ -3415,7 +3394,6 @@ dependencies = [
 name = "stat"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "miette",
@@ -3564,7 +3542,6 @@ name = "tag"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
@@ -3598,7 +3575,6 @@ name = "team"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",
@@ -3993,7 +3969,6 @@ name = "update"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "cache",
  "clone",
@@ -4106,6 +4081,7 @@ dependencies = [
  "add",
  "audit",
  "cache",
+ "clap",
  "clone",
  "colored",
  "compress",
@@ -4135,7 +4111,6 @@ dependencies = [
 name = "volt_core"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "colored",
  "console",
@@ -4269,7 +4244,6 @@ name = "watch"
 version = "0.0.1"
 dependencies = [
  "add",
- "anyhow",
  "async-trait",
  "colored",
  "dialoguer",

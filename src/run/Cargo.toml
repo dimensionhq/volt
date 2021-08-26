@@ -9,7 +9,6 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1.50"
-anyhow = "1.0"
 colored = "2.0"
 volt_core = { path = "../volt_core" }
 add = { path = "../add" }

@@ -15,6 +15,7 @@ use git_config::file::GitConfig;
 use git_config::parser::Parser;
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
+use jwalk::WalkDir;
 use lz4::Decoder;
 use miette::DiagnosticResult;
 use package::Package;
@@ -27,7 +28,6 @@ use std::convert::TryFrom;
 use std::env::temp_dir;
 use std::ffi::OsStr;
 use std::fs::read_to_string;
-use std::fs::remove_dir_all;
 use std::fs::File;
 use std::io::Cursor;
 use std::io::Read;
@@ -37,6 +37,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tar::Archive;
 use tokio::fs::create_dir_all;
+use tokio::fs::hard_link;
 use volt_api::VoltPackage;
 use volt_api::VoltResponse;
 
@@ -188,7 +189,7 @@ pub async fn get_volt_response(
                 response
                     .copy_to(&mut buf)
                     .await
-                    .map_err(VoltError::NetworkRecError);
+                    .map_err(VoltError::NetworkRecError)?;
 
                 // decompress using lz4
                 let decoded = decompress(buf)?;
@@ -252,9 +253,6 @@ pub async fn get_volt_response_multi(
 
 #[cfg(windows)]
 pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
-    use jwalk::WalkDir;
-    use tokio::fs::hard_link;
-
     for entry in WalkDir::new(src) {
         let entry = entry.unwrap();
 
@@ -419,7 +417,7 @@ pub async fn download_tarball(
         if !Path::new(&package_directory_location).exists() {
             create_dir_all(&package_directory_location)
                 .await
-                .map_err(VoltError::CreateDirError);
+                .map_err(VoltError::CreateDirError)?;
         }
     }
 
@@ -708,7 +706,8 @@ pub async fn download_tarball_create(
     let temp_dir = temp_dir();
 
     if !Path::new(&temp_dir.join("volt")).exists() {
-        std::fs::create_dir(Path::new(&temp_dir.join("volt"))).map_err(VoltError::CreateDirError);
+        std::fs::create_dir(Path::new(&temp_dir.join("volt")))
+            .map_err(VoltError::CreateDirError)?;
     }
 
     if name.starts_with('@') && name.contains("__") {
@@ -986,7 +985,10 @@ pub async fn install_extract_package(
 
     generate_script(&app, package);
 
-    let directory = &app.volt_dir.join(package.version.clone()).join(package.name.clone());
+    let directory = &app
+        .volt_dir
+        .join(package.version.clone())
+        .join(package.name.clone());
 
     let path = Path::new(directory.as_os_str());
 

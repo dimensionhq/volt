@@ -21,6 +21,7 @@ impl AppFlag {
     pub fn get(arg: &String) -> Option<AppFlag> {
         let mut flag = arg.to_string();
 
+        // --verbose -> verbose
         while flag.starts_with("-") {
             flag.remove(0);
         }
@@ -56,7 +57,7 @@ impl App {
         enable_ansi_support().unwrap();
 
         // Current Directory
-        let current_directory = env::current_dir().map_err(|e| VoltError::EnvironmentError {
+        let current_directory = env::current_dir().map_err(|_e| VoltError::EnvironmentError {
             env: "CURRENT_DIRECTORY".to_string(),
         })?;
 
@@ -72,7 +73,7 @@ impl App {
         let volt_dir = home_directory.join(".volt");
 
         // Create volt directory if it doesn't exist
-        std::fs::create_dir_all(&volt_dir).map_err(VoltError::CreateDirError);
+        std::fs::create_dir_all(&volt_dir).map_err(VoltError::CreateDirError)?;
 
         // ./volt.lock
         let lock_file_path = current_directory.join("volt.lock");
@@ -142,7 +143,7 @@ impl App {
             }
             Algorithm::Sha512 => {
                 let mut hasher = Sha512::new();
-                std::io::copy(&mut &**data, &mut hasher).map_err(VoltError::HasherCopyError);
+                std::io::copy(&mut &**data, &mut hasher).map_err(VoltError::HasherCopyError)?;
                 return Ok(format!("sha512-{:x}", hasher.finalize()));
             }
             _ => Ok(String::new()),

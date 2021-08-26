@@ -1,7 +1,6 @@
 use crate::constants::MAX_RETRIES;
 use crate::errors::VoltError;
 use crate::volt_api::VoltPackage;
-use colored::Colorize;
 use futures::stream::FuturesOrdered;
 use futures::TryStreamExt;
 use isahc::http::StatusCode;
