@@ -15,7 +15,6 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;

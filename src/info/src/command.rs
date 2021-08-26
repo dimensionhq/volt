@@ -15,7 +15,6 @@
 
 use std::{collections::HashMap, sync::Arc};
 
-use anyhow::Result;
 use async_trait::async_trait;
 use bat::PrettyPrinter;
 use colored::Colorize;

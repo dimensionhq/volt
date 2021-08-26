@@ -18,7 +18,6 @@ use std::fs::read_dir;
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;

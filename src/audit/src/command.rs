@@ -19,7 +19,6 @@ use miette::DiagnosticResult;
 // Library Imports
 use serde::{Deserialize, Serialize};
 
-use anyhow::Result;
 use async_trait::async_trait;
 use utils::app::App;
 use volt_core::command::Command;
