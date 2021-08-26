@@ -18,9 +18,9 @@
 
 use std::{io::Write, process, sync::Arc};
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use tokio::sync::Mutex;
 use utils::{app::App, error, package::PackageJson};
 use volt_core::{command::Command, model::lock_file::LockFile, VERSION};
@@ -69,7 +69,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         if app.args.len() == 1 {
             println!("{}", Self::help());
             process::exit(1);
@@ -82,7 +82,7 @@ Options:
             }
         }
 
-        let package_json_dir = std::env::current_dir()?.join("package.json");
+        let package_json_dir = std::env::current_dir().unwrap().join("package.json");
 
         if !package_json_dir.exists() {
             error!("no package.json found");

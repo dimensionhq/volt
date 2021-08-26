@@ -15,10 +15,10 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
-use volt_core::command::Command;
+use miette::DiagnosticResult;
 use utils::app::App;
+use volt_core::command::Command;
 pub struct Logout {}
 #[async_trait]
 impl Command for Logout {
@@ -39,7 +39,7 @@ impl Command for Logout {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         Ok(())
     }
 }

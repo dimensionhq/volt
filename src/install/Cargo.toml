@@ -1,7 +1,9 @@
 [package]
 name = "install"
 version = "0.0.1"
-authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+authors = [
+    "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
+]
 description = "The install command for volt cli."
 edition = "2018"
 
@@ -11,4 +13,5 @@ async-trait = "0.1"
 colored = "2.0"
 add = { path = "../add" }
 volt_core = { path = "../volt_core" }
+miette = "1.0.1"
 utils = { path = "../utils" }

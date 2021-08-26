@@ -21,6 +21,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use scripts::command::Script;
 use utils::app::App;
 use utils::error;
@@ -69,7 +70,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         if app.clone().args.len() == 1_usize {
             let package_json = PackageJson::from("package.json");
 

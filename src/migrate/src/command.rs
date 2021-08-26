@@ -18,9 +18,9 @@
 
 use std::{env, fs, process, sync::Arc};
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use utils::{app::App, error};
 use volt_core::{
     classes::package_manager::PackageManager, command::Command, prompt::prompts::Select, VERSION,
@@ -70,7 +70,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         let packagemanagers: Vec<String> = PackageManager::options();
         let mut packagemanager: String = String::new();
         if app.args.len() == 1 {
@@ -93,7 +93,7 @@ Options:
         }
 
         if packagemanager.eq_ignore_ascii_case("volt") {
-            std::fs::remove_dir_all("node_modules")?;
+            std::fs::remove_dir_all("node_modules").unwrap();
 
             let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
             files
@@ -109,7 +109,7 @@ Options:
             println!("{}", "$ volt install".truecolor(147, 148, 148));
             install::command::Install::exec(app).await?; // NOTE WILL ONLY WORK IF THE VAR DEPENDENCIES is populated
         } else if packagemanager.eq_ignore_ascii_case("yarn") {
-            std::fs::remove_dir_all("node_modules")?;
+            std::fs::remove_dir_all("node_modules").unwrap();
 
             let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
             files
@@ -130,7 +130,7 @@ Options:
                 .wait()
                 .unwrap();
         } else if packagemanager.eq_ignore_ascii_case("pnpm") {
-            std::fs::remove_dir_all("node_modules")?;
+            std::fs::remove_dir_all("node_modules").unwrap();
 
             let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
             files
@@ -152,7 +152,7 @@ Options:
                 .wait()
                 .unwrap();
         } else if packagemanager.eq_ignore_ascii_case("npm") {
-            std::fs::remove_dir_all("node_modules")?;
+            std::fs::remove_dir_all("node_modules").unwrap();
 
             let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
             files

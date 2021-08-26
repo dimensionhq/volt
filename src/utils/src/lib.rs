@@ -1,16 +1,13 @@
 pub mod app;
 pub mod constants;
+pub mod errors;
 pub mod helper;
 pub mod npm;
 pub mod package;
 pub mod volt_api;
 
-use anyhow::anyhow;
-use anyhow::Context;
-use anyhow::Error;
-use anyhow::Result;
 use app::App;
-use colored::Colorize;
+use errors::VoltError;
 use flate2::read::GzDecoder;
 use futures_util::stream::FuturesUnordered;
 use futures_util::StreamExt;
@@ -19,8 +16,8 @@ use git_config::parser::Parser;
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use lz4::Decoder;
+use miette::DiagnosticResult;
 use package::Package;
-use rand::prelude::SliceRandom;
 use reqwest::StatusCode;
 use ssri::Algorithm;
 use ssri::Integrity;
@@ -38,7 +35,6 @@ use std::io::Write;
 use std::path::Component;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Instant;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use volt_api::VoltPackage;
@@ -47,7 +43,7 @@ use volt_api::VoltResponse;
 use crate::constants::MAX_RETRIES;
 use crate::volt_api::JSONVoltResponse;
 
-pub fn decompress(data: Vec<u8>) -> Result<Vec<u8>> {
+pub fn decompress(data: Vec<u8>) -> DiagnosticResult<Vec<u8>> {
     // initialize decoded data
     let mut decoded: Vec<u8> = Vec::new();
 
@@ -55,15 +51,17 @@ pub fn decompress(data: Vec<u8>) -> Result<Vec<u8>> {
     let cursor = Cursor::new(data);
 
     // initialize a decoder
-    let mut decoder = Decoder::new(cursor).context("failed to initialize lz4 decoder")?;
+    let mut decoder = Decoder::new(cursor).map_err(VoltError::DecoderError)?;
 
     // decode and return data
-    decoder.read_to_end(&mut decoded).unwrap();
+    decoder
+        .read_to_end(&mut decoded)
+        .map_err(VoltError::DecoderError)?;
 
     Ok(decoded)
 }
 
-pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
+pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse> {
     // initialize a hashmap to store the converted versions
     let mut converted_versions: HashMap<String, VoltPackage> = HashMap::new();
 
@@ -91,7 +89,13 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
         // @codemirror/state@1.2.3 -> 1.2.3
         let package_version = version.0.split("@").last().unwrap();
 
-        let integrity: Integrity = data.integrity.clone().parse().unwrap();
+        let integrity: Integrity =
+            data.integrity
+                .clone()
+                .parse()
+                .map_err(|_| VoltError::HashParseError {
+                    hash: data.integrity.clone(),
+                })?;
 
         let algo = integrity.pick_algorithm();
 
@@ -101,7 +105,7 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
             .find(|h| h.algorithm == algo)
             .map(|h| Integrity { hashes: vec![h] })
             .map(|i| i.to_hex().1)
-            .unwrap();
+            .ok_or(VoltError::IntegrityConversionError)?;
 
         match algo {
             Algorithm::Sha1 => {
@@ -133,18 +137,18 @@ pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
 
     final_res.insert(deserialized.latest.to_string(), converted_versions);
 
-    VoltResponse {
+    Ok(VoltResponse {
         version: deserialized.latest,
         versions: final_res,
-    }
+    })
 }
 
 // Get response from volt CDN
 pub async fn get_volt_response(
     package_name: &String,
     hash: &String,
-    package: &Option<VoltPackage>,
-) -> Result<VoltResponse> {
+    package: Option<VoltPackage>,
+) -> DiagnosticResult<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
@@ -173,9 +177,7 @@ pub async fn get_volt_response(
         let mut response =
             isahc::get_async(format!("http://push-2105.5centscdn.com/{}.json", hash))
                 .await
-                .with_context(|| {
-                    format!("failed to fetch {}", package_name.bright_yellow().bold())
-                })?;
+                .map_err(VoltError::NetworkError)?;
 
         // check the status of the response
         match response.status() {
@@ -183,39 +185,49 @@ pub async fn get_volt_response(
             StatusCode::OK => {
                 let mut buf: Vec<u8> = vec![];
 
-                response.copy_to(&mut buf).await.unwrap();
+                response
+                    .copy_to(&mut buf)
+                    .await
+                    .map_err(VoltError::NetworkRecError);
 
                 // decompress using lz4
                 let decoded = decompress(buf)?;
 
-                let deserialized: JSONVoltResponse = serde_json::from_slice(&decoded).unwrap();
+                let deserialized: JSONVoltResponse =
+                    serde_json::from_slice(&decoded).map_err(|_| VoltError::DeserializeError)?;
 
-                let converted = convert(deserialized);
+                let converted = convert(deserialized)?;
 
                 return Ok(converted);
             }
+            // 429 (TOO_MANY_REQUESTS)
+            StatusCode::TOO_MANY_REQUESTS => Err(VoltError::TooManyRequests {
+                url: format!("http://registry.voltpkg.com/{}", package_name),
+                package_name: package_name.to_string(),
+            })?,
+            // 400 (BAD_REQUEST)
+            StatusCode::BAD_REQUEST => Err(VoltError::BadRequest {
+                url: format!("http://registry.voltpkg.com/{}", package_name),
+                package_name: package_name.to_string(),
+            })?,
             // 404 (NOT_FOUND)
             StatusCode::NOT_FOUND => {
                 if retries == MAX_RETRIES {
-                    return Err(anyhow!(
-                        "GET {} - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.\n",
-                        format!("http://registry.voltpkg.com/{}", package_name),
-                        format!("Not Found ({})", "404".bright_yellow().bold()),
-                        package_name,
-                    ));
+                    Err(VoltError::PackageNotFound {
+                        url: format!("http://registry.voltpkg.com/{}", package_name),
+                        package_name: package_name.to_string(),
+                    })?
                 }
             }
             // Other Errors
             _ => {
                 // Stop at MAX_RETRIES
                 if retries == MAX_RETRIES {
-                    return Err(anyhow!(
-                        "{} {}: Failed - {}\n\n{} was not found on the volt registry, or you don't have the permission to request it.",
-                        "GET".bright_green(),
-                        format!("http://registry.voltpkg.com/{}", package_name).underline(),
-                        response.status().as_str(),
-                        package_name
-                    ));
+                    Err(VoltError::NetworkUnknownError {
+                        url: format!("http://registry.voltpkg.com/{}", package_name),
+                        package_name: package_name.to_string(),
+                        code: response.status().as_str().to_string(),
+                    })?
                 }
             }
         }
@@ -228,13 +240,13 @@ pub async fn get_volt_response(
 pub async fn get_volt_response_multi(
     versions: &Vec<(String, String, String, Option<VoltPackage>)>,
     pb: &ProgressBar,
-) -> Vec<Result<VoltResponse>> {
+) -> Vec<DiagnosticResult<VoltResponse>> {
     versions
         .into_iter()
-        .map(|(name, _, hash, package)| get_volt_response(&name, &hash, package))
+        .map(|(name, _, hash, package)| get_volt_response(&name, &hash, package.to_owned()))
         .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
-        .collect::<Vec<Result<VoltResponse>>>()
+        .collect::<Vec<DiagnosticResult<VoltResponse>>>()
         .await
 }
 
@@ -391,7 +403,11 @@ pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
 }
 
 /// downloads tarball file from package
-pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) -> Result<()> {
+pub async fn download_tarball(
+    app: &App,
+    package: &VoltPackage,
+    secure: bool,
+) -> DiagnosticResult<()> {
     let package_instance = package.clone();
 
     // @types/eslint
@@ -401,7 +417,9 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
             .join(&package.name.split("/").collect::<Vec<&str>>()[0]);
 
         if !Path::new(&package_directory_location).exists() {
-            create_dir_all(&package_directory_location).await.unwrap();
+            create_dir_all(&package_directory_location)
+                .await
+                .map_err(VoltError::CreateDirError);
         }
     }
 
@@ -467,7 +485,11 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                 }
             }
 
-            extract_directory = extract_directory.join(package.clone().name);
+            extract_directory = extract_directory.join(format!(
+                "{}-{}",
+                package.clone().name,
+                package.clone().version
+            ));
 
             // Initialize tarfile decoder while directly passing in bytes
 
@@ -670,7 +692,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
             //     }
             // }
         } else {
-            return Err(anyhow::Error::msg("failed to verify checksum"));
+            return Err(VoltError::ChecksumVerificationError)?;
         }
     }
 
@@ -681,12 +703,12 @@ pub async fn download_tarball_create(
     _app: &App,
     package: &Package,
     name: &str,
-) -> Result<String, Error> {
+) -> DiagnosticResult<String> {
     let file_name = format!("{}-{}.tgz", name, package.dist_tags.get("latest").unwrap());
     let temp_dir = temp_dir();
 
     if !Path::new(&temp_dir.join("volt")).exists() {
-        std::fs::create_dir(Path::new(&temp_dir.join("volt")))?;
+        std::fs::create_dir(Path::new(&temp_dir.join("volt"))).map_err(VoltError::CreateDirError);
     }
 
     if name.starts_with('@') && name.contains("__") {
@@ -949,7 +971,10 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
 }
 
-pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> Result<()> {
+pub async fn install_extract_package(
+    app: &Arc<App>,
+    package: &VoltPackage,
+) -> DiagnosticResult<()> {
     if download_tarball(&app, &package, false).await.is_err() {
         download_tarball(&app, &package, true)
             .await

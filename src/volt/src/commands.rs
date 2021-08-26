@@ -17,7 +17,7 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use anyhow::Result;
+use miette::DiagnosticResult;
 use utils::app::App;
 use volt_core::command::Command;
 
@@ -114,7 +114,7 @@ impl AppCommand {
         }
     }
 
-    pub async fn run(&self, app: App) -> Result<()> {
+    pub async fn run(&self, app: App) -> DiagnosticResult<()> {
         let app = Arc::new(app);
         match self {
             Self::Add => add::command::Add::exec(app).await,

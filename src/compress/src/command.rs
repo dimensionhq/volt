@@ -15,11 +15,11 @@ limitations under the License.
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use volt_core::{command::Command, VERSION};
+use miette::DiagnosticResult;
 use utils::app::App;
+use volt_core::{command::Command, VERSION};
 pub struct Compress {}
 
 #[async_trait]
@@ -60,7 +60,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         Ok(())
     }
 }

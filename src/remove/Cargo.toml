@@ -15,3 +15,4 @@ tokio = "1.9.0"
 volt_core = { path = "../volt_core" }
 init = { path = "../init" }
 utils = { path = "../utils" }
+miette = "1.0.1"

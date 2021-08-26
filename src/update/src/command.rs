@@ -16,12 +16,12 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
+use utils::app::App;
 use volt_core::command::Command;
 use volt_core::VERSION;
-use utils::app::App;
 
 /// Struct implementation for the `Update` command.
 pub struct Update;
@@ -64,7 +64,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         Ok(())
     }
 }

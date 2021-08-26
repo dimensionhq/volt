@@ -20,3 +20,4 @@ add = { path = "../add" }
 walkdir = "2.3.2"
 bat = "0.18.2"
 prettytable-rs = "0.8.0"
+miette = "1.0.1"

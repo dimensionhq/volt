@@ -9,7 +9,6 @@ edition = "2018"
 default-run = "volt"
 
 [dependencies]
-anyhow = "1.0"
 colored = "2.0"
 volt_core = { path = "../volt_core" }
 add = { path = "../add" }
@@ -35,3 +34,4 @@ search = { path = "../search" }
 stat = { path = "../stat" }
 audit = { path = "../audit" }
 tokio = { version = "*", features = ["macros", "rt-multi-thread"] }
+miette = "1.0.1"

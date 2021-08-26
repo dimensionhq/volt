@@ -15,9 +15,9 @@ limitations under the License.
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use std::fs::read_dir;
 use utils::app::App;
 use volt_core::{command::Command, VERSION};
@@ -62,7 +62,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         let flags = &app.flags;
 
         let mut depth: u64 = 2;
@@ -126,8 +126,8 @@ Options:
                             print!("  ");
                         }
                         let mut version = "".to_owned();
-                        for file in read_dir(std::env::temp_dir().join("volt"))? {
-                            let file_path: PathBuf = file?.path();
+                        for file in read_dir(std::env::temp_dir().join("volt")).unwrap() {
+                            let file_path: PathBuf = file.unwrap().path();
                             let file_name: &str = file_path.to_str().unwrap();
                             let file_split: Vec<&str> = file_name.split('\\').collect();
                             let name: &str = file_split[file_split.len() - 1];

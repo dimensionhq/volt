@@ -18,11 +18,11 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-use volt_core::{command::Command, VERSION};
+use miette::DiagnosticResult;
 use utils::app::App;
+use volt_core::{command::Command, VERSION};
 /// Struct implementation for the `Check` command.
 pub struct Check;
 
@@ -42,7 +42,7 @@ Options:
   {} {} Output verbose messages on internal operations."#,
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
-            "check".bright_purple(),           
+            "check".bright_purple(),
             "--verbose".blue(),
             "(-v)".yellow()
         )
@@ -58,7 +58,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         Ok(())
     }
 }

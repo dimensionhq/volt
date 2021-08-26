@@ -19,6 +19,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use bat::PrettyPrinter;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use prettytable::{Cell, Row, Table};
 use utils::{
     app::App,
@@ -64,11 +65,16 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         #[allow(unused_assignments)]
         let mut name = String::new();
 
-        if !std::env::current_dir()?.join("package.json").exists() && app.args.len() == 1 {
+        if !std::env::current_dir()
+            .unwrap()
+            .join("package.json")
+            .exists()
+            && app.args.len() == 1
+        {
             println!(
                 "{}: {}\n",
                 "warning".yellow().bold(),
@@ -86,7 +92,7 @@ Options:
             name = String::from(&app.args[1]);
         }
 
-        let package: Package = get_package(&name).await?.unwrap();
+        let package: Package = get_package(&name).await.unwrap().unwrap();
 
         if field == String::new() {
             let latest_version = package.dist_tags.get("latest").unwrap();

@@ -1,6 +1,6 @@
 use crate::constants::MAX_RETRIES;
+use crate::errors::VoltError;
 use crate::volt_api::VoltPackage;
-use anyhow::{anyhow, ensure, Context, Result};
 use colored::Colorize;
 use futures::stream::FuturesOrdered;
 use futures::TryStreamExt;
@@ -8,6 +8,7 @@ use isahc::http::StatusCode;
 use isahc::AsyncReadResponseExt;
 use isahc::Request;
 use isahc::RequestExt;
+use miette::DiagnosticResult;
 use semver_rs::Version;
 use serde_json::Value;
 use ssri::{Algorithm, Integrity};
@@ -15,7 +16,7 @@ use ssri::{Algorithm, Integrity};
 // Get version from NPM
 pub async fn get_version(
     package_name: String,
-) -> Result<(String, String, String, Option<VoltPackage>)> {
+) -> DiagnosticResult<(String, String, String, Option<VoltPackage>)> {
     let mut retries = 0;
 
     let count = package_name.matches("@").count();
@@ -28,18 +29,14 @@ pub async fn get_version(
                         "Accept",
                         "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
                     )
-                    .body("")?;
+                    .body("")
+                    .map_err(VoltError::RequestBuilderError)?;
 
-            let mut response = client.send_async().await.with_context(|| {
-                format!("failed to fetch {}", package_name.bright_cyan().bold())
-            })?;
+            let mut response = client.send_async().await.map_err(VoltError::NetworkError)?;
 
             match response.status_mut() {
                 &mut StatusCode::OK => {
-                    let text = response.text().await.context(format!(
-                        "failed to deserialize response for {}",
-                        package_name.bright_cyan().bold()
-                    ))?;
+                    let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
                     match serde_json::from_str::<Value>(&text).unwrap()["dist-tags"]["latest"]
                         .as_str()
@@ -77,7 +74,13 @@ pub async fn get_version(
                                             base64::encode(value["shasum"].to_string())
                                         );
                                     }
-                                    let integrity: Integrity = hash_string.parse().unwrap();
+
+                                    let integrity: Integrity =
+                                        hash_string.parse().map_err(|_| {
+                                            VoltError::HashParseError {
+                                                hash: hash_string.to_string(),
+                                            }
+                                        })?;
 
                                     let algo = integrity.pick_algorithm();
 
@@ -87,7 +90,7 @@ pub async fn get_version(
                                         .find(|h| h.algorithm == algo)
                                         .map(|h| Integrity { hashes: vec![h] })
                                         .map(|i| i.to_hex().1)
-                                        .unwrap();
+                                        .ok_or(VoltError::IntegrityConversionError)?;
 
                                     match algo {
                                         Algorithm::Sha1 => {
@@ -114,39 +117,31 @@ pub async fn get_version(
                                     return Ok((package_name, latest.to_string(), hash, package));
                                 }
                                 None => {
-                                    return Err(anyhow!(
-                                        "Failed to find a hash that matches the specified requirement: {}",
-                                        package_name.bright_cyan().bold()
-                                    ));
+                                    return Err(VoltError::HashLookupError {
+                                        version: latest.to_string(),
+                                    })?;
                                 }
                             }
                         }
                         None => {
-                            return Err(anyhow!(
-                                "Failed to request latest version for {}.",
-                                package_name.bright_cyan()
-                            ));
+                            return Err(VoltError::VersionLookupError { name: package_name })?;
                         }
                     }
                 }
                 &mut StatusCode::NOT_FOUND => {
                     if retries == MAX_RETRIES {
-                        return Err(anyhow!(
-                                "GET {} - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
-                                format!("http://registry.npmjs.org/{}", package_name),
-                                format!("Not Found ({})", "404".bright_yellow().bold()),
-                                package_name,
-                            ));
+                        return Err(VoltError::TooManyRequests {
+                            url: format!("http://registry.npmjs.org/{}", package_name),
+                            package_name: package_name.to_string(),
+                        })?;
                     }
                 }
                 _ => {
                     if retries == MAX_RETRIES {
-                        return Err(anyhow!(
-                                "GET {}: Not Found - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
-                                format!("http://registry.npmjs.org/{}", package_name).underline(),
-                                response.status().as_str(),
-                                package_name
-                            ));
+                        return Err(VoltError::PackageNotFound {
+                            url: format!("http://registry.npmjs.org/{}", package_name),
+                            package_name: package_name.to_string(),
+                        })?;
                     }
                 }
             }
@@ -170,18 +165,14 @@ pub async fn get_version(
                     "Accept",
                     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
                 )
-                .body("")?;
+                .body("")
+                .map_err(VoltError::RequestBuilderError)?;
 
-                let mut response = client.send_async().await.with_context(|| {
-                    format!("failed to fetch {}", package_name.bright_cyan().bold())
-                })?;
+                let mut response = client.send_async().await.map_err(VoltError::NetworkError)?;
 
                 match response.status_mut() {
                     &mut StatusCode::OK => {
-                        let text = response.text().await.context(format!(
-                            "failed to deserialize response for {}",
-                            package_name.bright_cyan().bold()
-                        ))?;
+                        let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
                         match serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object()
                         {
@@ -192,20 +183,13 @@ pub async fn get_version(
                                     .filter(|v| version_requirement.test(&v))
                                     .collect::<Vec<_>>();
 
-                                ensure!(
-                                    !available_versions.is_empty(),
-                                    "Failed to find a version that matches the specified requirement: {}",
-                                    name.bright_cyan().bold(),
-                                );
-
                                 available_versions
                                     .sort_unstable_by(|a, b| a.partial_cmp(b).unwrap().reverse());
 
                                 if available_versions.is_empty() {
-                                    return Err(anyhow!(
-                                        "Failed to find a version that matches the specified requirement: {}",
-                                        name.bright_cyan().bold()
-                                    ));
+                                    return Err(VoltError::VersionLookupError {
+                                        name: package_name,
+                                    })?;
                                 }
 
                                 let num_deps;
@@ -241,7 +225,12 @@ pub async fn get_version(
                                             );
                                         }
 
-                                        let integrity: Integrity = hash_string.parse().unwrap();
+                                        let integrity: Integrity =
+                                            hash_string.parse().map_err(|_| {
+                                                VoltError::HashParseError {
+                                                    hash: hash_string.to_string(),
+                                                }
+                                            })?;
 
                                         let algo = integrity.pick_algorithm();
 
@@ -251,7 +240,7 @@ pub async fn get_version(
                                             .find(|h| h.algorithm == algo)
                                             .map(|h| Integrity { hashes: vec![h] })
                                             .map(|i| i.to_hex().1)
-                                            .unwrap();
+                                            .ok_or(VoltError::IntegrityConversionError)?;
 
                                         match algo {
                                             Algorithm::Sha1 => {
@@ -284,40 +273,30 @@ pub async fn get_version(
                                         ));
                                     }
                                     None => {
-                                        return Err(anyhow!(
-                                            "Failed to find a hash that matches the specified requirement: {}",
-                                            name.bright_cyan().bold()
-                                        ));
+                                        return Err(VoltError::HashLookupError {
+                                            version: available_versions[0].to_string(),
+                                        })?;
                                     }
                                 }
                             }
                             None => {
-                                return Err(anyhow!(
-                                    "Failed to request versions for {}.",
-                                    package_name.bright_cyan()
-                                ));
+                                return Err(VoltError::VersionLookupError { name: package_name })?;
                             }
                         }
                     }
                     &mut StatusCode::NOT_FOUND => {
                         if retries == MAX_RETRIES {
-                            return Err(anyhow!(
-                                    "GET {} - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
-                                    format!("http://registry.npmjs.org/{}", package_name),
-                                    format!("Not Found ({})", "404".bright_yellow().bold()),
-                                    package_name,
-                                ));
+                            return Err(VoltError::TooManyRequests {
+                                url: format!("http://registry.npmjs.org/{}", package_name),
+                                package_name: package_name.to_string(),
+                            })?;
                         }
                     }
                     _ => {
-                        if retries == MAX_RETRIES {
-                            return Err(anyhow!(
-                                    "GET {}: Not Found - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
-                                    format!("http://registry.npmjs.org/{}", package_name).underline(),
-                                    response.status().as_str(),
-                                    package_name
-                                ));
-                        }
+                        return Err(VoltError::PackageNotFound {
+                            url: format!("http://registry.npmjs.org/{}", package_name),
+                            package_name: package_name.to_string(),
+                        })?;
                     }
                 }
 
@@ -339,18 +318,14 @@ pub async fn get_version(
                     "Accept",
                     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
                 )
-                .body("")?;
+                .body("")
+                .map_err(VoltError::RequestBuilderError)?;
 
-                let mut response = client.send_async().await.with_context(|| {
-                    format!("failed to fetch {}", package_name.bright_cyan().bold())
-                })?;
+                let mut response = client.send_async().await.map_err(VoltError::NetworkError)?;
 
                 match response.status_mut() {
                     &mut StatusCode::OK => {
-                        let text = response.text().await.context(format!(
-                            "failed to deserialize response for {}",
-                            package_name.bright_cyan().bold()
-                        ))?;
+                        let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
                         match serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object()
                         {
@@ -361,20 +336,13 @@ pub async fn get_version(
                                     .filter(|v| version_requirement.test(&v))
                                     .collect::<Vec<_>>();
 
-                                ensure!(
-                                    !available_versions.is_empty(),
-                                    "Failed to find a version that matches the specified requirement: {}",
-                                    name.bright_cyan().bold(),
-                                );
-
                                 available_versions
                                     .sort_unstable_by(|a, b| a.partial_cmp(b).unwrap().reverse());
 
                                 if available_versions.is_empty() {
-                                    return Err(anyhow!(
-                                        "Failed to find a version that matches the specified requirement: {}",
-                                        name.bright_cyan().bold()
-                                    ));
+                                    return Err(VoltError::VersionLookupError {
+                                        name: package_name,
+                                    })?;
                                 }
 
                                 let num_deps;
@@ -410,7 +378,12 @@ pub async fn get_version(
                                             );
                                         }
 
-                                        let integrity: Integrity = hash_string.parse().unwrap();
+                                        let integrity: Integrity =
+                                            hash_string.parse().map_err(|_| {
+                                                VoltError::HashParseError {
+                                                    hash: hash_string.to_string(),
+                                                }
+                                            })?;
 
                                         let algo = integrity.pick_algorithm();
 
@@ -420,7 +393,7 @@ pub async fn get_version(
                                             .find(|h| h.algorithm == algo)
                                             .map(|h| Integrity { hashes: vec![h] })
                                             .map(|i| i.to_hex().1)
-                                            .unwrap();
+                                            .ok_or(VoltError::IntegrityConversionError)?;
 
                                         match algo {
                                             Algorithm::Sha1 => {
@@ -454,39 +427,28 @@ pub async fn get_version(
                                         ));
                                     }
                                     None => {
-                                        return Err(anyhow!(
-                                            "Failed to find a hash that matches the specified requirement: {}",
-                                            name.bright_cyan().bold()
-                                        ));
+                                        return Err(VoltError::HashLookupError {
+                                            version: available_versions[0].to_string(),
+                                        })?;
                                     }
                                 }
                             }
-                            None => {
-                                return Err(anyhow!(
-                                    "Failed to request versions for {}.",
-                                    package_name.bright_cyan()
-                                ));
-                            }
+                            None => {}
                         }
                     }
                     &mut StatusCode::NOT_FOUND => {
                         if retries == MAX_RETRIES {
-                            return Err(anyhow!(
-                                    "GET {} - {}\n\n{} npm registry, or you don't have the permission to request it.",
-                                    format!("http://registry.npmjs.org/{}", package_name),
-                                    format!("Not Found ({})", "404".bright_yellow().bold()),
-                                    package_name,
-                                ));
+                            return Err(VoltError::VersionLookupError { name: package_name })?;
                         }
                     }
                     _ => {
                         if retries == MAX_RETRIES {
-                            return Err(anyhow!(
-                                    "GET {}: Not Found - {}\n\n{} was not found on the npm registry, or you don't have the permission to request it.",
-                                    format!("http://registry.npmjs.org/{}", package_name).underline(),
-                                    response.status().as_str(),
-                                    package_name
-                                ));
+                            if retries == MAX_RETRIES {
+                                return Err(VoltError::PackageNotFound {
+                                    url: format!("http://registry.npmjs.org/{}", package_name),
+                                    package_name: package_name.to_string(),
+                                })?;
+                            }
                         }
                     }
                 }
@@ -494,14 +456,14 @@ pub async fn get_version(
                 retries += 1;
             }
         } else {
-            return Err(anyhow!("an unexpected error happened"));
+            return Err(VoltError::UnknownError)?;
         }
     }
 }
 
 pub async fn get_versions(
     packages: &Vec<String>,
-) -> Result<Vec<(String, String, String, Option<VoltPackage>)>> {
+) -> DiagnosticResult<Vec<(String, String, String, Option<VoltPackage>)>> {
     packages
         .to_owned()
         .into_iter()

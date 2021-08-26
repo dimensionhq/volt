@@ -16,9 +16,9 @@ limitations under the License.
 use std::process;
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use utils::app::App;
 use utils::helper::CustomColorize;
 use volt_core::command::Command;
@@ -64,7 +64,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         let args: Vec<String> = app.args.clone();
 
         if args.is_empty() {
@@ -82,8 +82,8 @@ Options:
                 .spawn()
                 .unwrap();
         } else {
-            anyhow!("Failed to Clone Repository");
         }
+
         Ok(())
     }
 }

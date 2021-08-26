@@ -19,10 +19,10 @@ use std::fs::remove_file;
 use std::process::exit;
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
+use miette::DiagnosticResult;
 use utils::app::App;
 use utils::constants::PROGRESS_CHARS;
 use volt_core::command::Command;
@@ -73,13 +73,13 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         if app.args.len() == 1 {
             println!("{}", Self::help());
             exit(1);
         }
         if app.args[1].as_str() == "clean" {
-            let files: Vec<_> = fs::read_dir(temp_dir().join("volt"))?.collect();
+            let files: Vec<_> = fs::read_dir(temp_dir().join("volt")).unwrap().collect();
 
             let count = files.len();
 

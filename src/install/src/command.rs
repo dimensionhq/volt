@@ -18,9 +18,9 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use utils::app::App;
 use utils::package::PackageJson;
 use volt_core::{command::Command, VERSION};
@@ -68,7 +68,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         let package_file = PackageJson::from("package.json");
         let dependencies = package_file.dependencies;
         let dev_dependencies = package_file.dev_dependencies;

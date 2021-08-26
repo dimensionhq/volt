@@ -18,7 +18,6 @@ mod commands;
 
 use crate::commands::AppCommand;
 
-use anyhow::Result;
 use colored::Colorize;
 use std::time::Instant;
 use utils::app::{App, AppFlag};
@@ -27,28 +26,8 @@ use utils::helper::CustomColorize;
 use volt_core::VERSION;
 
 #[tokio::main]
-async fn main() {
-    if let Err(err) = try_main().await {
-        error!("{}", &err);
-
-        let err_chain = err.chain().skip(1);
-        if err_chain.clone().next().is_some() {
-            println!("{}", "\nCaused by:".caused_by_style());
-        }
-
-        err_chain.for_each(|e| eprintln!("{}", e));
-
-        println!(
-            "Need help? Check out {} for help",
-            "https://voltpkg.com/support".truecolor(155, 255, 171)
-        );
-
-        std::process::exit(1);
-    }
-}
-
-async fn try_main() -> Result<()> {
-    let app = App::initialize().unwrap();
+async fn main() -> miette::DiagnosticResult<()> {
+    let app = App::initialize()?;
     let cmd = AppCommand::current().unwrap_or(AppCommand::Script); // Default command is help
 
     if app.has_flag(AppFlag::Help) {
