@@ -8,7 +8,6 @@ description = "The remove command for volt cli."
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
 async-trait = "0.1"
 colored = "2.0"
 tokio = "1.9.0"

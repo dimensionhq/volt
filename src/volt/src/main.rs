@@ -42,7 +42,10 @@ async fn main() -> miette::DiagnosticResult<()> {
     }
 
     let time = Instant::now();
+
+    // Run command
     cmd.run(app).await?;
+
     println!("Finished in {:.2}s", time.elapsed().as_secs_f32());
 
     Ok(())

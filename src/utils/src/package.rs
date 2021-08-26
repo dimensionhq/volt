@@ -23,7 +23,6 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::error;
-use crate::errors::VoltError;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
