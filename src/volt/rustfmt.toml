@@ -1,0 +1,12 @@
+brace_style = "AlwaysNextLine"
+color = "Always"
+comment_width = 70
+condense_wildcard_suffixes = true
+control_brace_style = "AlwaysNextLine"
+edition = "2021"
+enum_discrim_align_threshold = 20
+max_width = 100
+fn_single_line = true
+format_strings = true
+imports_layout = "Vertical"
+match_arm_leading_pipes = "Always"
