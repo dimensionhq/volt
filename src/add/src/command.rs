@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//! Add a package to your dependencies for your project.
+//! Add a package to the dependencies for your project.
 
 use std::collections::HashMap;
 use std::io::Write;

@@ -10,8 +10,9 @@ default-run = "volt"
 
 [dependencies]
 colored = "2.0"
-clap = "2.33.3"
+clap = { git = "https://github.com/clap-rs/clap" }
 miette = "1.0.1"
+tokio = { version = "*", features = ["macros", "rt-multi-thread"] }
 volt_core = { path = "../volt_core" }
 add = { path = "../add" }
 cache = { path = "../cache" }
@@ -35,4 +36,3 @@ update = { path = "../update" }
 search = { path = "../search" }
 stat = { path = "../stat" }
 audit = { path = "../audit" }
-tokio = { version = "*", features = ["macros", "rt-multi-thread"] }

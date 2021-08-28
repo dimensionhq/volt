@@ -14,39 +14,60 @@
     limitations under the License.
 */
 
-mod commands;
+pub mod commands;
 
-use crate::commands::AppCommand;
-
-use colored::Colorize;
 use std::time::Instant;
-use utils::app::{App, AppFlag};
-use utils::helper::CustomColorize;
-use volt_core::VERSION;
+
+use clap::{
+    App,
+    Arg,
+};
+use colored::Colorize;
+
+// use colored::Colorize;
+// use std::time::Instant;
+// use utils::app::{App, AppFlag};
+// use utils::helper::CustomColorize;
+// use volt_core::VERSION;
 
 #[tokio::main]
-async fn main() -> miette::DiagnosticResult<()> {
-    let app = App::initialize()?;
-    let cmd = AppCommand::current().unwrap_or(AppCommand::Script); // Default command is help
+async fn main() -> miette::DiagnosticResult<()>
+{
+    let volt_help = format!(
+        r#"{} {}
 
-    if app.has_flag(AppFlag::Help) {
-        // Display help message
-        println!("{}", cmd.help());
-        return Ok(());
-    }
+Usage: {} [{}] [{}]
 
-    if app.has_flag(AppFlag::Version) {
-        // Display version
-        println!("volt v{}{}", "::".bright_magenta(), VERSION.success_style());
-        return Ok(());
-    }
+Displays help information.
 
-    let time = Instant::now();
+Commands:
+  {} add"#,
+        "volt".bright_green().bold(),
+        "1.0.0",
+        "volt".bright_green().bold(),
+        "command".bright_cyan(),
+        "flags".bright_blue(),
+        "-".bright_magenta()
+    );
 
-    // Run command
-    cmd.run(app).await?;
+    let app = App::new("volt")
+        .version("1.0.0")
+        .author("XtremeDevX <xtremedevx@gmail.com>")
+        .about("Manage your NPM packages")
+        .override_help(volt_help.as_str())
+        .subcommand(
+            App::new("add")
+                .about("Add a package to the dependencies for your project.")
+                .arg(
+                    Arg::new("package-name")
+                        .about("Package to add to the dependencies for your project.")
+                        .index(1)
+                        .required(true),
+                ),
+        );
 
-    println!("Finished in {:.2}s", time.elapsed().as_secs_f32());
+    let matches = app.get_matches();
 
+    println!("{:?}", matches);
     Ok(())
 }
