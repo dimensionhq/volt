@@ -34,6 +34,7 @@ ssri = "6.0.0"
 git-config = "0.1.4"
 isahc = "1.4.0"
 miette = "1.0.1"
+clap = { git = "https://github.com/clap-rs/clap" }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [

@@ -1,4 +1,5 @@
 use crate::{enable_ansi_support, errors::VoltError};
+use clap::ArgMatches;
 use dirs::home_dir;
 use miette::DiagnosticResult;
 use sha1::Digest;
@@ -53,7 +54,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn initialize() -> DiagnosticResult<App> {
+    pub fn initialize(args: &ArgMatches) -> DiagnosticResult<App> {
         enable_ansi_support().unwrap();
 
         // Current Directory

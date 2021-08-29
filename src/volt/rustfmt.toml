@@ -2,7 +2,6 @@ brace_style = "AlwaysNextLine"
 color = "Always"
 comment_width = 70
 condense_wildcard_suffixes = true
-control_brace_style = "AlwaysNextLine"
 edition = "2021"
 enum_discrim_align_threshold = 20
 max_width = 100

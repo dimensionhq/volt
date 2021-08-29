@@ -69,30 +69,7 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
-        let package_file = PackageJson::from("package.json");
-        let dependencies = package_file.dependencies;
-        let dev_dependencies = package_file.dev_dependencies;
-
-        let mut app = App::initialize().unwrap();
-
-        let mut dev_deps = dev_dependencies
-            .into_iter()
-            .map(|value| value.0)
-            .collect::<Vec<String>>();
-
-        let mut deps = dependencies
-            .into_iter()
-            .map(|value| value.0)
-            .collect::<Vec<String>>();
-
-        deps.append(&mut dev_deps);
-
-        deps.push(String::from("add"));
-
-        app.args = deps;
-
-        add::command::Add::exec(Arc::new(app)).await.unwrap();
-
+        // let package_file 
         Ok(())
     }
 }

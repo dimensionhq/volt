@@ -16,19 +16,27 @@
 
 pub mod commands;
 
-use std::time::Instant;
+use std::sync::Arc;
 
+use add::command::Add;
 use clap::{
-    App,
     Arg,
+    ArgMatches,
 };
 use colored::Colorize;
+use utils::app::App;
+use volt_core::command::Command;
 
-// use colored::Colorize;
-// use std::time::Instant;
-// use utils::app::{App, AppFlag};
-// use utils::helper::CustomColorize;
-// use volt_core::VERSION;
+pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()>
+{
+    match matches.subcommand() {
+        | Some(("add", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Add::exec(app).await
+        }
+        | _ => Ok(()),
+    }
+}
 
 #[tokio::main]
 async fn main() -> miette::DiagnosticResult<()>
@@ -50,13 +58,13 @@ Commands:
         "-".bright_magenta()
     );
 
-    let app = App::new("volt")
+    let app = clap::App::new("volt")
         .version("1.0.0")
         .author("XtremeDevX <xtremedevx@gmail.com>")
         .about("Manage your NPM packages")
         .override_help(volt_help.as_str())
         .subcommand(
-            App::new("add")
+            clap::App::new("add")
                 .about("Add a package to the dependencies for your project.")
                 .arg(
                     Arg::new("package-name")
@@ -68,6 +76,7 @@ Commands:
 
     let matches = app.get_matches();
 
-    println!("{:?}", matches);
+    map_subcommand(matches).await?;
+
     Ok(())
 }
