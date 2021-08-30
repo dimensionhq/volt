@@ -87,13 +87,12 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
-        let input_packages = app.args.values_of("package-name").unwrap();
-
-        let mut packages: Vec<String> = vec![];
-
-        for package in input_packages {
-            packages.push(package.to_string());
-        }
+        let packages = app
+            .args
+            .values_of("package-name")
+            .unwrap()
+            .map(|v| v.to_string())
+            .collect::<Vec<String>>();
 
         // Check if package.json exists, otherwise, let the user know.
         if !app.current_dir.join("package.json").exists() {
