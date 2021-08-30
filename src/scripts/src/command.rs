@@ -15,9 +15,9 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use utils::app::App;
 use utils::error;
 use utils::package::PackageJson;
@@ -43,38 +43,38 @@ impl Command for Script {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        let package_json = PackageJson::from("package.json");
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+        // let package_json = PackageJson::from("package.json");
 
-        let args = app.args.clone();
-        let command: &str = args[0].as_str();
+        // let args = app.args.clone();
+        // let command: &str = args[0].as_str();
 
-        if package_json.scripts.contains_key(command) {
-            // let script = package_json.scripts.get(command).unwrap();
-            // let mut split: Vec<&str> = script.split_ascii_whitespace().into_iter().collect();
-            // let mut bin_cmd = format!("{}.cmd", split[0]);
+        // if package_json.scripts.contains_key(command) {
+        //     // let script = package_json.scripts.get(command).unwrap();
+        //     // let mut split: Vec<&str> = script.split_ascii_whitespace().into_iter().collect();
+        //     // let mut bin_cmd = format!("{}.cmd", split[0]);
 
-            // split[0] = bin_cmd.as_str();
+        //     // split[0] = bin_cmd.as_str();
 
-            // let exec = format!("node_modules\\scripts\\{}", split.join(" "));
+        //     // let exec = format!("node_modules\\scripts\\{}", split.join(" "));
 
-            // if cfg!(target_os = "unix") {
-            // #[allow(unused_assignments)]
-            // bin_cmd = format!("{}.sh", split[0]);
-            // }
+        //     // if cfg!(target_os = "unix") {
+        //     // #[allow(unused_assignments)]
+        //     // bin_cmd = format!("{}.sh", split[0]);
+        //     // }
 
-            if cfg!(target_os = "windows ") {
-                // std::process::Command::new("cmd.exe")
-                //     .arg("/C")
-                //     .arg(exec)
-                //     .spawn()
-                //     .unwrap();
-            } else {
-                // std::process::Command::new("sh").arg(exec).spawn().unwrap();
-            }
-        } else {
-            error!("{} is not a valid command.", command.bright_yellow().bold());
-        }
+        //     if cfg!(target_os = "windows ") {
+        //         // std::process::Command::new("cmd.exe")
+        //         //     .arg("/C")
+        //         //     .arg(exec)
+        //         //     .spawn()
+        //         //     .unwrap();
+        //     } else {
+        //         // std::process::Command::new("sh").arg(exec).spawn().unwrap();
+        //     }
+        // } else {
+        //     error!("{} is not a valid command.", command.bright_yellow().bold());
+        // }
 
         Ok(())
     }

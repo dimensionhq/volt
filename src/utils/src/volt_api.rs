@@ -23,7 +23,7 @@ pub struct VoltResponse {
     pub versions: HashMap<String, HashMap<String, VoltPackage>>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct VoltPackage {
     pub name: String,
     pub version: String,

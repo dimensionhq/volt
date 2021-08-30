@@ -6,7 +6,6 @@ description = "Set a configuration option."
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
 async-trait = "0.1"
 regex = "1"
 volt_core = { path = "../volt_core" }
@@ -14,3 +13,4 @@ colored = "2.0.0"
 dialoguer = "0.8.0"
 utils = { path="../utils" }
 add = { path = "../add" }
+miette = "1.0.1"

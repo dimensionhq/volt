@@ -1,12 +1,13 @@
 [package]
 name = "create"
 version = "0.0.1"
-authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+authors = [
+    "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
+]
 description = "The create command for volt cli."
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
 async-trait = "0.1"
 colored = "2.0"
 dialoguer = "0.8"
@@ -14,5 +15,6 @@ volt_core = { path = "../volt_core" }
 init = { path = "../init" }
 flate2 = "1.0"
 tar = "0.4"
-utils = { path="../utils" }
+utils = { path = "../utils" }
+miette = "1.0.1"
 tokio = { version = "1.9.0", features = ["fs"] }

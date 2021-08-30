@@ -19,10 +19,10 @@ use std::fs::remove_file;
 use std::process::exit;
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
+use miette::DiagnosticResult;
 use utils::app::App;
 use utils::constants::PROGRESS_CHARS;
 use volt_core::command::Command;
@@ -73,37 +73,37 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        if app.args.len() == 1 {
-            println!("{}", Self::help());
-            exit(1);
-        }
-        if app.args[1].as_str() == "clean" {
-            let files: Vec<_> = fs::read_dir(temp_dir().join("volt"))?.collect();
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+        // if app.args.len() == 1 {
+        //     println!("{}", Self::help());
+        //     exit(1);
+        // }
+        // if app.args[1].as_str() == "clean" {
+        //     let files: Vec<_> = fs::read_dir(temp_dir().join("volt")).unwrap().collect();
 
-            let count = files.len();
+        //     let count = files.len();
 
-            let progress_bar = ProgressBar::new(count.to_owned() as u64);
+        //     let progress_bar = ProgressBar::new(count.to_owned() as u64);
 
-            progress_bar.set_style(
-                ProgressStyle::default_bar()
-                    .progress_chars(PROGRESS_CHARS)
-                    .template(&format!(
-                        "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{len}} / {{pos}}",
-                        "Deleting Cache".bright_blue()
-                    )),
-            );
+        //     progress_bar.set_style(
+        //         ProgressStyle::default_bar()
+        //             .progress_chars(PROGRESS_CHARS)
+        //             .template(&format!(
+        //                 "{} [{{bar:40.magenta/blue}}] {{msg:.blue}} {{len}} / {{pos}}",
+        //                 "Deleting Cache".bright_blue()
+        //             )),
+        //     );
 
-            for file in files {
-                let os_str = file.unwrap().file_name();
-                let f_name = format!(r"{}volt\{}", temp_dir().display(), os_str.to_str().unwrap());
+        //     for file in files {
+        //         let os_str = file.unwrap().file_name();
+        //         let f_name = format!(r"{}volt\{}", temp_dir().display(), os_str.to_str().unwrap());
 
-                remove_file(f_name).unwrap();
-                progress_bar.inc(1);
-            }
+        //         remove_file(f_name).unwrap();
+        //         progress_bar.inc(1);
+        //     }
 
-            progress_bar.finish();
-        }
+        //     progress_bar.finish();
+        // }
         Ok(())
     }
 }

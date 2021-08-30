@@ -18,9 +18,9 @@ use std::fs::read_dir;
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use scripts::command::Script;
 use utils::app::App;
 use utils::error;
@@ -69,63 +69,63 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        if app.clone().args.len() == 1_usize {
-            let package_json = PackageJson::from("package.json");
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+        // if app.clone().args.len() == 1_usize {
+        //     let package_json = PackageJson::from("package.json");
 
-            let args = app.args.clone();
-            let command: &str = args[0].as_str();
+        //     let args = app.args.clone();
+        //     let command: &str = args[0].as_str();
 
-            if package_json.scripts.contains_key(command) {
-                Script::exec(app.clone()).await.unwrap();
-                std::process::exit(0);
-            }
-        }
+        //     if package_json.scripts.contains_key(command) {
+        //         Script::exec(app.clone()).await.unwrap();
+        //         std::process::exit(0);
+        //     }
+        // }
 
-        let path = Path::new("node_modules/scripts");
+        // let path = Path::new("node_modules/scripts");
 
-        if path.exists() {
-            let files = read_dir("node_modules/scripts").unwrap();
+        // if path.exists() {
+        //     let files = read_dir("node_modules/scripts").unwrap();
 
-            let mut files_vec: Vec<String> = vec![];
+        //     let mut files_vec: Vec<String> = vec![];
 
-            for f in files {
-                let f = f.unwrap();
-                let file_name = f.file_name();
-                let file_name_str = file_name.to_string_lossy();
+        //     for f in files {
+        //         let f = f.unwrap();
+        //         let file_name = f.file_name();
+        //         let file_name_str = file_name.to_string_lossy();
 
-                files_vec.push(file_name_str.to_string());
-            }
+        //         files_vec.push(file_name_str.to_string());
+        //     }
 
-            if app.clone().args.len() == 1_usize {
-                let print_string = files_vec.join(", ");
-                println!(
-                    "{}{} {}",
-                    "scripts".bright_cyan().bold(),
-                    ":".bright_magenta().bold(),
-                    print_string
-                );
-                std::process::exit(1);
-            }
+        //     if app.clone().args.len() == 1_usize {
+        //         let print_string = files_vec.join(", ");
+        //         println!(
+        //             "{}{} {}",
+        //             "scripts".bright_cyan().bold(),
+        //             ":".bright_magenta().bold(),
+        //             print_string
+        //         );
+        //         std::process::exit(1);
+        //     }
 
-            if files_vec.contains(&app.args[1]) {
-                let location = format!("node_modules/scripts/{}", &app.args[1]);
+        //     if files_vec.contains(&app.args[1]) {
+        //         let location = format!("node_modules/scripts/{}", &app.args[1]);
 
-                let command = format!("scripts/{}", &app.args[1]);
-                println!("{} {}", ">".bright_magenta().bold(), command);
+        //         let command = format!("scripts/{}", &app.args[1]);
+        //         println!("{} {}", ">".bright_magenta().bold(), command);
 
-                std::process::Command::new("cmd.exe")
-                    .arg("/C")
-                    .arg(location.replace("/", r"\"))
-                    .spawn()
-                    .unwrap();
-            } else {
-                error!(
-                    "{} 'is not a valid script.'",
-                    &app.args[1].bright_yellow().bold(),
-                );
-            }
-        }
+        //         std::process::Command::new("cmd.exe")
+        //             .arg("/C")
+        //             .arg(location.replace("/", r"\"))
+        //             .spawn()
+        //             .unwrap();
+        //     } else {
+        //         error!(
+        //             "{} 'is not a valid script.'",
+        //             &app.args[1].bright_yellow().bold(),
+        //         );
+        //     }
+        // }
 
         Ok(())
     }

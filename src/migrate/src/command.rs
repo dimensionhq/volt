@@ -18,9 +18,9 @@
 
 use std::{env, fs, process, sync::Arc};
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
+use miette::DiagnosticResult;
 use utils::{app::App, error};
 use volt_core::{
     classes::package_manager::PackageManager, command::Command, prompt::prompts::Select, VERSION,
@@ -70,112 +70,112 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        let packagemanagers: Vec<String> = PackageManager::options();
-        let mut packagemanager: String = String::new();
-        if app.args.len() == 1 {
-            packagemanager = app.args[0].to_string();
-        } else if app.args.len() == 1 {
-            let select = Select {
-                message: String::from("Package Manager"),
-                paged: true,
-                selected: Some(1),
-                items: packagemanagers.clone(),
-            };
-            let selected = select.run().unwrap_or_else(|err| {
-                error!("{}", err.to_string());
-                process::exit(1);
-            });
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+        // let packagemanagers: Vec<String> = PackageManager::options();
+        // let mut packagemanager: String = String::new();
+        // if app.args.len() == 1 {
+        //     packagemanager = app.args[0].to_string();
+        // } else if app.args.len() == 1 {
+        //     let select = Select {
+        //         message: String::from("Package Manager"),
+        //         paged: true,
+        //         selected: Some(1),
+        //         items: packagemanagers.clone(),
+        //     };
+        //     let selected = select.run().unwrap_or_else(|err| {
+        //         error!("{}", err.to_string());
+        //         process::exit(1);
+        //     });
 
-            packagemanager = PackageManager::from_index(selected).unwrap().to_string();
-        } else {
-            error!("{}", "volt migrate only takes 1 argument");
-        }
+        //     packagemanager = PackageManager::from_index(selected).unwrap().to_string();
+        // } else {
+        //     error!("{}", "volt migrate only takes 1 argument");
+        // }
 
-        if packagemanager.eq_ignore_ascii_case("volt") {
-            std::fs::remove_dir_all("node_modules")?;
+        // if packagemanager.eq_ignore_ascii_case("volt") {
+        //     std::fs::remove_dir_all("node_modules").unwrap();
 
-            let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
-            files
-                .filter_map(Result::ok)
-                .filter(|d| {
-                    if let Some(e) = d.path().extension() {
-                        String::from(e.to_str().unwrap()).contains("lock")
-                    } else {
-                        false
-                    }
-                })
-                .for_each(|f| std::fs::remove_file(f.file_name()).unwrap());
-            println!("{}", "$ volt install".truecolor(147, 148, 148));
-            install::command::Install::exec(app).await?; // NOTE WILL ONLY WORK IF THE VAR DEPENDENCIES is populated
-        } else if packagemanager.eq_ignore_ascii_case("yarn") {
-            std::fs::remove_dir_all("node_modules")?;
+        //     let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
+        //     files
+        //         .filter_map(Result::ok)
+        //         .filter(|d| {
+        //             if let Some(e) = d.path().extension() {
+        //                 String::from(e.to_str().unwrap()).contains("lock")
+        //             } else {
+        //                 false
+        //             }
+        //         })
+        //         .for_each(|f| std::fs::remove_file(f.file_name()).unwrap());
+        //     println!("{}", "$ volt install".truecolor(147, 148, 148));
+        //     install::command::Install::exec(app).await?; // NOTE WILL ONLY WORK IF THE VAR DEPENDENCIES is populated
+        // } else if packagemanager.eq_ignore_ascii_case("yarn") {
+        //     std::fs::remove_dir_all("node_modules").unwrap();
 
-            let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
-            files
-                .filter_map(Result::ok)
-                .filter(|d| {
-                    if let Some(e) = d.path().extension() {
-                        e == "lock"
-                    } else {
-                        false
-                    }
-                })
-                .for_each(|f| std::fs::remove_file(f.file_name()).unwrap());
+        //     let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
+        //     files
+        //         .filter_map(Result::ok)
+        //         .filter(|d| {
+        //             if let Some(e) = d.path().extension() {
+        //                 e == "lock"
+        //             } else {
+        //                 false
+        //             }
+        //         })
+        //         .for_each(|f| std::fs::remove_file(f.file_name()).unwrap());
 
-            println!("{}", "$ yarn".truecolor(147, 148, 148));
-            std::process::Command::new("yarn")
-                .spawn()
-                .expect("failed to execute")
-                .wait()
-                .unwrap();
-        } else if packagemanager.eq_ignore_ascii_case("pnpm") {
-            std::fs::remove_dir_all("node_modules")?;
+        //     println!("{}", "$ yarn".truecolor(147, 148, 148));
+        //     std::process::Command::new("yarn")
+        //         .spawn()
+        //         .expect("failed to execute")
+        //         .wait()
+        //         .unwrap();
+        // } else if packagemanager.eq_ignore_ascii_case("pnpm") {
+        //     std::fs::remove_dir_all("node_modules").unwrap();
 
-            let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
-            files
-                .filter_map(Result::ok)
-                .filter(|d| {
-                    if let Some(e) = d.path().file_name() {
-                        String::from(e.to_str().unwrap()).contains("lock")
-                    } else {
-                        false
-                    }
-                })
-                .for_each(|f| std::fs::remove_file(f.file_name()).unwrap());
+        //     let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
+        //     files
+        //         .filter_map(Result::ok)
+        //         .filter(|d| {
+        //             if let Some(e) = d.path().file_name() {
+        //                 String::from(e.to_str().unwrap()).contains("lock")
+        //             } else {
+        //                 false
+        //             }
+        //         })
+        //         .for_each(|f| std::fs::remove_file(f.file_name()).unwrap());
 
-            println!("{}", "$ pnpm install".truecolor(147, 148, 148));
-            std::process::Command::new("pnpm")
-                .arg("install")
-                .spawn()
-                .expect("failed to execute")
-                .wait()
-                .unwrap();
-        } else if packagemanager.eq_ignore_ascii_case("npm") {
-            std::fs::remove_dir_all("node_modules")?;
+        //     println!("{}", "$ pnpm install".truecolor(147, 148, 148));
+        //     std::process::Command::new("pnpm")
+        //         .arg("install")
+        //         .spawn()
+        //         .expect("failed to execute")
+        //         .wait()
+        //         .unwrap();
+        // } else if packagemanager.eq_ignore_ascii_case("npm") {
+        //     std::fs::remove_dir_all("node_modules").unwrap();
 
-            let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
-            files
-                .filter_map(Result::ok)
-                .filter(|d| {
-                    if let Some(e) = d.path().file_name() {
-                        String::from(e.to_str().unwrap()).contains("lock")
-                    } else {
-                        false
-                    }
-                })
-                .for_each(|f| std::fs::remove_file(f.file_name()).unwrap());
+        //     let files = fs::read_dir(env::current_dir().unwrap()).unwrap();
+        //     files
+        //         .filter_map(Result::ok)
+        //         .filter(|d| {
+        //             if let Some(e) = d.path().file_name() {
+        //                 String::from(e.to_str().unwrap()).contains("lock")
+        //             } else {
+        //                 false
+        //             }
+        //         })
+        //         .for_each(|f| std::fs::remove_file(f.file_name()).unwrap());
 
-            println!("{}", "$ npm install".truecolor(147, 148, 148));
-            std::process::Command::new("npm")
-                .arg("install")
-                .spawn()
-                .expect("failed to execute")
-                .wait()
-                .unwrap();
-        } else {
-            println!("Volt accepts only volt, yarn, pnpm or npm for volt migrate's args it does not support {}" ,app.args[0].to_string().red());
-        }
+        //     println!("{}", "$ npm install".truecolor(147, 148, 148));
+        //     std::process::Command::new("npm")
+        //         .arg("install")
+        //         .spawn()
+        //         .expect("failed to execute")
+        //         .wait()
+        //         .unwrap();
+        // } else {
+        //     println!("Volt accepts only volt, yarn, pnpm or npm for volt migrate's args it does not support {}" ,app.args[0].to_string().red());
+        // }
         Ok(())
     }
 }

@@ -14,8 +14,6 @@
     limitations under the License.
 */
 
-use anyhow::Context;
-
 use std::io::Write;
 use std::{
     collections::HashMap,
@@ -204,7 +202,6 @@ impl PackageJson {
     pub fn save(&self) {
         let mut file = File::create("package.json").unwrap();
         file.write(serde_json::to_string_pretty(self).unwrap().as_bytes())
-            .context("failed to write to package.json")
             .unwrap();
     }
 

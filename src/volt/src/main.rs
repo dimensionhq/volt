@@ -14,58 +14,67 @@
     limitations under the License.
 */
 
-mod commands;
+use std::sync::Arc;
 
-use crate::commands::AppCommand;
-
-use anyhow::Result;
+use add::command::Add;
+use clap::{
+    Arg,
+    ArgMatches,
+};
 use colored::Colorize;
-use std::time::Instant;
-use utils::app::{App, AppFlag};
-use utils::error;
-use utils::helper::CustomColorize;
-use volt_core::VERSION;
+use utils::app::App;
+use volt_core::command::Command;
 
-#[tokio::main]
-async fn main() {
-    if let Err(err) = try_main().await {
-        error!("{}", &err);
-
-        let err_chain = err.chain().skip(1);
-        if err_chain.clone().next().is_some() {
-            println!("{}", "\nCaused by:".caused_by_style());
+pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()>
+{
+    match matches.subcommand() {
+        | Some(("add", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Add::exec(app).await
         }
-
-        err_chain.for_each(|e| eprintln!("{}", e));
-
-        println!(
-            "Need help? Check out {} for help",
-            "https://voltpkg.com/support".truecolor(155, 255, 171)
-        );
-
-        std::process::exit(1);
+        | _ => Ok(()),
     }
 }
 
-async fn try_main() -> Result<()> {
-    let app = App::initialize().unwrap();
-    let cmd = AppCommand::current().unwrap_or(AppCommand::Script); // Default command is help
+#[tokio::main]
+async fn main() -> miette::DiagnosticResult<()>
+{
+    let volt_help = format!(
+        r#"{} {}
 
-    if app.has_flag(AppFlag::Help) {
-        // Display help message
-        println!("{}", cmd.help());
-        return Ok(());
-    }
+Usage: {} [{}] [{}]
 
-    if app.has_flag(AppFlag::Version) {
-        // Display version
-        println!("volt v{}{}", "::".bright_magenta(), VERSION.success_style());
-        return Ok(());
-    }
+Displays help information.
 
-    let time = Instant::now();
-    cmd.run(app).await?;
-    println!("Finished in {:.2}s", time.elapsed().as_secs_f32());
+Commands:
+  {} add"#,
+        "volt".bright_green().bold(),
+        "1.0.0",
+        "volt".bright_green().bold(),
+        "command".bright_cyan(),
+        "flags".bright_blue(),
+        "-".bright_magenta()
+    );
+
+    let app = clap::App::new("volt")
+        .version("1.0.0")
+        .author("XtremeDevX <xtremedevx@gmail.com>")
+        .about("Manage your NPM packages")
+        .override_help(volt_help.as_str())
+        .subcommand(
+            clap::App::new("add")
+                .about("Add a package to the dependencies for your project.")
+                .arg(
+                    Arg::new("package-name")
+                        .about("Package to add to the dependencies for your project.")
+                        .multiple_values(true)
+                        .required(true),
+                ),
+        );
+
+    let matches = app.get_matches();
+
+    map_subcommand(matches).await?;
 
     Ok(())
 }

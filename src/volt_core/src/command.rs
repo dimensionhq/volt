@@ -16,14 +16,14 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 
+use miette::DiagnosticResult;
 use utils::app::App;
 
 #[async_trait]
 pub trait Command {
     fn help() -> String;
 
-    async fn exec(app: Arc<App>) -> Result<()>;
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()>;
 }

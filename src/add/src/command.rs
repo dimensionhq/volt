@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//! Add a package to your dependencies for your project.
+//! Add a package to the dependencies for your project.
 
 use std::collections::HashMap;
 use std::io::Write;
@@ -19,12 +19,12 @@ use std::process::exit;
 use std::sync::Arc;
 use std::time::Instant;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use futures::stream::FuturesUnordered;
 use futures::{StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
+use miette::DiagnosticResult;
 use utils::app::App;
 use utils::constants::PROGRESS_CHARS;
 use utils::npm::get_versions;
@@ -86,30 +86,13 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        // Display help menu if `volt add` is run.
-        if app.args.len() == 1 {
-            println!("{}", Self::help());
-            exit(0);
-        }
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+        let input_packages = app.args.values_of("package-name").unwrap();
 
-        // TODO: BENCHMARK COPYING VS HARD LINKING.
-        // TODO: BENCHMARK COPYING VS HARD LINKING.
-        // TODO: BENCHMARK COPYING VS HARD LINKING.
-        // TODO: BENCHMARK COPYING VS HARD LINKING.
-        // TODO: Move to miette + thiserror.
-        // TODO: Move to miette + thiserror.
-        // TODO: Move to miette + thiserror.
-        // TODO: Move to miette + thiserror.
-        // TODO: Move to miette + thiserror.
+        let mut packages: Vec<String> = vec![];
 
-        let mut packages = vec![];
-
-        // Add packages to the packages vec.
-        for arg in app.args.iter() {
-            if arg != "add" {
-                packages.push(arg.clone());
-            }
+        for package in input_packages {
+            packages.push(package.to_string());
         }
 
         // Check if package.json exists, otherwise, let the user know.
@@ -132,6 +115,8 @@ Options:
 
         // Load the existing package.json file
         let package_file = PackageJson::from("package.json");
+
+        let start = Instant::now();
 
         // Get the integrity hash and version of the requested package.
         let versions = get_versions(&packages).await?;
@@ -161,17 +146,17 @@ Options:
                 )),
         );
 
-        let start = Instant::now();
-
-        let responses: Result<Vec<VoltResponse>> = if packages.len() > 1 {
+        let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
             utils::get_volt_response_multi(&versions, &progress_bar)
                 .await
                 .into_iter()
                 .collect()
         } else {
-            vec![utils::get_volt_response(&packages[0], &versions[0].2, &versions[0].3).await]
-                .into_iter()
-                .collect()
+            vec![
+                utils::get_volt_response(&packages[0], &versions[0].2, versions[0].3.clone()).await,
+            ]
+            .into_iter()
+            .collect()
         };
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
