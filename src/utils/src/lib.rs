@@ -46,6 +46,8 @@ use volt_api::VoltResponse;
 use crate::constants::MAX_RETRIES;
 use crate::volt_api::JSONVoltResponse;
 
+/// decompress lz4 compressed json data
+/// lz4 has the fastest decompression speeds
 pub fn decompress(data: Vec<u8>) -> Result<Vec<u8>> {
     // initialize decoded data
     let mut decoded: Vec<u8> = Vec::new();
@@ -62,6 +64,7 @@ pub fn decompress(data: Vec<u8>) -> Result<Vec<u8>> {
     Ok(decoded)
 }
 
+/// convert a JSONVoltResponse -> VoltResponse
 pub fn convert(deserialized: JSONVoltResponse) -> VoltResponse {
     // initialize a hashmap to store the converted versions
     let mut converted_versions: HashMap<String, VoltPackage> = HashMap::new();
@@ -147,6 +150,7 @@ pub async fn get_volt_response(
     // number of retries
     let mut retries = 0;
 
+    // only 1 package, zero dependencies
     if package.is_some() {
         let package = package.as_ref().unwrap();
 
@@ -166,7 +170,7 @@ pub async fn get_volt_response(
             versions,
         });
     }
-
+    // loop until MAX_RETRIES reached.
     loop {
         // get a response
         let mut response =
@@ -421,12 +425,16 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
         }
 
         // Get Tarball File
-        let res = reqwest::get(url).await.unwrap();
-
+        let res = reqwest::get(url).await.unwrap();        
+        
+        // Tarball bytes response
         let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
         let algorithm;
 
+        // there are only 2 supported algorithms
+        // sha1 and sha512
+        // so we can be sure that if it doesn't start with sha1, it's going to have to be sha512
         if package.integrity.starts_with("sha1") {
             algorithm = Algorithm::Sha1;
         } else {
@@ -441,6 +449,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
             // Delete package from node_modules
             let node_modules_dep_path = app.node_modules_dir.join(&package.name);
 
+            // TODO: fix this
             if node_modules_dep_path.exists() {
                 remove_dir_all(&node_modules_dep_path)?;
             }
@@ -754,8 +763,8 @@ pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
 }
 
 /// Gets a config key from git using the git cli.
+/// Uses `gitoxide` to read from your git configuration.
 pub fn get_git_config(app: &App, key: &str) -> Option<String> {
-    println!("{}", key);
     match key {
         "user.name" => {
             let config_path = app.home_dir.join(".gitconfig");
@@ -861,13 +870,15 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 }
 
 #[cfg(windows)]
+/// Generates the binary and other required scripts for the package  
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
     // Create node_modules/scripts if it doesn't exist
     if !Path::new("node_modules/.bin").exists() {
+        // Create the binary directory
         std::fs::create_dir_all("node_modules/.bin").unwrap();
     }
 
-    // If the package has binary scripts, create them
+    // Create binary scripts for the package if they exist.
     if package.bin.is_some() {
         let bin = package.bin.as_ref().unwrap();
 
@@ -924,6 +935,7 @@ node  "{}/.volt/{}/{}" %*
         f.write_all(command.as_bytes()).unwrap();
     }
 }
+
 // Unix functions
 #[cfg(unix)]
 pub fn enable_ansi_support() -> Result<(), u32> {
@@ -934,8 +946,11 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
 }
 
+/// package all steps for installation into 1 convinient function.
 pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> Result<()> {
+    // if there's an error (most likely a checksum verification error) while using insecure http, retry.
     if download_tarball(&app, &package, false).await.is_err() {
+        // use https instead
         download_tarball(&app, &package, true)
             .await
             .unwrap_or_else(|_| {
@@ -944,6 +959,7 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
             });
     }
 
+    // generate the package's script
     generate_script(&app, package);
 
     // let directory = &app.volt_dir.join(package.name.clone());
