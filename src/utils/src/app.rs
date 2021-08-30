@@ -108,6 +108,14 @@ impl App {
         self.flags.contains(&flag)
     }
 
+    /// Calculate the hash of a tarball
+    /// 
+    /// ## Examples
+    /// ```rs
+    /// calc_hash(bytes::Bytes::new(), ssri::Algorithm::Sha1)?;
+    /// ```
+    /// ## Returns
+    /// * Result<String>
     pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> Result<String> {
         match algorithm {
             Algorithm::Sha1 => {
