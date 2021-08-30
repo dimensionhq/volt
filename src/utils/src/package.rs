@@ -229,7 +229,7 @@ impl PackageJson {
         version: String,
     ) -> Result<(), String> {
         if self.dependencies.contains_key(&name) {
-            self.dependencies[name.as_str()] = version.to_string();
+            *self.dependencies.get_mut(&name).unwrap() = version.to_string();
             Ok(())
         } else {
             Err(String::from("dependency does not exist on the hashmap"))

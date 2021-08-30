@@ -87,12 +87,14 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
-        let packages = app
+        let mut packages = app
             .args
             .values_of("package-name")
             .unwrap()
             .map(|v| v.to_string())
             .collect::<Vec<String>>();
+
+        packages.dedup();
 
         // Check if package.json exists, otherwise, let the user know.
         if !app.current_dir.join("package.json").exists() {
@@ -113,7 +115,7 @@ Options:
         }
 
         // Load the existing package.json file
-        let package_file = PackageJson::from("package.json");
+        let mut package_file = PackageJson::from("package.json");
 
         let start = Instant::now();
 
@@ -284,6 +286,12 @@ Options:
             .unwrap();
 
         progress_bar.finish();
+
+        for (index, _) in packages.iter().enumerate() {
+            let data = &versions[index];
+
+            package_file.add_dependency(data.0.clone(), data.1.clone());
+        }
 
         Ok(())
     }
