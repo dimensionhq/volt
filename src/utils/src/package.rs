@@ -15,11 +15,13 @@
 */
 
 use std::io::Write;
+use std::ops::Index;
 use std::{
     collections::HashMap,
     fs::{read_to_string, File},
 };
 
+use miette::DiagnosticResult;
 use serde::{Deserialize, Serialize};
 
 use crate::error;
@@ -205,11 +207,32 @@ impl PackageJson {
             .unwrap();
     }
 
-    // pub fn add_dependency(&mut self, name: String, version: String) {
-    //     self.dependencies.unwrap().insert(name, version);
-    // }
+    pub fn add_dependency(&mut self, name: String, version: String) {
+        self.dependencies.insert(name, version);
+    }
 
-    // pub fn remove_dependency(&mut self, name: String, version: String) {
-    //     self.dependencies.unwrap().remove(&name);
-    // }
+    pub fn add_dev_dependency(&mut self, name: String, version: String) {
+        self.dev_dependencies.insert(name, version);
+    }
+
+    pub fn remove_dev_dependency(&mut self, name: String) {
+        self.dev_dependencies.remove(&name);
+    }
+
+    pub fn remove_dependency(&mut self, name: String) {
+        self.dependencies.remove(&name);
+    }
+
+    pub fn update_dependency_version(
+        &mut self,
+        name: String,
+        version: String,
+    ) -> Result<(), String> {
+        if self.dependencies.contains_key(&name) {
+            self.dependencies[name.as_str()] = version.to_string();
+            Ok(())
+        } else {
+            Err(String::from("dependency does not exist on the hashmap"))
+        }
+    }
 }
