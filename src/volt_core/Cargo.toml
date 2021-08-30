@@ -8,7 +8,7 @@ description = "Volt's core library."
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
+miette = "1.0.1"
 async-trait = "0.1"
 colored = "2.0"
 console = "0.14"

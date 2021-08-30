@@ -15,10 +15,10 @@
 
 use std::{collections::HashMap, sync::Arc};
 
+use miette::DiagnosticResult;
 // Library Imports
 use serde::{Deserialize, Serialize};
 
-use anyhow::Result;
 use async_trait::async_trait;
 use utils::app::App;
 use volt_core::command::Command;
@@ -130,7 +130,7 @@ impl Command for Audit {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         // let package_json = PackageJson::from("package.json");
 
         // let mut requires = package_json.dependencies;

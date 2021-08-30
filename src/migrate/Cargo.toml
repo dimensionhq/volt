@@ -1,14 +1,16 @@
 [package]
 name = "migrate"
 version = "0.0.1"
-authors = ["Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)"]
+authors = [
+    "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
+]
 description = "The migrate command for volt cli."
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
 async-trait = "0.1"
 colored = "2.0"
 volt_core = { path = "../volt_core" }
-install = { path= "../install" }
-utils = { path="../utils" }
+install = { path = "../install" }
+miette = "1.0.1"
+utils = { path = "../utils" }

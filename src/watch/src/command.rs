@@ -13,24 +13,24 @@
 
 //! Handle an unknown command (can be listed in scripts).
 
+use miette::DiagnosticResult;
 use regex::Regex;
 use rslint_parser::Syntax;
 use std::fs::{read_dir, read_to_string};
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
-use volt_core::command::Command;
 use utils::app::App;
+use volt_core::command::Command;
 use walkdir::WalkDir;
 
 use syntect::easy::HighlightLines;
+use syntect::highlighting::{Style, ThemeSet};
 use syntect::parsing::SyntaxSet;
-use syntect::highlighting::{ThemeSet, Style};
 use syntect::util::{as_24_bit_terminal_escaped, LinesWithEndings};
 
 const PROGRESS_CHARS: &str = "=> ";
@@ -87,9 +87,9 @@ impl Command for Watch {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         // Set current dir
-        let mut current_dir = std::env::current_dir()?;
+        let mut current_dir = std::env::current_dir().unwrap();
 
         // Set list for all JS files
         let mut files: Vec<String> = vec![];
@@ -153,17 +153,21 @@ impl Command for Watch {
                         let ps = SyntaxSet::load_defaults_newlines();
                         let ts = ThemeSet::get_theme("dracula.tmTheme").unwrap();
                         let file_name = Path::new(&f).file_name().unwrap().to_str().unwrap();
-                        let code = &err.code.as_ref().unwrap().to_lowercase().replace("error", "");
+                        let code = &err
+                            .code
+                            .as_ref()
+                            .unwrap()
+                            .to_lowercase()
+                            .replace("error", "");
                         let _severity = &err.severity;
                         let title = &err.title;
-                        
+
                         let start = *&err.primary.as_ref().unwrap().span.range.start as u128;
                         let end = *&err.primary.as_ref().unwrap().span.range.end as u128;
                         let chars = &text.chars().collect::<Vec<char>>()[0..(start - 1) as usize];
                         let line_number = chars.iter().filter(|&n| *n == '\n').count() + 1;
                         let line_error = text.lines().collect::<Vec<&str>>()[line_number - 1];
-                        
-                        
+
                         let syntax = ps.find_syntax_by_extension("js").unwrap();
                         let mut h = HighlightLines::new(syntax, &ts);
                         let mut colorized_line = String::new();
@@ -177,10 +181,21 @@ impl Command for Watch {
 
                         println!(" {} {}:{}", "-->".bright_black(), &file_name, line_number);
                         println!("  {}", "|".bright_black());
-                        println!("{}{} {}", line_number.to_string().bright_black(), " |".bright_black(), colorized_line);
-                        println!("  {}{}", "|".bright_black(), gen_pointer_string(start, end).bright_green());
+                        println!(
+                            "{}{} {}",
+                            line_number.to_string().bright_black(),
+                            " |".bright_black(),
+                            colorized_line
+                        );
+                        println!(
+                            "  {}{}",
+                            "|".bright_black(),
+                            gen_pointer_string(start, end).bright_green()
+                        );
                         println!("  {}", "|".bright_black());
-                        termimad::print_text(format!("error({}): {}", code.bright_yellow(), title).as_str());
+                        termimad::print_text(
+                            format!("error({}): {}", code.bright_yellow(), title).as_str(),
+                        );
 
                         std::process::exit(0);
                     }

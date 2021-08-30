@@ -8,7 +8,6 @@ description = "The team command for volt cli."
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
 async-trait = "0.1"
 regex = "1"
 colored = "2.0.0"
@@ -18,3 +17,4 @@ volt_core = { path = "../volt_core" }
 utils = { path = "../utils" }
 add = { path = "../add" }
 walkdir = "2.3.2"
+miette = "1.0.1"

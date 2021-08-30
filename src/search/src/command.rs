@@ -13,11 +13,11 @@
 
 //! Search for a package.
 use crate::search::SearchData;
-use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use isahc::AsyncReadResponseExt;
 
+use miette::DiagnosticResult;
 use prettytable::row;
 use std::sync::Arc;
 // use search::SearchResp;
@@ -73,45 +73,45 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        if app.args.len() >= 2 {
-            let package_name = &app.args[1];
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+        // if app.args.len() >= 2 {
+        //     let package_name = &app.args[1];
 
-            let response = isahc::get_async(format!(
-                "http://www.npmjs.com/search/suggestions?q={}",
-                package_name
-            ))
-            .await
-            .unwrap_or_else(|_| {
-                error!("package does not exist");
-                std::process::exit(1);
-            })
-            .text()
-            .await
-            .unwrap_or_else(|_| {
-                error!("package does not exist");
-                std::process::exit(1);
-            });
-            let s: Vec<SearchData> = serde_json::from_str(&response).unwrap_or_else(|e| {
-                error!("failed to parse response from server {}", e.to_string());
+        //     let response = isahc::get_async(format!(
+        //         "http://www.npmjs.com/search/suggestions?q={}",
+        //         package_name
+        //     ))
+        //     .await
+        //     .unwrap_or_else(|_| {
+        //         error!("package does not exist");
+        //         std::process::exit(1);
+        //     })
+        //     .text()
+        //     .await
+        //     .unwrap_or_else(|_| {
+        //         error!("package does not exist");
+        //         std::process::exit(1);
+        //     });
+        //     let s: Vec<SearchData> = serde_json::from_str(&response).unwrap_or_else(|e| {
+        //         error!("failed to parse response from server {}", e.to_string());
 
-                std::process::exit(1);
-            });
+        //         std::process::exit(1);
+        //     });
 
-            let mut table = Table::new();
-            table.add_row(row![
-                "Name".green().bold(),
-                "Version".green().bold(),
-                "Description".green().bold()
-            ]);
-            for i in s.iter() {
-                table.add_row(row![i.name, i.version, truncate(&i.description, 35)]);
-            }
-            table.printstd();
+        //     let mut table = Table::new();
+        //     table.add_row(row![
+        //         "Name".green().bold(),
+        //         "Version".green().bold(),
+        //         "Description".green().bold()
+        //     ]);
+        //     for i in s.iter() {
+        //         table.add_row(row![i.name, i.version, truncate(&i.description, 35)]);
+        //     }
+        //     table.printstd();
 
-            // let u: SearchResp = s;
-            // panic!("{:#?}", s);
-        }
+        //     // let u: SearchResp = s;
+        //     // panic!("{:#?}", s);
+        // }
         Ok(())
     }
 }

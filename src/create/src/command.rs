@@ -22,11 +22,11 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::{Context, Result};
 use async_trait::async_trait;
 use colored::Colorize;
 use dialoguer::Input;
 use flate2::read::GzDecoder;
+use miette::DiagnosticResult;
 use tar::Archive;
 use utils::{app::App, error};
 use volt_core::{
@@ -80,93 +80,88 @@ Options:
     /// * `Result<()>`
 
     #[allow(unused)]
-    async fn exec(app: Arc<App>) -> Result<()> {
-        let args = app.args.clone();
-        let templates: Vec<String> = Template::options();
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+        // let args = app.args.clone();
+        // let templates: Vec<String> = Template::options();
 
-        let mut template: String = String::new();
+        // let mut template: String = String::new();
 
-        let mut app_name: String = String::new();
-        if args.len() == 1 {
-            let select = Select {
-                message: String::from("Template"),
-                paged: true,
-                selected: Some(1),
-                items: templates.clone(),
-            };
+        // let mut app_name: String = String::new();
+        // if args.len() == 1 {
+        //     let select = Select {
+        //         message: String::from("Template"),
+        //         paged: true,
+        //         selected: Some(1),
+        //         items: templates.clone(),
+        //     };
 
-            let selected = select.run().unwrap_or_else(|err| {
-                error!("{}", err.to_string());
-                process::exit(1);
-            });
+        //     let selected = select.run().unwrap_or_else(|err| {
+        //         error!("{}", err.to_string());
+        //         process::exit(1);
+        //     });
 
-            template = Template::from_index(selected).unwrap().to_string();
-        } else {
-            let _template = &args[1];
-            if templates.contains(_template) {
-                template = _template.to_string();
-            } else {
-                error!("Template {} doesn't exist!", _template.bright_blue());
-                process::exit(1);
-            }
-        }
+        //     template = Template::from_index(selected).unwrap().to_string();
+        // } else {
+        //     let _template = &args[1];
+        //     if templates.contains(_template) {
+        //         template = _template.to_string();
+        //     } else {
+        //         error!("Template {} doesn't exist!", _template.bright_blue());
+        //         process::exit(1);
+        //     }
+        // }
 
-        if args.len() > 1 {
-            app_name = Input::new()
-                .with_prompt("App name")
-                .with_initial_text("")
-                .default("my-app".into())
-                .interact_text()?;
+        // if args.len() > 1 {
+        //     app_name = Input::new()
+        //         .with_prompt("App name")
+        //         .with_initial_text("")
+        //         .default("my-app".into())
+        //         .interact_text()
+        //         .unwrap();
 
-            if app_name.is_empty() {
-                error!("Invalid app name!");
-                process::exit(1);
-            }
-        } else {
-            let _app_name = &args[1];
-            app_name = _app_name.to_string();
-        }
+        //     if app_name.is_empty() {
+        //         error!("Invalid app name!");
+        //         process::exit(1);
+        //     }
+        // } else {
+        //     let _app_name = &args[1];
+        //     app_name = _app_name.to_string();
+        // }
 
-        let template_name = template.split('-').collect::<Vec<&str>>()[0];
-        let version = "create-".to_owned() + template_name;
-        let package_json = get_package(&version).await?.unwrap_or_else(|| {
-            println!(
-                "{} Could not find template for {}",
-                "error".red().bold(),
-                template_name
-            );
-            exit(1)
-        });
-        // For dev checking
-        let v = package_json
-            .versions
-            .get(package_json.dist_tags.get("latest").unwrap())
-            .unwrap_or_else(|| {
-                println!(
-                    "{} Could not find template version for {}",
-                    "error".red().bold(),
-                    template_name
-                );
-                exit(1)
-            });
+        // let template_name = template.split('-').collect::<Vec<&str>>()[0];
+        // let version = "create-".to_owned() + template_name;
+        // let package_json = get_package(&version).await.unwrap().unwrap_or_else(|| {
+        //     println!(
+        //         "{} Could not find template for {}",
+        //         "error".red().bold(),
+        //         template_name
+        //     );
+        //     exit(1)
+        // });
+        // // For dev checking
+        // let v = package_json
+        //     .versions
+        //     .get(package_json.dist_tags.get("latest").unwrap())
+        //     .unwrap_or_else(|| {
+        //         println!(
+        //             "{} Could not find template version for {}",
+        //             "error".red().bold(),
+        //             template_name
+        //         );
+        //         exit(1)
+        //     });
 
-        println!("HANDLE THIS");
-        let tarball_file = utils::download_tarball_create(&app, &package_json, &version)
-            .await
-            .unwrap()
-;
-        let gz_decoder = GzDecoder::new(
-            File::open(tarball_file)
-                .context("Unable to open tar file")
-                .unwrap(),
-        );
+        // println!("HANDLE THIS");
+        // let tarball_file = utils::download_tarball_create(&app, &package_json, &version)
+        //     .await
+        //     .unwrap();
+        // let gz_decoder = GzDecoder::new(File::open(tarball_file).unwrap());
 
-        let mut archive = Archive::new(gz_decoder);
-        let mut dir = std::env::current_dir().unwrap();
+        // let mut archive = Archive::new(gz_decoder);
+        // let mut dir = std::env::current_dir().unwrap();
 
-        archive
-            .unpack(&dir.join(app_name))
-            .context("Unable to unpack dependency")?;
+        // archive.unpack(&dir.join(app_name)).unwrap();
+
         Ok(())
     }
 }
