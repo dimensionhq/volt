@@ -56,6 +56,14 @@ Commands:
         "-".bright_magenta()
     );
 
+    let add_usage = format!(
+        "{} add {}",
+        "volt".bright_green().bold(),
+        "<package-name>".bright_blue()
+    );
+
+    // https://docs.rs/clap/2.33.3/clap/struct.App.html?search=#method.usage
+
     let app = clap::App::new("volt")
         .version("1.0.0")
         .author("XtremeDevX <xtremedevx@gmail.com>")
@@ -64,9 +72,10 @@ Commands:
         .subcommand(
             clap::App::new("add")
                 .about("Add a package to the dependencies for your project.")
+                .override_usage(add_usage.as_str())
                 .arg(
-                    Arg::new("package-name")
-                        .about("Package to add to the dependencies for your project.")
+                    Arg::new("package-names")
+                        .about("Packages to add to the dependencies for your project.")
                         .multiple_values(true)
                         .required(true),
                 ),

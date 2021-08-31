@@ -168,6 +168,7 @@ Options:
             let current_version = res.versions.get(&res.version).unwrap();
             dependencies.extend(current_version.clone());
         }
+
         let end = Instant::now();
 
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
