@@ -211,7 +211,7 @@ Options:
             }
         }
 
-        let dependencies: Vec<_> = dependencies
+        let mut dependencies: Vec<_> = dependencies
             .iter()
             .map(|(_name, object)| {
                 let mut lock_dependencies: Vec<String> = vec![];
@@ -276,6 +276,8 @@ Options:
                     "Installing Packages".bright_blue()
                 )),
         );
+
+        dependencies.dedup();
 
         dependencies
             .into_iter()
