@@ -14,17 +14,12 @@
     limitations under the License.
 */
 
-use std::fs::read_dir;
-use std::path::Path;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use scripts::command::Script;
 use utils::app::App;
-use utils::error;
-use utils::package::PackageJson;
 use volt_core::command::Command;
 use volt_core::VERSION;
 

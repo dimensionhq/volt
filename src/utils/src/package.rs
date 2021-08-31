@@ -15,13 +15,11 @@
 */
 
 use std::io::Write;
-use std::ops::Index;
 use std::{
     collections::HashMap,
     fs::{read_to_string, File},
 };
 
-use miette::DiagnosticResult;
 use serde::{Deserialize, Serialize};
 
 use crate::error;
