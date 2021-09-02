@@ -16,12 +16,12 @@
 
 //! Remove a package from your direct dependencies.
 
-use std::{env, process, sync::Arc};
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use utils::{app::App, error};
+use utils::app::App;
 use volt_core::{command::Command, VERSION};
 /// Struct implementation for the `Deploy` command.
 pub struct Deploy;

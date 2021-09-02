@@ -1,38 +1,28 @@
 /*
-    Copyright 2021 Volt Contributors
+Copyright 2021 Volt Contributors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 //! Remove a package from your direct dependencies.
 
-use std::{
-    fs::File,
-    process::{self, exit},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use colored::Colorize;
-use dialoguer::Input;
-use flate2::read::GzDecoder;
 use miette::DiagnosticResult;
-use tar::Archive;
-use utils::{app::App, error};
-use volt_core::{
-    classes::create_templates::Template, command::Command, model::http_manager::get_package,
-    prompt::prompts::Select, VERSION,
-};
+use utils::app::App;
+use volt_core::{command::Command, VERSION};
 /// Struct implementation for the `Remove` command.
 pub struct Create;
 
@@ -42,15 +32,15 @@ impl Command for Create {
     fn help() -> String {
         format!(
             r#"volt {}
-    
-Creates a project from a template.
 
-Usage: {} {} {} {}
+            Creates a project from a template.
 
-Options: 
+            Usage: {} {} {} {}
 
-  {} {} Output the version number.
-  {} {} Output verbose messages on internal operations."#,
+            Options:
+
+            {} {} Output the version number.
+            {} {} Output verbose messages on internal operations."#,
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
             "create".bright_purple(),

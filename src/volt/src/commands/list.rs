@@ -18,12 +18,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use std::fs::read_dir;
 use utils::app::App;
 use volt_core::{command::Command, VERSION};
-use walkdir::WalkDir;
-
-use std::path::PathBuf;
 
 pub struct List;
 

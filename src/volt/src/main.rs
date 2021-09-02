@@ -24,7 +24,6 @@ use utils::app::App;
 use volt_core::command::Command;
 
 use crate::commands::add::*;
-use crate::commands::audit::*;
 
 pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()> {
     match matches.subcommand() {
