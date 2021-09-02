@@ -151,15 +151,14 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
 pub async fn get_volt_response(
     package_name: &String,
     hash: &String,
-    package: Option<VoltPackage>,
+    package: VoltPackage,
+    zero_deps: bool,
 ) -> DiagnosticResult<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
     // only 1 package, zero dependencies
-    if package.is_some() {
-        let package = package.as_ref().unwrap();
-
+    if zero_deps {
         let mut versions: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
 
         let mut nested_versions: HashMap<String, VoltPackage> = HashMap::new();
@@ -176,6 +175,7 @@ pub async fn get_volt_response(
             versions,
         });
     }
+
     // loop until MAX_RETRIES reached.
     loop {
         // get a response
@@ -243,12 +243,12 @@ pub async fn get_volt_response(
 }
 
 pub async fn get_volt_response_multi(
-    versions: &Vec<(String, String, String, Option<VoltPackage>)>,
+    versions: &Vec<(String, String, String, VoltPackage, bool)>,
     pb: &ProgressBar,
 ) -> Vec<DiagnosticResult<VoltResponse>> {
     versions
         .into_iter()
-        .map(|(name, _, hash, package)| get_volt_response(&name, &hash, package.to_owned()))
+        .map(|(name, _, hash, package, no_deps)| get_volt_response(&name, &hash, package.to_owned(), *no_deps))
         .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
         .collect::<Vec<DiagnosticResult<VoltResponse>>>()
