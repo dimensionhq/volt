@@ -18,10 +18,7 @@ mod commands;
 
 use std::sync::Arc;
 
-use clap::{
-    Arg,
-    ArgMatches,
-};
+use clap::{Arg, ArgMatches};
 use colored::Colorize;
 use utils::app::App;
 use volt_core::command::Command;
@@ -29,20 +26,18 @@ use volt_core::command::Command;
 use crate::commands::add::*;
 use crate::commands::audit::*;
 
-pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()>
-{
+pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()> {
     match matches.subcommand() {
-        | Some(("add", args)) => {
+        Some(("add", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Add::exec(app).await
         }
-        | _ => Ok(()),
+        _ => Ok(()),
     }
 }
 
 #[tokio::main]
-async fn main() -> miette::DiagnosticResult<()>
-{
+async fn main() -> miette::DiagnosticResult<()> {
     let volt_help = format!(
         r#"{} {}
 
@@ -60,6 +55,14 @@ async fn main() -> miette::DiagnosticResult<()>
         "-".bright_magenta()
     );
 
+    let add_usage = format!(
+        "{} add {}",
+        "volt".bright_green().bold(),
+        "<package-name>".bright_blue()
+    );
+
+    // https://docs.rs/clap/2.33.3/clap/struct.App.html?search=#method.usage
+
     let app = clap::App::new("volt")
         .version("1.0.0")
         .author("XtremeDevX <xtremedevx@gmail.com>")
@@ -68,10 +71,11 @@ async fn main() -> miette::DiagnosticResult<()>
         .subcommand(
             clap::App::new("add")
                 .about("Add a package to the dependencies for your project.")
+                .override_usage(add_usage.as_str())
                 .arg(
-                    Arg::new("package-name")
-                        .about("Package to add to the dependencies for your project.")
-                        .index(1)
+                    Arg::new("package-names")
+                        .about("Packages to add to the dependencies for your project.")
+                        .multiple_values(true)
                         .required(true),
                 ),
         );
@@ -79,10 +83,10 @@ async fn main() -> miette::DiagnosticResult<()>
     // let matches = app.get_matches();
     let matches = app.try_get_matches();
     match matches {
-        | Ok(_) => {
+        Ok(_) => {
             println!("Is ok!");
         }
-        | Err(_) => {
+        Err(_) => {
             println!("Failed!");
             for arg in std::env::args().skip(1) {
                 println!("{:?}", arg);

@@ -62,27 +62,27 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
-        let args: Vec<String> = app.args.clone();
-        if args.is_empty() {
-            error!("expected commit name");
-            process::exit(1);
-        } else {
-            let commit_msg = &args[0];
-            env::set_current_dir(env::current_dir().unwrap()).unwrap();
-            // println!("current dir: {:?}", env::current_dir()?);
-            process::Command::new("git")
-                .args(&["add", "."])
-                .output()
-                .expect("Failed to add");
-            process::Command::new("git")
-                .args(&["commit", "-m", commit_msg.as_str()])
-                .output()
-                .expect("Failed to commit");
-            process::Command::new("git")
-                .args(&["push"])
-                .output()
-                .expect("Failed to push");
-        }
+        // let args: Vec<String> = app.args.clone();
+        // if args.is_empty() {
+        //     error!("expected commit name");
+        //     process::exit(1);
+        // } else {
+        //     let commit_msg = &args[0];
+        //     env::set_current_dir(env::current_dir().unwrap()).unwrap();
+        //     // println!("current dir: {:?}", env::current_dir()?);
+        //     process::Command::new("git")
+        //         .args(&["add", "."])
+        //         .output()
+        //         .expect("Failed to add");
+        //     process::Command::new("git")
+        //         .args(&["commit", "-m", commit_msg.as_str()])
+        //         .output()
+        //         .expect("Failed to commit");
+        //     process::Command::new("git")
+        //         .args(&["push"])
+        //         .output()
+        //         .expect("Failed to push");
+        // }
         Ok(())
     }
 }
