@@ -14,24 +14,14 @@
     limitations under the License.
 */
 
-use std::fs::File;
-use std::io::Write;
 use std::sync::Arc;
-use std::{env, process};
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use regex::Regex;
-use utils::app::{App, AppFlag};
-use volt_core::classes::init_data::InitData;
-use volt_core::classes::init_data::License;
+use utils::app::App;
 use volt_core::command::Command;
-use volt_core::prompt::prompts::Confirm;
-use volt_core::prompt::prompts::Input;
-use volt_core::prompt::prompts::Select;
 // use volt_core::utils;
-use utils::{error, get_git_config};
 use volt_core::VERSION;
 
 /// Struct implementation for the `Init` command.

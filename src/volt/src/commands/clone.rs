@@ -13,14 +13,12 @@ limitations under the License.
 
 //! Clone and setup a repository from Github.
 
-use std::process;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
 use utils::app::App;
-use utils::helper::CustomColorize;
 use volt_core::command::Command;
 use volt_core::VERSION;
 

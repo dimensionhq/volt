@@ -13,19 +13,13 @@
 
 //! Display info about a package.
 
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use async_trait::async_trait;
-use bat::PrettyPrinter;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use prettytable::{Cell, Row, Table};
-use utils::{
-    app::App,
-    error,
-    package::{Package, Version},
-};
-use volt_core::{command::Command, model::http_manager::get_package, VERSION};
+use utils::app::App;
+use volt_core::{command::Command, VERSION};
 
 pub struct Info {}
 

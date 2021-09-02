@@ -12,19 +12,15 @@
 */
 
 //! Search for a package.
-use crate::commands::search;
 use async_trait::async_trait;
 use colored::Colorize;
-use isahc::AsyncReadResponseExt;
 
 use serde::{Deserialize, Serialize};
 
+use crate::App;
 use miette::DiagnosticResult;
-use prettytable::row;
 use std::sync::Arc;
 // use search::SearchResp;
-use prettytable::{cell, Table};
-use utils::{app::App, error};
 use volt_core::{command::Command, VERSION};
 
 fn truncate(s: &str, max_chars: usize) -> String {

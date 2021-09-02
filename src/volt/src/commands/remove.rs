@@ -16,16 +16,13 @@
 
 //! Remove a package from your direct dependencies.
 
-use std::{io::Write, process, sync::Arc};
-
-use crate::commands::init::Init;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use tokio::sync::Mutex;
-use utils::{app::App, error, package::PackageJson};
-use volt_core::{command::Command, model::lock_file::LockFile, VERSION};
+use utils::app::App;
+use volt_core::{command::Command, VERSION};
 /// Struct implementation for the `Remove` command.
 pub struct Remove;
 

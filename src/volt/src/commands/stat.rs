@@ -16,15 +16,11 @@
 
 //! Display stats on a specific package
 
-use std::sync::Arc;
-
+use crate::App;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use reqwest::get;
-use serde_json::{from_str, Value};
-use std::process;
-use utils::{app::App, error};
+use std::sync::Arc;
 use volt_core::{command::Command, VERSION};
 
 /// Struct implementation for the `stat` command.

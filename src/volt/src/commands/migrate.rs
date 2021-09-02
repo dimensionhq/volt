@@ -16,17 +16,13 @@
 
 //!  Migrates a package from your direct dependencies.
 
-use std::{env, fs, process, sync::Arc};
-
-use crate::commands::install::Install;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use utils::{app::App, error};
-use volt_core::{
-    classes::package_manager::PackageManager, command::Command, prompt::prompts::Select, VERSION,
-};
+use utils::app::App;
+use volt_core::{command::Command, VERSION};
 /// Struct implementation for the `Migrate` command.
 pub struct Migrate;
 

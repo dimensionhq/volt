@@ -9,37 +9,29 @@ pub mod volt_api;
 use app::App;
 use errors::VoltError;
 use flate2::read::GzDecoder;
-use futures_util::stream::FuturesUnordered;
-use futures_util::StreamExt;
-use git_config::file::GitConfig;
-use git_config::parser::Parser;
+use futures_util::{stream::FuturesUnordered, StreamExt};
+use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
-use jwalk::WalkDir;
 use lz4::Decoder;
 use miette::DiagnosticResult;
 use package::Package;
 use reqwest::StatusCode;
-use ssri::Algorithm;
-use ssri::Integrity;
-use std::borrow::Cow;
-use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::env::temp_dir;
-use std::ffi::OsStr;
-use std::fs::read_to_string;
-use std::fs::File;
-use std::io::Cursor;
-use std::io::Read;
-use std::io::Write;
-use std::path::Component;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use ssri::{Algorithm, Integrity};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    convert::TryFrom,
+    env::temp_dir,
+    ffi::OsStr,
+    fs::{read_to_string, File},
+    io::{Cursor, Read, Write},
+    path::{Component, Path, PathBuf},
+    sync::Arc,
+};
 use tar::Archive;
 use tokio::fs::create_dir_all;
-use tokio::fs::hard_link;
-use volt_api::VoltPackage;
-use volt_api::VoltResponse;
+use volt_api::{VoltPackage, VoltResponse};
 
 use crate::constants::MAX_RETRIES;
 use crate::volt_api::JSONVoltResponse;
