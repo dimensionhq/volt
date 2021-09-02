@@ -1,24 +1,23 @@
 /*
-    Copyright 2021 Volt Contributors
+Copyright 2021 Volt Contributors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
-pub mod commands;
+mod commands;
 
 use std::sync::Arc;
 
-use add::command::Add;
 use clap::{
     Arg,
     ArgMatches,
@@ -26,6 +25,9 @@ use clap::{
 use colored::Colorize;
 use utils::app::App;
 use volt_core::command::Command;
+
+use crate::commands::add::*;
+use crate::commands::audit::*;
 
 pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()>
 {
@@ -44,12 +46,12 @@ async fn main() -> miette::DiagnosticResult<()>
     let volt_help = format!(
         r#"{} {}
 
-Usage: {} [{}] [{}]
+        Usage: {} [{}] [{}]
 
-Displays help information.
+        Displays help information.
 
-Commands:
-  {} add"#,
+        Commands:
+        {} add"#,
         "volt".bright_green().bold(),
         "1.0.0",
         "volt".bright_green().bold(),
@@ -74,9 +76,22 @@ Commands:
                 ),
         );
 
-    let matches = app.get_matches();
+    // let matches = app.get_matches();
+    let matches = app.try_get_matches();
+    match matches {
+        | Ok(_) => {
+            println!("Is ok!");
+        }
+        | Err(_) => {
+            println!("Failed!");
+            for arg in std::env::args().skip(1) {
+                println!("{:?}", arg);
+            }
+        }
+    }
+    // app.get_arguments()
 
-    map_subcommand(matches).await?;
+    // map_subcommand(matches).await?;
 
     Ok(())
 }

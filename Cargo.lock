@@ -3,21 +3,6 @@
 version = 3
 
 [[package]]
-name = "add"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "futures",
- "indicatif",
- "init",
- "miette",
- "tokio",
- "utils",
- "volt_core",
-]
-
-[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -105,24 +90,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "audit"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "regex",
- "serde",
- "serde_json",
- "utils",
- "volt_core",
- "walkdir",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -157,9 +124,9 @@ checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 
 [[package]]
 name = "bat"
-version = "0.18.2"
+version = "0.18.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5e5245fd3b048e7117e7f2a0ad479d51a009d452aa8c57927cdb41c6c55ed07"
+checksum = "5a069bad29696ecaa51ac79d3eb87abe3b65c7808ab2b3836afd9bd6c4009362"
 dependencies = [
  "ansi_colours",
  "ansi_term 0.12.1",
@@ -268,9 +235,9 @@ dependencies = [
 
 [[package]]
 name = "bugreport"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0e97e538864a7c95d33accbf64c8d354018ba3b6e032502fd0fe7259cf1aa3d"
+checksum = "0014b4b2b4f63bfe69c3838470121290cc437fdc79785d408a761a21e8b2404c"
 dependencies = [
  "git-version",
  "shell-escape",
@@ -302,18 +269,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b700ce4376041dcd0a327fd0097c41095743c4c8af8887265942faf1100bd040"
 
 [[package]]
-name = "cache"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "indicatif",
- "miette",
- "utils",
- "volt_core",
-]
-
-[[package]]
 name = "cache-padded"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -342,17 +297,6 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
-name = "check"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "utils",
- "volt_core",
-]
 
 [[package]]
 name = "chrono"
@@ -437,17 +381,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clone"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "utils",
- "volt_core",
-]
-
-[[package]]
 name = "colored"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -456,17 +389,6 @@ dependencies = [
  "atty",
  "lazy_static",
  "winapi",
-]
-
-[[package]]
-name = "compress"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "utils",
- "volt_core",
 ]
 
 [[package]]
@@ -573,22 +495,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81156fece84ab6a9f2afdb109ce3ae577e42b1228441eded99bd77f627953b1a"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "create"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "dialoguer",
- "flate2",
- "init",
- "miette",
- "tar",
- "tokio",
- "utils",
- "volt_core",
 ]
 
 [[package]]
@@ -781,17 +687,6 @@ dependencies = [
  "pkg-config",
  "vcpkg",
  "winapi",
-]
-
-[[package]]
-name = "deploy"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "utils",
- "volt_core",
 ]
 
 [[package]]
@@ -1067,17 +962,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fix"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "utils",
- "volt_core",
-]
-
-[[package]]
 name = "flate2"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1324,9 +1208,9 @@ dependencies = [
 
 [[package]]
 name = "git-version"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94918e83f1e01dedc2e361d00ce9487b14c58c7f40bab148026fa39d42cb41e2"
+checksum = "f6b0decc02f4636b9ccad390dcbe77b722a77efedfa393caf8379a51d5c61899"
 dependencies = [
  "git-version-macro",
  "proc-macro-hack",
@@ -1334,9 +1218,9 @@ dependencies = [
 
 [[package]]
 name = "git-version-macro"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34a97a52fdee1870a34fa6e4b77570cba531b27d1838874fef4429a791a3d657"
+checksum = "fe69f1cbdb6e28af2bac214e943b99ce8a0a06b447d15d3e61161b0423139f3f"
 dependencies = [
  "proc-macro-hack",
  "proc-macro2",
@@ -1346,9 +1230,9 @@ dependencies = [
 
 [[package]]
 name = "git2"
-version = "0.13.20"
+version = "0.13.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9831e983241f8c5591ed53f17d874833e2fa82cac2625f3888c50cbfe136cba"
+checksum = "659cd14835e75b64d9dba5b660463506763cf0aa6cb640aeeb0e98d841093490"
 dependencies = [
  "bitflags",
  "libc",
@@ -1431,17 +1315,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
 dependencies = [
  "unicode-segmentation",
-]
-
-[[package]]
-name = "help"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "utils",
- "volt_core",
 ]
 
 [[package]]
@@ -1573,48 +1446,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "info"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "bat",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "prettytable-rs",
- "regex",
- "utils",
- "volt_core",
- "walkdir",
-]
-
-[[package]]
-name = "init"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "regex",
- "utils",
- "volt_core",
-]
-
-[[package]]
-name = "install"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "miette",
- "utils",
- "volt_core",
-]
-
-[[package]]
 name = "instant"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1703,9 +1534,9 @@ checksum = "dd25036021b0de88a0aff6b850051563c6516d0bf53f8638938edbb9de732736"
 
 [[package]]
 name = "jobserver"
-version = "0.1.22"
+version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "972f5ae5d1cb9c6ae417789196c803205313edde988685da5e3aae0827b9e7fd"
+checksum = "af25a77299a7f711a01975c35a6a424eb6862092cc2d6c72c4ed6cbc56dfc1fa"
 dependencies = [
  "libc",
 ]
@@ -1772,9 +1603,9 @@ checksum = "12b8adadd720df158f4d70dfe7ccc6adb0472d7c55ca83445f6a5ab3e36f8fb6"
 
 [[package]]
 name = "libgit2-sys"
-version = "0.12.21+1.1.0"
+version = "0.12.22+1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86271bacd72b2b9e854c3dcfb82efd538f15f870e4c11af66900effb462f6825"
+checksum = "89c53ac117c44f7042ad8d8f5681378dfbc6010e49ec2c0d1f11dfedc7a4a1c3"
 dependencies = [
  "cc",
  "libc",
@@ -1820,22 +1651,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 
 [[package]]
-name = "list"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "utils",
- "volt_core",
- "walkdir",
-]
-
-[[package]]
 name = "lock_api"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0382880606dff6d15c9476c416d18690b72742aa7b605bb6dd6ec9030fbf07eb"
+checksum = "712a4d093c9976e24e7dbca41db895dabcbac38eb5f4045393d17a95bdfb1109"
 dependencies = [
  "scopeguard",
 ]
@@ -1847,38 +1666,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51b9bbe6c47d51fc3e1a9b945965946b4c44142ab8792c50835a980d362c2710"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "login"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "regex",
- "utils",
- "volt_core",
- "walkdir",
-]
-
-[[package]]
-name = "logout"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "regex",
- "utils",
- "volt_core",
- "walkdir",
 ]
 
 [[package]]
@@ -1968,18 +1755,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "migrate"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "install",
- "miette",
- "utils",
- "volt_core",
 ]
 
 [[package]]
@@ -2206,38 +1981,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6acbef58a60fe69ab50510a55bc8cdd4d6cf2283d27ad338f54cb52747a9cf2d"
 
 [[package]]
-name = "outdated"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "regex",
- "utils",
- "volt_core",
- "walkdir",
-]
-
-[[package]]
-name = "owner"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "regex",
- "utils",
- "volt_core",
- "walkdir",
-]
-
-[[package]]
 name = "owo-colors"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2251,9 +1994,9 @@ checksum = "427c3892f9e783d91cc128285287e70a59e206ca452770ece88a76f7a3eddd72"
 
 [[package]]
 name = "parking_lot"
-version = "0.11.1"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d7744ac029df22dca6284efe4e898991d28e3085c706c972bcd7da4a27a15eb"
+checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
 dependencies = [
  "instant",
  "lock_api",
@@ -2262,9 +2005,9 @@ dependencies = [
 
 [[package]]
 name = "parking_lot_core"
-version = "0.8.3"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa7a782938e745763fe6907fc6ba86946d72f49fe7e21de074e08128a99fb018"
+checksum = "d76e8e1493bcac0d2766c42737f34458f1c8c50c0d23bcb24ea953affb273216"
 dependencies = [
  "cfg-if",
  "instant",
@@ -2338,9 +2081,9 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 
 [[package]]
 name = "plist"
-version = "1.1.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "679104537029ed2287c216bfb942bbf723f48ee98f0aef15611634173a74ef21"
+checksum = "a38d026d73eeaf2ade76309d0c65db5a35ecf649e3cec428db316243ea9d6711"
 dependencies = [
  "base64 0.13.0",
  "chrono",
@@ -2464,22 +2207,6 @@ checksum = "95b4ce31ff0a27d93c8de1849cf58162283752f065a90d508f1105fa6c9a213f"
 dependencies = [
  "idna",
  "url",
-]
-
-[[package]]
-name = "publish"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "regex",
- "utils",
- "volt_core",
- "walkdir",
 ]
 
 [[package]]
@@ -2695,19 +2422,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 
 [[package]]
-name = "remove"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "init",
- "miette",
- "tokio",
- "utils",
- "volt_core",
-]
-
-[[package]]
 name = "remove_dir_all"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2904,32 +2618,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "run"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "cache",
- "clone",
- "colored",
- "compress",
- "create",
- "deploy",
- "fix",
- "help",
- "init",
- "install",
- "list",
- "miette",
- "migrate",
- "remove",
- "scripts",
- "utils",
- "volt_core",
- "watch",
-]
-
-[[package]]
 name = "rust-argon2"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3034,17 +2722,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
-name = "scripts"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "utils",
- "volt_core",
-]
-
-[[package]]
 name = "sct"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3052,21 +2729,6 @@ checksum = "b362b83898e0e69f38515b82ee15aa80636befe47c3b6d3d89a911e78fc228ce"
 dependencies = [
  "ring",
  "untrusted",
-]
-
-[[package]]
-name = "search"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "isahc",
- "miette",
- "prettytable-rs",
- "serde",
- "serde_json",
- "utils",
- "volt_core",
 ]
 
 [[package]]
@@ -3219,28 +2881,14 @@ dependencies = [
 
 [[package]]
 name = "serde_yaml"
-version = "0.8.17"
+version = "0.8.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15654ed4ab61726bf918a39cb8d98a2e2995b002387807fa6ba58fdf7f59bb23"
+checksum = "ad104641f3c958dab30eb3010e834c2622d1f3f4c530fef1dee20ad9485f3c09"
 dependencies = [
  "dtoa",
- "linked-hash-map",
+ "indexmap",
  "serde",
  "yaml-rust",
-]
-
-[[package]]
-name = "set"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "miette",
- "regex",
- "utils",
- "volt_core",
 ]
 
 [[package]]
@@ -3313,9 +2961,9 @@ checksum = "b6fa3938c99da4914afedd13bf3d79bcb6c277d1b2c398d23257a304d9e1b074"
 
 [[package]]
 name = "signal-hook"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "470c5a6397076fae0094aaf06a08e6ba6f37acb77d3b1b91ea92b4d6c8650c39"
+checksum = "9c98891d737e271a2954825ef19e46bd16bdb98e2746f2eec4f7a4ef7946efd1"
 dependencies = [
  "libc",
  "signal-hook-registry",
@@ -3423,19 +3071,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e113fb6f3de07a243d434a56ec6f186dfd51cb08448239fe7bcae73f87ff28ff"
 dependencies = [
  "version_check",
-]
-
-[[package]]
-name = "stat"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "colored",
- "miette",
- "reqwest",
- "serde_json",
- "utils",
- "volt_core",
 ]
 
 [[package]]
@@ -3548,9 +3183,9 @@ dependencies = [
 
 [[package]]
 name = "syntect"
-version = "4.5.0"
+version = "4.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bfac2b23b4d049dc9a89353b4e06bbc85a8f42020cccbe5409a115cf19031e5"
+checksum = "8b20815bbe80ee0be06e6957450a841185fcf690fe0178f14d77a05ce2caa031"
 dependencies = [
  "bincode",
  "bitflags",
@@ -3579,22 +3214,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tag"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "regex",
- "utils",
- "volt_core",
- "walkdir",
-]
-
-[[package]]
 name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3609,22 +3228,6 @@ dependencies = [
  "filetime",
  "libc",
  "xattr",
-]
-
-[[package]]
-name = "team"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "regex",
- "utils",
- "volt_core",
- "walkdir",
 ]
 
 [[package]]
@@ -3673,9 +3276,9 @@ dependencies = [
 
 [[package]]
 name = "termimad"
-version = "0.14.2"
+version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f97a06798c64fce2120a9a89413c33c55e9c6ad85654774aaf7c1d279018c639"
+checksum = "d1ea6e542eaec310898d8ba84e5dbda91e95b27e5e023722f0140ca57d72136e"
 dependencies = [
  "crossbeam",
  "crossterm",
@@ -4015,30 +3618,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
-name = "update"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "cache",
- "clone",
- "colored",
- "compress",
- "create",
- "deploy",
- "help",
- "init",
- "install",
- "list",
- "miette",
- "migrate",
- "remove",
- "scripts",
- "utils",
- "volt_core",
-]
-
-[[package]]
 name = "ureq"
 version = "1.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4129,33 +3708,29 @@ checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
 name = "volt"
 version = "0.0.1"
 dependencies = [
- "add",
- "audit",
- "cache",
+ "async-trait",
+ "bat",
  "clap 3.0.0-beta.4",
- "clone",
  "colored",
- "compress",
- "create",
- "deploy",
- "fix",
- "help",
- "info",
- "init",
- "install",
- "list",
+ "dialoguer",
+ "flate2",
+ "futures",
+ "indicatif",
+ "isahc",
  "miette",
- "migrate",
- "remove",
- "run",
- "scripts",
- "search",
- "stat",
+ "prettytable-rs",
+ "regex",
+ "reqwest",
+ "rslint_parser",
+ "serde",
+ "serde_json",
+ "syntect",
+ "tar",
+ "termimad",
  "tokio",
- "update",
  "utils",
  "volt_core",
- "watch",
+ "walkdir",
 ]
 
 [[package]]
@@ -4291,29 +3866,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7cff876b8f18eed75a66cf49b65e7f967cb354a7aa16003fb55dbfd25b44b4f"
 
 [[package]]
-name = "watch"
-version = "0.0.1"
-dependencies = [
- "add",
- "async-trait",
- "colored",
- "dialoguer",
- "indicatif",
- "miette",
- "regex",
- "rslint_cli",
- "rslint_config",
- "rslint_core",
- "rslint_parser",
- "serde_json",
- "syntect",
- "termimad",
- "utils",
- "volt_core",
- "walkdir",
-]
-
-[[package]]
 name = "web-sys"
 version = "0.3.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4417,9 +3969,9 @@ dependencies = [
 
 [[package]]
 name = "xml-rs"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b07db065a5cf61a7e4ba64f29e67db906fb1787316516c4e6e5ff0fea1efcd8a"
+checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
 
 [[package]]
 name = "yaml-rust"
