@@ -1,4 +1,4 @@
-use crate::utils::{enable_ansi_support, errors::VoltError};
+use crate::core::utils::{enable_ansi_support, errors::VoltError};
 use clap::ArgMatches;
 use dirs::home_dir;
 use miette::DiagnosticResult;

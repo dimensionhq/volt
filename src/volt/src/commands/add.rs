@@ -3,7 +3,7 @@ Copyright 2021 Volt Contributors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,34 +13,27 @@ limitations under the License.
 
 //! Add a package to the dependencies for your project.
 
+use crate::{
+    commands::init::Init,
+    core::model::lock_file::{DependencyID, DependencyLock, LockFile},
+    core::utils::package::PackageJson,
+    core::utils::voltapi::{VoltPackage, VoltResponse},
+    core::utils::{constants::PROGRESS_CHARS, install_extract_package, npm::get_versions},
+    core::{command::Command, VERSION},
+    App,
+};
+
 use std::collections::HashMap;
 use std::io::Write;
 use std::process::exit;
 use std::sync::Arc;
 use std::time::Instant;
 
-use crate::commands::init::Init;
-
 use async_trait::async_trait;
 use colored::Colorize;
-
 use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
-
 use indicatif::{ProgressBar, ProgressStyle};
-
 use miette::DiagnosticResult;
-use utils::app::App;
-use utils::constants::PROGRESS_CHARS;
-use utils::npm::get_versions;
-use utils::{error, install_extract_package};
-
-use utils::package::PackageJson;
-
-use utils::volt_api::{VoltPackage, VoltResponse};
-
-use volt_core::model::lock_file::{DependencyID, DependencyLock, LockFile};
-
-use volt_core::{command::Command, VERSION};
 
 /// Struct implementation for the `Add` command.
 #[derive(Clone)]
@@ -52,15 +45,15 @@ impl Command for Add {
     fn help() -> String {
         format!(
             r#"volt {}
-    
-Add a package to your project's dependencies.
-Usage: {} {} {} {}
-Options: 
-    
-  {} {} Output the version number.
-  {} {} Output verbose messages on internal operations.
-  {} {} Adds package as a dev dependency
-  {} {} Disable progress bar."#,
+
+            Add a package to your project's dependencies.
+            Usage: {} {} {} {}
+            Options:
+
+            {} {} Output the version number.
+            {} {} Output verbose messages on internal operations.
+            {} {} Adds package as a dev dependency
+            {} {} Disable progress bar."#,
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
             "add".bright_purple(),
@@ -104,7 +97,7 @@ Options:
 
         // Check if package.json exists, otherwise, let the user know.
         if !app.current_dir.join("package.json").exists() {
-            error!("no package.json found.");
+            crate::error!("no package.json found.");
             print!("Do you want to initialize package.json (Y/N): ");
 
             std::io::stdout().flush().expect("Could not flush stdout");
@@ -154,13 +147,13 @@ Options:
         );
 
         let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
-            utils::get_volt_response_multi(&versions, &progress_bar)
+            crate::core::utils::get_volt_response_multi(&versions, &progress_bar)
                 .await
                 .into_iter()
                 .collect()
         } else {
             vec![
-                utils::get_volt_response(
+                crate::core::utils::get_volt_response(
                     &packages[0],
                     &versions[0].2,
                     versions[0].3.clone(),
@@ -230,7 +223,7 @@ Options:
 
                 if let Some(peer_deps) = &object.peer_dependencies {
                     for dep in peer_deps {
-                        if !utils::check_peer_dependency(&dep) {
+                        if !crate::core::utils::check_peer_dependency(&dep) {
                             progress_bar.println(format!(
                                 "{}{} {} has unmet peer dependency {}",
                                 " warn ".black().bright_yellow(),

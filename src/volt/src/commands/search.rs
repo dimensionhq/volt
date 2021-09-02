@@ -21,7 +21,7 @@ use crate::App;
 use miette::DiagnosticResult;
 use std::sync::Arc;
 // use search::SearchResp;
-use volt_core::{command::Command, VERSION};
+use crate::core::{command::Command, VERSION};
 
 fn truncate(s: &str, max_chars: usize) -> String {
     match s.char_indices().nth(max_chars) {

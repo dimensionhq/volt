@@ -4,10 +4,9 @@ pub mod errors;
 pub mod helper;
 pub mod npm;
 pub mod package;
-pub mod utils;
 pub mod voltapi;
 
-use crate::utils::voltapi::{VoltPackage, VoltResponse};
+use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
 use app::App;
 use errors::VoltError;
 use flate2::read::GzDecoder;
@@ -34,8 +33,8 @@ use std::{
 use tar::Archive;
 use tokio::fs::create_dir_all;
 
-use crate::utils::constants::MAX_RETRIES;
-use crate::utils::voltapi::JSONVoltResponse;
+use crate::core::utils::constants::MAX_RETRIES;
+use crate::core::utils::voltapi::JSONVoltResponse;
 
 /// decompress lz4 compressed json data
 /// lz4 has the fastest decompression speeds

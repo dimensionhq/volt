@@ -16,27 +16,21 @@
 
 //! Installs dependencies for a project.
 
+use crate::{core::VERSION, App, Command};
+
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use utils::app::App;
-// use utils::package::PackageJson;
-use volt_core::{
-    command::Command,
-    VERSION,
-};
 
 /// Struct implementation for the `Install` command.
 pub struct Install;
 
 #[async_trait]
-impl Command for Install
-{
+impl Command for Install {
     /// Display a help menu for the `volt install` command.
-    fn help() -> String
-    {
+    fn help() -> String {
         format!(
             r#"volt {}
         
@@ -74,8 +68,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> DiagnosticResult<()>
-    {
+    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
         // let package_file
         Ok(())
     }

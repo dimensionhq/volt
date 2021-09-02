@@ -14,7 +14,7 @@
     limitations under the License.
 */
 
-use crate::utils::package::Package;
+use crate::core::utils::package::Package;
 use isahc::http::StatusCode;
 use isahc::AsyncReadResponseExt;
 use std::io;

@@ -17,8 +17,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use miette::DiagnosticResult;
-use volt_core::command::Command;
-use utils::app::App;
+use crate::Command;
+use crate::App;
 
 pub struct Outdated {}
 #[async_trait]

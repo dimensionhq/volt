@@ -18,8 +18,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use utils::app::App;
-use volt_core::{command::Command, VERSION};
+use crate::App;
+use crate::{core::VERSION, Command};
 
 pub struct List;
 

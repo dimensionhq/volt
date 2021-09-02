@@ -17,12 +17,13 @@
 use std::sync::Arc;
 
 // use crate::commands::scripts::Script;
+use crate::core::VERSION;
+use crate::App;
+use crate::Command;
+
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use utils::app::App;
-use volt_core::command::Command;
-use volt_core::VERSION;
 
 /// Struct implementation for the `Run` command.
 pub struct Run;

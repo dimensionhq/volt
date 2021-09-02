@@ -1,7 +1,6 @@
 [workspace]
 members = [
   "src/volt",
-  "src/volt_core",
   "src/rslint/rslint_parser",
   "src/rslint/rslint_errors",
   "src/rslint/rslint_lexer",
