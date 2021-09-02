@@ -154,7 +154,7 @@ Options:
                 .collect()
         } else {
             vec![
-                utils::get_volt_response(&packages[0], &versions[0].2, versions[0].3.clone()).await,
+                utils::get_volt_response(&packages[0], &versions[0].2, versions[0].3.clone(), versions[0].4.clone()).await,
             ]
             .into_iter()
             .collect()
