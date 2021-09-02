@@ -18,8 +18,9 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
+use crate::utils::app::App;
+
 use miette::DiagnosticResult;
-use utils::app::App;
 
 #[async_trait]
 pub trait Command {
