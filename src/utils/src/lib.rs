@@ -44,6 +44,8 @@ use volt_api::VoltResponse;
 use crate::constants::MAX_RETRIES;
 use crate::volt_api::JSONVoltResponse;
 
+/// decompress lz4 compressed json data
+/// lz4 has the fastest decompression speeds
 pub fn decompress(data: Vec<u8>) -> DiagnosticResult<Vec<u8>> {
     // initialize decoded data
     let mut decoded: Vec<u8> = Vec::new();
@@ -62,6 +64,7 @@ pub fn decompress(data: Vec<u8>) -> DiagnosticResult<Vec<u8>> {
     Ok(decoded)
 }
 
+/// convert a JSONVoltResponse -> VoltResponse
 pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse> {
     // initialize a hashmap to store the converted versions
     let mut converted_versions: HashMap<String, VoltPackage> = HashMap::new();
@@ -92,11 +95,11 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
 
         let integrity: Integrity =
             data.integrity
-                .clone()
-                .parse()
-                .map_err(|_| VoltError::HashParseError {
-                    hash: data.integrity.clone(),
-                })?;
+            .clone()
+            .parse()
+            .map_err(|_| VoltError::HashParseError {
+                hash: data.integrity.clone(),
+            })?;
 
         let algo = integrity.pick_algorithm();
 
@@ -129,7 +132,7 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
                 peer_dependencies: data.peer_dependencies.clone(),
                 dependencies: data.dependencies.clone(),
             },
-        );
+            );
     }
 
     // create a final hashmap
@@ -148,14 +151,14 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
 pub async fn get_volt_response(
     package_name: &String,
     hash: &String,
-    package: Option<VoltPackage>,
-) -> DiagnosticResult<VoltResponse> {
+    package: VoltPackage,
+    zero_deps: bool,
+    ) -> DiagnosticResult<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
-    if package.is_some() {
-        let package = package.as_ref().unwrap();
-
+    // only 1 package, zero dependencies
+    if zero_deps {
         let mut versions: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
 
         let mut nested_versions: HashMap<String, VoltPackage> = HashMap::new();
@@ -163,7 +166,7 @@ pub async fn get_volt_response(
         nested_versions.insert(
             format!("{}{}", package.name, package.version),
             package.clone(),
-        );
+            );
 
         versions.insert(package.clone().version, nested_versions);
 
@@ -173,12 +176,13 @@ pub async fn get_volt_response(
         });
     }
 
+    // loop until MAX_RETRIES reached.
     loop {
         // get a response
         let mut response =
             isahc::get_async(format!("http://push-2105.5centscdn.com/{}.json", hash))
-                .await
-                .map_err(VoltError::NetworkError)?;
+            .await
+            .map_err(VoltError::NetworkError)?;
 
         // check the status of the response
         match response.status() {
@@ -239,13 +243,15 @@ pub async fn get_volt_response(
 }
 
 pub async fn get_volt_response_multi(
-    versions: &Vec<(String, String, String, Option<VoltPackage>)>,
+    versions: &Vec<(String, String, String, VoltPackage, bool)>,
     pb: &ProgressBar,
-) -> Vec<DiagnosticResult<VoltResponse>> {
+    ) -> Vec<DiagnosticResult<VoltResponse>> {
     versions
         .into_iter()
-        .map(|(name, _, hash, package)| get_volt_response(&name, &hash, package.to_owned()))
-        .collect::<FuturesUnordered<_>>()
+        .map(|(name, _, hash, package, no_deps)| {
+            get_volt_response(&name, &hash, package.to_owned(), *no_deps)
+        })
+    .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
         .collect::<Vec<DiagnosticResult<VoltResponse>>>()
         .await
@@ -269,143 +275,145 @@ pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
 
             // node_modules/lib
             create_dir_all(format!(
-                "node_modules/{}",
-                &path
+                    "node_modules/{}",
+                    &path
                     .replace(
                         format!("{}", &app.volt_dir.display())
-                            .replace(r"\", "/")
-                            .as_str(),
+                        .replace(r"\", "/")
+                        .as_str(),
                         ""
-                    )
+                        )
                     .trim_end_matches(file_name)
-            ))
-            .await
-            .unwrap();
+                    ))
+                .await
+                .unwrap();
 
             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
             if !Path::new(&format!(
-                "node_modules{}",
-                &path.replace(
-                    format!("{}", &app.volt_dir.display())
+                    "node_modules{}",
+                    &path.replace(
+                        format!("{}", &app.volt_dir.display())
                         .replace(r"\", "/")
                         .as_str(),
-                    ""
-                )
-            ))
-            .exists()
-            {
-                hard_link(
-                    format!("{}", &path),
-                    format!(
-                        "node_modules{}",
-                        &path.replace(
-                            format!("{}", &app.volt_dir.display())
+                        ""
+                        )
+                    ))
+                .exists()
+                {
+                    hard_link(
+                        format!("{}", &path),
+                        format!(
+                            "node_modules{}",
+                            &path.replace(
+                                format!("{}", &app.volt_dir.display())
                                 .replace(r"\", "/")
                                 .as_str(),
-                            ""
-                        )
-                    ),
-                )
-                .await
-                .unwrap_or_else(|_| {
-                    0;
-                });
-            }
+                                ""
+                                )
+                            ),
+                            )
+                        .await
+                        .unwrap_or_else(|_| {
+                            0;
+                        });
+                }
         }
     }
 }
 
 #[cfg(unix)]
-pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
-    let mut src = src;
-    let volt_directory = format!("{}", app.volt_dir.display());
-
-    if !cfg!(target_os = "windows") {
-        src = src.replace(r"\", "/");
-    }
-
-    for entry in WalkDir::new(src) {
-        let entry = entry.unwrap();
-
-        if !entry.path().is_dir() {
-            // index.js
-            let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
-
-            // lib/index.js
-            let path = format!("{}", &entry.path().display())
-                .replace(r"\", "/")
-                .replace(&volt_directory, "");
-
-            // node_modules/lib
-            create_dir_all(format!(
-                "node_modules/{}",
-                &path
-                    .replace(
-                        format!("{}", &app.volt_dir.display())
-                            .replace(r"\", "/")
-                            .as_str(),
-                        ""
-                    )
-                    .trim_end_matches(file_name)
-            ))
-            .await
-            .unwrap();
-
-            // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
-            if !Path::new(&format!(
-                "node_modules{}",
-                &path.replace(
-                    format!("{}", &app.volt_dir.display())
-                        .replace(r"\", "/")
-                        .as_str(),
-                    ""
-                )
-            ))
-            .exists()
-            {
-                hard_link(
-                    format!("{}/.volt/{}", std::env::var("HOME").unwrap(), path),
-                    format!(
-                        "{}/node_modules{}",
-                        std::env::current_dir().unwrap().to_string_lossy(),
-                        &path.replace(
-                            format!("{}", &app.volt_dir.display())
-                                .replace(r"\", "/")
-                                .as_str(),
-                            ""
-                        )
-                    ),
-                )
-                .await
-                .unwrap_or_else(|e| {
-                    panic!(
-                        "{:#?}",
-                        (
-                            format!("{}", &path),
-                            format!(
-                                "node_modules{}",
-                                &path.replace(
-                                    format!("{}", &app.volt_dir.display())
-                                        .replace(r"\", "/")
-                                        .as_str(),
-                                    ""
-                                )
-                            ),
-                            e
-                        )
-                    )
-                });
-            }
-        }
-    }
-}
+/*
+ * pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
+ *     let mut src = src;
+ *     let volt_directory = format!("{}", app.volt_dir.display());
+ *
+ *     if !cfg!(target_os = "windows") {
+ *         src = src.replace(r"\", "/");
+ *     }
+ *
+ *     for entry in WalkDir::new(src) {
+ *         let entry = entry.unwrap();
+ *
+ *         if !entry.path().is_dir() {
+ *             // index.js
+ *             let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
+ *
+ *             // lib/index.js
+ *             let path = format!("{}", &entry.path().display())
+ *                 .replace(r"\", "/")
+ *                 .replace(&volt_directory, "");
+ *
+ *             // node_modules/lib
+ *             create_dir_all(format!(
+ *                 "node_modules/{}",
+ *                 &path
+ *                     .replace(
+ *                         format!("{}", &app.volt_dir.display())
+ *                             .replace(r"\", "/")
+ *                             .as_str(),
+ *                         ""
+ *                     )
+ *                     .trim_end_matches(file_name)
+ *             ))
+ *             .await
+ *             .unwrap();
+ *
+ *             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
+ *             if !Path::new(&format!(
+ *                 "node_modules{}",
+ *                 &path.replace(
+ *                     format!("{}", &app.volt_dir.display())
+ *                         .replace(r"\", "/")
+ *                         .as_str(),
+ *                     ""
+ *                 )
+ *             ))
+ *             .exists()
+ *             {
+ *                 hard_link(
+ *                     format!("{}/.volt/{}", std::env::var("HOME").unwrap(), path),
+ *                     format!(
+ *                         "{}/node_modules{}",
+ *                         std::env::current_dir().unwrap().to_string_lossy(),
+ *                         &path.replace(
+ *                             format!("{}", &app.volt_dir.display())
+ *                                 .replace(r"\", "/")
+ *                                 .as_str(),
+ *                             ""
+ *                         )
+ *                     ),
+ *                 )
+ *                 .await
+ *                 .unwrap_or_else(|e| {
+ *                     panic!(
+ *                         "{:#?}",
+ *                         (
+ *                             format!("{}", &path),
+ *                             format!(
+ *                                 "node_modules{}",
+ *                                 &path.replace(
+ *                                     format!("{}", &app.volt_dir.display())
+*                                         .replace(r"\", "/")
+*                                         .as_str(),
+*                                     ""
+*                                 )
+*                             ),
+*                             e
+*                         )
+*                     )
+*                 });
+*             }
+*         }
+*     }
+* }
+*/
 
 /// downloads tarball file from package
 pub async fn download_tarball(
     app: &App,
     package: &VoltPackage,
     secure: bool,
-) -> DiagnosticResult<()> {
+    ) -> DiagnosticResult<()> {
     let package_instance = package.clone();
 
     // @types/eslint
@@ -440,10 +448,14 @@ pub async fn download_tarball(
         // Get Tarball File
         let res = reqwest::get(url).await.unwrap();
 
+        // Tarball bytes response
         let bytes: bytes::Bytes = res.bytes().await.unwrap();
 
         let algorithm;
 
+        // there are only 2 supported algorithms
+        // sha1 and sha512
+        // so we can be sure that if it doesn't start with sha1, it's going to have to be sha512
         if package.integrity.starts_with("sha1") {
             algorithm = Algorithm::Sha1;
         } else {
@@ -458,6 +470,7 @@ pub async fn download_tarball(
             // Delete package from node_modules
             let node_modules_dep_path = app.node_modules_dir.join(&package.name);
 
+            // TODO: fix this
             // if node_modules_dep_path.exists() {
             //     remove_dir_all(&node_modules_dep_path).unwrap();
             // }
@@ -484,10 +497,10 @@ pub async fn download_tarball(
             }
 
             extract_directory = extract_directory.join(format!(
-                "{}-{}",
-                package.clone().name,
-                package.clone().version
-            ));
+                    "{}-{}",
+                    package.clone().name,
+                    package.clone().version
+                    ));
 
             // Initialize tarfile decoder while directly passing in bytes
 
@@ -524,12 +537,12 @@ pub async fn download_tarball(
 
                         std::fs::create_dir_all(
                             node_modules_dep_path_instance
-                                .to_path_buf()
-                                .join(new_path.clone())
-                                .parent()
-                                .unwrap(),
-                        )
-                        .unwrap();
+                            .to_path_buf()
+                            .join(new_path.clone())
+                            .parent()
+                            .unwrap(),
+                            )
+                            .unwrap();
 
                         entry
                             .unpack(node_modules_dep_path_instance.to_path_buf().join(new_path))
@@ -559,12 +572,12 @@ pub async fn download_tarball(
 
                         std::fs::create_dir_all(
                             extract_directory_instance
-                                .to_path_buf()
-                                .join(new_path.clone())
-                                .parent()
-                                .unwrap(),
-                        )
-                        .unwrap();
+                            .to_path_buf()
+                            .join(new_path.clone())
+                            .parent()
+                            .unwrap(),
+                            )
+                            .unwrap();
 
                         entry
                             .unpack(extract_directory_instance.to_path_buf().join(new_path))
@@ -575,120 +588,7 @@ pub async fn download_tarball(
                     }
                 })
             )
-            .unwrap();
-
-            // if cfg!(target_os = "windows") {
-            //     if Path::new(
-            //         format!(r"{}\package", &extract_directory_instance.to_str().unwrap()).as_str(),
-            //     )
-            //     .exists()
-            //     {
-            //         std::fs::rename(
-            //             format!(r"{}\package", &extract_directory_instance.to_str().unwrap()),
-            //             format!(
-            //                 r"{}\{}",
-            //                 &extract_directory_instance.to_str().unwrap(),
-            //                 package.clone().version
-            //             ),
-            //         )
-            //         .context("failed to rename dependency folder")
-            //         .unwrap();
-            //     } else {
-            //         if Path::new(
-            //             format!(r"{}/package", &extract_directory_instance.to_str().unwrap())
-            //                 .as_str(),
-            //         )
-            //         .exists()
-            //         {
-            //             std::fs::rename(
-            //                 format!(r"{}/package", &extract_directory_instance.to_str().unwrap()),
-            //                 format!(
-            //                     r"{}/{}",
-            //                     &extract_directory_instance.to_str().unwrap(),
-            //                     package.clone().version
-            //                 ),
-            //             )
-            //             .context("failed to rename dependency folder")
-            //             .unwrap();
-            //         }
-            //     }
-            //     if Path::new(
-            //         format!(
-            //             r"{}\package",
-            //             &node_modules_dep_path_instance.to_str().unwrap()
-            //         )
-            //         .as_str(),
-            //     )
-            //     .exists()
-            //     {
-            //         std::fs::rename(
-            //             format!(
-            //                 r"{}\package",
-            //                 &node_modules_dep_path_instance.to_str().unwrap()
-            //             ),
-            //             format!(
-            //                 r"{}\{}",
-            //                 &node_modules_dep_path_instance.to_str().unwrap(),
-            //                 package.clone().version
-            //             ),
-            //         )
-            //         .context("failed to rename dependency folder")
-            //         .unwrap();
-            //     } else {
-            //         if Path::new(
-            //             format!(
-            //                 r"{}/package",
-            //                 &node_modules_dep_path_instance.to_str().unwrap()
-            //             )
-            //             .as_str(),
-            //         )
-            //         .exists()
-            //         {
-            //             std::fs::rename(
-            //                 format!(
-            //                     r"{}/package",
-            //                     &node_modules_dep_path_instance.to_str().unwrap()
-            //                 ),
-            //                 format!(
-            //                     r"{}/{}",
-            //                     &node_modules_dep_path_instance.to_str().unwrap(),
-            //                     package.clone().version
-            //                 ),
-            //             )
-            //             .context("failed to rename dependency folder")
-            //             .unwrap();
-            //         }
-            //     }
-            // } else {
-            //     if Path::new(
-            //         format!(
-            //             r"{}/package",
-            //             &node_modules_dep_path_instance.to_str().unwrap()
-            //         )
-            //         .as_str(),
-            //     )
-            //     .exists()
-            //     {
-            //         std::fs::rename(
-            //             format!(
-            //                 r"{}/package",
-            //                 &node_modules_dep_path_instance.to_str().unwrap()
-            //             ),
-            //             format!(
-            //                 r"{}/{}",
-            //                 &node_modules_dep_path_instance.to_str().unwrap(),
-            //                 package.clone().version
-            //             ),
-            //         )
-            //         .context("failed to rename dependency folder")
-            //         .unwrap();
-            //     }
-            // }
-            // if let Some(parent) = node_modules_dep_path_instance.parent() {
-            //     if !parent.exists() {
-            //         create_dir_all(&parent).await?;
-            //     }
-            // }
+                .unwrap();
         } else {
             return Err(VoltError::ChecksumVerificationError)?;
         }
@@ -701,7 +601,7 @@ pub async fn download_tarball_create(
     _app: &App,
     package: &Package,
     name: &str,
-) -> DiagnosticResult<String> {
+    ) -> DiagnosticResult<String> {
     let file_name = format!("{}-{}.tgz", name, package.dist_tags.get("latest").unwrap());
     let temp_dir = temp_dir();
 
@@ -719,14 +619,14 @@ pub async fn download_tarball_create(
                 r"{}\.volt\{}",
                 std::env::var("USERPROFILE").unwrap(),
                 name.split("__").collect::<Vec<&str>>()[0]
-            );
+                );
         } else {
             // Check if ~/.volt\packagename exists
             package_dir_loc = format!(
                 r"{}\.volt\{}",
                 std::env::var("HOME").unwrap(),
                 name.split("__").collect::<Vec<&str>>()[0]
-            );
+                );
         }
 
         if !Path::new(&package_dir_loc).exists() {
@@ -792,6 +692,7 @@ pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
 }
 
 /// Gets a config key from git using the git cli.
+/// Uses `gitoxide` to read from your git configuration.
 pub fn get_git_config(app: &App, key: &str) -> Option<String> {
     match key {
         "user.name" => {
@@ -870,7 +771,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
             OPEN_EXISTING,
             0,
             null_mut(),
-        );
+            );
         if console_handle == INVALID_HANDLE_VALUE {
             return Err(GetLastError());
         }
@@ -887,7 +788,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
             if 0 == SetConsoleMode(
                 console_handle,
                 console_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-            ) {
+                ) {
                 return Err(GetLastError());
             }
         }
@@ -897,13 +798,15 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 }
 
 #[cfg(windows)]
+/// Generates the binary and other required scripts for the package
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
     // Create node_modules/scripts if it doesn't exist
     if !Path::new("node_modules/.bin").exists() {
+        // Create the binary directory
         std::fs::create_dir_all("node_modules/.bin").unwrap();
     }
 
-    // If the package has binary scripts, create them
+    // Create binary scripts for the package if they exist.
     if package.bin.is_some() {
         let bin = package.bin.as_ref().unwrap();
 
@@ -912,16 +815,16 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
 
         let command = format!(
             r#"
-@IF EXIST "%~dp0\node.exe" (
-    "%~dp0\node.exe"  "%~dp0\..\{}\{}" %*
-) ELSE (
-    @SETLOCAL
-    @SET PATHEXT=%PATHEXT:;.JS;=;%
-    node  "%~dp0\..\{}\{}" %*
-)"#,
-            k, v, k, v
-        )
-        .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
+            @IF EXIST "%~dp0\node.exe" (
+                "%~dp0\node.exe"  "%~dp0\..\{}\{}" %*
+                ) ELSE (
+                    @SETLOCAL
+                    @SET PATHEXT=%PATHEXT:;.JS;=;%
+                    node  "%~dp0\..\{}\{}" %*
+                    )"#,
+                    k, v, k, v
+                    )
+            .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
 
         let mut f = File::create(format!(r"node_modules/.bin/{}.cmd", k)).unwrap();
         f.write_all(command.as_bytes()).unwrap();
@@ -944,12 +847,12 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
 
         let command = format!(
             r#"
-node  "{}/.volt/{}/{}" %*
-"#,
+            node  "{}/.volt/{}/{}" %*
+            "#,
             app.volt_dir.to_string_lossy(),
             k,
             v,
-        );
+            );
         // .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
         let p = format!(r"node_modules/scripts/{}.sh", k);
         let mut f = File::create(p.clone()).unwrap();
@@ -960,6 +863,7 @@ node  "{}/.volt/{}/{}" %*
         f.write_all(command.as_bytes()).unwrap();
     }
 }
+
 // Unix functions
 #[cfg(unix)]
 pub fn enable_ansi_support() -> Result<(), u32> {
@@ -970,11 +874,14 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
 }
 
+/// package all steps for installation into 1 convinient function.
 pub async fn install_extract_package(
     app: &Arc<App>,
     package: &VoltPackage,
-) -> DiagnosticResult<()> {
+    ) -> DiagnosticResult<()> {
+    // if there's an error (most likely a checksum verification error) while using insecure http, retry.
     if download_tarball(&app, &package, false).await.is_err() {
+        // use https instead
         download_tarball(&app, &package, true)
             .await
             .unwrap_or_else(|_| {
@@ -983,16 +890,17 @@ pub async fn install_extract_package(
             });
     }
 
+    // generate the package's script
     generate_script(&app, package);
 
-    let directory = &app
-        .volt_dir
-        .join(package.version.clone())
-        .join(package.name.clone());
+    // let directory = &app
+    //     .volt_dir
+    //     .join(package.version.clone())
+    //     .join(package.name.clone());
 
-    let path = Path::new(directory.as_os_str());
+    // let path = Path::new(directory.as_os_str());
 
-    hardlink_files(app.to_owned(), (&path).to_path_buf()).await;
+    // hardlink_files(app.to_owned(), (&path).to_path_buf()).await;
 
     Ok(())
 }

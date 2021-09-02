@@ -24,54 +24,32 @@ use crate::commands::init::Init;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use futures::{
-    stream::FuturesUnordered,
-    StreamExt,
-    TryStreamExt,
-};
+use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 
-use indicatif::{
-    ProgressBar,
-    ProgressStyle,
-};
+use indicatif::{ProgressBar, ProgressStyle};
 
 use miette::DiagnosticResult;
 use utils::app::App;
 use utils::constants::PROGRESS_CHARS;
 use utils::npm::get_versions;
-use utils::{
-    error,
-    install_extract_package,
-};
+use utils::{error, install_extract_package};
 
 use utils::package::PackageJson;
 
-use utils::volt_api::{
-    VoltPackage,
-    VoltResponse,
-};
+use utils::volt_api::{VoltPackage, VoltResponse};
 
-use volt_core::model::lock_file::{
-    DependencyID,
-    DependencyLock,
-    LockFile,
-};
+use volt_core::model::lock_file::{DependencyID, DependencyLock, LockFile};
 
-use volt_core::{
-    command::Command,
-    VERSION,
-};
+use volt_core::{command::Command, VERSION};
 
 /// Struct implementation for the `Add` command.
 #[derive(Clone)]
 pub struct Add {}
 
 #[async_trait]
-impl Command for Add
-{
+impl Command for Add {
     /// Display a help menu for the `volt add` command.
-    fn help() -> String
-    {
+    fn help() -> String {
         format!(
             r#"volt {}
     
@@ -114,27 +92,15 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()>
-    {
-        // Display help menu if `volt add` is run.
-        if app.args.len() == 1 {
-            println!("{}", Self::help());
-            exit(0);
-        }
+    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+        let mut packages = app
+            .args
+            .values_of("package-name")
+            .unwrap()
+            .map(|v| v.to_string())
+            .collect::<Vec<String>>();
 
-        // TODO: BENCHMARK COPYING VS HARD LINKING.
-        // TODO: BENCHMARK COPYING VS HARD LINKING.
-        // TODO: BENCHMARK COPYING VS HARD LINKING.
-        // TODO: BENCHMARK COPYING VS HARD LINKING.
-
-        let mut packages = vec![];
-
-        // Add packages to the packages vec.
-        for arg in app.args.iter() {
-            if arg != "add" {
-                packages.push(arg.clone());
-            }
-        }
+        packages.dedup();
 
         // Check if package.json exists, otherwise, let the user know.
         if !app.current_dir.join("package.json").exists() {
@@ -155,12 +121,13 @@ Options:
         }
 
         // Load the existing package.json file
-        let package_file = PackageJson::from("package.json");
+        let mut package_file = PackageJson::from("package.json");
 
         let start = Instant::now();
+
         // Get the integrity hash and version of the requested package.
         let versions = get_versions(&packages).await?;
-        println!("{}", start.elapsed().as_secs_f32());
+
         let lockfile_path = &app.lock_file_path;
 
         let global_lockfile = &app.home_dir.join(".global.lock");
@@ -186,8 +153,6 @@ Options:
                 )),
         );
 
-        let start = Instant::now();
-
         let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
             utils::get_volt_response_multi(&versions, &progress_bar)
                 .await
@@ -195,7 +160,13 @@ Options:
                 .collect()
         } else {
             vec![
-                utils::get_volt_response(&packages[0], &versions[0].2, versions[0].3.clone()).await,
+                utils::get_volt_response(
+                    &packages[0],
+                    &versions[0].2,
+                    versions[0].3.clone(),
+                    versions[0].4.clone(),
+                )
+                .await,
             ]
             .into_iter()
             .collect()
@@ -209,6 +180,7 @@ Options:
             let current_version = res.versions.get(&res.version).unwrap();
             dependencies.extend(current_version.clone());
         }
+
         let end = Instant::now();
 
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
@@ -251,7 +223,7 @@ Options:
             }
         }
 
-        let dependencies: Vec<_> = dependencies
+        let mut dependencies: Vec<_> = dependencies
             .iter()
             .map(|(_name, object)| {
                 let mut lock_dependencies: Vec<String> = vec![];
@@ -317,6 +289,8 @@ Options:
                 )),
         );
 
+        dependencies.dedup();
+
         dependencies
             .into_iter()
             .map(|v| install_extract_package(&app, &v))
@@ -327,6 +301,12 @@ Options:
             .unwrap();
 
         progress_bar.finish();
+
+        for (index, _) in packages.iter().enumerate() {
+            let data = &versions[index];
+
+            package_file.add_dependency(data.0.clone(), data.1.clone());
+        }
 
         Ok(())
     }

@@ -65,24 +65,24 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
-        let args: Vec<String> = app.args.clone();
+        // let args: Vec<String> = app.args.clone();
 
-        if args.is_empty() {
-            println!("{} expected repository url", "error".error_style());
-        }
+        // if args.is_empty() {
+        //     println!("{} expected repository url", "error".error_style());
+        // }
 
-        let exit_code = process::Command::new("cmd")
-            .arg(format!("/C git clone {} --depth=1", args[0]).as_str())
-            .status()
-            .unwrap();
+        // let exit_code = process::Command::new("cmd")
+        //     .arg(format!("/C git clone {} --depth=1", args[0]).as_str())
+        //     .status()
+        //     .unwrap();
 
-        if exit_code.success() {
-            process::Command::new("volt")
-                .arg("install")
-                .spawn()
-                .unwrap();
-        } else {
-        }
+        // if exit_code.success() {
+        //     process::Command::new("volt")
+        //         .arg("install")
+        //         .spawn()
+        //         .unwrap();
+        // } else {
+        // }
 
         Ok(())
     }

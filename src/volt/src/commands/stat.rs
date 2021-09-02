@@ -58,95 +58,95 @@ Usage: {} {} {}"#,
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
-        let args = &app.args;
+        // let args = &app.args;
 
-        if args.len() <= 1 {
-            error!("Missing Package Name!");
-            process::exit(1);
-        }
+        // if args.len() <= 1 {
+        //     error!("Missing Package Name!");
+        //     process::exit(1);
+        // }
 
-        let package = &args[1];
+        // let package = &args[1];
 
-        println!(
-            "{}{}\n",
-            "Download stats for ".bright_cyan().bold(),
-            package.bright_cyan().bold()
-        );
+        // println!(
+        //     "{}{}\n",
+        //     "Download stats for ".bright_cyan().bold(),
+        //     package.bright_cyan().bold()
+        // );
 
-        // Get downloads for the past week
-        let url = format!(
-            "https://api.npmjs.org/downloads/point/last-week/{}",
-            package
-        );
+        // // Get downloads for the past week
+        // let url = format!(
+        //     "https://api.npmjs.org/downloads/point/last-week/{}",
+        //     package
+        // );
 
-        let response = get(url).await.unwrap_or_else(|e| {
-            eprintln!("{}", e.to_string());
-            std::process::exit(1)
-        });
+        // let response = get(url).await.unwrap_or_else(|e| {
+        //     eprintln!("{}", e.to_string());
+        //     std::process::exit(1)
+        // });
 
-        let file_contents = response.text().await.unwrap_or_else(|e| {
-            eprintln!("{}", e.to_string());
-            std::process::exit(1)
-        });
+        // let file_contents = response.text().await.unwrap_or_else(|e| {
+        //     eprintln!("{}", e.to_string());
+        //     std::process::exit(1)
+        // });
 
-        let data: Value = from_str(&file_contents).unwrap();
+        // let data: Value = from_str(&file_contents).unwrap();
 
-        let downloads = &data["downloads"];
-        println!(
-            "{} {}",
-            downloads.to_string().bright_green(),
-            "downloads in the past week!".bright_green()
-        );
+        // let downloads = &data["downloads"];
+        // println!(
+        //     "{} {}",
+        //     downloads.to_string().bright_green(),
+        //     "downloads in the past week!".bright_green()
+        // );
 
-        // Get downloads for the past month
-        let url = format!(
-            "https://api.npmjs.org/downloads/point/last-month/{}",
-            package
-        );
+        // // Get downloads for the past month
+        // let url = format!(
+        //     "https://api.npmjs.org/downloads/point/last-month/{}",
+        //     package
+        // );
 
-        let response = get(url).await.unwrap_or_else(|e| {
-            eprintln!("{}", e.to_string());
-            std::process::exit(1)
-        });
+        // let response = get(url).await.unwrap_or_else(|e| {
+        //     eprintln!("{}", e.to_string());
+        //     std::process::exit(1)
+        // });
 
-        let file_contents = response.text().await.unwrap_or_else(|e| {
-            eprintln!("{}", e.to_string());
-            std::process::exit(1)
-        });
+        // let file_contents = response.text().await.unwrap_or_else(|e| {
+        //     eprintln!("{}", e.to_string());
+        //     std::process::exit(1)
+        // });
 
-        let data: Value = serde_json::from_str(&file_contents).unwrap();
+        // let data: Value = serde_json::from_str(&file_contents).unwrap();
 
-        let downloads = &data["downloads"];
-        println!(
-            "{} {}",
-            downloads.to_string().bright_green(),
-            "downloads in the past month!".bright_green()
-        );
+        // let downloads = &data["downloads"];
+        // println!(
+        //     "{} {}",
+        //     downloads.to_string().bright_green(),
+        //     "downloads in the past month!".bright_green()
+        // );
 
-        // Get downloads for the past year
-        let url = format!(
-            "https://api.npmjs.org/downloads/point/last-year/{}",
-            package
-        );
+        // // Get downloads for the past year
+        // let url = format!(
+        //     "https://api.npmjs.org/downloads/point/last-year/{}",
+        //     package
+        // );
 
-        let response = get(url).await.unwrap_or_else(|e| {
-            eprintln!("{}", e.to_string());
-            process::exit(1)
-        });
+        // let response = get(url).await.unwrap_or_else(|e| {
+        //     eprintln!("{}", e.to_string());
+        //     process::exit(1)
+        // });
 
-        let file_contents = response.text().await.unwrap_or_else(|e| {
-            eprintln!("{}", e.to_string());
-            process::exit(1)
-        });
+        // let file_contents = response.text().await.unwrap_or_else(|e| {
+        //     eprintln!("{}", e.to_string());
+        //     process::exit(1)
+        // });
 
-        let data: Value = serde_json::from_str(&file_contents).unwrap();
+        // let data: Value = serde_json::from_str(&file_contents).unwrap();
 
-        let downloads = &data["downloads"];
-        println!(
-            "{} {}",
-            downloads.to_string().bright_green(),
-            "downloads in the past year!".bright_green()
-        );
+        // let downloads = &data["downloads"];
+        // println!(
+        //     "{} {}",
+        //     downloads.to_string().bright_green(),
+        //     "downloads in the past year!".bright_green()
+        // );
 
         Ok(())
     }

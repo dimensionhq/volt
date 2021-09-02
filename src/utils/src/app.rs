@@ -48,9 +48,7 @@ pub struct App {
     pub node_modules_dir: PathBuf,
     pub volt_dir: PathBuf,
     pub lock_file_path: PathBuf,
-    pub args: Vec<String>,
-    pub flags: Vec<AppFlag>,
-    pub unknown_flags: Vec<String>,
+    pub args: ArgMatches,
 }
 
 impl App {
@@ -79,41 +77,29 @@ impl App {
         // ./volt.lock
         let lock_file_path = current_directory.join("volt.lock");
 
-        let cli_args: Vec<String> = std::env::args().collect();
-
-        let mut refined_args: Vec<String> = Vec::new();
-
-        let mut flags: Vec<AppFlag> = Vec::new();
-        let mut unknown_flags: Vec<String> = Vec::new();
-
-        for arg in cli_args.into_iter().skip(1) {
-            if arg.starts_with("--") || arg.starts_with('-') {
-                match AppFlag::get(&arg) {
-                    Some(flag) => flags.push(flag),
-                    None => unknown_flags.push(arg),
-                }
-            } else {
-                refined_args.push(arg);
-            }
-        }
-
         Ok(App {
             current_dir: current_directory,
             home_dir: home_directory,
             node_modules_dir: node_modules_directory,
             volt_dir,
             lock_file_path,
-            args: refined_args,
-            flags,
-            unknown_flags,
+            args: args.to_owned(),
         })
     }
 
     /// Check if the app arguments contain the flags specified
-    pub fn has_flag(&self, flag: AppFlag) -> bool {
-        self.flags.contains(&flag)
+    pub fn has_flag(&self, flag: &str) -> bool {
+        self.args.is_present(flag)
     }
 
+    /// Calculate the hash of a tarball
+    ///
+    /// ## Examples
+    /// ```rs
+    /// calc_hash(bytes::Bytes::new(), ssri::Algorithm::Sha1)?;
+    /// ```
+    /// ## Returns
+    /// * DiagnosticResult<String>
     pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> DiagnosticResult<String> {
         match algorithm {
             Algorithm::Sha1 => {
