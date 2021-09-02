@@ -13,13 +13,12 @@
 
 //! Set a configuration option.
 
-use std::sync::Arc;
+use crate::App;
+use crate::Command;
 
 use async_trait::async_trait;
 use miette::DiagnosticResult;
-use volt_core::command::Command;
-
-use utils::app::App;
+use std::sync::Arc;
 
 pub struct Set {}
 

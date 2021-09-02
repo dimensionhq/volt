@@ -19,13 +19,13 @@ use std::fs::remove_file;
 use std::process::exit;
 use std::sync::Arc;
 
+use crate::coreutils::constants::PROGRESS_CHARS;
+use crate::App;
 use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::DiagnosticResult;
-use utils::app::App;
-use utils::constants::PROGRESS_CHARS;
-use volt_core::command::Command;
+use crate::Command;
 use volt_core::VERSION;
 
 /// Struct implementation for the `Add` command.

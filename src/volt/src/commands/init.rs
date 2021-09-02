@@ -14,15 +14,15 @@
     limitations under the License.
 */
 
+use crate::core::VERSION;
+
 use std::sync::Arc;
 
+use crate::App;
+use crate::Command;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use utils::app::App;
-use volt_core::command::Command;
-// use volt_core::utils;
-use volt_core::VERSION;
 
 /// Struct implementation for the `Init` command.
 pub struct Init;

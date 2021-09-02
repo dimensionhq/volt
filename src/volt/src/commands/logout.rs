@@ -17,8 +17,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use miette::DiagnosticResult;
-use utils::app::App;
-use volt_core::command::Command;
+use crate::App;
+use crate::Command;
 pub struct Logout {}
 #[async_trait]
 impl Command for Logout {

@@ -24,9 +24,10 @@ use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
-use utils::app::App;
-use volt_core::command::Command;
 use walkdir::WalkDir;
+
+use crate::core::command::Command;
+use crate::App;
 
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};

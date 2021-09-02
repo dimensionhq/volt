@@ -21,7 +21,7 @@ use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
 use std::sync::Arc;
-use volt_core::{command::Command, VERSION};
+use crate::{core::VERSION, Command};
 
 /// Struct implementation for the `stat` command.
 pub struct Stat;

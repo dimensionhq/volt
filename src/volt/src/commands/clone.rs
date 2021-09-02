@@ -13,14 +13,12 @@ limitations under the License.
 
 //! Clone and setup a repository from Github.
 
-use std::sync::Arc;
+use crate::{core::VERSION, App, Command};
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use utils::app::App;
-use volt_core::command::Command;
-use volt_core::VERSION;
+use std::sync::Arc;
 
 pub struct Clone {}
 

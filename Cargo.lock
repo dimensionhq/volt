@@ -3650,43 +3650,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "utils"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "base64 0.13.0",
- "bytes",
- "clap 3.0.0-beta.4",
- "colored",
- "console",
- "dialoguer",
- "dirs 3.0.2",
- "flate2",
- "futures",
- "futures-util",
- "git-config",
- "indicatif",
- "isahc",
- "jwalk",
- "lz4",
- "miette",
- "rand 0.8.4",
- "reqwest",
- "scopeguard",
- "semver_rs",
- "serde",
- "serde_json",
- "sha-1 0.9.6",
- "sha2 0.9.5",
- "ssri",
- "tar",
- "tempfile",
- "thiserror",
- "tokio",
- "winapi",
-]
-
-[[package]]
 name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3709,36 +3672,8 @@ name = "volt"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "bat",
- "clap 3.0.0-beta.4",
- "colored",
- "dialoguer",
- "flate2",
- "futures",
- "indicatif",
- "isahc",
- "miette",
- "prettytable-rs",
- "regex",
- "reqwest",
- "rslint_parser",
- "serde",
- "serde_json",
- "syntect",
- "tar",
- "termimad",
- "tokio",
- "utils",
- "volt_core",
- "walkdir",
-]
-
-[[package]]
-name = "volt_core"
-version = "0.0.1"
-dependencies = [
- "async-trait",
  "base64 0.13.0",
+ "bat",
  "bytes",
  "clap 3.0.0-beta.4",
  "colored",
@@ -3755,8 +3690,11 @@ dependencies = [
  "lazy_static",
  "lz4",
  "miette",
+ "prettytable-rs",
  "rand 0.8.4",
+ "regex",
  "reqwest",
+ "rslint_parser",
  "scopeguard",
  "semver_rs",
  "serde",
@@ -3765,10 +3703,13 @@ dependencies = [
  "sha2 0.9.5",
  "ssri",
  "structopt",
+ "syntect",
  "tar",
  "tempfile",
+ "termimad",
  "thiserror",
  "tokio",
+ "walkdir",
  "winapi",
 ]
 

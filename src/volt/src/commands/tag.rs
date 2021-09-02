@@ -13,12 +13,12 @@
 
 //! Check for outdated packages.
 
-use std::sync::Arc;
+use crate::App;
+use crate::Command;
 
 use async_trait::async_trait;
 use miette::DiagnosticResult;
-use utils::app::App;
-use volt_core::command::Command;
+use std::sync::Arc;
 
 pub struct Tag {}
 

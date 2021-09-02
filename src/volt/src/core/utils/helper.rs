@@ -54,15 +54,15 @@ impl<E: Display> ResultLogErrorExt for Result<(), E> {
 
 #[macro_export]
 macro_rules! error {
-    ($($tt:tt)*) => { print!("{} ", $crate::utils::helper::CustomColorize::error_style(" ERROR ")); println!($($tt)*); };
+    ($($tt:tt)*) => { print!("{} ", $crate::core::utils::helper::CustomColorize::error_style(" ERROR ")); println!($($tt)*); };
 }
 
 #[macro_export]
 macro_rules! warning {
-    ($($tt:tt)*) => { print!("{}", $crate::utils::helper::CustomColorize::warning_style("warning: ")); println!($($tt)*); };
+    ($($tt:tt)*) => { print!("{}", $crate::core::utils::helper::CustomColorize::warning_style("warning: ")); println!($($tt)*); };
 }
 
 #[macro_export]
 macro_rules! info {
-    ($($tt:tt)*) => { print!("{}", $crate::utils::helper::CustomColorize::info_style("info: ")); println!($($tt)*); };
+    ($($tt:tt)*) => { print!("{}", $crate::core::utils::helper::CustomColorize::info_style("info: ")); println!($($tt)*); };
 }

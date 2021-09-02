@@ -18,7 +18,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::utils::app::App;
+use crate::App;
 
 use miette::DiagnosticResult;
 

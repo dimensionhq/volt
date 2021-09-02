@@ -2,7 +2,7 @@
 
 use colored::Colorize;
 
-use crate::classes::meta::Meta;
+use crate::core::classes::meta::Meta;
 
 pub fn write(text: String, metadata: Meta) {
     if !metadata.silent {

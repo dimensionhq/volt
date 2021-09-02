@@ -19,7 +19,7 @@ use std::io::Result;
 use dialoguer::{console, theme::ColorfulTheme};
 use structopt::StructOpt;
 
-use crate::prompt::input;
+use crate::core::prompt::input;
 
 /// Prompt that returns `true` or `false` (as strings)
 #[derive(Debug, StructOpt)]
