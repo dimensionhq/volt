@@ -35,6 +35,7 @@ use std::io::Write;
 use std::path::Component;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Instant;
 use tar::Archive;
 use tokio::fs::create_dir_all;
 use tokio::fs::hard_link;
@@ -149,57 +150,30 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
 
 // Get response from volt CDN
 pub async fn get_volt_response(
-    package_name: &String,
-    hash: &String,
-    package: Option<VoltPackage>,
+    package_name: String,
+    version: String,
 ) -> DiagnosticResult<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
-    // only 1 package, zero dependencies
-    if package.is_some() {
-        let package = package.as_ref().unwrap();
-
-        let mut versions: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
-
-        let mut nested_versions: HashMap<String, VoltPackage> = HashMap::new();
-
-        nested_versions.insert(
-            format!("{}{}", package.name, package.version),
-            package.clone(),
-        );
-
-        versions.insert(package.clone().version, nested_versions);
-
-        return Ok(VoltResponse {
-            version: package.clone().version,
-            versions,
-        });
-    }
     // loop until MAX_RETRIES reached.
     loop {
         // get a response
-        let mut response =
-            isahc::get_async(format!("http://push-2105.5centscdn.com/{}.json", hash))
-                .await
-                .map_err(VoltError::NetworkError)?;
+        let start = Instant::now();
+        let mut response = isahc::get_async(format!(
+            "https://cdn.jsdelivr.net/npm/@voltpkg/{}/data.json",
+            package_name
+        ))
+        .await
+        .map_err(VoltError::NetworkError)?;
 
         // check the status of the response
         match response.status() {
             // 200 (OK)
             StatusCode::OK => {
-                let mut buf: Vec<u8> = vec![];
-
-                response
-                    .copy_to(&mut buf)
-                    .await
-                    .map_err(VoltError::NetworkRecError)?;
-
-                // decompress using lz4
-                let decoded = decompress(buf)?;
-
                 let deserialized: JSONVoltResponse =
-                    serde_json::from_slice(&decoded).map_err(|_| VoltError::DeserializeError)?;
+                    serde_json::from_str(response.text().await.unwrap().as_str())
+                        .map_err(|_| VoltError::DeserializeError)?;
 
                 let converted = convert(deserialized)?;
 
@@ -243,12 +217,12 @@ pub async fn get_volt_response(
 }
 
 pub async fn get_volt_response_multi(
-    versions: &Vec<(String, String, String, Option<VoltPackage>)>,
+    packages: Vec<(String, String)>,
     pb: &ProgressBar,
 ) -> Vec<DiagnosticResult<VoltResponse>> {
-    versions
+    packages
         .into_iter()
-        .map(|(name, _, hash, package)| get_volt_response(&name, &hash, package.to_owned()))
+        .map(|(name, version)| get_volt_response(name, version))
         .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
         .collect::<Vec<DiagnosticResult<VoltResponse>>>()
@@ -540,12 +514,12 @@ pub async fn download_tarball(
                         )
                         .unwrap();
 
-                        entry
+                        match entry
                             .unpack(node_modules_dep_path_instance.to_path_buf().join(new_path))
-                            .unwrap_or_else(|e| {
-                                println!("{:?}", e);
-                                std::process::exit(1);
-                            });
+                        {
+                            Ok(_v) => {}
+                            Err(_err) => {}
+                        }
                     }
                 }),
                 tokio::task::spawn_blocking(move || {
@@ -575,12 +549,17 @@ pub async fn download_tarball(
                         )
                         .unwrap();
 
-                        entry
-                            .unpack(extract_directory_instance.to_path_buf().join(new_path))
-                            .unwrap_or_else(|e| {
-                                println!("{:?}", e);
-                                std::process::exit(1);
-                            });
+                        match entry.unpack(extract_directory_instance.to_path_buf().join(new_path))
+                        {
+                            Ok(_v) => {}
+                            Err(err) => {
+                                let code = err.raw_os_error().unwrap();
+
+                                if code == 5 {
+                                    continue;
+                                }
+                            }
+                        }
                     }
                 })
             )

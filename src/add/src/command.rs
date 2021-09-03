@@ -89,7 +89,7 @@ Options:
     async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         let mut packages = app
             .args
-            .values_of("package-name")
+            .values_of("package-names")
             .unwrap()
             .map(|v| v.to_string())
             .collect::<Vec<String>>();
@@ -120,7 +120,7 @@ Options:
         let start = Instant::now();
 
         // Get the integrity hash and version of the requested package.
-        let versions = get_versions(&packages).await?;
+        // let versions = get_versions(&packages).await?;
 
         let lockfile_path = &app.lock_file_path;
 
@@ -148,16 +148,20 @@ Options:
         );
 
         let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
-            utils::get_volt_response_multi(&versions, &progress_bar)
-                .await
+            // utils::get_volt_response_multi(&versions, &progress_bar)
+            //     .await
+            //     .into_iter()
+            //     .collect()
+            Ok(vec![])
+        } else {
+            // vec![
+            //     utils::get_volt_response(&packages[0], &versions[0].2, versions[0].3.clone()).await,
+            // ]
+            // .into_iter()
+            // .collect()
+            vec![utils::get_volt_response(packages[0].clone(), String::new()).await]
                 .into_iter()
                 .collect()
-        } else {
-            vec![
-                utils::get_volt_response(&packages[0], &versions[0].2, versions[0].3.clone()).await,
-            ]
-            .into_iter()
-            .collect()
         };
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
@@ -290,11 +294,11 @@ Options:
 
         progress_bar.finish();
 
-        for (index, _) in packages.iter().enumerate() {
-            let data = &versions[index];
+        // for (index, _) in packages.iter().enumerate() {
+        //     let data = &versions[index];
 
-            package_file.add_dependency(data.0.clone(), data.1.clone());
-        }
+        //     package_file.add_dependency(data.0.clone(), data.1.clone());
+        // }
 
         Ok(())
     }
