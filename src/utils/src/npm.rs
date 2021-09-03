@@ -15,7 +15,7 @@ use ssri::{Algorithm, Integrity};
 // Get version from NPM
 pub async fn get_version(
     package_name: String,
-) -> DiagnosticResult<(String, String, String, Option<VoltPackage>)> {
+) -> DiagnosticResult<(String, String, String, VoltPackage, bool)> {
     let mut retries = 0;
 
     let count = package_name.matches("@").count();
@@ -55,7 +55,7 @@ pub async fn get_version(
                                 }
                             }
 
-                            let mut package: Option<VoltPackage> = None;
+                            let package: VoltPackage;
 
                             match serde_json::from_str::<Value>(&text).unwrap()["versions"][latest]
                                 ["dist"]
@@ -101,19 +101,23 @@ pub async fn get_version(
                                         _ => {}
                                     }
 
-                                    if num_deps == 0 {
-                                        package = Some(VoltPackage {
-                                            name: package_name.clone(),
-                                            version: latest.to_string(),
-                                            tarball: value["tarball"].to_string().replace("\"", ""),
-                                            bin: None,
-                                            integrity: hash.clone(),
-                                            peer_dependencies: None,
-                                            dependencies: None,
-                                        })
-                                    }
+                                    package = VoltPackage {
+                                        name: package_name.clone(),
+                                        version: latest.to_string(),
+                                        tarball: value["tarball"].to_string().replace("\"", ""),
+                                        bin: None,
+                                        integrity: hash.clone(),
+                                        peer_dependencies: None,
+                                        dependencies: None,
+                                    };
 
-                                    return Ok((package_name, latest.to_string(), hash, package));
+                                    return Ok((
+                                        package_name,
+                                        latest.to_string(),
+                                        hash,
+                                        package,
+                                        num_deps == 0,
+                                    ));
                                 }
                                 None => {
                                     return Err(VoltError::HashLookupError {
@@ -205,7 +209,7 @@ pub async fn get_version(
                                     }
                                 }
 
-                                let mut package: Option<VoltPackage> = None;
+                                let package: VoltPackage;
 
                                 match serde_json::from_str::<Value>(&text).unwrap()["versions"]
                                     [available_versions[0].to_string()]["dist"]
@@ -251,24 +255,22 @@ pub async fn get_version(
                                             _ => {}
                                         }
 
-                                        if num_deps == 0 {
-                                            package = Some(VoltPackage {
-                                                name: package_name.replace(&name, ""),
-                                                version: input_version,
-                                                tarball: value["tarball"]
-                                                    .to_string()
-                                                    .replace("\"", ""),
-                                                bin: None,
-                                                integrity: hash.clone(),
-                                                peer_dependencies: None,
-                                                dependencies: None,
-                                            })
-                                        }
+                                        package = VoltPackage {
+                                            name: package_name.replace(&name, ""),
+                                            version: input_version,
+                                            tarball: value["tarball"].to_string().replace("\"", ""),
+                                            bin: None,
+                                            integrity: hash.clone(),
+                                            peer_dependencies: None,
+                                            dependencies: None,
+                                        };
+
                                         return Ok((
                                             package_name,
                                             available_versions[0].to_string(),
                                             hash,
                                             package,
+                                            num_deps == 0,
                                         ));
                                     }
                                     None => {
@@ -358,7 +360,7 @@ pub async fn get_version(
                                     }
                                 }
 
-                                let mut package: Option<VoltPackage> = None;
+                                let package: VoltPackage;
 
                                 match serde_json::from_str::<Value>(&text).unwrap()["versions"]
                                     [available_versions[0].to_string()]["dist"]
@@ -404,25 +406,22 @@ pub async fn get_version(
                                             _ => {}
                                         }
 
-                                        if num_deps == 0 {
-                                            package = Some(VoltPackage {
-                                                name: package_name.replace(&name, ""),
-                                                version: input_version,
-                                                tarball: value["tarball"]
-                                                    .to_string()
-                                                    .replace("\"", ""),
-                                                bin: None,
-                                                integrity: hash.clone(),
-                                                peer_dependencies: None,
-                                                dependencies: None,
-                                            })
-                                        }
+                                        package = VoltPackage {
+                                            name: package_name.replace(&name, ""),
+                                            version: input_version,
+                                            tarball: value["tarball"].to_string().replace("\"", ""),
+                                            bin: None,
+                                            integrity: hash.clone(),
+                                            peer_dependencies: None,
+                                            dependencies: None,
+                                        };
 
                                         return Ok((
                                             package_name,
                                             available_versions[0].to_string(),
                                             hash,
                                             package,
+                                            num_deps == 0,
                                         ));
                                     }
                                     None => {
@@ -462,12 +461,12 @@ pub async fn get_version(
 
 pub async fn get_versions(
     packages: &Vec<String>,
-) -> DiagnosticResult<Vec<(String, String, String, Option<VoltPackage>)>> {
+) -> DiagnosticResult<Vec<(String, String, String, VoltPackage, bool)>> {
     packages
         .to_owned()
         .into_iter()
         .map(get_version)
         .collect::<FuturesOrdered<_>>()
-        .try_collect::<Vec<(String, String, String, Option<VoltPackage>)>>()
+        .try_collect::<Vec<(String, String, String, VoltPackage, bool)>>()
         .await
 }
