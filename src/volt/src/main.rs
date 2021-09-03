@@ -14,7 +14,10 @@
     limitations under the License.
 */
 
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    time::Instant,
+};
 
 use add::command::Add;
 use clap::{
@@ -83,7 +86,11 @@ Commands:
 
     let matches = app.get_matches();
 
+    let start = Instant::now();
+
     map_subcommand(matches).await?;
+
+    println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
 
     Ok(())
 }
