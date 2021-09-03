@@ -293,90 +293,90 @@ pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
     }
 }
 
-#[cfg(unix)]
-pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
-    let mut src = src;
-    let volt_directory = format!("{}", app.volt_dir.display());
+// #[cfg(unix)]
+// pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
+//     let mut src = src;
+//     let volt_directory = format!("{}", app.volt_dir.display());
 
-    if !cfg!(target_os = "windows") {
-        src = src.replace(r"\", "/");
-    }
+//     if !cfg!(target_os = "windows") {
+//         src = src.replace(r"\", "/");
+//     }
 
-    for entry in WalkDir::new(src) {
-        let entry = entry.unwrap();
+//     for entry in WalkDir::new(src) {
+//         let entry = entry.unwrap();
 
-        if !entry.path().is_dir() {
-            // index.js
-            let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
+//         if !entry.path().is_dir() {
+//             // index.js
+//             let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
 
-            // lib/index.js
-            let path = format!("{}", &entry.path().display())
-                .replace(r"\", "/")
-                .replace(&volt_directory, "");
+//             // lib/index.js
+//             let path = format!("{}", &entry.path().display())
+//                 .replace(r"\", "/")
+//                 .replace(&volt_directory, "");
 
-            // node_modules/lib
-            create_dir_all(format!(
-                "node_modules/{}",
-                &path
-                    .replace(
-                        format!("{}", &app.volt_dir.display())
-                            .replace(r"\", "/")
-                            .as_str(),
-                        ""
-                    )
-                    .trim_end_matches(file_name)
-            ))
-            .await
-            .unwrap();
+//             // node_modules/lib
+//             create_dir_all(format!(
+//                 "node_modules/{}",
+//                 &path
+//                     .replace(
+//                         format!("{}", &app.volt_dir.display())
+//                             .replace(r"\", "/")
+//                             .as_str(),
+//                         ""
+//                     )
+//                     .trim_end_matches(file_name)
+//             ))
+//             .await
+//             .unwrap();
 
-            // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
-            if !Path::new(&format!(
-                "node_modules{}",
-                &path.replace(
-                    format!("{}", &app.volt_dir.display())
-                        .replace(r"\", "/")
-                        .as_str(),
-                    ""
-                )
-            ))
-            .exists()
-            {
-                hard_link(
-                    format!("{}/.volt/{}", std::env::var("HOME").unwrap(), path),
-                    format!(
-                        "{}/node_modules{}",
-                        std::env::current_dir().unwrap().to_string_lossy(),
-                        &path.replace(
-                            format!("{}", &app.volt_dir.display())
-                                .replace(r"\", "/")
-                                .as_str(),
-                            ""
-                        )
-                    ),
-                )
-                .await
-                .unwrap_or_else(|e| {
-                    panic!(
-                        "{:#?}",
-                        (
-                            format!("{}", &path),
-                            format!(
-                                "node_modules{}",
-                                &path.replace(
-                                    format!("{}", &app.volt_dir.display())
-                                        .replace(r"\", "/")
-                                        .as_str(),
-                                    ""
-                                )
-                            ),
-                            e
-                        )
-                    )
-                });
-            }
-        }
-    }
-}
+//             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
+//             if !Path::new(&format!(
+//                 "node_modules{}",
+//                 &path.replace(
+//                     format!("{}", &app.volt_dir.display())
+//                         .replace(r"\", "/")
+//                         .as_str(),
+//                     ""
+//                 )
+//             ))
+//             .exists()
+//             {
+//                 hard_link(
+//                     format!("{}/.volt/{}", std::env::var("HOME").unwrap(), path),
+//                     format!(
+//                         "{}/node_modules{}",
+//                         std::env::current_dir().unwrap().to_string_lossy(),
+//                         &path.replace(
+//                             format!("{}", &app.volt_dir.display())
+//                                 .replace(r"\", "/")
+//                                 .as_str(),
+//                             ""
+//                         )
+//                     ),
+//                 )
+//                 .await
+//                 .unwrap_or_else(|e| {
+//                     panic!(
+//                         "{:#?}",
+//                         (
+//                             format!("{}", &path),
+//                             format!(
+//                                 "node_modules{}",
+//                                 &path.replace(
+//                                     format!("{}", &app.volt_dir.display())
+//                                         .replace(r"\", "/")
+//                                         .as_str(),
+//                                     ""
+//                                 )
+//                             ),
+//                             e
+//                         )
+//                     )
+//                 });
+//             }
+//         }
+//     }
+// }
 
 /// downloads tarball file from package
 pub async fn download_tarball(
