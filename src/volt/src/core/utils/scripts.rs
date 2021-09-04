@@ -15,13 +15,13 @@
 
 use std::sync::Arc;
 
+use crate::core::utils::errors;
+use crate::core::utils::package::PackageJson;
+use crate::App;
+use crate::Command;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::DiagnosticResult;
-use utils::app::App;
-use utils::error;
-use utils::package::PackageJson;
-use volt_core::command::Command;
 pub struct Script {}
 
 #[async_trait]
