@@ -4,6 +4,7 @@ pub mod errors;
 pub mod helper;
 pub mod npm;
 pub mod package;
+pub mod scripts;
 pub mod voltapi;
 
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
