@@ -16,8 +16,9 @@ limitations under the License.
 
 mod commands;
 mod core;
+use std::{sync::Arc, time::Instant};
 
-use std::sync::Arc;
+use crate::core::utils;
 
 use crate::core::command::Command;
 use crate::core::utils::app::App;
@@ -95,7 +96,7 @@ async fn main() -> miette::DiagnosticResult<()> {
     }
     // app.get_arguments()
 
-    // map_subcommand(matches).await?;
+    // println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
 
     Ok(())
 }
