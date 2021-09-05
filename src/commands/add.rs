@@ -88,7 +88,7 @@ impl Command for Add {
     async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
         let mut packages = app
             .args
-            .values_of("package-name")
+            .values_of("package-names")
             .unwrap()
             .map(|v| v.to_string())
             .collect::<Vec<String>>();
@@ -147,22 +147,10 @@ impl Command for Add {
         );
 
         let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
-            crate::core::utils::get_volt_response_multi(&versions, &progress_bar)
+            crate::core::utils::get_volt_response_multi(versions, &progress_bar)
                 .await
                 .into_iter()
                 .collect()
-        } else {
-            vec![
-                crate::core::utils::get_volt_response(
-                    &packages[0],
-                    &versions[0].2,
-                    versions[0].3.clone(),
-                    versions[0].4.clone(),
-                )
-                .await,
-            ]
-            .into_iter()
-            .collect()
         };
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
@@ -295,11 +283,11 @@ impl Command for Add {
 
         progress_bar.finish();
 
-        for (index, _) in packages.iter().enumerate() {
-            let data = &versions[index];
+        // for (index, _) in packages.iter().enumerate() {
+        //     let data = &versions[index];
 
-            package_file.add_dependency(data.0.clone(), data.1.clone());
-        }
+        //     package_file.add_dependency(data.0.clone(), data.1.clone());
+        // }
 
         Ok(())
     }

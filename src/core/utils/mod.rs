@@ -8,6 +8,7 @@ pub mod scripts;
 pub mod voltapi;
 
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
+use crate::Instant;
 use app::App;
 use errors::VoltError;
 use flate2::read::GzDecoder;
@@ -141,39 +142,18 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(
-    package_name: &String,
-    hash: &String,
-    package: VoltPackage,
-    zero_deps: bool,
-    ) -> DiagnosticResult<VoltResponse> {
+pub async fn get_volt_response(package_name: String) -> DiagnosticResult<VoltResponse> {
     // number of retries
     let mut retries = 0;
-
-    // only 1 package, zero dependencies
-    if zero_deps {
-        let mut versions: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
-
-        let mut nested_versions: HashMap<String, VoltPackage> = HashMap::new();
-
-        nested_versions.insert(
-            format!("{}{}", package.name, package.version),
-            package.clone(),
-            );
-
-        versions.insert(package.clone().version, nested_versions);
-
-        return Ok(VoltResponse {
-            version: package.clone().version,
-            versions,
-        });
-    }
 
     // loop until MAX_RETRIES reached.
     loop {
         // get a response
-        let mut response =
-            isahc::get_async(format!("http://push-2105.5centscdn.com/{}.json", hash))
+        let start = Instant::now();
+        let mut response = isahc::get_async(format!(
+                "https://cdn.jsdelivr.net/npm/@voltpkg/{}/data.json",
+                package_name
+                ))
             .await
             .map_err(VoltError::NetworkError)?;
 
@@ -181,18 +161,9 @@ pub async fn get_volt_response(
         match response.status() {
             // 200 (OK)
             StatusCode::OK => {
-                let mut buf: Vec<u8> = vec![];
-
-                response
-                    .copy_to(&mut buf)
-                    .await
-                    .map_err(VoltError::NetworkRecError)?;
-
-                // decompress using lz4
-                let decoded = decompress(buf)?;
-
                 let deserialized: JSONVoltResponse =
-                    serde_json::from_slice(&decoded).map_err(|_| VoltError::DeserializeError)?;
+                    serde_json::from_str(response.text().await.unwrap().as_str())
+                    .map_err(|_| VoltError::DeserializeError)?;
 
                 let converted = convert(deserialized)?;
 
@@ -236,15 +207,13 @@ pub async fn get_volt_response(
 }
 
 pub async fn get_volt_response_multi(
-    versions: &Vec<(String, String, String, VoltPackage, bool)>,
+    packages: Vec<String>,
     pb: &ProgressBar,
     ) -> Vec<DiagnosticResult<VoltResponse>> {
-    versions
+    packages
         .into_iter()
-        .map(|(name, _, hash, package, no_deps)| {
-            get_volt_response(&name, &hash, package.to_owned(), *no_deps)
-        })
-    .collect::<FuturesUnordered<_>>()
+        .map(|name| get_volt_response(name))
+        .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
         .collect::<Vec<DiagnosticResult<VoltResponse>>>()
         .await
@@ -274,6 +243,7 @@ pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
                         format!("{}", &app.volt_dir.display())
                         .replace(r"\", "/")
                         .as_str(),
+                        <<<<<<< HEAD:src/core/utils/mod.rs
                         ""
                         )
                     .trim_end_matches(file_name)
@@ -314,92 +284,90 @@ pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
     }
 }
 
-#[cfg(unix)]
-/*
- * pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
- *     let mut src = src;
- *     let volt_directory = format!("{}", app.volt_dir.display());
- *
- *     if !cfg!(target_os = "windows") {
- *         src = src.replace(r"\", "/");
- *     }
- *
- *     for entry in WalkDir::new(src) {
- *         let entry = entry.unwrap();
- *
- *         if !entry.path().is_dir() {
- *             // index.js
- *             let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
- *
- *             // lib/index.js
- *             let path = format!("{}", &entry.path().display())
- *                 .replace(r"\", "/")
- *                 .replace(&volt_directory, "");
- *
- *             // node_modules/lib
- *             create_dir_all(format!(
- *                 "node_modules/{}",
- *                 &path
- *                     .replace(
- *                         format!("{}", &app.volt_dir.display())
- *                             .replace(r"\", "/")
- *                             .as_str(),
- *                         ""
- *                     )
- *                     .trim_end_matches(file_name)
- *             ))
- *             .await
- *             .unwrap();
- *
- *             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
- *             if !Path::new(&format!(
- *                 "node_modules{}",
- *                 &path.replace(
- *                     format!("{}", &app.volt_dir.display())
- *                         .replace(r"\", "/")
- *                         .as_str(),
- *                     ""
- *                 )
- *             ))
- *             .exists()
- *             {
- *                 hard_link(
- *                     format!("{}/.volt/{}", std::env::var("HOME").unwrap(), path),
- *                     format!(
- *                         "{}/node_modules{}",
- *                         std::env::current_dir().unwrap().to_string_lossy(),
- *                         &path.replace(
- *                             format!("{}", &app.volt_dir.display())
- *                                 .replace(r"\", "/")
- *                                 .as_str(),
- *                             ""
- *                         )
- *                     ),
- *                 )
- *                 .await
- *                 .unwrap_or_else(|e| {
- *                     panic!(
- *                         "{:#?}",
- *                         (
- *                             format!("{}", &path),
- *                             format!(
- *                                 "node_modules{}",
- *                                 &path.replace(
- *                                     format!("{}", &app.volt_dir.display())
-*                                         .replace(r"\", "/")
-*                                         .as_str(),
-*                                     ""
-*                                 )
-*                             ),
-*                             e
-*                         )
-*                     )
-*                 });
-*             }
-*         }
-*     }
-* }
-*/
+// #[cfg(unix)]
+// pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
+//     let mut src = src;
+//     let volt_directory = format!("{}", app.volt_dir.display());
+
+//     if !cfg!(target_os = "windows") {
+//         src = src.replace(r"\", "/");
+//     }
+
+//     for entry in WalkDir::new(src) {
+//         let entry = entry.unwrap();
+
+//         if !entry.path().is_dir() {
+//             // index.js
+//             let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
+
+//             // lib/index.js
+//             let path = format!("{}", &entry.path().display())
+//                 .replace(r"\", "/")
+//                 .replace(&volt_directory, "");
+
+//             // node_modules/lib
+//             create_dir_all(format!(
+//                 "node_modules/{}",
+//                 &path
+//                     .replace(
+//                         format!("{}", &app.volt_dir.display())
+//                             .replace(r"\", "/")
+//                             .as_str(),
+//                         ""
+//                     )
+//                     .trim_end_matches(file_name)
+//             ))
+//             .await
+//             .unwrap();
+
+//             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
+//             if !Path::new(&format!(
+//                 "node_modules{}",
+//                 &path.replace(
+//                     format!("{}", &app.volt_dir.display())
+//                         .replace(r"\", "/")
+//                         .as_str(),
+//                     ""
+//                 )
+//             ))
+//             .exists()
+//             {
+//                 hard_link(
+//                     format!("{}/.volt/{}", std::env::var("HOME").unwrap(), path),
+//                     format!(
+//                         "{}/node_modules{}",
+//                         std::env::current_dir().unwrap().to_string_lossy(),
+//                         &path.replace(
+//                             format!("{}", &app.volt_dir.display())
+//                                 .replace(r"\", "/")
+//                                 .as_str(),
+//                             ""
+//                         )
+//                     ),
+//                 )
+//                 .await
+//                 .unwrap_or_else(|e| {
+//                     panic!(
+//                         "{:#?}",
+//                         (
+//                             format!("{}", &path),
+//                             format!(
+//                                 "node_modules{}",
+//                                 &path.replace(
+//                                     format!("{}", &app.volt_dir.display())
+//                                         .replace(r"\", "/")
+//                                         .as_str(),
+//                                     ""
+//                                 )
+//                             ),
+//                             e
+//                         )
+//                     )
+//                 });
+//             }
+//         }
+//     }
+// }
 
 /// downloads tarball file from package
 pub async fn download_tarball(
@@ -537,12 +505,12 @@ pub async fn download_tarball(
                             )
                             .unwrap();
 
-                        entry
+                        match entry
                             .unpack(node_modules_dep_path_instance.to_path_buf().join(new_path))
-                            .unwrap_or_else(|e| {
-                                println!("{:?}", e);
-                                std::process::exit(1);
-                            });
+                            {
+                                Ok(_v) => {}
+                                Err(_err) => {}
+                            }
                     }
                 }),
                 tokio::task::spawn_blocking(move || {
@@ -572,12 +540,17 @@ pub async fn download_tarball(
                             )
                             .unwrap();
 
-                        entry
-                            .unpack(extract_directory_instance.to_path_buf().join(new_path))
-                            .unwrap_or_else(|e| {
-                                println!("{:?}", e);
-                                std::process::exit(1);
-                            });
+                        match entry.unpack(extract_directory_instance.to_path_buf().join(new_path))
+                        {
+                            Ok(_v) => {}
+                            Err(err) => {
+                                let code = err.raw_os_error().unwrap();
+
+                                if code == 5 {
+                                    continue;
+                                }
+                            }
+                        }
                     }
                 })
             )
