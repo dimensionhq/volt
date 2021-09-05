@@ -148,18 +148,15 @@ Options:
         );
 
         let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
-            // utils::get_volt_response_multi(&versions, &progress_bar)
-            //     .await
-            //     .into_iter()
-            //     .collect()
-            Ok(vec![])
+            Ok(
+                // utils::get_volt_response_multi(packages.clone(), &progress_bar)
+                //     .await
+                //     .into_iter()
+                //     .collect(),
+                vec![],
+            )
         } else {
-            // vec![
-            //     utils::get_volt_response(&packages[0], &versions[0].2, versions[0].3.clone()).await,
-            // ]
-            // .into_iter()
-            // .collect()
-            vec![utils::get_volt_response(packages[0].clone(), String::new()).await]
+            vec![utils::get_volt_response(packages[0].clone()).await]
                 .into_iter()
                 .collect()
         };

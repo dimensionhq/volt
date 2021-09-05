@@ -149,10 +149,7 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(
-    package_name: String,
-    version: String,
-) -> DiagnosticResult<VoltResponse> {
+pub async fn get_volt_response(package_name: String) -> DiagnosticResult<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
@@ -217,12 +214,12 @@ pub async fn get_volt_response(
 }
 
 pub async fn get_volt_response_multi(
-    packages: Vec<(String, String)>,
+    packages: Vec<String>,
     pb: &ProgressBar,
 ) -> Vec<DiagnosticResult<VoltResponse>> {
     packages
         .into_iter()
-        .map(|(name, version)| get_volt_response(name, version))
+        .map(|name| get_volt_response(name))
         .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
         .collect::<Vec<DiagnosticResult<VoltResponse>>>()
