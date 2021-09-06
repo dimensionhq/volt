@@ -147,10 +147,14 @@ impl Command for Add {
         );
 
         let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
-            crate::core::utils::get_volt_response_multi(versions, &progress_bar)
+            crate::core::utils::get_volt_response_multi(packages.clone(), &progress_bar)
                 .await
                 .into_iter()
                 .collect()
+        } else {
+            Ok(vec![
+                crate::core::utils::get_volt_response(packages[0].clone()).await?,
+            ])
         };
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
