@@ -16,7 +16,6 @@ use futures_util::{stream::FuturesUnordered, StreamExt};
 use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
-use lz4::Decoder;
 use miette::DiagnosticResult;
 use package::Package;
 use reqwest::StatusCode;
@@ -28,35 +27,19 @@ use std::{
     env::temp_dir,
     ffi::OsStr,
     fs::{read_to_string, File},
-    io::{Cursor, Read, Write},
+    io::Write,
     path::{Component, Path, PathBuf},
     sync::Arc,
 };
+
+use tokio::fs::hard_link;
+use jwalk::WalkDir;
+
 use tar::Archive;
 use tokio::fs::create_dir_all;
 
 use crate::core::utils::constants::MAX_RETRIES;
 use crate::core::utils::voltapi::JSONVoltResponse;
-
-/// decompress lz4 compressed json data
-/// lz4 has the fastest decompression speeds
-pub fn decompress(data: Vec<u8>) -> DiagnosticResult<Vec<u8>> {
-    // initialize decoded data
-    let mut decoded: Vec<u8> = Vec::new();
-
-    // generate cursor (impl `Read`)
-    let cursor = Cursor::new(data);
-
-    // initialize a decoder
-    let mut decoder = Decoder::new(cursor).map_err(VoltError::DecoderError)?;
-
-    // decode and return data
-    decoder
-        .read_to_end(&mut decoded)
-        .map_err(VoltError::DecoderError)?;
-
-    Ok(decoded)
-}
 
 /// convert a JSONVoltResponse -> VoltResponse
 pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse> {
@@ -89,11 +72,11 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
 
         let integrity: Integrity =
             data.integrity
-            .clone()
-            .parse()
-            .map_err(|_| VoltError::HashParseError {
-                hash: data.integrity.clone(),
-            })?;
+                .clone()
+                .parse()
+                .map_err(|_| VoltError::HashParseError {
+                    hash: data.integrity.clone(),
+                })?;
 
         let algo = integrity.pick_algorithm();
 
@@ -126,7 +109,7 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
                 peer_dependencies: data.peer_dependencies.clone(),
                 dependencies: data.dependencies.clone(),
             },
-            );
+        );
     }
 
     // create a final hashmap
@@ -151,11 +134,11 @@ pub async fn get_volt_response(package_name: String) -> DiagnosticResult<VoltRes
         // get a response
         let start = Instant::now();
         let mut response = isahc::get_async(format!(
-                "https://cdn.jsdelivr.net/npm/@voltpkg/{}/data.json",
-                package_name
-                ))
-            .await
-            .map_err(VoltError::NetworkError)?;
+            "https://cdn.jsdelivr.net/npm/@voltpkg/{}/data.json",
+            package_name
+        ))
+        .await
+        .map_err(VoltError::NetworkError)?;
 
         // check the status of the response
         match response.status() {
@@ -163,7 +146,7 @@ pub async fn get_volt_response(package_name: String) -> DiagnosticResult<VoltRes
             StatusCode::OK => {
                 let deserialized: JSONVoltResponse =
                     serde_json::from_str(response.text().await.unwrap().as_str())
-                    .map_err(|_| VoltError::DeserializeError)?;
+                        .map_err(|_| VoltError::DeserializeError)?;
 
                 let converted = convert(deserialized)?;
 
@@ -209,7 +192,7 @@ pub async fn get_volt_response(package_name: String) -> DiagnosticResult<VoltRes
 pub async fn get_volt_response_multi(
     packages: Vec<String>,
     pb: &ProgressBar,
-    ) -> Vec<DiagnosticResult<VoltResponse>> {
+) -> Vec<DiagnosticResult<VoltResponse>> {
     packages
         .into_iter()
         .map(|name| get_volt_response(name))
@@ -237,49 +220,48 @@ pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
 
             // node_modules/lib
             create_dir_all(format!(
-                    "node_modules/{}",
-                    &path
-                    .replace(
-                        format!("{}", &app.volt_dir.display())
-                        .replace(r"\", "/")
-                        .as_str(),
-                        <<<<<<< HEAD:src/core/utils/mod.rs
-                        ""
-                        )
-                    .trim_end_matches(file_name)
-                    ))
-                .await
-                .unwrap();
+            "node_modules/{}",
+            &path
+            .replace(
+                format!("{}", &app.volt_dir.display())
+                .replace(r"\", "/")
+                .as_str(),
+                ""
+                )
+            .trim_end_matches(file_name)
+            ))
+            .await
+            .unwrap();
 
             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
             if !Path::new(&format!(
-                    "node_modules{}",
-                    &path.replace(
-                        format!("{}", &app.volt_dir.display())
+                "node_modules{}",
+                &path.replace(
+                    format!("{}", &app.volt_dir.display())
                         .replace(r"\", "/")
                         .as_str(),
-                        ""
-                        )
-                    ))
-                .exists()
-                {
-                    hard_link(
-                        format!("{}", &path),
-                        format!(
-                            "node_modules{}",
-                            &path.replace(
-                                format!("{}", &app.volt_dir.display())
+                    ""
+                )
+            ))
+            .exists()
+            {
+                hard_link(
+                    format!("{}", &path),
+                    format!(
+                        "node_modules{}",
+                        &path.replace(
+                            format!("{}", &app.volt_dir.display())
                                 .replace(r"\", "/")
                                 .as_str(),
-                                ""
-                                )
-                            ),
-                            )
-                        .await
-                        .unwrap_or_else(|_| {
-                            0;
-                        });
-                }
+                            ""
+                        )
+                    ),
+                )
+                .await
+                .unwrap_or_else(|_| {
+                    0;
+                });
+            }
         }
     }
 }
@@ -374,7 +356,7 @@ pub async fn download_tarball(
     app: &App,
     package: &VoltPackage,
     secure: bool,
-    ) -> DiagnosticResult<()> {
+) -> DiagnosticResult<()> {
     let package_instance = package.clone();
 
     // @types/eslint
@@ -458,10 +440,10 @@ pub async fn download_tarball(
             }
 
             extract_directory = extract_directory.join(format!(
-                    "{}-{}",
-                    package.clone().name,
-                    package.clone().version
-                    ));
+                "{}-{}",
+                package.clone().name,
+                package.clone().version
+            ));
 
             // Initialize tarfile decoder while directly passing in bytes
 
@@ -498,19 +480,19 @@ pub async fn download_tarball(
 
                         std::fs::create_dir_all(
                             node_modules_dep_path_instance
-                            .to_path_buf()
-                            .join(new_path.clone())
-                            .parent()
-                            .unwrap(),
-                            )
-                            .unwrap();
+                                .to_path_buf()
+                                .join(new_path.clone())
+                                .parent()
+                                .unwrap(),
+                        )
+                        .unwrap();
 
                         match entry
                             .unpack(node_modules_dep_path_instance.to_path_buf().join(new_path))
-                            {
-                                Ok(_v) => {}
-                                Err(_err) => {}
-                            }
+                        {
+                            Ok(_v) => {}
+                            Err(_err) => {}
+                        }
                     }
                 }),
                 tokio::task::spawn_blocking(move || {
@@ -533,12 +515,12 @@ pub async fn download_tarball(
 
                         std::fs::create_dir_all(
                             extract_directory_instance
-                            .to_path_buf()
-                            .join(new_path.clone())
-                            .parent()
-                            .unwrap(),
-                            )
-                            .unwrap();
+                                .to_path_buf()
+                                .join(new_path.clone())
+                                .parent()
+                                .unwrap(),
+                        )
+                        .unwrap();
 
                         match entry.unpack(extract_directory_instance.to_path_buf().join(new_path))
                         {
@@ -554,7 +536,7 @@ pub async fn download_tarball(
                     }
                 })
             )
-                .unwrap();
+            .unwrap();
         } else {
             return Err(VoltError::ChecksumVerificationError)?;
         }
@@ -567,7 +549,7 @@ pub async fn download_tarball_create(
     _app: &App,
     package: &Package,
     name: &str,
-    ) -> DiagnosticResult<String> {
+) -> DiagnosticResult<String> {
     let file_name = format!("{}-{}.tgz", name, package.dist_tags.get("latest").unwrap());
     let temp_dir = temp_dir();
 
@@ -585,14 +567,14 @@ pub async fn download_tarball_create(
                 r"{}\.volt\{}",
                 std::env::var("USERPROFILE").unwrap(),
                 name.split("__").collect::<Vec<&str>>()[0]
-                );
+            );
         } else {
             // Check if ~/.volt\packagename exists
             package_dir_loc = format!(
                 r"{}\.volt\{}",
                 std::env::var("HOME").unwrap(),
                 name.split("__").collect::<Vec<&str>>()[0]
-                );
+            );
         }
 
         if !Path::new(&package_dir_loc).exists() {
@@ -737,7 +719,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
             OPEN_EXISTING,
             0,
             null_mut(),
-            );
+        );
         if console_handle == INVALID_HANDLE_VALUE {
             return Err(GetLastError());
         }
@@ -754,7 +736,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
             if 0 == SetConsoleMode(
                 console_handle,
                 console_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-                ) {
+            ) {
                 return Err(GetLastError());
             }
         }
@@ -788,9 +770,9 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
                     @SET PATHEXT=%PATHEXT:;.JS;=;%
                     node  "%~dp0\..\{}\{}" %*
                     )"#,
-                    k, v, k, v
-                    )
-            .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
+            k, v, k, v
+        )
+        .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
 
         let mut f = File::create(format!(r"node_modules/.bin/{}.cmd", k)).unwrap();
         f.write_all(command.as_bytes()).unwrap();
@@ -818,7 +800,7 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
             app.volt_dir.to_string_lossy(),
             k,
             v,
-            );
+        );
         // .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
         let p = format!(r"node_modules/scripts/{}.sh", k);
         let mut f = File::create(p.clone()).unwrap();
@@ -844,7 +826,7 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 pub async fn install_extract_package(
     app: &Arc<App>,
     package: &VoltPackage,
-    ) -> DiagnosticResult<()> {
+) -> DiagnosticResult<()> {
     // if there's an error (most likely a checksum verification error) while using insecure http, retry.
     if download_tarball(&app, &package, false).await.is_err() {
         // use https instead

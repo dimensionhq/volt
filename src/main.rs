@@ -18,8 +18,6 @@ mod commands;
 mod core;
 use std::{sync::Arc, time::Instant};
 
-use crate::core::utils;
-
 use crate::core::command::Command;
 use crate::core::utils::app::App;
 use clap::{Arg, ArgMatches};
@@ -81,20 +79,9 @@ async fn main() -> miette::DiagnosticResult<()> {
                 ),
         );
 
-    // let matches = app.get_matches();
-    let matches = app.try_get_matches();
-    match matches {
-        Ok(_) => {
-            println!("Is ok!");
-        }
-        Err(_) => {
-            println!("Failed!");
-            for arg in std::env::args().skip(1) {
-                println!("{:?}", arg);
-            }
-        }
-    }
-    // app.get_arguments()
+    let matches = app.get_matches();
+
+    map_subcommand(matches);
 
     // println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
 
