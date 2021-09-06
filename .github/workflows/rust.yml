@@ -10,11 +10,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
+  rust:
+    name: Rust
+    runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+
+      - name: Build
+        run: cargo build --verbose
+
