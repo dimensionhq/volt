@@ -2,6 +2,7 @@
 name = "volt"
 version = "0.0.1"
 authors = [
+  "Tejas Ravishankar <xtremedevx@gmail.com>",
   "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
 ]
 description = "A fast, memory-safe package manager for the web."
