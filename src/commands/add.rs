@@ -18,7 +18,7 @@ use crate::{
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
     core::utils::package::PackageJson,
     core::utils::voltapi::{VoltPackage, VoltResponse},
-    core::utils::{constants::PROGRESS_CHARS, install_extract_package, npm::get_versions},
+    core::utils::{constants::PROGRESS_CHARS, install_extract_package, npm::parse_versions},
     core::{command::Command, VERSION},
     App,
 };
@@ -119,7 +119,7 @@ impl Command for Add {
         let start = Instant::now();
 
         // Get the integrity hash and version of the requested package.
-        let versions = get_versions(&packages).await?;
+        let versions = parse_versions(&packages).await?;
 
         let lockfile_path = &app.lock_file_path;
 
