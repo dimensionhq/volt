@@ -21,7 +21,7 @@ use crate::App;
 
 use async_trait::async_trait;
 use colored::Colorize;
-use miette::DiagnosticResult;
+use miette::Result;
 use std::sync::Arc;
 
 /// Struct implementation for the `Remove` command.
@@ -69,7 +69,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // if app.args.len() == 1 {
         //     println!("{}", Self::help());
         //     process::exit(1);

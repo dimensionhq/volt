@@ -1,4 +1,4 @@
-use miette::DiagnosticResult;
+use miette::Result;
 
 use crate::commands::add::Package;
 
@@ -11,12 +11,12 @@ use crate::commands::add::Package;
 // use isahc::AsyncReadResponseExt;
 // use isahc::Request;
 // use isahc::RequestExt;
-// use miette::DiagnosticResult;
+// use miette::Result;
 // use semver_rs::Version;
 // use serde_json::Value;
 // use ssri::{Algorithm, Integrity};
 
-pub async fn parse_versions(packages: &Vec<String>) -> DiagnosticResult<Vec<Package>> {
+pub async fn parse_versions(packages: &Vec<String>) -> Result<Vec<Package>> {
     let mut parsed: Vec<Package> = vec![];
 
     for package in packages.iter() {

@@ -15,10 +15,10 @@
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use miette::DiagnosticResult;
-use crate::Command;
 use crate::App;
+use crate::Command;
+use async_trait::async_trait;
+use miette::Result;
 
 pub struct Outdated {}
 #[async_trait]
@@ -40,7 +40,7 @@ impl Command for Outdated {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         Ok(())
     }
 }

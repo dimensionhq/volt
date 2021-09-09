@@ -26,12 +26,12 @@ use commands::init::Init;
 
 use crate::commands::add::*;
 
-pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()> {
+pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
     match matches.subcommand() {
         Some(("add", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Add::exec(app).await
-        },
+        }
         Some(("init", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Init::exec(app).await
@@ -41,7 +41,7 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()>
 }
 
 #[tokio::main]
-async fn main() -> miette::DiagnosticResult<()> {
+async fn main() -> miette::Result<()> {
     let start = Instant::now();
     let volt_help = format!(
         r#"{} {}

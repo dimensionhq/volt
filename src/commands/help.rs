@@ -23,7 +23,7 @@ use std::sync::Arc;
 use crate::App;
 use async_trait::async_trait;
 use colored::Colorize;
-use miette::DiagnosticResult;
+use miette::Result;
 
 /// Struct implementation for the `Help` command.
 pub struct Help;
@@ -91,7 +91,7 @@ Commands:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         println!("{}", Self::help());
         Ok(())
     }

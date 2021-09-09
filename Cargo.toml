@@ -1,10 +1,11 @@
 [package]
 name = "volt"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   "Tejas Ravishankar <xtremedevx@gmail.com>",
   "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
 ]
+license = "Apache-2.0"
 description = "A fast, memory-safe package manager for the web."
 edition = "2018"
 default-run = "volt"
@@ -26,22 +27,22 @@ indicatif = "0.16"
 isahc = '1.4.1'
 jwalk = "0.6.0"
 lazy_static = "1.4"
-miette = "1.1.0"
+miette = "2.1.1"
 prettytable-rs = "0.8.0"
 rand = "0.8.4"
 regex = "1"
 reqwest = "0.11.4"
-rslint_cli = { path = "src/rslint/cli" }
-rslint_config = { path = "src/rslint/config" }
-rslint_core = { path = "src/rslint/core" }
-rslint_errors = { path = "src/rslint/errors" }
-rslint_lexer = { path = "src/rslint/lexer" }
-rslint_macros = { path = "src/rslint/macros" }
-rslint_parser = { path = "src/rslint/parser" }
-rslint_regex = { path = "src/rslint/regex" }
-rslint_rowan = { path = "src/rslint/rowan" }
-rslint_syntax = { path = "src/rslint/syntax" }
-rslint_text_edit = { path = "src/rslint/text_edit" }
+# rslint_cli = { path = "src/rslint/cli" }
+# rslint_config = { path = "src/rslint/config" }
+# rslint_core = { path = "src/rslint/core" }
+# rslint_errors = { path = "src/rslint/errors" }
+# rslint_lexer = { path = "src/rslint/lexer" }
+# rslint_macros = { path = "src/rslint/macros" }
+# rslint_parser = { path = "src/rslint/parser" }
+# rslint_regex = { path = "src/rslint/regex" }
+# rslint_rowan = { path = "src/rslint/rowan" }
+# rslint_syntax = { path = "src/rslint/syntax" }
+# rslint_text_edit = { path = "src/rslint/text_edit" }
 semver_rs = "0.1.3"
 serde_json = "1.0.64"
 serde = { version = "1.0", features = ["derive"] }

@@ -17,7 +17,7 @@ use crate::{core::VERSION, App, Command};
 
 use async_trait::async_trait;
 use colored::Colorize;
-use miette::DiagnosticResult;
+use miette::Result;
 use std::sync::Arc;
 
 pub struct Clone {}
@@ -60,7 +60,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // let args: Vec<String> = app.args.clone();
 
         // if args.is_empty() {

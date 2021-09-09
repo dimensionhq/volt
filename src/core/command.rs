@@ -20,11 +20,11 @@ use async_trait::async_trait;
 
 use crate::App;
 
-use miette::DiagnosticResult;
+use miette::Result;
 
 #[async_trait]
 pub trait Command {
     fn help() -> String;
 
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()>;
+    async fn exec(app: Arc<App>) -> Result<()>;
 }

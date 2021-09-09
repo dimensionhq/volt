@@ -22,7 +22,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use colored::Colorize;
-use miette::DiagnosticResult;
+use miette::Result;
 
 /// Struct implementation for the `Migrate` command.
 pub struct Migrate;
@@ -69,7 +69,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // let packagemanagers: Vec<String> = PackageManager::options();
         // let mut packagemanager: String = String::new();
         // if app.args.len() == 1 {

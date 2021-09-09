@@ -23,7 +23,7 @@ use crate::Command;
 
 use async_trait::async_trait;
 use colored::Colorize;
-use miette::DiagnosticResult;
+use miette::Result;
 
 /// Struct implementation for the `Run` command.
 pub struct Run;
@@ -66,7 +66,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // if app.clone().args.len() == 1_usize {
         //     let package_json = PackageJson::from("package.json");
 

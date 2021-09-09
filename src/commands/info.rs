@@ -20,7 +20,7 @@ use std::sync::Arc;
 use crate::App;
 use async_trait::async_trait;
 use colored::Colorize;
-use miette::DiagnosticResult;
+use miette::Result;
 
 pub struct Info {}
 
@@ -59,7 +59,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // #[allow(unused_assignments)]
         // let mut name = String::new();
 

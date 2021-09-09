@@ -18,7 +18,7 @@ use colored::Colorize;
 use serde::{Deserialize, Serialize};
 
 use crate::App;
-use miette::DiagnosticResult;
+use miette::Result;
 use std::sync::Arc;
 // use search::SearchResp;
 use crate::core::{command::Command, VERSION};
@@ -78,7 +78,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // if app.args.len() >= 2 {
         //     let package_name = &app.args[1];
 

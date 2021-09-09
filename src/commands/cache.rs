@@ -24,7 +24,7 @@ use crate::App;
 use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
-use miette::DiagnosticResult;
+use miette::Result;
 use crate::Command;
 use volt_core::VERSION;
 
@@ -73,7 +73,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // if app.args.len() == 1 {
         //     println!("{}", Self::help());
         //     exit(1);

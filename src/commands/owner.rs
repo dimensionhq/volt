@@ -18,7 +18,7 @@ use crate::{App, Command};
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use miette::DiagnosticResult;
+use miette::Result;
 
 pub struct Owner {}
 
@@ -41,7 +41,7 @@ impl Command for Owner {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         Ok(())
     }
 }
