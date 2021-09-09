@@ -17,11 +17,11 @@
 //! Display stats on a specific package
 
 use crate::App;
+use crate::{core::VERSION, Command};
 use async_trait::async_trait;
 use colored::Colorize;
-use miette::DiagnosticResult;
+use miette::Result;
 use std::sync::Arc;
-use crate::{core::VERSION, Command};
 
 /// Struct implementation for the `stat` command.
 pub struct Stat;
@@ -53,7 +53,7 @@ Usage: {} {} {}"#,
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // let args = &app.args;
 
         // if args.len() <= 1 {

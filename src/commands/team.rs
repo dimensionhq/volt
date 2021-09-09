@@ -16,7 +16,7 @@ limitations under the License.
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use miette::DiagnosticResult;
+use miette::Result;
 // use crate::App;
 use crate::App;
 use crate::Command;
@@ -42,7 +42,7 @@ impl Command for Team {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         Ok(())
     }
 }

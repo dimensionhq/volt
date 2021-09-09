@@ -18,11 +18,11 @@
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use colored::Colorize;
-use miette::DiagnosticResult;
 use crate::App;
 use crate::{core::VERSION, Command};
+use async_trait::async_trait;
+use colored::Colorize;
+use miette::Result;
 /// Struct implementation for the `Deploy` command.
 pub struct Deploy;
 
@@ -61,7 +61,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // let args: Vec<String> = app.args.clone();
         // if args.is_empty() {
         //     error!("expected commit name");

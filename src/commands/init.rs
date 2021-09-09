@@ -22,7 +22,7 @@ use crate::App;
 use crate::Command;
 use async_trait::async_trait;
 use colored::Colorize;
-use miette::DiagnosticResult;
+use miette::Result;
 
 /// Struct implementation for the `Init` command.
 pub struct Init;
@@ -68,7 +68,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
         // let split: Vec<&str> = temp.split('\\').collect::<Vec<&str>>();
         // let cwd: String = split[split.len() - 1].to_string();

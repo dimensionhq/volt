@@ -15,10 +15,10 @@
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use miette::DiagnosticResult;
 use crate::App;
 use crate::Command;
+use async_trait::async_trait;
+use miette::Result;
 pub struct Logout {}
 #[async_trait]
 impl Command for Logout {
@@ -39,7 +39,7 @@ impl Command for Logout {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         Ok(())
     }
 }

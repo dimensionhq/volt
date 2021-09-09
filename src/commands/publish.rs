@@ -17,7 +17,7 @@ use crate::App;
 use crate::Command;
 
 use async_trait::async_trait;
-use miette::DiagnosticResult;
+use miette::Result;
 use std::sync::Arc;
 
 pub struct Publish {}
@@ -41,7 +41,7 @@ impl Command for Publish {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         Ok(())
     }
 }

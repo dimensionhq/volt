@@ -17,7 +17,7 @@ use crate::App;
 use crate::Command;
 use async_trait::async_trait;
 
-use miette::DiagnosticResult;
+use miette::Result;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 
@@ -128,7 +128,7 @@ impl Command for Audit {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         // let package_json = PackageJson::from("package.json");
 
         // let mut requires = package_json.dependencies;

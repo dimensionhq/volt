@@ -21,7 +21,7 @@ use crate::App;
 use crate::Command;
 use async_trait::async_trait;
 use colored::Colorize;
-use miette::DiagnosticResult;
+use miette::Result;
 pub struct Script {}
 
 #[async_trait]
@@ -43,7 +43,7 @@ impl Command for Script {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // let package_json = PackageJson::from("package.json");
 
         // let args = app.args.clone();

@@ -15,11 +15,11 @@ limitations under the License.
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use colored::Colorize;
-use miette::DiagnosticResult;
 use crate::App;
 use crate::{core::VERSION, Command};
+use async_trait::async_trait;
+use colored::Colorize;
+use miette::Result;
 
 pub struct List;
 
@@ -58,7 +58,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         // let flags = &app.flags;
 
         // let mut depth: u64 = 2;

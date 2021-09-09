@@ -16,7 +16,7 @@ use futures_util::{stream::FuturesUnordered, StreamExt};
 use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
-use miette::DiagnosticResult;
+use miette::Result;
 use package::Package;
 use reqwest::StatusCode;
 use ssri::{Algorithm, Integrity};
@@ -32,8 +32,8 @@ use std::{
     sync::Arc,
 };
 
-use tokio::fs::hard_link;
 use jwalk::WalkDir;
+use tokio::fs::hard_link;
 
 use tar::Archive;
 use tokio::fs::create_dir_all;
@@ -42,7 +42,7 @@ use crate::core::utils::constants::MAX_RETRIES;
 use crate::core::utils::voltapi::JSONVoltResponse;
 
 /// convert a JSONVoltResponse -> VoltResponse
-pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse> {
+pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
     // initialize a hashmap to store the converted versions
     let mut converted_versions: HashMap<String, VoltPackage> = HashMap::new();
 
@@ -125,7 +125,7 @@ pub fn convert(deserialized: JSONVoltResponse) -> DiagnosticResult<VoltResponse>
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(package_name: String) -> DiagnosticResult<VoltResponse> {
+pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
@@ -192,13 +192,13 @@ pub async fn get_volt_response(package_name: String) -> DiagnosticResult<VoltRes
 pub async fn get_volt_response_multi(
     packages: Vec<String>,
     pb: &ProgressBar,
-) -> Vec<DiagnosticResult<VoltResponse>> {
+) -> Vec<Result<VoltResponse>> {
     packages
         .into_iter()
         .map(|name| get_volt_response(name))
         .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
-        .collect::<Vec<DiagnosticResult<VoltResponse>>>()
+        .collect::<Vec<Result<VoltResponse>>>()
         .await
 }
 
@@ -220,15 +220,15 @@ pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
 
             // node_modules/lib
             create_dir_all(format!(
-            "node_modules/{}",
-            &path
-            .replace(
-                format!("{}", &app.volt_dir.display())
-                .replace(r"\", "/")
-                .as_str(),
-                ""
-                )
-            .trim_end_matches(file_name)
+                "node_modules/{}",
+                &path
+                    .replace(
+                        format!("{}", &app.volt_dir.display())
+                            .replace(r"\", "/")
+                            .as_str(),
+                        ""
+                    )
+                    .trim_end_matches(file_name)
             ))
             .await
             .unwrap();
@@ -352,11 +352,7 @@ pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
 // }
 
 /// downloads tarball file from package
-pub async fn download_tarball(
-    app: &App,
-    package: &VoltPackage,
-    secure: bool,
-) -> DiagnosticResult<()> {
+pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) -> Result<()> {
     let package_instance = package.clone();
 
     // @types/eslint
@@ -545,11 +541,7 @@ pub async fn download_tarball(
     Ok(())
 }
 
-pub async fn download_tarball_create(
-    _app: &App,
-    package: &Package,
-    name: &str,
-) -> DiagnosticResult<String> {
+pub async fn download_tarball_create(_app: &App, package: &Package, name: &str) -> Result<String> {
     let file_name = format!("{}-{}.tgz", name, package.dist_tags.get("latest").unwrap());
     let temp_dir = temp_dir();
 
@@ -823,10 +815,7 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 }
 
 /// package all steps for installation into 1 convinient function.
-pub async fn install_extract_package(
-    app: &Arc<App>,
-    package: &VoltPackage,
-) -> DiagnosticResult<()> {
+pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> Result<()> {
     // if there's an error (most likely a checksum verification error) while using insecure http, retry.
     if download_tarball(&app, &package, false).await.is_err() {
         // use https instead

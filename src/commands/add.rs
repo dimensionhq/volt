@@ -33,7 +33,7 @@ use async_trait::async_trait;
 use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
-use miette::DiagnosticResult;
+use miette::Result;
 
 #[derive(Clone, Debug)]
 pub struct Package {
@@ -91,7 +91,7 @@ impl Command for Add {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> DiagnosticResult<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
         let mut packages = app
             .args
             .values_of("package-names")
@@ -157,7 +157,7 @@ impl Command for Add {
         );
 
         let start = Instant::now();
-        let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
+        let responses: Result<Vec<VoltResponse>> = if packages.len() > 1 {
             crate::core::utils::get_volt_response_multi(packages.clone(), &progress_bar)
                 .await
                 .into_iter()

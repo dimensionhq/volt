@@ -1,7 +1,7 @@
 use crate::core::utils::{enable_ansi_support, errors::VoltError};
 use clap::ArgMatches;
 use dirs::home_dir;
-use miette::DiagnosticResult;
+use miette::Result;
 use sha1::Digest;
 use sha2::Sha512;
 use ssri::{Algorithm, Integrity};
@@ -52,7 +52,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn initialize(args: &ArgMatches) -> DiagnosticResult<App> {
+    pub fn initialize(args: &ArgMatches) -> Result<App> {
         enable_ansi_support().unwrap();
 
         // Current Directory
@@ -99,8 +99,8 @@ impl App {
     /// calc_hash(bytes::Bytes::new(), ssri::Algorithm::Sha1)?;
     /// ```
     /// ## Returns
-    /// * DiagnosticResult<String>
-    pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> DiagnosticResult<String> {
+    /// * Result<String>
+    pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> Result<String> {
         match algorithm {
             Algorithm::Sha1 => {
                 let mut hasher = sha1::Sha1::new();
