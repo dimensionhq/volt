@@ -35,6 +35,11 @@ use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::DiagnosticResult;
 
+pub struct Package {
+    name: String,
+    version: Option<String>,
+}
+
 /// Struct implementation for the `Add` command.
 #[derive(Clone)]
 pub struct Add {}
@@ -95,6 +100,11 @@ impl Command for Add {
 
         packages.dedup();
 
+        let versions = parse_versions(&packages).await?;
+
+        println!("{:#?}", versions);
+        std::process::exit(0);
+
         // Check if package.json exists, otherwise, let the user know.
         if !app.current_dir.join("package.json").exists() {
             crate::error!("no package.json found.");
@@ -119,7 +129,6 @@ impl Command for Add {
         let start = Instant::now();
 
         // Get the integrity hash and version of the requested package.
-        let versions = parse_versions(&packages).await?;
 
         let lockfile_path = &app.lock_file_path;
 
@@ -146,6 +155,7 @@ impl Command for Add {
                 )),
         );
 
+        let start = Instant::now();
         let responses: DiagnosticResult<Vec<VoltResponse>> = if packages.len() > 1 {
             crate::core::utils::get_volt_response_multi(packages.clone(), &progress_bar)
                 .await
@@ -156,7 +166,7 @@ impl Command for Add {
                 crate::core::utils::get_volt_response(packages[0].clone()).await?,
             ])
         };
-
+        println!("{}", start.elapsed().as_secs_f32());
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
 
         let responses = responses?;

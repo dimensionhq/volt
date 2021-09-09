@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use miette::DiagnosticResult;
 
+use crate::commands::add::Package;
+
 // use crate::core::utils::constants::MAX_RETRIES;
 // use crate::core::utils::errors::VoltError;
 // use crate::core::utils::voltapi::VoltPackage;
@@ -16,17 +18,17 @@ use miette::DiagnosticResult;
 // use serde_json::Value;
 // use ssri::{Algorithm, Integrity};
 
-pub async fn parse_versions(packages: &Vec<String>) -> DiagnosticResult<HashMap<String, String>> {
-    let mut parsed: HashMap<String, String> = HashMap::new();
+pub async fn parse_versions(packages: &Vec<String>) -> DiagnosticResult<Vec<Package>> {
+    let mut parsed: Vec<Package> = vec![];
 
     for package in packages.iter() {
         let split = package.split("@").map(|s| s.trim()).collect::<Vec<&str>>();
         let length = split.len();
 
         if length == 1 {
-            parsed.insert(split[0].to_string(), String::new());
+            parsed.insert(Package {split[0].to_string(), None});
         } else if length == 2 && !package.contains("/") {
-            parsed.insert(split[0].to_string(), split[1].to_string());
+            parsed.insert(Package { split[0].to_string(), split[1].to_string() });
         } else if length == 2 && package.contains("/") {
             parsed.insert(format!("@{}", split[1]), String::new());
         } else if length == 3 && package.contains("/") {

@@ -22,6 +22,7 @@ use crate::core::command::Command;
 use crate::core::utils::app::App;
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
+use commands::init::Init;
 
 use crate::commands::add::*;
 
@@ -30,6 +31,10 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()>
         Some(("add", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Add::exec(app).await
+        },
+        Some(("init", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Init::exec(app).await
         }
         _ => Ok(()),
     }
@@ -37,6 +42,7 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::DiagnosticResult<()>
 
 #[tokio::main]
 async fn main() -> miette::DiagnosticResult<()> {
+    let start = Instant::now();
     let volt_help = format!(
         r#"{} {}
 
@@ -60,8 +66,6 @@ async fn main() -> miette::DiagnosticResult<()> {
         "<package-name>".bright_blue()
     );
 
-    // https://docs.rs/clap/2.33.3/clap/struct.App.html?search=#method.usage
-
     let app = clap::App::new("volt")
         .version("1.0.0")
         .author("XtremeDevX <xtremedevx@gmail.com>")
@@ -81,9 +85,9 @@ async fn main() -> miette::DiagnosticResult<()> {
 
     let matches = app.get_matches();
 
-    map_subcommand(matches);
+    map_subcommand(matches).await?;
 
-    // println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
+    println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
 
     Ok(())
 }
