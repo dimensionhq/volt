@@ -35,9 +35,10 @@ use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::DiagnosticResult;
 
+#[derive(Clone, Debug)]
 pub struct Package {
-    name: String,
-    version: Option<String>,
+    pub name: String,
+    pub version: Option<String>,
 }
 
 /// Struct implementation for the `Add` command.

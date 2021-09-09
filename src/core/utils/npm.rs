@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use miette::DiagnosticResult;
 
 use crate::commands::add::Package;
@@ -26,13 +24,25 @@ pub async fn parse_versions(packages: &Vec<String>) -> DiagnosticResult<Vec<Pack
         let length = split.len();
 
         if length == 1 {
-            parsed.insert(Package {split[0].to_string(), None});
+            parsed.push(Package {
+                name: split[0].to_string(),
+                version: None,
+            });
         } else if length == 2 && !package.contains("/") {
-            parsed.insert(Package { split[0].to_string(), split[1].to_string() });
+            parsed.push(Package {
+                name: split[0].to_string(),
+                version: Some(split[1].to_string()),
+            });
         } else if length == 2 && package.contains("/") {
-            parsed.insert(format!("@{}", split[1]), String::new());
+            parsed.push(Package {
+                name: format!("@{}", split[1]),
+                version: None,
+            });
         } else if length == 3 && package.contains("/") {
-            parsed.insert(format!("@{}", split[1]), split[2].to_string());
+            parsed.push(Package {
+                name: format!("@{}", split[1]),
+                version: Some(split[2].to_string()),
+            });
         }
     }
 
