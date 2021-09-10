@@ -101,10 +101,7 @@ impl Command for Add {
 
         packages.dedup();
 
-        let versions = parse_versions(&packages).await?;
-
-        println!("{:#?}", versions);
-        std::process::exit(0);
+        let packages = parse_versions(&packages).await?;
 
         // Check if package.json exists, otherwise, let the user know.
         if !app.current_dir.join("package.json").exists() {
@@ -298,11 +295,9 @@ impl Command for Add {
 
         progress_bar.finish();
 
-        // for (index, _) in packages.iter().enumerate() {
-        //     let data = &versions[index];
-
-        //     package_file.add_dependency(data.0.clone(), data.1.clone());
-        // }
+        for package in packages {
+            package_file.add_dependency(package);
+        }
 
         Ok(())
     }

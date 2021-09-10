@@ -14,7 +14,7 @@
     limitations under the License.
 */
 
-use crate::core::utils::package::Package;
+use crate::core::utils::package::NpmPackage;
 use isahc::http::StatusCode;
 use isahc::AsyncReadResponseExt;
 use std::io;
@@ -43,7 +43,7 @@ pub enum GetPackageError {
 /// ```
 /// ## Returns
 /// * `Result<Option<Package>, GetPackageError>`
-pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError> {
+pub async fn get_package(name: &str) -> Result<Option<NpmPackage>, GetPackageError> {
     let mut resp = isahc::get_async(format!("http://registry.yarnpkg.com/{}", name))
         .await
         .map_err(GetPackageError::Request)?;
@@ -58,7 +58,7 @@ pub async fn get_package(name: &str) -> Result<Option<Package>, GetPackageError>
     }
 
     let body_string = resp.text().await.map_err(GetPackageError::IO)?;
-    let package: Package = serde_json::from_str(&body_string).map_err(GetPackageError::Json)?;
+    let package: NpmPackage = serde_json::from_str(&body_string).map_err(GetPackageError::Json)?;
 
     Ok(Some(package))
 }

@@ -22,11 +22,12 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
+use crate::commands::add::Package;
 use crate::error;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Package {
+pub struct NpmPackage {
     #[serde(rename = "_id")]
     pub id: String,
     #[serde(rename = "_rev")]
@@ -205,20 +206,26 @@ impl PackageJson {
             .unwrap();
     }
 
-    pub fn add_dependency(&mut self, name: String, version: String) {
-        self.dependencies.insert(name, version);
+    pub fn add_dependency(&mut self, package: Package) {
+        self.dependencies.insert(
+            package.name,
+            package.version.unwrap_or_default(),
+        );
     }
 
-    pub fn add_dev_dependency(&mut self, name: String, version: String) {
-        self.dev_dependencies.insert(name, version);
+    pub fn add_dev_dependency(&mut self, package: Package) {
+        self.dev_dependencies.insert(
+            package.name,
+            package.version.unwrap_or_default(),
+        );
     }
 
-    pub fn remove_dev_dependency(&mut self, name: String) {
-        self.dev_dependencies.remove(&name);
+    pub fn remove_dev_dependency(&mut self, package: Package) {
+        self.dev_dependencies.remove(&package.name);
     }
 
-    pub fn remove_dependency(&mut self, name: String) {
-        self.dependencies.remove(&name);
+    pub fn remove_dependency(&mut self, package: Package) {
+        self.dependencies.remove(&package.name);
     }
 
     pub fn update_dependency_version(
