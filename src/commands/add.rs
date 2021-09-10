@@ -16,9 +16,9 @@ limitations under the License.
 use crate::{
     commands::init::Init,
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
-    core::utils::package::PackageJson,
     core::utils::voltapi::{VoltPackage, VoltResponse},
     core::utils::{constants::PROGRESS_CHARS, install_extract_package, npm::parse_versions},
+    core::utils::{fetch_dep_tree, package::PackageJson},
     core::{command::Command, VERSION},
     App,
 };
@@ -92,16 +92,7 @@ impl Command for Add {
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        let mut packages = app
-            .args
-            .values_of("package-names")
-            .unwrap()
-            .map(|v| v.to_string())
-            .collect::<Vec<String>>();
-
-        packages.dedup();
-
-        let packages = parse_versions(&packages).await?;
+        let packages = app.get_packages()?;
 
         // Check if package.json exists, otherwise, let the user know.
         if !app.current_dir.join("package.json").exists() {
@@ -110,7 +101,7 @@ impl Command for Add {
 
             std::io::stdout().flush().expect("Could not flush stdout");
 
-            let mut input: String = String::new();
+            let mut input = String::new();
 
             std::io::stdin().read_line(&mut input).unwrap();
 
@@ -124,15 +115,11 @@ impl Command for Add {
         // Load the existing package.json file
         let mut package_file = PackageJson::from("package.json");
 
-        let start = Instant::now();
-
-        // Get the integrity hash and version of the requested package.
+        // Load global and local lock files.
 
         let lockfile_path = &app.lock_file_path;
 
         let global_lockfile = &app.home_dir.join(".global.lock");
-
-        // Load global and local lock files.
 
         let mut lock_file =
             LockFile::load(lockfile_path).unwrap_or_else(|_| LockFile::new(lockfile_path));
@@ -153,21 +140,9 @@ impl Command for Add {
                 )),
         );
 
-        let start = Instant::now();
-        let responses: Result<Vec<VoltResponse>> = if packages.len() > 1 {
-            crate::core::utils::get_volt_response_multi(packages.clone(), &progress_bar)
-                .await
-                .into_iter()
-                .collect()
-        } else {
-            Ok(vec![
-                crate::core::utils::get_volt_response(packages[0].clone()).await?,
-            ])
-        };
-        println!("{}", start.elapsed().as_secs_f32());
-        let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
+        let (responses, elapsed) = fetch_dep_tree(&packages, &progress_bar).await?;
 
-        let responses = responses?;
+        let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
 
         for res in responses.iter() {
             let current_version = res.versions.get(&res.version).unwrap();
@@ -181,37 +156,33 @@ impl Command for Add {
         let length = dependencies.len();
 
         if length == 1 {
-            let duration = (end - start).as_secs_f32();
-
-            if duration < 0.001 {
+            if elapsed < 0.001 {
                 println!(
                     "{}: resolved 1 dependency in {:.5}s.",
                     "success".bright_green(),
-                    duration
+                    elapsed
                 );
             } else {
                 println!(
                     "{}: resolved 1 dependency in {:.2}s.",
                     "success".bright_green(),
-                    duration
+                    elapsed
                 );
             }
         } else {
-            let duration = (end - start).as_secs_f32();
-
-            if duration < 0.001 {
+            if elapsed < 0.001 {
                 println!(
                     "{}: resolved {} dependencies in {:.4}s.",
                     "success".bright_green(),
                     length,
-                    duration
+                    elapsed
                 );
             } else {
                 println!(
                     "{}: resolved {} dependencies in {:.2}s.",
                     "success".bright_green(),
                     length,
-                    duration
+                    elapsed
                 );
             }
         }

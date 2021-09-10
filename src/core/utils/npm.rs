@@ -16,7 +16,7 @@ use crate::commands::add::Package;
 // use serde_json::Value;
 // use ssri::{Algorithm, Integrity};
 
-pub async fn parse_versions(packages: &Vec<String>) -> Result<Vec<Package>> {
+pub fn parse_versions(packages: &Vec<String>) -> Result<Vec<Package>> {
     let mut parsed: Vec<Package> = vec![];
 
     for package in packages.iter() {
