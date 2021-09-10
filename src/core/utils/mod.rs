@@ -7,6 +7,7 @@ pub mod package;
 pub mod scripts;
 pub mod voltapi;
 
+use crate::commands::add::{self, Package};
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
 use crate::Instant;
 use app::App;
@@ -17,7 +18,7 @@ use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use package::Package;
+use package::NpmPackage;
 use reqwest::StatusCode;
 use ssri::{Algorithm, Integrity};
 use std::{
@@ -125,12 +126,13 @@ pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
+pub async fn get_volt_response(package: Package) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
     // loop until MAX_RETRIES reached.
     loop {
+        let package_name = package.name.clone();
         // get a response
         let start = Instant::now();
         let mut response = isahc::get_async(format!(
@@ -190,7 +192,7 @@ pub async fn get_volt_response(package_name: String) -> Result<VoltResponse> {
 }
 
 pub async fn get_volt_response_multi(
-    packages: Vec<String>,
+    packages: Vec<Package>,
     pb: &ProgressBar,
 ) -> Vec<Result<VoltResponse>> {
     packages
@@ -541,7 +543,11 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
     Ok(())
 }
 
-pub async fn download_tarball_create(_app: &App, package: &Package, name: &str) -> Result<String> {
+pub async fn download_tarball_create(
+    _app: &App,
+    package: &NpmPackage,
+    name: &str,
+) -> Result<String> {
     let file_name = format!("{}-{}.tgz", name, package.dist_tags.get("latest").unwrap());
     let temp_dir = temp_dir();
 
