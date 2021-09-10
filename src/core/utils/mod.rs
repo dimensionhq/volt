@@ -847,3 +847,24 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
 
     Ok(())
 }
+
+pub async fn fetch_dep_tree(
+    packages: &Vec<Package>,
+    progress_bar: &ProgressBar,
+) -> Result<(Vec<VoltResponse>, f32)> {
+    let start = Instant::now();
+    if packages.len() > 1 {
+        Ok((
+            get_volt_response_multi(packages.clone(), progress_bar)
+                .await
+                .into_iter()
+                .collect::<Result<Vec<_>>>()?,
+            start.elapsed().as_secs_f32(),
+        ))
+    } else {
+        Ok((
+            vec![get_volt_response(packages[0].clone()).await?],
+            start.elapsed().as_secs_f32(),
+        ))
+    }
+}

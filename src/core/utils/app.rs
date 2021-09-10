@@ -1,4 +1,7 @@
-use crate::core::utils::{enable_ansi_support, errors::VoltError};
+use crate::{
+    commands::add::Package,
+    core::utils::{enable_ansi_support, errors::VoltError},
+};
 use clap::ArgMatches;
 use dirs::home_dir;
 use miette::Result;
@@ -6,6 +9,8 @@ use sha1::Digest;
 use sha2::Sha512;
 use ssri::{Algorithm, Integrity};
 use std::{env, path::PathBuf};
+
+use super::npm::parse_versions;
 
 #[derive(Debug, PartialEq)]
 pub enum AppFlag {
@@ -85,6 +90,20 @@ impl App {
             lock_file_path,
             args: args.to_owned(),
         })
+    }
+
+    /// Retrieve packages passed in
+    pub fn get_packages(&self) -> Result<Vec<Package>> {
+        let mut args = self
+            .args
+            .values_of("package-names")
+            .unwrap()
+            .map(|v| v.to_string())
+            .collect::<Vec<String>>();
+
+        args.dedup();
+
+        Ok(parse_versions(&args)?)
     }
 
     /// Check if the app arguments contain the flags specified
