@@ -61,14 +61,13 @@ impl App {
         enable_ansi_support().unwrap();
 
         // Current Directory
-        let current_directory = env::current_dir().map_err(|_e| VoltError::EnvironmentError {
+        let current_directory = env::current_dir().map_err(|e| VoltError::EnvironmentError {
             env: "CURRENT_DIRECTORY".to_string(),
+            source: e,
         })?;
 
         // Home Directory: /username or C:\Users\username
-        let home_directory = home_dir().ok_or(VoltError::EnvironmentError {
-            env: "HOME".to_string(),
-        })?;
+        let home_directory = home_dir().ok_or(VoltError::GetHomeDirError)?;
 
         // node_modules/
         let node_modules_directory = current_directory.join("node_modules");

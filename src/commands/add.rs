@@ -90,7 +90,7 @@ impl Command for Add {
         let packages = app.get_packages()?;
 
         // Load the existing package.json file
-        let mut package_file = PackageJson::open("package.json")?;
+        let (mut package_file, package_file_path) = PackageJson::open("package.json")?;
 
         // Construct a path to the local and global lockfile.
         let lockfile_path = &app.lock_file_path;
