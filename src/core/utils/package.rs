@@ -20,6 +20,8 @@ use std::{
     fs::{read_to_string, File},
 };
 
+use super::errors::VoltError;
+use miette::{IntoDiagnostic, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::commands::add::Package;
@@ -190,34 +192,44 @@ pub struct PackageJson {
 }
 
 impl PackageJson {
-    pub fn from(path: &str) -> Self {
+    pub fn open(path: &str) -> Result<Self> {
         if std::path::Path::new(path).exists() {
-            let data = read_to_string(path).unwrap();
-            serde_json::from_str(data.as_str()).unwrap()
+            let data = read_to_string(path).map_err(|e| VoltError::ReadFileError {
+                name: String::from("package.json"),
+                source: e,
+            })?;
+
+            Ok(serde_json::from_str(data.as_str()).into_diagnostic()?)
         } else {
             error!("No package.json found");
             std::process::exit(1);
         }
     }
 
-    pub fn save(&self) {
-        let mut file = File::create("package.json").unwrap();
-        file.write(serde_json::to_string_pretty(self).unwrap().as_bytes())
-            .unwrap();
+    pub fn save(&self) -> Result<()> {
+        let mut file = File::create("package.json").into_diagnostic()?;
+
+        file.write(
+            serde_json::to_string_pretty(self)
+                .into_diagnostic()?
+                .as_bytes(),
+        )
+        .map_err(|e| VoltError::WriteFileError {
+            source: e,
+            name: String::from("package.json"),
+        })?;
+
+        Ok(())
     }
 
     pub fn add_dependency(&mut self, package: Package) {
-        self.dependencies.insert(
-            package.name,
-            package.version.unwrap_or_default(),
-        );
+        self.dependencies
+            .insert(package.name, package.version.unwrap_or_default());
     }
 
     pub fn add_dev_dependency(&mut self, package: Package) {
-        self.dev_dependencies.insert(
-            package.name,
-            package.version.unwrap_or_default(),
-        );
+        self.dev_dependencies
+            .insert(package.name, package.version.unwrap_or_default());
     }
 
     pub fn remove_dev_dependency(&mut self, package: Package) {

@@ -7,7 +7,7 @@ pub enum VoltError {
     #[diagnostic(code(volt::environment::enable_ansi_support))]
     EnableAnsiSupport(),
 
-    #[error("failed to detect {env}")]
+    #[error("failed to detect `{env}`")]
     #[diagnostic(code(volt::environment::get))]
     EnvironmentError { env: String },
 
@@ -86,6 +86,20 @@ pub enum VoltError {
     #[error("failed to find a version that matches the specified version requirement for {name}")]
     #[diagnostic(code(volt::io::rec::text))]
     VersionLookupError { name: String },
+
+    #[error("failed to read `{name}`")]
+    #[diagnostic(code(volt::io::file::read))]
+    ReadFileError {
+        source: std::io::Error,
+        name: String,
+    },
+
+    #[error("failed to write to `{name}`")]
+    #[diagnostic(code(volt::io::file::write))]
+    WriteFileError {
+        source: std::io::Error,
+        name: String,
+    },
 
     #[error("an unknown error occured.")]
     #[diagnostic(code(volt::unknown))]
