@@ -9,7 +9,11 @@ pub enum VoltError {
 
     #[error("failed to detect `{env}`")]
     #[diagnostic(code(volt::environment::get))]
-    EnvironmentError { env: String },
+    EnvironmentError { source: std::io::Error, env: String },
+
+    #[error("failed to detect your home directory")]
+    #[diagnostic(code(volt::environment::home_dir))]
+    GetHomeDirError,
 
     #[error("failed to initialize lz4 decoder")]
     #[diagnostic(code(volt::decode::lz4::initialize))]

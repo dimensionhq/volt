@@ -15,6 +15,7 @@
 */
 
 use std::io::Write;
+use std::path::PathBuf;
 use std::{
     collections::HashMap,
     fs::{read_to_string, File},
@@ -192,18 +193,34 @@ pub struct PackageJson {
 }
 
 impl PackageJson {
-    pub fn open(path: &str) -> Result<Self> {
-        if std::path::Path::new(path).exists() {
-            let data = read_to_string(path).map_err(|e| VoltError::ReadFileError {
-                name: String::from("package.json"),
+    pub fn open(path: &str) -> Result<(Self, PathBuf)> {
+        for parent in std::env::current_exe()
+            .map_err(|e| VoltError::EnvironmentError {
+                env: String::from("CURRENT_DIR"),
                 source: e,
-            })?;
+            })?
+            .parent()
+            .expect("this should have a parent!")
+            .ancestors()
+        {
+            let pkg_path = parent.join("package.json");
 
-            Ok(serde_json::from_str(data.as_str()).into_diagnostic()?)
-        } else {
-            error!("No package.json found");
-            std::process::exit(1);
+            if pkg_path.exists() {
+                let data = read_to_string(&pkg_path).map_err(|e| VoltError::ReadFileError {
+                    source: e,
+                    name: pkg_path.to_str().unwrap().to_string(),
+                })?;
+
+                return Ok((
+                    serde_json::from_str(data.as_str()).into_diagnostic()?,
+                    pkg_path,
+                ));
+            } else {
+                miette::bail!("No package.json found!")
+            }
         }
+
+        miette::bail!("No package.json found!")
     }
 
     pub fn save(&self) -> Result<()> {
