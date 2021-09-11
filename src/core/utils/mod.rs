@@ -7,7 +7,7 @@ pub mod package;
 pub mod scripts;
 pub mod voltapi;
 
-use crate::commands::add::{self, Package};
+use crate::commands::add::Package;
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
 use crate::Instant;
 use app::App;

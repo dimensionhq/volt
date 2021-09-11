@@ -14,20 +14,16 @@ limitations under the License.
 //! Add a package to the dependencies for your project.
 
 use crate::{
-    commands::init::Init,
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
-    core::utils::voltapi::{VoltPackage, VoltResponse},
-    core::utils::{constants::PROGRESS_CHARS, install_extract_package, npm::parse_versions},
+    core::utils::voltapi::VoltPackage,
+    core::utils::{constants::PROGRESS_CHARS, install_extract_package},
     core::utils::{fetch_dep_tree, package::PackageJson},
     core::{command::Command, VERSION},
     App,
 };
 
 use std::collections::HashMap;
-use std::io::Write;
-use std::process::exit;
 use std::sync::Arc;
-use std::time::Instant;
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -81,46 +77,27 @@ impl Command for Add {
     /// Adds a package to dependencies for your project.
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)
-    /// * `packages` - List of packages to add (`Vec<String>`)
-    /// * `flags` - List of flags passed in through the CLI (`Vec<String>`)
     /// ## Examples
     /// ```rust
     /// // Add react to your dependencies with logging level verbose
     /// // .exec() is an async call so you need to await it
-    /// Add.exec(app, vec!["react"], vec!["--verbose"]).await;
+    /// Add.exec(app).await;
     /// ```
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
+        // Get input packages
         let packages = app.get_packages()?;
 
-        // Check if package.json exists, otherwise, let the user know.
-        if !app.current_dir.join("package.json").exists() {
-            crate::error!("no package.json found.");
-            print!("Do you want to initialize package.json (Y/N): ");
-
-            std::io::stdout().flush().expect("Could not flush stdout");
-
-            let mut input = String::new();
-
-            std::io::stdin().read_line(&mut input).unwrap();
-
-            if input.trim().to_lowercase() != "y" || input.trim().to_lowercase() != "yes" {
-                exit(0);
-            } else {
-                Init::exec(app.clone()).await.unwrap();
-            }
-        }
-
         // Load the existing package.json file
-        let mut package_file = PackageJson::from("package.json");
+        let mut package_file = PackageJson::open("package.json")?;
 
-        // Load global and local lock files.
-
+        // Construct a path to the local and global lockfile.
         let lockfile_path = &app.lock_file_path;
 
         let global_lockfile = &app.home_dir.join(".global.lock");
 
+        // Load local and global lockfiles.
         let mut lock_file =
             LockFile::load(lockfile_path).unwrap_or_else(|_| LockFile::new(lockfile_path));
 
@@ -148,8 +125,6 @@ impl Command for Add {
             let current_version = res.versions.get(&res.version).unwrap();
             dependencies.extend(current_version.clone());
         }
-
-        let end = Instant::now();
 
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
