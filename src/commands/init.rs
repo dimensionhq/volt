@@ -14,8 +14,18 @@
     limitations under the License.
 */
 
+use crate::core::classes::init_data::InitData;
+use crate::core::classes::init_data::License;
+use crate::core::prompt::prompts::Confirm;
+use crate::core::prompt::prompts::Input;
+use crate::core::prompt::prompts::Select;
+use crate::core::utils;
 use crate::core::VERSION;
+use crate::error;
 
+use std::env;
+use std::fs::File;
+use std::io::Write;
 use std::sync::Arc;
 
 use crate::App;
@@ -23,6 +33,7 @@ use crate::Command;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
+use regex::Regex;
 
 /// Struct implementation for the `Init` command.
 pub struct Init;
@@ -69,217 +80,228 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        // let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
-        // let split: Vec<&str> = temp.split('\\').collect::<Vec<&str>>();
-        // let cwd: String = split[split.len() - 1].to_string();
-        // let data = if app.has_flag(AppFlag::Yes) {
-        //     // Set name to current directory name
-        //     let name = env::current_dir()
-        //         .map(|dir| {
-        //             dir.file_name()
-        //                 .map(|file_name| file_name.to_string_lossy().to_string())
-        //         })
-        //         .ok()
-        //         .flatten()
-        //         .unwrap_or_else(|| "app".to_string());
+        let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
+        let split: Vec<&str> = temp.split('\\').collect::<Vec<&str>>();
+        let cwd: String = split[split.len() - 1].to_string();
+        let data = if app.has_flag("yes") {
+            // Set name to current directory name
+            let name = env::current_dir()
+                .map(|dir| {
+                    dir.file_name()
+                        .map(|file_name| file_name.to_string_lossy().to_string())
+                })
+                .ok()
+                .flatten()
+                .unwrap_or_else(|| "app".to_string());
 
-        //     let version = "0.1.0".to_string();
+            let version = "0.1.0".to_string();
 
-        //     let description = None;
+            let description = None;
 
-        //     let main = "index.js".to_string();
+            let main = "index.js".to_string();
 
-        //     let author = {
-        //         let git_user_name = get_git_config(&app, "user.name").unwrap_or_else(String::new);
+            let author = {
+                let git_user_name =
+                    utils::get_git_config(&app, "user.name").unwrap_or_else(String::new);
 
-        //         let git_email = get_git_config(&app, "user.email").unwrap_or_else(String::new);
+                let git_email =
+                    utils::get_git_config(&app, "user.email").unwrap_or_else(String::new);
 
-        //         if git_user_name.is_empty() && git_email.is_empty() {
-        //             None
-        //         } else {
-        //             Some([git_user_name, format!("<{}>", git_email)].join(" "))
-        //         }
-        //     };
+                if git_user_name.is_empty() && git_email.is_empty() {
+                    None
+                } else {
+                    Some([git_user_name, format!("<{}>", git_email)].join(" "))
+                }
+            };
 
-        //     let repository = get_git_config(&app, "remote.origin.url");
+            let repository = utils::get_git_config(&app, "remote.origin.url");
 
-        //     let license = License::default();
-        //     InitData {
-        //         name,
-        //         version,
-        //         description,
-        //         main,
-        //         repository,
-        //         author,
-        //         license,
-        //         private: None,
-        //     }
-        // } else {
-        //     // Get "name"
-        //     let input = Input {
-        //         message: String::from("name"),
-        //         default: Some(cwd),
-        //         allow_empty: false,
-        //     };
-        //     let mut name;
-        //     name = input.run().unwrap_or_else(|err| {
-        //         eprintln!("{}", err);
-        //         process::exit(1);
-        //     });
-        //     let re_name =
-        //         Regex::new("^(?:@[a-z0-9-*~][a-z0-9-*._~]*/)?[a-z0-9-~][a-z0-9-._~]*$").unwrap();
-        //     if re_name.is_match(&name) { // returns bool
-        //          // Do nothing
-        //          // It passes and everyone is happy
-        //          // it continues with the other code
-        //     } else {
-        //         println!("{}", "Name cannot contain special characters".red());
-        //         loop {
-        //             let input: Input = Input {
-        //                 message: String::from("name"),
-        //                 default: Some(split[split.len() - 1].to_string()), // Cwd does not impl Copy trait hence wrote it like this
-        //                 allow_empty: false,
-        //             };
-        //             name = input.run().unwrap_or_else(|err| {
-        //                 eprintln!("{}", err);
-        //                 process::exit(1);
-        //             });
-        //             if re_name.is_match(&name) {
-        //                 break;
-        //             } else {
-        //                 println!("{}", "Name cannot contain special characters".red());
-        //             }
-        //         }
-        //     }
+            let license = License::default();
 
-        //     // Get "version"
-        //     let input: Input = Input {
-        //         message: String::from("version"),
-        //         default: Some(String::from("1.0.0")),
-        //         allow_empty: false,
-        //     };
-        //     let version = input.run().unwrap_or_else(|err| {
-        //         error!("{}", err.to_string());
-        //         process::exit(1);
-        //     });
+            InitData {
+                name,
+                version,
+                description,
+                main,
+                repository,
+                author,
+                license,
+                private: None,
+            }
+        } else {
+            // Get "name"
+            let input = Input {
+                message: String::from("name"),
+                default: Some(cwd),
+                allow_empty: false,
+            };
 
-        //     // Get "description"
-        //     let input: Input = Input {
-        //         message: String::from("description"),
-        //         default: None,
-        //         allow_empty: true,
-        //     };
+            let mut name;
+            name = input.run().unwrap_or_else(|err| {
+                eprintln!("{}", err);
+                std::process::exit(1);
+            });
 
-        //     let description = input.run().unwrap_or_else(|err| {
-        //         error!("{}", err.to_string());
-        //         process::exit(1);
-        //     });
+            let re_name =
+                Regex::new("^(?:@[a-z0-9-*~][a-z0-9-*._~]*/)?[a-z0-9-~][a-z0-9-._~]*$").unwrap();
 
-        //     // Get "main"
-        //     let input: Input = Input {
-        //         message: String::from("main"),
-        //         default: Some(String::from("index.js")),
-        //         allow_empty: false,
-        //     };
+            if re_name.is_match(&name) { // returns bool
+                 // Do nothing
+                 // It passes and everyone is happy
+                 // it continues with the other code
+            } else {
+                println!("{}", "Name cannot contain special characters".red());
+                loop {
+                    let input: Input = Input {
+                        message: String::from("name"),
+                        default: Some(split[split.len() - 1].to_string()), // Cwd does not impl Copy trait hence wrote it like this
+                        allow_empty: false,
+                    };
 
-        //     let main = input.run().unwrap_or_else(|err| {
-        //         error!("{}", err.to_string());
-        //         process::exit(1);
-        //     });
+                    name = input.run().unwrap_or_else(|err| {
+                        eprintln!("{}", err);
+                        std::process::exit(1);
+                    });
 
-        //     // Get "author"
-        //     let git_user_name = get_git_config(&app, "user.name").unwrap_or_else(String::new);
+                    if re_name.is_match(&name) {
+                        break;
+                    } else {
+                        println!("{}", "Name cannot contain special characters".red());
+                    }
+                }
+            }
 
-        //     let git_email = format!(
-        //         "<{}>",
-        //         get_git_config(&app, "user.email").unwrap_or_else(String::new)
-        //     );
+            // Get "version"
+            let input: Input = Input {
+                message: String::from("version"),
+                default: Some(String::from("1.0.0")),
+                allow_empty: false,
+            };
 
-        //     let author;
+            let version = input.run().unwrap_or_else(|err| {
+                error!("{}", err.to_string());
+                std::process::exit(1);
+            });
 
-        //     if git_user_name != String::new() && git_email != String::new() {
-        //         let input: Input = Input {
-        //             message: String::from("author"),
-        //             default: Some(format!("{} {}", git_user_name, git_email)),
-        //             allow_empty: true,
-        //         };
-        //         author = input.run().unwrap_or_else(|err| {
-        //             error!("{}", err.to_string());
-        //             process::exit(1);
-        //         });
-        //     } else {
-        //         let input: Input = Input {
-        //             message: String::from("author"),
-        //             default: None,
-        //             allow_empty: true,
-        //         };
-        //         author = input.run().unwrap_or_else(|err| {
-        //             error!("{}", err.to_string());
-        //             process::exit(1);
-        //         });
-        //     }
+            // Get "description"
+            let input: Input = Input {
+                message: String::from("description"),
+                default: None,
+                allow_empty: true,
+            };
 
-        //     // Get "repository"
-        //     let input: Input = Input {
-        //         message: String::from("repository"),
-        //         default: None,
-        //         allow_empty: true,
-        //     };
+            let description = input.run().unwrap_or_else(|err| {
+                error!("{}", err.to_string());
+                std::process::exit(1);
+            });
 
-        //     let repository = input.run().unwrap_or_else(|err| {
-        //         error!("{}", err.to_string());
-        //         process::exit(1);
-        //     });
+            // Get "main"
+            let input: Input = Input {
+                message: String::from("main"),
+                default: Some(String::from("index.js")),
+                allow_empty: false,
+            };
 
-        //     let licenses: Vec<String> = License::options();
+            let main = input.run().unwrap_or_else(|err| {
+                error!("{}", err.to_string());
+                std::process::exit(1);
+            });
 
-        //     let select = Select {
-        //         message: String::from("License"),
-        //         paged: true,
-        //         selected: Some(1),
-        //         items: licenses,
-        //     };
+            // Get "author"
+            let git_user_name =
+                utils::get_git_config(&app, "user.name").unwrap_or_else(String::new);
 
-        //     select.run().unwrap_or_else(|err| {
-        //         error!("{}", err.to_string());
-        //         process::exit(1);
-        //     });
+            let git_email = format!(
+                "<{}>",
+                utils::get_git_config(&app, "user.email").unwrap_or_else(String::new)
+            );
 
-        //     let license = License::from_index(select.selected.unwrap()).unwrap();
+            let author;
 
-        //     let input = Confirm {
-        //         message: String::from("private"),
-        //         default: false,
-        //     };
+            if git_user_name != String::new() && git_email != String::new() {
+                let input: Input = Input {
+                    message: String::from("author"),
+                    default: Some(format!("{} {}", git_user_name, git_email)),
+                    allow_empty: true,
+                };
 
-        //     let private = input.run().unwrap_or_else(|err| {
-        //         error!("{}", err.to_string());
-        //         process::exit(1);
-        //     });
+                author = input.run().unwrap_or_else(|err| {
+                    error!("{}", err.to_string());
+                    std::process::exit(1);
+                });
+            } else {
+                let input: Input = Input {
+                    message: String::from("author"),
+                    default: None,
+                    allow_empty: true,
+                };
+                author = input.run().unwrap_or_else(|err| {
+                    error!("{}", err.to_string());
+                    std::process::exit(1);
+                });
+            }
 
-        //     InitData {
-        //         name,
-        //         version,
-        //         description: Some(description),
-        //         main,
-        //         repository: Some(repository),
-        //         author: Some(author),
-        //         license,
-        //         private: Some(private),
-        //     }
-        // };
+            // Get "repository"
+            let input: Input = Input {
+                message: String::from("repository"),
+                default: None,
+                allow_empty: true,
+            };
 
-        // let mut file = File::create(r"package.json").unwrap();
-        // if let Err(error) = file.write(data.dump().as_bytes()) {
-        //     error!(
-        //         "{} {}",
-        //         "Failed to create package.json -",
-        //         error.to_string().bright_yellow().bold()
-        //     );
-        //     process::exit(1);
-        // }
+            let repository = input.run().unwrap_or_else(|err| {
+                error!("{}", err.to_string());
+                std::process::exit(1);
+            });
 
-        // println!("{}", "Successfully Initialized package.json".bright_green());
+            let licenses: Vec<String> = License::options();
+
+            let select = Select {
+                message: String::from("License"),
+                paged: true,
+                selected: Some(1),
+                items: licenses,
+            };
+
+            select.run().unwrap_or_else(|err| {
+                error!("{}", err.to_string());
+                std::process::exit(1);
+            });
+
+            let license = License::from_index(select.selected.unwrap()).unwrap();
+
+            let input = Confirm {
+                message: String::from("private"),
+                default: false,
+            };
+
+            let private = input.run().unwrap_or_else(|err| {
+                error!("{}", err.to_string());
+                std::process::exit(1);
+            });
+
+            InitData {
+                name,
+                version,
+                description: Some(description),
+                main,
+                repository: Some(repository),
+                author: Some(author),
+                license,
+                private: Some(private),
+            }
+        };
+
+        let mut file = File::create(r"package.json").unwrap();
+        if let Err(error) = file.write(data.dump().as_bytes()) {
+            error!(
+                "{} {}",
+                "Failed to create package.json -",
+                error.to_string().bright_yellow().bold()
+            );
+            std::process::exit(1);
+        }
+
+        println!("{}", "Successfully Initialized package.json".bright_green());
         Ok(())
     }
 }

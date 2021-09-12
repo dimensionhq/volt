@@ -16,7 +16,7 @@ limitations under the License.
 use crate::{
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
     core::utils::voltapi::VoltPackage,
-    core::utils::{constants::PROGRESS_CHARS, install_extract_package},
+    core::utils::{constants::PROGRESS_CHARS, install_extract_package, print_elapsed},
     core::utils::{fetch_dep_tree, package::PackageJson},
     core::{command::Command, VERSION},
     App,
@@ -117,50 +117,19 @@ impl Command for Add {
                 )),
         );
 
+        // Fetch pre-flattened dependency trees from the registry
         let (responses, elapsed) = fetch_dep_tree(&packages, &progress_bar).await?;
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
 
         for res in responses.iter() {
             let current_version = res.versions.get(&res.version).unwrap();
-            dependencies.extend(current_version.clone());
+            dependencies.extend(current_version.to_owned());
         }
 
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
-        let length = dependencies.len();
-
-        if length == 1 {
-            if elapsed < 0.001 {
-                println!(
-                    "{}: resolved 1 dependency in {:.5}s.",
-                    "success".bright_green(),
-                    elapsed
-                );
-            } else {
-                println!(
-                    "{}: resolved 1 dependency in {:.2}s.",
-                    "success".bright_green(),
-                    elapsed
-                );
-            }
-        } else {
-            if elapsed < 0.001 {
-                println!(
-                    "{}: resolved {} dependencies in {:.4}s.",
-                    "success".bright_green(),
-                    length,
-                    elapsed
-                );
-            } else {
-                println!(
-                    "{}: resolved {} dependencies in {:.2}s.",
-                    "success".bright_green(),
-                    length,
-                    elapsed
-                );
-            }
-        }
+        print_elapsed(dependencies.len(), elapsed);
 
         let mut dependencies: Vec<_> = dependencies
             .iter()

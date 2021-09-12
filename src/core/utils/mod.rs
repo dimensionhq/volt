@@ -11,6 +11,7 @@ use crate::commands::add::Package;
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
 use crate::Instant;
 use app::App;
+use colored::Colorize;
 use errors::VoltError;
 use flate2::read::GzDecoder;
 use futures_util::{stream::FuturesUnordered, StreamExt};
@@ -866,5 +867,39 @@ pub async fn fetch_dep_tree(
             vec![get_volt_response(packages[0].clone()).await?],
             start.elapsed().as_secs_f32(),
         ))
+    }
+}
+
+pub fn print_elapsed(length: usize, elapsed: f32) {
+    if length == 1 {
+        if elapsed < 0.001 {
+            println!(
+                "{}: resolved 1 dependency in {:.5}s.", 
+                "success".bright_green(),
+                elapsed
+            );
+        } else {
+            println!(
+                "{}: resolved 1 dependency in {:.2}s.",
+                "success".bright_green(),
+                elapsed
+            );
+        }
+    } else {
+        if elapsed < 0.001 {
+            println!(
+                "{}: resolved {} dependencies in {:.4}s.",
+                "success".bright_green(),
+                length,
+                elapsed
+            );
+        } else {
+            println!(
+                "{}: resolved {} dependencies in {:.2}s.",
+                "success".bright_green(),
+                length,
+                elapsed
+            );
+        }
     }
 }
