@@ -27,7 +27,6 @@ use commands::init::Init;
 use crate::commands::add::*;
 
 pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
-    println!("{:?}", matches);
     match matches.subcommand() {
         Some(("add", args)) => {
             let app = Arc::new(App::initialize(args)?);
