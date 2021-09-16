@@ -22,7 +22,7 @@ use crate::core::command::Command;
 use crate::core::utils::app::App;
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
-use commands::init::Init;
+use commands::{compress::Compress, init::Init};
 
 use crate::commands::add::*;
 
@@ -35,6 +35,10 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
         Some(("init", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Init::exec(app).await
+        }
+        Some(("compress", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Compress::exec(app).await
         }
         _ => Ok(()),
     }
@@ -72,6 +76,12 @@ async fn main() -> miette::Result<()> {
         "[flags]".bright_blue(),
     );
 
+    let compress_usage = format!(
+        "{} compress {}",
+        "volt".bright_green().bold(),
+        "[flags]".bright_blue(),
+    );
+
     let app = clap::App::new("volt")
         .version("1.0.0")
         .author("XtremeDevX <xtremedevx@gmail.com>")
@@ -93,6 +103,11 @@ async fn main() -> miette::Result<()> {
                 .about("Interactively create and edit your package.json file.")
                 .override_usage(init_usage.as_str())
                 .arg(Arg::new("yes").short('y').about("Use default options")),
+        )
+        .subcommand(
+            clap::App::new("compress")
+                .about("Interactively create and edit your package.json file.")
+                .override_usage(compress_usage.as_str()),
         );
 
     let matches = app.get_matches();

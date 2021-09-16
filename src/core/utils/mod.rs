@@ -135,7 +135,6 @@ pub async fn get_volt_response(package: Package) -> Result<VoltResponse> {
     loop {
         let package_name = package.name.clone();
         // get a response
-        let start = Instant::now();
         let mut response = isahc::get_async(format!(
             "https://cdn.jsdelivr.net/npm/@voltpkg/{}/data.json",
             package_name
@@ -500,6 +499,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                     let mut archive = Archive::new(gz_decoder);
 
                     for entry in archive.entries().unwrap() {
+                        
                         let mut entry = entry.unwrap();
                         let path = entry.path().unwrap();
                         let mut new_path = PathBuf::new();
@@ -874,7 +874,7 @@ pub fn print_elapsed(length: usize, elapsed: f32) {
     if length == 1 {
         if elapsed < 0.001 {
             println!(
-                "{}: resolved 1 dependency in {:.5}s.", 
+                "{}: resolved 1 dependency in {:.5}s.",
                 "success".bright_green(),
                 elapsed
             );

@@ -13,6 +13,8 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
+use std::fs::remove_file;
+use std::io::{Read, Write};
 use std::sync::Arc;
 
 use crate::App;
@@ -60,7 +62,44 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
+        let readme_patterns = vec!["readme.md", "changelog.md", "history.md"];
+
+        for entry in jwalk::WalkDir::new("node_modules") {
+            let path = entry.unwrap().path();
+
+            let mut contents = String::new();
+
+            if path.is_file() {
+                let mut file = std::fs::File::open(&path).unwrap_or_else(|err| {
+                    println!("{}", err);
+                    std::process::exit(1);
+                });
+
+                file.read_to_string(&mut contents).unwrap();
+
+                let extension = path.extension();
+
+                if extension.is_some() {
+                    let extension = extension.unwrap();
+
+                    if extension == "md" {
+                        let file_name = path.file_name().unwrap();
+
+                        if readme_patterns
+                            .contains(&file_name.to_str().unwrap().to_lowercase().as_str())
+                        {
+                            remove_file(path).unwrap();
+                        };
+                    } else if extension == "json" {
+                        let minified = minifier::json::minify(&contents);
+
+                        file.write(minified.as_bytes()).unwrap();
+                    }
+                };
+            }
+        }
+
         Ok(())
     }
 }
