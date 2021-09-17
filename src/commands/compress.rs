@@ -25,7 +25,7 @@ use colored::Colorize;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
 use glob::MatchOptions;
-use globset::GlobBuilder;
+use globset::{Glob, GlobBuilder, GlobMatcher, GlobSetBuilder};
 use globwalk::{DirEntry, GlobWalker};
 use miette::Result;
 use regex::Regex;
@@ -63,7 +63,7 @@ Options:
     /// * `app` - Instance of the command (`Arc<App>`)
     /// ## Examples
     /// ```
-    /// // Compress node_modules into node_modules.pack
+    /// //  Optimizes your node_modules by removing redundant files and folders
     /// // .exec() is an async call so you need to await it
     /// Add.exec(app).await;
     /// ```
@@ -71,9 +71,10 @@ Options:
     /// * `Result<()>`
     async fn exec(_app: Arc<App>) -> Result<()> {
         let start = Instant::now();
+
         let removables = vec![
-            "readme*",
-            ".npmignore",
+            "readme.*",
+            ".*.npmignore",
             "license",
             "license.md",
             "licence.md",
@@ -82,117 +83,99 @@ Options:
             "license-mit",
             "history.md",
             "history.markdown",
-            ".gitattributes",
-            ".gitmodules",
-            ".travis.yml",
+            ".*.gitattributes",
+            ".*.gitmodules",
+            ".*.travis.yml",
             "binding.gyp",
-            "contributing*",
+            "contributing.*",
             "component.json",
             "composer.json",
-            "makefile*",
-            "gemfile*",
-            "rakefile*",
-            ".coveralls.yml",
-            "example*",
-            "changelog*",
-            "changes",
-            ".jshintrc",
+            "makefile.*",
+            "gemfile.*",
+            "rakefile.*",
+            ".*.coveralls.yml",
+            "example.*",
+            "changelog.*",
+            "changes.*",
+            ".*.jshintrc",
             "bower.json",
-            "*appveyor.yml",
-            "*.log",
-            "*.tlog",
-            "*.patch",
-            "*.sln",
-            "*.pdb",
-            "*.vcxproj*",
-            ".gitignore",
-            ".sauce-labs*",
-            ".vimrc*",
-            ".idea",
-            "examples",
-            "samples",
-            "test",
-            "tests",
+            "appveyor.yml",
+            ".*.log",
+            ".*.tlog",
+            ".*.patch",
+            ".*.sln",
+            ".*.pdb",
+            ".*.vcxproj",
+            ".*.gitignore",
+            ".*.sauce-labs",
+            ".*.vimrc",
+            ".*.idea",
+            "examples.*",
+            "samples.*",
+            "test.*",
+            "tests.*",
             "draft-00",
             "draft-01",
             "draft-02",
             "draft-03",
             "draft-04",
-            ".eslintrc",
-            ".eslintrc.*",
-            ".jamignore",
-            ".jscsrc",
-            "*.todo",
-            "*.md",
-            "*.markdown",
-            "*.js.map",
-            "contributors",
-            "*.orig",
-            "*.rej",
-            ".zuul.yml",
-            ".editorconfig",
-            ".npmrc",
-            ".jshintignore",
-            ".eslintignore",
-            ".lint",
-            ".lintignore",
+            ".*.eslintrc",
+            ".*.jamignore",
+            ".*.jscsrc",
+            ".*.todo",
+            ".*.md",
+            ".*.js.map",
+            ".*.js.map",
+            "contributors.*",
+            ".*.orig",
+            ".*.rej",
+            ".*.zuul.yml",
+            ".*.editorconfig",
+            ".*.npmrc",
+            ".*.jshintignore",
+            ".*.eslintignore",
+            ".*.lint",
+            ".*.lintignore",
             "cakefile",
-            ".istanbul.yml",
+            ".*.istanbul.yml",
             "authors",
             "hyper-schema",
             "mocha.opts",
-            ".gradle",
-            ".tern-port",
-            ".gitkeep",
-            ".dntrc",
-            "*.watchr",
-            ".jsbeautifyrc",
+            ".*.gradle",
+            ".*.tern-port",
+            ".*.gitkeep",
+            ".*.dntrc",
+            ".*.watchr",
+            ".*.jsbeautifyrc",
             "cname",
             "screenshots",
-            ".dir-locals.el",
+            ".*.dir-locals.el",
             "jsl.conf",
             "jsstyle",
             "benchmark",
             "dockerfile",
-            "*.nuspec",
-            "*.csproj",
+            ".*.nuspec",
+            ".*.csproj",
             "thumbs.db",
-            ".ds_store",
+            ".*.ds_store",
             "desktop.ini",
             "npm-debug.log",
             "wercker.yml",
-            ".flowconfig",
+            ".*.flowconfig",
         ];
 
-        let mut files: Vec<PathBuf> = vec![];
-
-        let mut workers = FuturesUnordered::new();
-
-        for removable in removables {
-            workers.push(tokio::spawn(async move {
-                let mut results = vec![];
-                for result in glob::glob_with(
-                    format!("node_modules/**/{}", removable).as_str(),
-                    MatchOptions {
-                        case_sensitive: false,
-                        require_literal_separator: false,
-                        require_literal_leading_dot: false,
-                    },
-                )
+        for entry in jwalk::WalkDir::new("node_modules") {
+            let path = entry
                 .unwrap()
-                {
-                    results.push(result.unwrap())
-                }
+                .path()
+                .to_str()
+                .unwrap()
+                .to_string()
+                .replace(r"node_modules\", "")
+                .to_lowercase();
 
-                results
-            }));
+            println!("{}", path);
         }
-
-        while let Some(Ok(mut result)) = workers.next().await {
-            files.append(&mut result);
-        }
-
-        println!("{}", start.elapsed().as_secs_f32());
 
         Ok(())
     }
