@@ -13,8 +13,8 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
-use std::fs::remove_file;
-use std::io::{Read, Write};
+use std::fs::{remove_dir, remove_file, OpenOptions};
+use std::io::{Read, Seek, Write};
 use std::sync::Arc;
 
 use crate::App;
@@ -62,42 +62,107 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        let readme_patterns = vec!["readme.md", "changelog.md", "history.md"];
+    async fn exec(_app: Arc<App>) -> Result<()> {
+        let removables = vec![
+            "readme",
+            "readme.*",
+            ".npmignore",
+            "license",
+            "license.md",
+            "licence.md",
+            "license.markdown",
+            "licence.markdown",
+            "license-mit",
+            "history.md",
+            "history.markdown",
+            ".gitattributes",
+            ".gitmodules",
+            ".travis.yml",
+            "binding.gyp",
+            "contributing*",
+            "component.json",
+            "composer.json",
+            "makefile.*",
+            "gemfile.*",
+            "rakefile.*",
+            ".coveralls.yml",
+            "example.*",
+            "changelog",
+            "changelog.*",
+            "changes",
+            ".jshintrc",
+            "bower.json",
+            "*appveyor.yml",
+            "*.log",
+            "*.tlog",
+            "*.patch",
+            "*.sln",
+            "*.pdb",
+            "*.vcxproj*",
+            ".gitignore",
+            ".sauce-labs*",
+            ".vimrc*",
+            ".idea",
+            "examples",
+            "samples",
+            "test",
+            "tests",
+            "draft-00",
+            "draft-01",
+            "draft-02",
+            "draft-03",
+            "draft-04",
+            ".eslintrc",
+            ".eslintrc.*",
+            ".jamignore",
+            ".jscsrc",
+            "*.todo",
+            "*.md",
+            "*.markdown",
+            "*.js.map",
+            "contributors",
+            "*.orig",
+            "*.rej",
+            ".zuul.yml",
+            ".editorconfig",
+            ".npmrc",
+            ".jshintignore",
+            ".eslintignore",
+            ".lint",
+            ".lintignore",
+            "cakefile",
+            ".istanbul.yml",
+            "authors",
+            "hyper-schema",
+            "mocha.opts",
+            ".gradle",
+            ".tern-port",
+            ".gitkeep",
+            ".dntrc",
+            "*.watchr",
+            ".jsbeautifyrc",
+            "cname",
+            "screenshots",
+            ".dir-locals.el",
+            "jsl.conf",
+            "jsstyle",
+            "benchmark",
+            "dockerfile",
+            "*.nuspec",
+            "*.csproj",
+            "thumbs.db",
+            ".ds_store",
+            "desktop.ini",
+            "yarn-error.log",
+            "npm-debug.log",
+            "wercker.yml",
+            ".flowconfig",
+        ];
 
         for entry in jwalk::WalkDir::new("node_modules") {
             let path = entry.unwrap().path();
 
-            let mut contents = String::new();
-
-            if path.is_file() {
-                let mut file = std::fs::File::open(&path).unwrap_or_else(|err| {
-                    println!("{}", err);
-                    std::process::exit(1);
-                });
-
-                file.read_to_string(&mut contents).unwrap();
-
-                let extension = path.extension();
-
-                if extension.is_some() {
-                    let extension = extension.unwrap();
-
-                    if extension == "md" {
-                        let file_name = path.file_name().unwrap();
-
-                        if readme_patterns
-                            .contains(&file_name.to_str().unwrap().to_lowercase().as_str())
-                        {
-                            remove_file(path).unwrap();
-                        };
-                    } else if extension == "json" {
-                        let minified = minifier::json::minify(&contents);
-
-                        file.write(minified.as_bytes()).unwrap();
-                    }
-                };
-            }
+            
         }
 
         Ok(())

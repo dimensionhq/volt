@@ -50,12 +50,12 @@ async fn main() -> miette::Result<()> {
     let volt_help = format!(
         r#"{} {}
 
-        Usage: {} [{}] [{}]
+Usage: {} [{}] [{}]
 
-        Displays help information.
+Displays help information.
 
-        Commands:
-        {} add"#,
+Commands:
+  {} add"#,
         "volt".bright_green().bold(),
         "1.0.0",
         "volt".bright_green().bold(),
