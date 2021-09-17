@@ -13,15 +13,22 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
-use std::fs::{remove_dir, remove_file, OpenOptions};
-use std::io::{Read, Seek, Write};
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Instant;
 
 use crate::App;
 use crate::{core::VERSION, Command};
 use async_trait::async_trait;
 use colored::Colorize;
+use futures::stream::FuturesUnordered;
+use futures::StreamExt;
+use glob::MatchOptions;
+use globset::GlobBuilder;
+use globwalk::{DirEntry, GlobWalker};
 use miette::Result;
+use regex::Regex;
 pub struct Compress {}
 
 #[async_trait]
@@ -63,9 +70,9 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(_app: Arc<App>) -> Result<()> {
+        let start = Instant::now();
         let removables = vec![
-            "readme",
-            "readme.*",
+            "readme*",
             ".npmignore",
             "license",
             "license.md",
@@ -82,13 +89,12 @@ Options:
             "contributing*",
             "component.json",
             "composer.json",
-            "makefile.*",
-            "gemfile.*",
-            "rakefile.*",
+            "makefile*",
+            "gemfile*",
+            "rakefile*",
             ".coveralls.yml",
-            "example.*",
-            "changelog",
-            "changelog.*",
+            "example*",
+            "changelog*",
             "changes",
             ".jshintrc",
             "bower.json",
@@ -153,17 +159,40 @@ Options:
             "thumbs.db",
             ".ds_store",
             "desktop.ini",
-            "yarn-error.log",
             "npm-debug.log",
             "wercker.yml",
             ".flowconfig",
         ];
 
-        for entry in jwalk::WalkDir::new("node_modules") {
-            let path = entry.unwrap().path();
+        let mut files: Vec<PathBuf> = vec![];
 
-            
+        let mut workers = FuturesUnordered::new();
+
+        for removable in removables {
+            workers.push(tokio::spawn(async move {
+                let mut results = vec![];
+                for result in glob::glob_with(
+                    format!("node_modules/**/{}", removable).as_str(),
+                    MatchOptions {
+                        case_sensitive: false,
+                        require_literal_separator: false,
+                        require_literal_leading_dot: false,
+                    },
+                )
+                .unwrap()
+                {
+                    results.push(result.unwrap())
+                }
+
+                results
+            }));
         }
+
+        while let Some(Ok(mut result)) = workers.next().await {
+            files.append(&mut result);
+        }
+
+        println!("{}", start.elapsed().as_secs_f32());
 
         Ok(())
     }
