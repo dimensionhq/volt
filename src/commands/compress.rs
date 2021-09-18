@@ -13,7 +13,8 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
-use std::io::Write;
+use std::fs::{File, OpenOptions};
+use std::io::{Read, Seek, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -182,7 +183,24 @@ Options:
             if !has_match {
                 if let Some(extension) = path.extension() {
                     match extension.to_str().unwrap() {
-                        "json" => {}
+                        "json" => {
+                            let mut contents = String::new();
+
+                            let mut file = OpenOptions::new()
+                                .read(true)
+                                .write(true)
+                                .open(path)
+                                .unwrap();
+
+                            file.read_to_string(&mut contents).unwrap();
+
+                            let minified = minifier::json::minify(&contents);
+
+                            file.set_len(0).unwrap();
+                            file.rewind().unwrap();
+
+                            file.write_all(minified.as_bytes()).unwrap();
+                        }
                         "js" | "ts" => {}
                         _ => {}
                     }
