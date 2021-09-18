@@ -58,9 +58,6 @@ thiserror = "1.0"
 tokio = { version = "1.10.0", features = ["fs", "macros", "rt-multi-thread"] }
 walkdir = "2.3.2"
 minifier = "0.0.41"
-glob = "0.3.0"
-globwalk = "0.8.1"
-globset = "0.4.8"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [
