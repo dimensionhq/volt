@@ -13,6 +13,7 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -172,16 +173,23 @@ Options:
 
             for regex in REGEXES.iter() {
                 if regex.is_match(&path_str) {
-                    matches.push(path);
+                    matches.push(path.clone());
                     has_match = true;
                     break;
                 };
             }
 
-            if !has_match {}
+            if !has_match {
+                if let Some(extension) = path.extension() {
+                    match extension.to_str().unwrap() {
+                        "json" => {}
+                        "js" | "ts" => {}
+                        _ => {}
+                    }
+                }
+            }
         }
 
-        println!("{}", matches.len());
         // If JS/TS remove comments
         // If JSON, minify it.
         Ok(())
