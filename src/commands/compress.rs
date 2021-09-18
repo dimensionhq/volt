@@ -13,22 +13,114 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Instant;
 
 use crate::App;
 use crate::{core::VERSION, Command};
 use async_trait::async_trait;
 use colored::Colorize;
-use futures::stream::FuturesUnordered;
-use futures::StreamExt;
-use glob::MatchOptions;
-use globset::{Glob, GlobBuilder, GlobMatcher, GlobSetBuilder};
-use globwalk::{DirEntry, GlobWalker};
+use lazy_static::lazy_static;
 use miette::Result;
 use regex::Regex;
+
+lazy_static! {
+    static ref REGEXES: Vec<Regex> = {
+        vec![
+            r"(?:/|\\)readme.*",
+            r"(?:/|\\).npmignore",
+            r"(?:/|\\)license",
+            r"(?:/|\\)license.md",
+            r"(?:/|\\)license.markdown",
+            r"(?:/|\\)licence.markdown",
+            r"(?:/|\\)license-mit",
+            r"(?:/|\\)history.md",
+            r"(?:/|\\)history.markdown",
+            r"(?:/|\\).*.gitattributes",
+            r"(?:/|\\).*.gitmodules",
+            r"(?:/|\\).*.travis.yml",
+            r"(?:/|\\)binding.gyp",
+            r"(?:/|\\)contributing.*",
+            r"(?:/|\\)component.json",
+            r"(?:/|\\)composer.json",
+            r"(?:/|\\)makefile.*",
+            r"(?:/|\\)gemfile.*",
+            r"(?:/|\\)rakefile.*",
+            r"(?:/|\\).coveralls.yml",
+            r"(?:/|\\)example.*",
+            r"(?:/|\\)changelog.*",
+            r"(?:/|\\)changes.*",
+            r"(?:/|\\).jshintrc",
+            r"(?:/|\\)bower.json",
+            r"(?:/|\\)appveyor.yml",
+            r"(?:/|\\).*.log",
+            r"(?:/|\\).*.tlog",
+            r"(?:/|\\).*.patch",
+            r"(?:/|\\).*.sln",
+            r"(?:/|\\).*.pdb",
+            r"(?:/|\\).*.vcxproj",
+            r"(?:/|\\).*.gitignore",
+            r"(?:/|\\).*.sauce-labs",
+            r"(?:/|\\).*.vimrc",
+            r"(?:/|\\).*.idea",
+            r"(?:/|\\)examples.*",
+            r"(?:/|\\)samples.*",
+            r"(?:/|\\)test.*",
+            r"(?:/|\\)tests.*",
+            "draft-00",
+            "draft-01",
+            "draft-02",
+            "draft-03",
+            "draft-04",
+            r"(?:/|\\).*.eslintrc",
+            r"(?:/|\\).*.jamignore",
+            r"(?:/|\\).*.jscsrc",
+            r"(?:/|\\).*.todo",
+            r"(?:/|\\).*.md",
+            r"(?:/|\\).*.js.map",
+            r"(?:/|\\)contributors.*",
+            r"(?:/|\\).orig",
+            r"(?:/|\\).rej",
+            r"(?:/|\\).zuul.yml",
+            r"(?:/|\\).editorconfig",
+            r"(?:/|\\).npmrc",
+            r"(?:/|\\).jshintignore",
+            r"(?:/|\\).eslintignore",
+            r"(?:/|\\).lint",
+            r"(?:/|\\).lintignore",
+            "cakefile",
+            r"(?:/|\\).istanbul.yml",
+            "authors",
+            "hyper-schema",
+            "mocha.opts",
+            r"(?:/|\\).*.gradle",
+            r"(?:/|\\).tern-port",
+            r"(?:/|\\).gitkeep",
+            r"(?:/|\\).dntrc",
+            r"(?:/|\\).watchr",
+            r"(?:/|\\).jsbeautifyrc",
+            "cname",
+            "screenshots",
+            r"(?:/|\\).dir-locals.el",
+            "jsl.conf",
+            "jsstyle",
+            "benchmark",
+            "dockerfile",
+            r"(?:/|\\).nuspec",
+            r"(?:/|\\).csproj",
+            "thumbs.db",
+            r"(?:/|\\).ds_store",
+            "desktop.ini",
+            "npm-debug.log",
+            "wercker.yml",
+            r"(?:/|\\).flowconfig",
+        ]
+        .into_iter()
+        .map(|v| Regex::new(v).unwrap())
+        .collect()
+    };
+}
+
 pub struct Compress {}
 
 #[async_trait]
@@ -70,113 +162,28 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(_app: Arc<App>) -> Result<()> {
-        let start = Instant::now();
-
-        let removables = vec![
-            "readme.*",
-            ".*.npmignore",
-            "license",
-            "license.md",
-            "licence.md",
-            "license.markdown",
-            "licence.markdown",
-            "license-mit",
-            "history.md",
-            "history.markdown",
-            ".*.gitattributes",
-            ".*.gitmodules",
-            ".*.travis.yml",
-            "binding.gyp",
-            "contributing.*",
-            "component.json",
-            "composer.json",
-            "makefile.*",
-            "gemfile.*",
-            "rakefile.*",
-            ".*.coveralls.yml",
-            "example.*",
-            "changelog.*",
-            "changes.*",
-            ".*.jshintrc",
-            "bower.json",
-            "appveyor.yml",
-            ".*.log",
-            ".*.tlog",
-            ".*.patch",
-            ".*.sln",
-            ".*.pdb",
-            ".*.vcxproj",
-            ".*.gitignore",
-            ".*.sauce-labs",
-            ".*.vimrc",
-            ".*.idea",
-            "examples.*",
-            "samples.*",
-            "test.*",
-            "tests.*",
-            "draft-00",
-            "draft-01",
-            "draft-02",
-            "draft-03",
-            "draft-04",
-            ".*.eslintrc",
-            ".*.jamignore",
-            ".*.jscsrc",
-            ".*.todo",
-            ".*.md",
-            ".*.js.map",
-            ".*.js.map",
-            "contributors.*",
-            ".*.orig",
-            ".*.rej",
-            ".*.zuul.yml",
-            ".*.editorconfig",
-            ".*.npmrc",
-            ".*.jshintignore",
-            ".*.eslintignore",
-            ".*.lint",
-            ".*.lintignore",
-            "cakefile",
-            ".*.istanbul.yml",
-            "authors",
-            "hyper-schema",
-            "mocha.opts",
-            ".*.gradle",
-            ".*.tern-port",
-            ".*.gitkeep",
-            ".*.dntrc",
-            ".*.watchr",
-            ".*.jsbeautifyrc",
-            "cname",
-            "screenshots",
-            ".*.dir-locals.el",
-            "jsl.conf",
-            "jsstyle",
-            "benchmark",
-            "dockerfile",
-            ".*.nuspec",
-            ".*.csproj",
-            "thumbs.db",
-            ".*.ds_store",
-            "desktop.ini",
-            "npm-debug.log",
-            "wercker.yml",
-            ".*.flowconfig",
-        ];
+        let mut matches: Vec<PathBuf> = vec![];
 
         for entry in jwalk::WalkDir::new("node_modules") {
-            let path = entry
-                .unwrap()
-                .path()
-                .to_str()
-                .unwrap()
-                .to_string()
-                .replace(r"node_modules\", "")
-                .to_lowercase();
+            let path = entry.unwrap().path();
 
-            println!("{}", path);
+            let path_str = path.to_str().unwrap().to_string().to_lowercase();
+            let mut has_match = false;
+
+            for regex in REGEXES.iter() {
+                if regex.is_match(&path_str) {
+                    matches.push(path);
+                    has_match = true;
+                    break;
+                };
+            }
+
+            if !has_match {}
         }
 
+        println!("{}", matches.len());
+        // If JS/TS remove comments
+        // If JSON, minify it.
         Ok(())
     }
 }
