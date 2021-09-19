@@ -13,7 +13,7 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{Read, Seek, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -31,11 +31,6 @@ lazy_static! {
         vec![
             r"(?:/|\\)readme.*",
             r"(?:/|\\).npmignore",
-            r"(?:/|\\)license",
-            r"(?:/|\\)license.md",
-            r"(?:/|\\)license.markdown",
-            r"(?:/|\\)licence.markdown",
-            r"(?:/|\\)license-mit",
             r"(?:/|\\)history.md",
             r"(?:/|\\)history.markdown",
             r"(?:/|\\).*.gitattributes",
@@ -201,15 +196,16 @@ Options:
 
                             file.write_all(minified.as_bytes()).unwrap();
                         }
-                        "js" | "ts" => {}
                         _ => {}
                     }
                 }
             }
         }
 
-        // If JS/TS remove comments
-        // If JSON, minify it.
+        for matcher in matches {
+            println!("{}", matcher.display());
+        }
+
         Ok(())
     }
 }
