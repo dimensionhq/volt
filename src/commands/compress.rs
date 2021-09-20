@@ -17,11 +17,14 @@ use std::fs::OpenOptions;
 use std::io::{Read, Seek, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::thread::{sleep, sleep_ms};
+use std::time::Duration;
 
 use crate::App;
 use crate::{core::VERSION, Command};
 use async_trait::async_trait;
 use colored::Colorize;
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use miette::Result;
 use regex::Regex;
@@ -120,6 +123,25 @@ lazy_static! {
 
 pub struct Compress {}
 
+pub fn minify(path: PathBuf) {
+    let mut contents = String::new();
+
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(path)
+        .unwrap();
+
+    file.read_to_string(&mut contents).unwrap();
+
+    let minified = minifier::json::minify(&contents);
+
+    file.set_len(0).unwrap();
+    file.rewind().unwrap();
+
+    file.write_all(minified.as_bytes()).unwrap();
+}
+
 #[async_trait]
 impl Command for Compress {
     /// Display a help menu for the `volt compress` command.
@@ -160,6 +182,7 @@ Options:
     /// * `Result<()>`
     async fn exec(_app: Arc<App>) -> Result<()> {
         let mut matches: Vec<PathBuf> = vec![];
+        let mut minify_files: Vec<PathBuf> = vec![];
 
         for entry in jwalk::WalkDir::new("node_modules") {
             let path = entry.unwrap().path();
@@ -179,22 +202,7 @@ Options:
                 if let Some(extension) = path.extension() {
                     match extension.to_str().unwrap() {
                         "json" => {
-                            let mut contents = String::new();
-
-                            let mut file = OpenOptions::new()
-                                .read(true)
-                                .write(true)
-                                .open(path)
-                                .unwrap();
-
-                            file.read_to_string(&mut contents).unwrap();
-
-                            let minified = minifier::json::minify(&contents);
-
-                            file.set_len(0).unwrap();
-                            file.rewind().unwrap();
-
-                            file.write_all(minified.as_bytes()).unwrap();
+                            minify_files.push(path.clone());
                         }
                         _ => {}
                     }
@@ -202,9 +210,18 @@ Options:
             }
         }
 
-        for matcher in matches {
-            println!("{}", matcher.display());
+        let minify_bar = ProgressBar::new(minify_files.len() as u64);
+        minify_bar.set_style(
+            ProgressStyle::default_bar()
+                .template("[{bar:.blue/magenta}]")
+                .progress_chars("=>-"),
+        );
+
+        for minify in minify_files.iter() {
+            minify_bar.inc(1);
         }
+
+        minify_bar.finish();
 
         Ok(())
     }
