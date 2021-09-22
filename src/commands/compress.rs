@@ -13,12 +13,12 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::thread::{sleep, sleep_ms};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::App;
 use crate::{core::VERSION, Command};
@@ -26,7 +26,7 @@ use async_trait::async_trait;
 use colored::Colorize;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 use regex::Regex;
 
 lazy_static! {
@@ -123,23 +123,31 @@ lazy_static! {
 
 pub struct Compress {}
 
-pub fn minify(path: PathBuf) {
-    let mut contents = String::new();
+pub fn minify(path: PathBuf) -> Result<()> {
+    let start = Instant::now();
 
-    let mut file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(path)
-        .unwrap();
+    let file = File::open(&path).into_diagnostic()?;
+    let mut reader = minifier::json::minify_from_read(&file);
 
-    file.read_to_string(&mut contents).unwrap();
+    let mut out_file = tempfile::NamedTempFile::new().unwrap();
 
-    let minified = minifier::json::minify(&contents);
+    std::io::copy(&mut reader, &mut out_file).unwrap();
+    out_file.persist(&path).unwrap();
+    // println!("{}", out_file.path().display());
+    // std::io::copy(&mut reader, &mut out_file);
+    // std::fs::rename(out_file.path(), path).unwrap();
 
-    file.set_len(0).unwrap();
-    file.rewind().unwrap();
+    // file.read_to_string(&mut contents).into_diagnostic()?;
 
-    file.write_all(minified.as_bytes()).unwrap();
+    // let minified = minifier::json::minify(&contents);
+
+    // file.set_len(0).into_diagnostic()?;
+    // file.rewind().into_diagnostic()?;
+
+    // file.write_all(minified.as_bytes()).into_diagnostic()?;
+    println!("{}", start.elapsed().as_secs_f32());
+
+    Ok(())
 }
 
 #[async_trait]
@@ -213,11 +221,12 @@ Options:
         let minify_bar = ProgressBar::new(minify_files.len() as u64);
         minify_bar.set_style(
             ProgressStyle::default_bar()
-                .template("[{bar:.blue/magenta}]")
+                .template("Minifying Files - [{bar:.green/magenta}] {pos} / {len} {per_sec}")
                 .progress_chars("=>-"),
         );
 
-        for minify in minify_files.iter() {
+        for file in minify_files {
+            minify(file).unwrap();
             minify_bar.inc(1);
         }
 
