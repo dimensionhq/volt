@@ -13,21 +13,21 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
-use std::fs::{File, OpenOptions};
-use std::io::{Read, Seek, Write};
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::thread::{sleep, sleep_ms};
-use std::time::{Duration, Instant};
-
 use crate::App;
 use crate::{core::VERSION, Command};
 use async_trait::async_trait;
 use colored::Colorize;
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use futures::stream::FuturesUnordered;
+use futures::StreamExt;
+use indicatif::{ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
+use std::io::SeekFrom;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Instant;
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
 lazy_static! {
     static ref REGEXES: Vec<Regex> = {
@@ -123,29 +123,27 @@ lazy_static! {
 
 pub struct Compress {}
 
-pub fn minify(path: PathBuf) -> Result<()> {
-    let start = Instant::now();
+// minify a JSON file
+pub async fn minify(path: &PathBuf) -> Result<()> {
+    let mut contents = String::new();
 
-    let file = File::open(&path).into_diagnostic()?;
-    let mut reader = minifier::json::minify_from_read(&file);
+    let mut file = tokio::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(path)
+        .await
+        .into_diagnostic()?;
 
-    let mut out_file = tempfile::NamedTempFile::new().unwrap();
+    file.read_to_string(&mut contents).await.into_diagnostic()?;
 
-    std::io::copy(&mut reader, &mut out_file).unwrap();
-    out_file.persist(&path).unwrap();
-    // println!("{}", out_file.path().display());
-    // std::io::copy(&mut reader, &mut out_file);
-    // std::fs::rename(out_file.path(), path).unwrap();
+    let minified = minifier::json::minify(&contents);
 
-    // file.read_to_string(&mut contents).into_diagnostic()?;
+    file.set_len(0).await.into_diagnostic()?;
+    file.seek(SeekFrom::Start(0)).await.into_diagnostic()?;
 
-    // let minified = minifier::json::minify(&contents);
-
-    // file.set_len(0).into_diagnostic()?;
-    // file.rewind().into_diagnostic()?;
-
-    // file.write_all(minified.as_bytes()).into_diagnostic()?;
-    println!("{}", start.elapsed().as_secs_f32());
+    file.write_all(minified.as_bytes())
+        .await
+        .into_diagnostic()?;
 
     Ok(())
 }
@@ -219,15 +217,25 @@ Options:
         }
 
         let minify_bar = ProgressBar::new(minify_files.len() as u64);
+
         minify_bar.set_style(
             ProgressStyle::default_bar()
                 .template("Minifying Files - [{bar:.green/magenta}] {pos} / {len} {per_sec}")
                 .progress_chars("=>-"),
         );
 
-        for file in minify_files {
-            minify(file).unwrap();
-            minify_bar.inc(1);
+        let mut workers = FuturesUnordered::new();
+
+        for chunk in minify_files.chunks(20) {
+            workers.push(async move {
+                for file in chunk {
+                    minify(file).await.unwrap();
+                }
+            });
+        }
+
+        while workers.next().await.is_some() {
+            minify_bar.inc(20);
         }
 
         minify_bar.finish();
