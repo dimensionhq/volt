@@ -12,40 +12,6 @@ use std::{env, path::PathBuf};
 
 use super::npm::parse_versions;
 
-#[derive(Debug, PartialEq)]
-pub enum AppFlag {
-    Help,
-    Version,
-    Yes,
-    Depth,
-    Verbose,
-    NoProgress,
-    Dev,
-}
-
-impl AppFlag {
-    pub fn get(arg: &String) -> Option<AppFlag> {
-        let mut flag = arg.to_string();
-
-        // --verbose -> verbose
-        while flag.starts_with("-") {
-            flag.remove(0);
-        }
-
-        match flag.to_lowercase().as_str() {
-            "help" => Some(AppFlag::Help),
-            "h" => Some(AppFlag::Help),
-            "version" => Some(AppFlag::Version),
-            "yes" => Some(AppFlag::Yes),
-            "y" => Some(AppFlag::Yes),
-            "depth" => Some(AppFlag::Depth),
-            "verbose" => Some(AppFlag::Verbose),
-            "no-progress" => Some(AppFlag::NoProgress),
-            &_ => None,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct App {
     pub current_dir: PathBuf,

@@ -26,7 +26,6 @@ use regex::Regex;
 use std::io::SeekFrom;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Instant;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
 lazy_static! {
