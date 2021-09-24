@@ -19,7 +19,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::io::{self, BufWriter};
+use std::io;
 use std::path::{Path, PathBuf};
 
 use serde::{de, ser, Deserialize, Deserializer, Serialize, Serializer};
@@ -32,8 +32,8 @@ pub enum LockFileError {
     #[error("unable to deserialize lock file")]
     #[allow(dead_code)]
     Decode(serde_json::Error),
-    #[error("unable to serialize lock file")]
-    Encode(serde_json::Error),
+    // #[error("unable to serialize lock file")]
+    // Encode(serde_json::Error),
 }
 
 /// The lock file is responsible for locking/pinning dependency versions in a given project.
@@ -171,17 +171,17 @@ impl LockFile {
         })
     }
 
-    /// Saves a lock file dumping pretty, formatted json
-    pub fn save_pretty(&self) -> Result<(), LockFileError> {
-        let lock_file = File::create(&self.path).map_err(LockFileError::IO)?;
-        let writer = BufWriter::new(lock_file);
-        serde_json::to_writer_pretty(writer, &self.dependencies).map_err(LockFileError::Encode)
-    }
+    // Saves a lock file dumping pretty, formatted json
+    // pub fn save_pretty(&self) -> Result<(), LockFileError> {
+    //     let lock_file = File::create(&self.path).map_err(LockFileError::IO)?;
+    //     let writer = BufWriter::new(lock_file);
+    //     serde_json::to_writer_pretty(writer, &self.dependencies).map_err(LockFileError::Encode)
+    // }
 
-    /// Saves a lock file to the same path it was opened from.
-    pub fn save(&self) -> Result<(), LockFileError> {
-        let lock_file = File::create(&self.path).map_err(LockFileError::IO)?;
-        let writer = BufWriter::new(lock_file);
-        serde_json::to_writer(writer, &self.dependencies).map_err(LockFileError::Encode)
-    }
+    // Saves a lock file to the same path it was opened from.
+    // pub fn save(&self) -> Result<(), LockFileError> {
+    //     let lock_file = File::create(&self.path).map_err(LockFileError::IO)?;
+    //     let writer = BufWriter::new(lock_file);
+    //     serde_json::to_writer(writer, &self.dependencies).map_err(LockFileError::Encode)
+    // }
 }

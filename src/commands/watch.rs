@@ -14,27 +14,27 @@
 //! Handle an unknown command (can be listed in scripts).
 
 use miette::Result;
-use regex::Regex;
+// use regex::Regex;
 // use rslint_parser::Syntax;
-use std::fs::{read_dir, read_to_string};
-use std::path::Path;
+// use std::fs::{read_dir, read_to_string};
+// use std::path::Path;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use colored::Colorize;
-use indicatif::ProgressBar;
-use indicatif::ProgressStyle;
-use walkdir::WalkDir;
+// use colored::Colorize;
+// use indicatif::ProgressBar;
+// use indicatif::ProgressStyle;
+// use walkdir::WalkDir;
 
 use crate::core::command::Command;
 use crate::App;
 
-use syntect::easy::HighlightLines;
-use syntect::highlighting::{Style, ThemeSet};
-use syntect::parsing::SyntaxSet;
-use syntect::util::{as_24_bit_terminal_escaped, LinesWithEndings};
+// use syntect::easy::HighlightLines;
+// use syntect::highlighting::{Style, ThemeSet};
+// use syntect::parsing::SyntaxSet;
+// use syntect::util::{as_24_bit_terminal_escaped, LinesWithEndings};
 
-const PROGRESS_CHARS: &str = "=> ";
+// const PROGRESS_CHARS: &str = "=> ";
 pub struct Watch {}
 
 // fn gen_pointer_string(start: u128, end: u128) -> String {

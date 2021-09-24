@@ -14,19 +14,14 @@
     limitations under the License.
 */
 
-use std::io::Write;
 use std::path::PathBuf;
-use std::{
-    collections::HashMap,
-    fs::{read_to_string, File},
-};
+use std::{collections::HashMap, fs::read_to_string};
 
 use super::errors::VoltError;
 use miette::{IntoDiagnostic, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::commands::add::Package;
-use crate::error;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -193,7 +188,7 @@ pub struct PackageJson {
 }
 
 impl PackageJson {
-    pub fn open(path: &str) -> Result<(Self, PathBuf)> {
+    pub fn open(_path: &str) -> Result<(Self, PathBuf)> {
         for parent in std::env::current_exe()
             .map_err(|e| VoltError::EnvironmentError {
                 env: String::from("CURRENT_DIR"),
@@ -223,50 +218,50 @@ impl PackageJson {
         miette::bail!("No package.json found!")
     }
 
-    pub fn save(&self) -> Result<()> {
-        let mut file = File::create("package.json").into_diagnostic()?;
+    // pub fn save(&self) -> Result<()> {
+    //     let mut file = File::create("package.json").into_diagnostic()?;
 
-        file.write(
-            serde_json::to_string_pretty(self)
-                .into_diagnostic()?
-                .as_bytes(),
-        )
-        .map_err(|e| VoltError::WriteFileError {
-            source: e,
-            name: String::from("package.json"),
-        })?;
+    //     file.write(
+    //         serde_json::to_string_pretty(self)
+    //             .into_diagnostic()?
+    //             .as_bytes(),
+    //     )
+    //     .map_err(|e| VoltError::WriteFileError {
+    //         source: e,
+    //         name: String::from("package.json"),
+    //     })?;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     pub fn add_dependency(&mut self, package: Package) {
         self.dependencies
             .insert(package.name, package.version.unwrap_or_default());
     }
 
-    pub fn add_dev_dependency(&mut self, package: Package) {
-        self.dev_dependencies
-            .insert(package.name, package.version.unwrap_or_default());
-    }
+    // pub fn add_dev_dependency(&mut self, package: Package) {
+    //     self.dev_dependencies
+    //         .insert(package.name, package.version.unwrap_or_default());
+    // }
 
-    pub fn remove_dev_dependency(&mut self, package: Package) {
-        self.dev_dependencies.remove(&package.name);
-    }
+    // pub fn remove_dev_dependency(&mut self, package: Package) {
+    //     self.dev_dependencies.remove(&package.name);
+    // }
 
-    pub fn remove_dependency(&mut self, package: Package) {
-        self.dependencies.remove(&package.name);
-    }
+    // pub fn remove_dependency(&mut self, package: Package) {
+    //     self.dependencies.remove(&package.name);
+    // }
 
-    pub fn update_dependency_version(
-        &mut self,
-        name: String,
-        version: String,
-    ) -> Result<(), String> {
-        if self.dependencies.contains_key(&name) {
-            *self.dependencies.get_mut(&name).unwrap() = version.to_string();
-            Ok(())
-        } else {
-            Err(String::from("dependency does not exist on the hashmap"))
-        }
-    }
+    // pub fn update_dependency_version(
+    //     &mut self,
+    //     name: String,
+    //     version: String,
+    // ) -> Result<(), String> {
+    //     if self.dependencies.contains_key(&name) {
+    //         *self.dependencies.get_mut(&name).unwrap() = version.to_string();
+    //         Ok(())
+    //     } else {
+    //         Err(String::from("dependency does not exist on the hashmap"))
+    //     }
+    // }
 }
