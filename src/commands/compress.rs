@@ -220,7 +220,6 @@ Options:
 
         let matches_bar = ProgressBar::new(matches.len() as u64);
         let minify_bar = ProgressBar::new(minify_files.len() as u64);
-        let empty_bar = ProgressBar::new(node_modules_contents.len() as u64);
 
         minify_bar.set_style(
             ProgressStyle::default_bar()
@@ -234,28 +233,25 @@ Options:
                 .progress_chars("=>-"),
         );
 
-        matches_bar.set_style(
-            ProgressStyle::default_bar()
-                .template("Deleting Empty Files & Folders - [{bar:.green/magenta}] {pos} / {len} {per_sec}")
-                .progress_chars("=>-"),
-        );
+        let mut workers = FuturesUnordered::new();
 
-        let workers = FuturesUnordered::new();
+        let minify_bar = minify_bar.clone();
 
         for chunk in minify_files.chunks(20) {
-            let minify_bar = minify_bar.clone();
-
             workers.push(async move {
                 for file in chunk {
                     minify(file).await.unwrap();
-                    minify_bar.inc(1);
                 }
             });
         }
 
-        minify_bar.finish();
+        while workers.next().await.is_some() {
+            minify_bar.inc(20);
+        }
 
         let mut workers = FuturesUnordered::new();
+
+        minify_bar.finish();
 
         for chunk in matches.chunks(90) {
             let chunk = chunk.to_vec();
@@ -280,17 +276,18 @@ Options:
 
         while workers.next().await.is_some() {}
 
+        matches_bar.finish();
+
         let mut workers = FuturesUnordered::new();
 
         for chunk in node_modules_contents.chunks(200) {
             let chunk = chunk.to_vec();
 
-            let empty_bar = empty_bar.clone();
             workers.push(tokio::task::spawn_blocking(move || {
                 for entry in chunk {
                     if entry.is_dir() && entry.read_dir().unwrap().next().is_none() {
                         match fs::remove_dir(entry) {
-                            Ok(_) => empty_bar.inc(1),
+                            Ok(_) => {}
                             Err(_) => {}
                         };
                     }
