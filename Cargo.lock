@@ -323,6 +323,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3b5ca7a04898ad4bcd41c90c5285445ff5b791899bb1b0abdd2a2aa791211d7"
 
 [[package]]
+name = "bytecount"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72feb31ffc86498dacdbd0fcebb56138e7177a8cc5cea4516031d15ae85a742e"
+
+[[package]]
 name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1018,7 +1024,7 @@ checksum = "58ca3e87ce84e898da3aca4ea4b5717ff95c1381fe3fe700fa411b4bb133c582"
 dependencies = [
  "dirs 3.0.2",
  "memchr",
- "nom",
+ "nom 6.2.1",
 ]
 
 [[package]]
@@ -1387,9 +1393,20 @@ checksum = "0d862c70a58573f4b857bc7a2a5c9ebfd1f39530cbf2e8a355da5a67888f585e"
 dependencies = [
  "atty",
  "ci_info",
- "miette-derive",
+ "miette-derive 2.1.1",
  "once_cell",
  "owo-colors",
+ "thiserror",
+]
+
+[[package]]
+name = "miette"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b98aebb9d23c72cb22c089834ea59be059c6f462e844fd9fd18dd0168ad149c"
+dependencies = [
+ "miette-derive 3.0.0",
+ "once_cell",
  "thiserror",
 ]
 
@@ -1398,6 +1415,17 @@ name = "miette-derive"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ed1011bada9fd84d03031b4a97c18559f86abc13d748f271d01f9eac20d90fe"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "miette-derive"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9a7cd3347eb52480d4ba59d71ce2b48b8b128034e17068c7e2ff3766c2e87a3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1427,6 +1455,12 @@ checksum = "8957f240ecb82a4e699bcf4db189fe8a7f5aa68b9e6d5abf829c62a9ee4630ed"
 dependencies = [
  "once_cell",
 ]
+
+[[package]]
+name = "minimal-lexical"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c835948974f68e0bd58636fc6c5b1fbff7b297e3046f11b3b3c18bbac012c6d"
 
 [[package]]
 name = "miniz_oxide"
@@ -1479,6 +1513,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "node-semver"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd30bd69a8b10d0a556ea552f40ddc42d0f205dfbab3a1e7fba79351a33413cb"
+dependencies = [
+ "bytecount",
+ "miette 3.0.0",
+ "nom 7.0.0",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "nom"
 version = "6.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1487,6 +1534,17 @@ dependencies = [
  "bitvec",
  "funty",
  "memchr",
+ "version_check",
+]
+
+[[package]]
+name = "nom"
+version = "7.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ffd9d26838a953b4af82cbeb9f1592c6798916983959be223a7124e992742c1"
+dependencies = [
+ "memchr",
+ "minimal-lexical",
  "version_check",
 ]
 
@@ -2637,8 +2695,9 @@ dependencies = [
  "isahc",
  "jwalk",
  "lazy_static",
- "miette",
+ "miette 2.1.1",
  "minifier",
+ "node-semver",
  "prettytable-rs",
  "rand",
  "regex",

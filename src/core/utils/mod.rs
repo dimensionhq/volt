@@ -204,69 +204,69 @@ pub async fn get_volt_response_multi(
         .await
 }
 
-#[cfg(windows)]
-pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
-    for entry in WalkDir::new(src) {
-        let entry = entry.unwrap();
+// #[cfg(windows)]
+// pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
+//     for entry in WalkDir::new(src) {
+//         let entry = entry.unwrap();
 
-        if !entry.path().is_dir() {
-            // index.js
-            let entry = entry.path();
+//         if !entry.path().is_dir() {
+//             // index.js
+//             let entry = entry.path();
 
-            let file_name = entry.file_name().unwrap().to_str().unwrap();
+//             let file_name = entry.file_name().unwrap().to_str().unwrap();
 
-            // lib/index.js
-            let path = format!("{}", &entry.display())
-                .replace(r"\", "/")
-                .replace(&app.volt_dir.display().to_string(), "");
+//             // lib/index.js
+//             let path = format!("{}", &entry.display())
+//                 .replace(r"\", "/")
+//                 .replace(&app.volt_dir.display().to_string(), "");
 
-            // node_modules/lib
-            create_dir_all(format!(
-                "node_modules/{}",
-                &path
-                    .replace(
-                        format!("{}", &app.volt_dir.display())
-                            .replace(r"\", "/")
-                            .as_str(),
-                        ""
-                    )
-                    .trim_end_matches(file_name)
-            ))
-            .await
-            .unwrap();
+//             // node_modules/lib
+//             create_dir_all(format!(
+//                 "node_modules/{}",
+//                 &path
+//                     .replace(
+//                         format!("{}", &app.volt_dir.display())
+//                             .replace(r"\", "/")
+//                             .as_str(),
+//                         ""
+//                     )
+//                     .trim_end_matches(file_name)
+//             ))
+//             .await
+//             .unwrap();
 
-            // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
-            if !Path::new(&format!(
-                "node_modules{}",
-                &path.replace(
-                    format!("{}", &app.volt_dir.display())
-                        .replace(r"\", "/")
-                        .as_str(),
-                    ""
-                )
-            ))
-            .exists()
-            {
-                hard_link(
-                    format!("{}", &path),
-                    format!(
-                        "node_modules{}",
-                        &path.replace(
-                            format!("{}", &app.volt_dir.display())
-                                .replace(r"\", "/")
-                                .as_str(),
-                            ""
-                        )
-                    ),
-                )
-                .await
-                .unwrap_or_else(|_| {
-                    0;
-                });
-            }
-        }
-    }
-}
+//             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
+//             if !Path::new(&format!(
+//                 "node_modules{}",
+//                 &path.replace(
+//                     format!("{}", &app.volt_dir.display())
+//                         .replace(r"\", "/")
+//                         .as_str(),
+//                     ""
+//                 )
+//             ))
+//             .exists()
+//             {
+//                 hard_link(
+//                     format!("{}", &path),
+//                     format!(
+//                         "node_modules{}",
+//                         &path.replace(
+//                             format!("{}", &app.volt_dir.display())
+//                                 .replace(r"\", "/")
+//                                 .as_str(),
+//                             ""
+//                         )
+//                     ),
+//                 )
+//                 .await
+//                 .unwrap_or_else(|_| {
+//                     0;
+//                 });
+//             }
+//         }
+//     }
+// }
 
 // #[cfg(unix)]
 // pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
@@ -479,14 +479,14 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                         std::fs::create_dir_all(
                             node_modules_dep_path_instance
                                 .to_path_buf()
-                                .join(new_path.clone())
+                                .join(&new_path)
                                 .parent()
                                 .unwrap(),
                         )
                         .unwrap();
 
                         match entry
-                            .unpack(node_modules_dep_path_instance.to_path_buf().join(new_path))
+                            .unpack(node_modules_dep_path_instance.to_path_buf().join(&new_path))
                         {
                             Ok(_v) => {}
                             Err(_err) => {}
@@ -499,7 +499,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                     let mut archive = Archive::new(gz_decoder);
 
                     for entry in archive.entries().unwrap() {
-                        
                         let mut entry = entry.unwrap();
                         let path = entry.path().unwrap();
                         let mut new_path = PathBuf::new();
@@ -515,13 +514,13 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
                         std::fs::create_dir_all(
                             extract_directory_instance
                                 .to_path_buf()
-                                .join(new_path.clone())
+                                .join(&new_path)
                                 .parent()
                                 .unwrap(),
                         )
                         .unwrap();
 
-                        match entry.unpack(extract_directory_instance.to_path_buf().join(new_path))
+                        match entry.unpack(extract_directory_instance.to_path_buf().join(&new_path))
                         {
                             Ok(_v) => {}
                             Err(err) => {

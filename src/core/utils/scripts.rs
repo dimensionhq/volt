@@ -15,12 +15,12 @@
 
 use std::sync::Arc;
 
-use crate::core::utils::errors;
-use crate::core::utils::package::PackageJson;
+// use crate::core::utils::errors;
+// use crate::core::utils::package::PackageJson;
 use crate::App;
 use crate::Command;
 use async_trait::async_trait;
-use colored::Colorize;
+// use colored::Colorize;
 use miette::Result;
 pub struct Script {}
 
@@ -43,7 +43,7 @@ impl Command for Script {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         // let package_json = PackageJson::from("package.json");
 
         // let args = app.args.clone();
@@ -63,15 +63,15 @@ impl Command for Script {
         //     // bin_cmd = format!("{}.sh", split[0]);
         //     // }
 
-        //     if cfg!(target_os = "windows ") {
-        //         // std::process::Command::new("cmd.exe")
-        //         //     .arg("/C")
-        //         //     .arg(exec)
-        //         //     .spawn()
-        //         //     .unwrap();
-        //     } else {
-        //         // std::process::Command::new("sh").arg(exec).spawn().unwrap();
-        //     }
+            // if cfg!(target_os = "windows ") {
+            //     // std::process::Command::new("cmd.exe")
+            //     //     .arg("/C")
+            //     //     .arg(exec)
+            //     //     .spawn()
+            //     //     .unwrap();
+            // } else {
+            //     // std::process::Command::new("sh").arg(exec).spawn().unwrap();
+            // }
         // } else {
         //     error!("{} is not a valid command.", command.bright_yellow().bold());
         // }
