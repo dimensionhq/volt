@@ -218,7 +218,9 @@ Options:
             }
         }
 
+        let matches_bar = ProgressBar::new(matches.len() as u64);
         let minify_bar = ProgressBar::new(minify_files.len() as u64);
+        let empty_bar = ProgressBar::new(node_modules_contents.len() as u64);
 
         minify_bar.set_style(
             ProgressStyle::default_bar()
@@ -226,18 +228,29 @@ Options:
                 .progress_chars("=>-"),
         );
 
-        let mut workers = FuturesUnordered::new();
+        matches_bar.set_style(
+            ProgressStyle::default_bar()
+                .template("Deleting Non-Essential Files & Folders - [{bar:.green/magenta}] {pos} / {len} {per_sec}")
+                .progress_chars("=>-"),
+        );
+
+        matches_bar.set_style(
+            ProgressStyle::default_bar()
+                .template("Deleting Empty Files & Folders - [{bar:.green/magenta}] {pos} / {len} {per_sec}")
+                .progress_chars("=>-"),
+        );
+
+        let workers = FuturesUnordered::new();
 
         for chunk in minify_files.chunks(20) {
+            let minify_bar = minify_bar.clone();
+
             workers.push(async move {
                 for file in chunk {
                     minify(file).await.unwrap();
+                    minify_bar.inc(1);
                 }
             });
-        }
-
-        while workers.next().await.is_some() {
-            minify_bar.inc(20);
         }
 
         minify_bar.finish();
@@ -246,16 +259,18 @@ Options:
 
         for chunk in matches.chunks(90) {
             let chunk = chunk.to_vec();
+            let matches_bar = matches_bar.clone();
+
             workers.push(tokio::task::spawn_blocking(move || {
                 for entry in chunk {
                     if entry.is_file() {
                         match fs::remove_file(entry) {
-                            Ok(_) => {}
+                            Ok(_) => matches_bar.inc(1),
                             Err(_) => {}
                         };
                     } else if entry.is_dir() {
                         match fs::remove_dir_all(entry) {
-                            Ok(_) => {}
+                            Ok(_) => matches_bar.inc(1),
                             Err(_) => {}
                         };
                     }
@@ -270,11 +285,12 @@ Options:
         for chunk in node_modules_contents.chunks(200) {
             let chunk = chunk.to_vec();
 
+            let empty_bar = empty_bar.clone();
             workers.push(tokio::task::spawn_blocking(move || {
                 for entry in chunk {
                     if entry.is_dir() && entry.read_dir().unwrap().next().is_none() {
                         match fs::remove_dir(entry) {
-                            Ok(_) => {}
+                            Ok(_) => empty_bar.inc(1),
                             Err(_) => {}
                         };
                     }
