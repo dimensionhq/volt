@@ -23,9 +23,11 @@ use indicatif::{ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
+use std::fs;
 use std::io::SeekFrom;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
 lazy_static! {
@@ -188,9 +190,11 @@ Options:
     async fn exec(_app: Arc<App>) -> Result<()> {
         let mut matches: Vec<PathBuf> = vec![];
         let mut minify_files: Vec<PathBuf> = vec![];
+        let mut node_modules_contents: Vec<PathBuf> = vec![];
 
         for entry in jwalk::WalkDir::new("node_modules") {
             let path = entry.unwrap().path();
+            node_modules_contents.push(path.clone());
 
             let path_str = path.to_str().unwrap().to_string().to_lowercase();
             let mut has_match = false;
@@ -239,6 +243,52 @@ Options:
 
         minify_bar.finish();
 
+        let mut workers = FuturesUnordered::new();
+        let start = Instant::now();
+
+        for chunk in matches.chunks(90) {
+            let chunk = chunk.to_vec();
+            workers.push(tokio::task::spawn_blocking(move || {
+                for entry in chunk {
+                    if entry.is_file() {
+                        match fs::remove_file(entry) {
+                            Ok(_) => {}
+                            Err(_) => {}
+                        };
+                    } else if entry.is_dir() {
+                        match fs::remove_dir_all(entry) {
+                            Ok(_) => {}
+                            Err(_) => {}
+                        };
+                    }
+                }
+            }));
+        }
+
+        while workers.next().await.is_some() {}
+        println!("{}", start.elapsed().as_secs_f32());
+
+        let start = Instant::now();
+        let mut workers = FuturesUnordered::new();
+
+        for chunk in node_modules_contents.chunks(200) {
+            let chunk = chunk.to_vec();
+
+            workers.push(tokio::task::spawn_blocking(move || {
+                for entry in chunk {
+                    if entry.is_dir() && entry.read_dir().unwrap().next().is_none() {
+                        match fs::remove_dir(entry) {
+                            Ok(_) => {}
+                            Err(_) => {}
+                        };
+                    }
+                }
+            }))
+        }
+
+        while workers.next().await.is_some() {}
+
+        println!("{}", start.elapsed().as_secs_f32());
         Ok(())
     }
 }
