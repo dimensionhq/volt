@@ -27,7 +27,6 @@ use std::fs;
 use std::io::SeekFrom;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Instant;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
 lazy_static! {
@@ -244,7 +243,6 @@ Options:
         minify_bar.finish();
 
         let mut workers = FuturesUnordered::new();
-        let start = Instant::now();
 
         for chunk in matches.chunks(90) {
             let chunk = chunk.to_vec();
@@ -266,9 +264,7 @@ Options:
         }
 
         while workers.next().await.is_some() {}
-        println!("{}", start.elapsed().as_secs_f32());
 
-        let start = Instant::now();
         let mut workers = FuturesUnordered::new();
 
         for chunk in node_modules_contents.chunks(200) {
@@ -288,7 +284,6 @@ Options:
 
         while workers.next().await.is_some() {}
 
-        println!("{}", start.elapsed().as_secs_f32());
         Ok(())
     }
 }
