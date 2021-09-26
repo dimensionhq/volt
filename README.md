@@ -12,12 +12,9 @@
 <br>
 
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fvoltpkg%2Fvolt.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fvoltpkg%2Fvolt?ref=badge_large)
-
 # 🧪 Benchmarks (Work In Progress)
 ## ⚡ Speed
 ![image](https://user-images.githubusercontent.com/63039748/122814035-b9696280-d2e4-11eb-8157-67a49f03190d.png)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fvoltpkg%2Fvolt.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fvoltpkg%2Fvolt?ref=badge_shield)
 
 
 ## 🌐 Bandwidth
@@ -34,3 +31,6 @@
 Volt wouldn't be here if not for our amazing sponsors and [contributors](https://github.com/voltpkg/volt/contributors)!
 
 Volt uses third party code from different libraries. A list of them can be found [here](https://github.com/voltpkg/volt/blob/master/CREDITS.md).
+
+## Licensing:
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fvoltpkg%2Fvolt.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fvoltpkg%2Fvolt?ref=badge_large)
