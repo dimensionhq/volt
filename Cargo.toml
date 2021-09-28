@@ -32,17 +32,17 @@ prettytable-rs = "0.8.0"
 rand = "0.8.4"
 regex = "1"
 reqwest = "0.11.4"
-# rslint_cli = { path = "src/rslint/cli" }
-# rslint_config = { path = "src/rslint/config" }
-# rslint_core = { path = "src/rslint/core" }
-# rslint_errors = { path = "src/rslint/errors" }
-# rslint_lexer = { path = "src/rslint/lexer" }
-# rslint_macros = { path = "src/rslint/macros" }
-# rslint_parser = { path = "src/rslint/parser" }
-# rslint_regex = { path = "src/rslint/regex" }
-# rslint_rowan = { path = "src/rslint/rowan" }
-# rslint_syntax = { path = "src/rslint/syntax" }
-# rslint_text_edit = { path = "src/rslint/text_edit" }
+rslint_cli = "0.3.0"
+rslint_config = "0.1.0"
+rslint_core = "0.3.0"
+rslint_errors = "0.2.0"
+rslint_lexer = "0.2.0"
+rslint_macros = "0.1.0"
+rslint_parser = "0.3.0"
+rslint_regex = "0.3.0"
+rslint_rowan = "0.10.0"
+rslint_syntax = "0.1.4"
+rslint_text_edit = "0.1.0"
 node-semver = "1.0.1"
 cacache = "9.0.0"
 semver_rs = "0.1.3"
@@ -63,15 +63,15 @@ minifier = "0.0.41"
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [
   "errhandlingapi",
-  "fileapi",
-  "guiddef",
-  "handleapi",
-  "ioapiset",
-  "processthreadsapi",
-  "securitybaseapi",
-  "winbase",
-  "winioctl",
-  "winnt",
+    "fileapi",
+    "guiddef",
+    "handleapi",
+    "ioapiset",
+    "processthreadsapi",
+    "securitybaseapi",
+    "winbase",
+    "winioctl",
+    "winnt",
 ] }
 tempfile = "3.2"
 scopeguard = "1.1"
