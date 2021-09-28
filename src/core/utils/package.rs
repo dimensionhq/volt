@@ -189,17 +189,15 @@ pub struct PackageJson {
 
 impl PackageJson {
     pub fn open(_path: &str) -> Result<(Self, PathBuf)> {
-        for parent in std::env::current_exe()
+        for parent in std::env::current_dir()
             .map_err(|e| VoltError::EnvironmentError {
                 env: String::from("CURRENT_DIR"),
                 source: e,
             })?
-            .parent()
-            .expect("this should have a parent!")
             .ancestors()
         {
             let pkg_path = parent.join("package.json");
-
+            println!("{}", pkg_path.display());
             if pkg_path.exists() {
                 let data = read_to_string(&pkg_path).map_err(|e| VoltError::ReadFileError {
                     source: e,
@@ -211,7 +209,7 @@ impl PackageJson {
                     pkg_path,
                 ));
             } else {
-                miette::bail!("No package.json found!")
+                break;
             }
         }
 
