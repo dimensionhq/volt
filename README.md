@@ -1,36 +1,122 @@
 <p align="center">
-  <img src="https://github.com/voltpkg/volt/blob/master/assets/volt-transparent-bg.png?raw=true">
+  <img src="https://github.com/voltpkg/volt/blob/master/assets/volt-transparent-bg.png?raw=true" />
 </p>
 
 <h1 align="center">Volt</h1>
-<h3 align="center">A powerful, fast and efficient package manager for the web. (WIP)</h3>
+<h4 align="center">Rapid, reliable and robust package management.</h4>
 <br>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0--pre--alpha-ff69b4"> <img src="https://img.shields.io/github/license/voltpkg/volt?color=pink"> <img src="https://img.shields.io/tokei/lines/github/voltpkg/volt?color=white&label=lines%20of%20code"> <img src="https://img.shields.io/github/languages/top/voltpkg/volt?color=%230xfffff"> <img src="https://img.shields.io/github/repo-size/voltpkg/volt?color=orange"> <img src="https://img.shields.io/discord/842781363312001025">
+  <img src="https://img.shields.io/badge/version-0.0.1--alpha-c6b5ff"> <img src="https://img.shields.io/github/license/voltpkg/volt?color=75ff73"> <img src="https://img.shields.io/tokei/lines/github/voltpkg/volt?color=%23ffb5f5"> <img src="https://img.shields.io/github/languages/top/voltpkg/volt?color=b5f0ff"> <img src="https://img.shields.io/github/languages/code-size/voltpkg/volt?color=%235e6cff&label=size">
 </p>
 <br>
 
+<img src="
+https://user-images.githubusercontent.com/63039748/122814035-b9696280-d2e4-11eb-8157-67a49f03190d.png">
 
-# 🧪 Benchmarks (Work In Progress)
-## ⚡ Speed
-![image](https://user-images.githubusercontent.com/63039748/122814035-b9696280-d2e4-11eb-8157-67a49f03190d.png)
+**Rapid**: 
+
+**Reliable**: 
+
+**Robust**:
+
+**Important**: Volt is still in the alpha stage of development, and is not ready for use in production or development environments.
+<br>
+
+# :zap: Installation
+
+We don't have an official release of Volt yet, however, if you would like to give it a try, feel free to follow the steps below to build from source.
+<br>
+
+## Build From Source
+Prerequisites: **Git**, **Rust Toolchain**
+
+1. Clone the github repository using the Github CLI.
+```powershell
+git clone https://github.com/voltpkg/volt
+```
+
+2. Change to the `volt` directory.
+```powershell
+cd volt
+```
+
+3. Installation Commands
+```
+rustup toolchain install nightly-2021-08-20
+rustup default nightly-2021-08-20
+```
+
+5. Run a compiled and optimized build
+```
+cargo run --release -- --help
+# you should see a help menu from Volt
+```
+<br>
+
+## :test_tube: Testing
+
+First, make sure you [**Build From Source**](https://github.com/voltpkg/volt/#build-from-source).
+
+Run this command to run the tests for volt.
+```powershell
+cargo test
+```
+<br>
+
+## :clap: Supporters
+[![Stargazers repo roster for @voltpkg/volt](https://reporoster.com/stars/voltpkg/volt)](https://github.com/voltpkg/volt/stargazers)
+
+[![Forkers repo roster for @voltpkg/volt](https://reporoster.com/forks/voltpkg/volt)](https://github.com/voltpkg/volt/network/members)
 
 
-## 🌐 Bandwidth
-![image](https://user-images.githubusercontent.com/63039748/122814065-c1c19d80-d2e4-11eb-868f-6c7519bc9820.png)
+<br>
 
+## :hammer: Build Status
+| Feature                             |  Build Status  |
+|-------------------------------------|----------------|
+| Add                                 |       🏗️       |
+| Audit                               |       ❌       |
+| Cache                               |       ❌       |
+| Check                               |       ❌       |
+| Clone                               |       🏗️       |
+| Compress                            |       🏗️       |
+| Create                              |       🏗️       |
+| Deploy                              |       🏗️       |
+| Fix                                 |       ❌       |
+| Help                                |       🏗️       |
+| Info                                |       ❌       |
+| Init                                |       🏗️       |
+| Install                             |       🏗️       |
+| List                                |       🏗️       |
+| Login                               |       ❌       |
+| Logout                              |       ❌       |
+| Migrate                             |       ❌       |
+| Mod                                 |       ❌       |
+| Outdated                            |       ❌       |
+| Owner                               |       ❌       |
+| Publish                             |       ❌       |
+| Remove                              |       ❌       |
+| Run                                 |       🏗️       |
+| Search                              |       ❌       |
+| Set                                 |       ❌       |
+| Stat                                |       ❌       |
+| Tag                                 |       ❌       |
+| Team                                |       ❌       |
+| Update                              |       ❌       |
+| Watch                               |       🏗️       |
 
-## 💾 Space
-(Coming Soon!)
+<br>
 
-# Sponsors
-![5CentsCDN](https://user-images.githubusercontent.com/63039748/124123389-51efa780-da88-11eb-9794-41d3f87cd11e.png)
+## Built With
+[Rust](https://www.rust-lang.org/)
 
-## Credits:
-Volt wouldn't be here if not for our amazing sponsors and [contributors](https://github.com/voltpkg/volt/contributors)!
+[External Libraries](https://github.com/voltpkg/volt/blob/dev/CREDITS.md)
 
-Volt uses third party code from different libraries. A list of them can be found [here](https://github.com/voltpkg/volt/blob/master/CREDITS.md).
+## Versioning
 
-## Licensing:
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fvoltpkg%2Fvolt.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fvoltpkg%2Fvolt?ref=badge_large)
+We use [semver](https://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/github.com/voltpkg/volt/tags). 
+
+## License
+
+This project is licensed under Apache 2 - see the [LICENSE.md](LICENSE) file for details.
