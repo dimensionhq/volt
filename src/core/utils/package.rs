@@ -210,11 +210,8 @@ impl PackageJson {
                     serde_json::from_str(data.as_str()).into_diagnostic()?,
                     pkg_path,
                 ));
-            } else {
-                miette::bail!("No package.json found!")
             }
         }
-
         miette::bail!("No package.json found!")
     }
 
