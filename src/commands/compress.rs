@@ -182,7 +182,12 @@ Options:
             let path = entry.unwrap().path();
             node_modules_contents.push(path.clone());
 
-            let path_str = path.to_str().unwrap().to_string().to_lowercase();
+            let path_str = path
+                .to_str()
+                .unwrap()
+                .to_string()
+                .replace(r"\", "/")
+                .to_lowercase();
             let mut has_match = false;
 
             for regex in REGEXES.iter() {
