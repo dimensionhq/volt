@@ -13,11 +13,11 @@
 
 <img src="https://user-images.githubusercontent.com/63039748/122814035-b9696280-d2e4-11eb-8157-67a49f03190d.png">
 
-**Rapid**: 
+**Rapid**: Volt is incredibly fast and powerful.
 
-**Reliable**: 
+**Reliable**: Volt is built to be reliable and dependable.
 
-**Robust**:
+**Robust**: Volt works under harsh conditions with low resource usage.
 
 **Important**: Volt is still in the alpha stage of development, and is not ready for use in production or development environments.
 <br>
