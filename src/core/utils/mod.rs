@@ -451,7 +451,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
 
             let extract_directory_instance = extract_directory.clone();
 
-            let node_modules_dep_path_instance = app.clone().node_modules_dir.clone();
+            let node_modules_dep_path_instance = app.node_modules_dir.clone();
             let pkg_name = package.clone().name;
             let pkg_name_instance = package.clone().name;
 
