@@ -197,7 +197,7 @@ impl PackageJson {
             .ancestors()
         {
             let pkg_path = parent.join("package.json");
-            println!("{}", pkg_path.display());
+
             if pkg_path.exists() {
                 let data = read_to_string(&pkg_path).map_err(|e| VoltError::ReadFileError {
                     source: e,
