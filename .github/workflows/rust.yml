@@ -1,20 +1,49 @@
-name: Rust
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
-env:
-  CARGO_TERM_COLOR: always
+on: [push]
 
 jobs:
-  build:
-
-    runs-on: windows-latest
-
+  linux:
+    name: Linux build pipeline
+    if: github.event_name == 'push' && contains(toJson(github.event.commits), '[ci skip]') == false
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose
+      - uses: actions/checkout@v2
+      - name: Toolchain Install
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: nightly-2021-08-01
+          override: true
+          components: rustfmt, clippy
+
+      - name: Cargo format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
+
+      - name: Cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+  windows:
+    name: Windows build pipeline
+    if: github.event_name == 'push' && contains(toJson(github.event.commits), '[ci skip]') == false
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Toolchain Install
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: nightly-2021-08-01
+          override: true
+          components: rustfmt, clippy
+
+      - name: Cargo format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
+
+      - name: Cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
