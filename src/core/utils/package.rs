@@ -189,13 +189,11 @@ pub struct PackageJson {
 
 impl PackageJson {
     pub fn open(_path: &str) -> Result<(Self, PathBuf)> {
-        for parent in std::env::current_exe()
+        for parent in std::env::current_dir()
             .map_err(|e| VoltError::EnvironmentError {
                 env: String::from("CURRENT_DIR"),
                 source: e,
             })?
-            .parent()
-            .expect("this should have a parent!")
             .ancestors()
         {
             let pkg_path = parent.join("package.json");
@@ -210,8 +208,11 @@ impl PackageJson {
                     serde_json::from_str(data.as_str()).into_diagnostic()?,
                     pkg_path,
                 ));
+            } else {
+                break;
             }
         }
+
         miette::bail!("No package.json found!")
     }
 
