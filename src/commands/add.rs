@@ -214,7 +214,6 @@ impl Command for Add {
             package_file.add_dependency(package);
         }
 
-
         Ok(())
     }
 }
