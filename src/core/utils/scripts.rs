@@ -63,15 +63,15 @@ impl Command for Script {
         //     // bin_cmd = format!("{}.sh", split[0]);
         //     // }
 
-            // if cfg!(target_os = "windows ") {
-            //     // std::process::Command::new("cmd.exe")
-            //     //     .arg("/C")
-            //     //     .arg(exec)
-            //     //     .spawn()
-            //     //     .unwrap();
-            // } else {
-            //     // std::process::Command::new("sh").arg(exec).spawn().unwrap();
-            // }
+        // if cfg!(target_os = "windows ") {
+        //     // std::process::Command::new("cmd.exe")
+        //     //     .arg("/C")
+        //     //     .arg(exec)
+        //     //     .spawn()
+        //     //     .unwrap();
+        // } else {
+        //     // std::process::Command::new("sh").arg(exec).spawn().unwrap();
+        // }
         // } else {
         //     error!("{} is not a valid command.", command.bright_yellow().bold());
         // }
