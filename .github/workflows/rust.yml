@@ -3,7 +3,6 @@ on: [push]
 jobs:
   linux:
     name: Linux build pipeline
-    if: github.event_name == 'push' && contains(toJson(github.event.commits), '[ci skip]') == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -26,7 +25,6 @@ jobs:
           command: clippy
   windows:
     name: Windows build pipeline
-    if: github.event_name == 'push' && contains(toJson(github.event.commits), '[ci skip]') == false
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
