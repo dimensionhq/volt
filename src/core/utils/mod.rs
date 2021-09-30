@@ -34,9 +34,6 @@ use std::{
     sync::Arc,
 };
 
-use jwalk::WalkDir;
-use tokio::fs::hard_link;
-
 use tar::Archive;
 use tokio::fs::create_dir_all;
 
