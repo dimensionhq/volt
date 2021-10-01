@@ -401,15 +401,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ci_info"
-version = "0.14.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98f1c9ee4939df5d42c01815f1fb783ab203c1dea7cee5e051ede261c4049b1f"
-dependencies = [
- "envmnt",
-]
-
-[[package]]
 name = "clap"
 version = "2.33.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -805,16 +796,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "envmnt"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbfac51e9996e41d78a943227b7f313efcebf545b21584a0e213b956a062e11e"
-dependencies = [
- "fsio",
- "indexmap",
-]
-
-[[package]]
 name = "erasable"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -919,10 +900,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "fsio"
-version = "0.2.0"
+name = "fs_extra"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a50045aa8931ae01afbc5d72439e8f57f326becb8c70d07dfc816778eff3d167"
+checksum = "2022715d62ab30faffd124d40b76f4134a550a87792276512b18d63272333394"
 
 [[package]]
 name = "funty"
@@ -1528,45 +1509,20 @@ dependencies = [
 
 [[package]]
 name = "miette"
-version = "2.1.1"
+version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d862c70a58573f4b857bc7a2a5c9ebfd1f39530cbf2e8a355da5a67888f585e"
+checksum = "024831248cacc3305f5bb33d9daf9df54d6d95bf462c58f388845a17388c47fe"
 dependencies = [
- "atty",
- "ci_info",
- "miette-derive 2.1.1",
- "once_cell",
- "owo-colors",
- "thiserror",
-]
-
-[[package]]
-name = "miette"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b98aebb9d23c72cb22c089834ea59be059c6f462e844fd9fd18dd0168ad149c"
-dependencies = [
- "miette-derive 3.0.0",
+ "miette-derive",
  "once_cell",
  "thiserror",
 ]
 
 [[package]]
 name = "miette-derive"
-version = "2.1.1"
+version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ed1011bada9fd84d03031b4a97c18559f86abc13d748f271d01f9eac20d90fe"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "miette-derive"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9a7cd3347eb52480d4ba59d71ce2b48b8b128034e17068c7e2ff3766c2e87a3"
+checksum = "074acd9c89172a516def5d82b8d90fb724fecba9dcae6fcdd88a75689601349f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1655,12 +1611,12 @@ dependencies = [
 
 [[package]]
 name = "node-semver"
-version = "1.0.1"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd30bd69a8b10d0a556ea552f40ddc42d0f205dfbab3a1e7fba79351a33413cb"
+checksum = "a8173fd025860308645e5cc6d9d75e23317b03b8a71216d3fc78e375eba386d9"
 dependencies = [
  "bytecount",
- "miette 3.0.0",
+ "miette",
  "nom 7.0.0",
  "serde",
  "thiserror",
@@ -1822,12 +1778,6 @@ name = "os_str_bytes"
 version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6acbef58a60fe69ab50510a55bc8cdd4d6cf2283d27ad338f54cb52747a9cf2d"
-
-[[package]]
-name = "owo-colors"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2fe43bf372b08cc9ccee5144715db59c79ab00168bbe4cf0d274dc0d5f64d7f"
 
 [[package]]
 name = "parking"
@@ -3099,6 +3049,7 @@ dependencies = [
  "dialoguer",
  "dirs 4.0.0",
  "flate2",
+ "fs_extra",
  "futures",
  "futures-util",
  "git-config",
@@ -3106,7 +3057,7 @@ dependencies = [
  "isahc",
  "jwalk",
  "lazy_static",
- "miette 2.1.1",
+ "miette",
  "minifier",
  "node-semver",
  "prettytable-rs",
