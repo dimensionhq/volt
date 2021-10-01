@@ -19,7 +19,7 @@ use async_trait::async_trait;
 use colored::Colorize;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{HumanBytes, ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
@@ -178,36 +178,68 @@ Options:
         let mut minify_files: Vec<PathBuf> = vec![];
         let mut node_modules_contents: Vec<PathBuf> = vec![];
 
+        let mut workers = FuturesUnordered::new();
+
+        let mut initial_file_size: u64 = 0;
+        let mut removed_file_size: u64 = 0;
+
         for entry in jwalk::WalkDir::new("node_modules") {
             let path = entry.unwrap().path();
             node_modules_contents.push(path.clone());
+        }
 
-            let path_str = path
-                .to_str()
-                .unwrap()
-                .to_string()
-                .replace(r"\", "/")
-                .to_lowercase();
-            let mut has_match = false;
+        for chunks in node_modules_contents.chunks(150) {
+            let chunk = chunks.to_vec();
 
-            for regex in REGEXES.iter() {
-                if regex.is_match(&path_str) {
-                    matches.push(path.clone());
-                    has_match = true;
-                    break;
-                };
-            }
+            workers.push(tokio::task::spawn_blocking(move || {
+                let mut regex_matches = vec![];
+                let mut minify_matches = vec![];
+                let mut initial_size: u64 = 0;
 
-            if !has_match {
-                if let Some(extension) = path.extension() {
-                    match extension.to_str().unwrap() {
-                        "json" => {
-                            minify_files.push(path.clone());
+                for path in chunk {
+                    initial_size += path.metadata().unwrap().len();
+
+                    let path_str = path
+                        .to_str()
+                        .unwrap()
+                        .to_string()
+                        .replace(r"\", "/")
+                        .to_lowercase();
+
+                    let mut has_match = false;
+
+                    for regex in REGEXES.iter() {
+                        if path_str.contains("npmignore") {
+                            println!("{}", path_str);
                         }
-                        _ => {}
+
+                        if regex.is_match(&path_str) {
+                            regex_matches.push(path.clone());
+                            has_match = true;
+                            break;
+                        };
+                    }
+
+                    if !has_match {
+                        if let Some(extension) = path.extension() {
+                            match extension.to_str().unwrap() {
+                                "json" => {
+                                    minify_matches.push(path.clone());
+                                }
+                                _ => {}
+                            }
+                        }
                     }
                 }
-            }
+
+                (minify_matches, regex_matches, initial_size)
+            }));
+        }
+
+        while let Some(Ok(value)) = workers.next().await {
+            minify_files.extend(value.0);
+            matches.extend(value.1);
+            initial_file_size += value.2;
         }
 
         let matches_bar = ProgressBar::new(matches.len() as u64);
@@ -227,12 +259,12 @@ Options:
 
         let mut workers = FuturesUnordered::new();
 
-        let minify_bar = minify_bar.clone();
-
         for chunk in minify_files.chunks(20) {
             workers.push(async move {
                 for file in chunk {
-                    minify(file).await.unwrap();
+                    minify(file).await.unwrap_or_else(|v| {
+                        println!("{}", v);
+                    });
                 }
             });
         }
@@ -241,17 +273,24 @@ Options:
             minify_bar.inc(20);
         }
 
-        let mut workers = FuturesUnordered::new();
-
         minify_bar.finish();
+
+        let mut workers = FuturesUnordered::new();
 
         for chunk in matches.chunks(90) {
             let chunk = chunk.to_vec();
             let matches_bar = matches_bar.clone();
 
             workers.push(tokio::task::spawn_blocking(move || {
+                let mut removed_size: u64 = 0;
+
                 for entry in chunk {
                     if entry.is_file() {
+                        if entry.to_str().unwrap().contains(".npmignore") {
+                            println!("{}", entry.display());
+                        }
+                        removed_size += entry.metadata().unwrap().len();
+
                         match fs::remove_file(entry) {
                             Ok(_) => matches_bar.inc(1),
                             Err(_) => {}
@@ -263,10 +302,14 @@ Options:
                         };
                     }
                 }
+
+                removed_size
             }));
         }
 
-        while workers.next().await.is_some() {}
+        while let Some(Ok(value)) = workers.next().await {
+            removed_file_size = value;
+        }
 
         matches_bar.finish();
 
@@ -288,6 +331,15 @@ Options:
         }
 
         while workers.next().await.is_some() {}
+
+        let final_size = initial_file_size - removed_file_size;
+        println!(
+            "{} {} {} ( {} Saved )",
+            HumanBytes(initial_file_size).to_string(),
+            "->".bright_magenta().bold(),
+            HumanBytes(final_size).to_string(),
+            HumanBytes(removed_file_size).to_string().bright_green(),
+        );
 
         Ok(())
     }
