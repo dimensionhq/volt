@@ -62,6 +62,7 @@ lazy_static! {
             r"^.*/.*.idea$",
             r"^.*/samples?/.*$",
             r"^.*/tests?/.*$",
+            r"^.*/testing/.*$",
             r"^.*/.eslintrc$",
             r"^.*/.jamignore$",
             r"^.*/.jscsrc$",
@@ -181,7 +182,7 @@ Options:
         let mut workers = FuturesUnordered::new();
 
         let mut initial_file_size: u64 = 0;
-        let mut removed_file_size: u64 = 0;
+        let mut final_file_size: u64 = 0;
 
         for entry in jwalk::WalkDir::new("node_modules") {
             let path = entry.unwrap().path();
@@ -282,15 +283,8 @@ Options:
             let matches_bar = matches_bar.clone();
 
             workers.push(tokio::task::spawn_blocking(move || {
-                let mut removed_size: u64 = 0;
-
                 for entry in chunk {
                     if entry.is_file() {
-                        if entry.to_str().unwrap().contains(".npmignore") {
-                            println!("{}", entry.display());
-                        }
-                        removed_size += entry.metadata().unwrap().len();
-
                         match fs::remove_file(entry) {
                             Ok(_) => matches_bar.inc(1),
                             Err(_) => {}
@@ -302,14 +296,10 @@ Options:
                         };
                     }
                 }
-
-                removed_size
             }));
         }
 
-        while let Some(Ok(value)) = workers.next().await {
-            removed_file_size = value;
-        }
+        while workers.next().await.is_some() {}
 
         matches_bar.finish();
 
@@ -332,13 +322,45 @@ Options:
 
         while workers.next().await.is_some() {}
 
-        let final_size = initial_file_size - removed_file_size;
+        node_modules_contents.clear();
+
+        for entry in jwalk::WalkDir::new("node_modules") {
+            let path = entry.unwrap().path();
+            node_modules_contents.push(path.clone());
+        }
+
+        let mut workers = FuturesUnordered::new();
+
+        for chunks in node_modules_contents.chunks(150) {
+            let chunk = chunks.to_vec();
+
+            workers.push(tokio::task::spawn_blocking(move || {
+                let mut final_size: u64 = 0;
+
+                for entry in chunk {
+                    if entry.is_dir() {
+                        final_size += entry.metadata().unwrap().len();
+                    } else {
+                        final_size += fs_extra::dir::get_size(entry).unwrap();
+                    }
+                }
+
+                final_size
+            }));
+        }
+
+        while let Some(Ok(value)) = workers.next().await {
+            final_file_size += value;
+        }
+
+        let removed_size = initial_file_size - final_file_size;
+
         println!(
             "{} {} {} ( {} Saved )",
             HumanBytes(initial_file_size).to_string(),
             "->".bright_magenta().bold(),
-            HumanBytes(final_size).to_string(),
-            HumanBytes(removed_file_size).to_string().bright_green(),
+            HumanBytes(final_file_size).to_string(),
+            HumanBytes(removed_size).to_string().bright_green(),
         );
 
         Ok(())
