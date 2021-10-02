@@ -22,7 +22,7 @@ use crate::core::command::Command;
 use crate::core::utils::app::App;
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
-use commands::{compress::Compress, init::Init};
+use commands::{clean::Clean, init::Init};
 
 use crate::commands::add::*;
 
@@ -38,7 +38,7 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
         }
         Some(("compress", args)) => {
             let app = Arc::new(App::initialize(args)?);
-            Compress::exec(app).await
+            Clean::exec(app).await
         }
         _ => Ok(()),
     }

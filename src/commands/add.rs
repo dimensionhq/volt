@@ -87,7 +87,7 @@ impl Command for Add {
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
         // Get input packages
-        let packages = app.get_packages()?;
+        let mut packages = app.get_packages()?;
 
         // Load the existing package.json file
         let (mut package_file, package_file_path) = PackageJson::open("package.json")?;
@@ -186,13 +186,21 @@ impl Command for Add {
             })
             .collect();
 
+        for dep in dependencies.iter() {
+            for package in packages.iter_mut() {
+                if dep.name == package.name {
+                    package.version = Some(dep.version.clone());
+                }
+            }
+        }
+
         let progress_bar = ProgressBar::new(dependencies.len() as u64);
 
         progress_bar.set_style(
             ProgressStyle::default_bar()
                 .progress_chars(PROGRESS_CHARS)
                 .template(&format!(
-                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                    "{} [{{bar:40.green/magenta}}] {{msg:.blue}}",
                     "Installing Packages".bright_blue()
                 )),
         );
@@ -213,6 +221,8 @@ impl Command for Add {
         for package in packages {
             package_file.add_dependency(package);
         }
+
+        package_file.save()?;
 
         Ok(())
     }

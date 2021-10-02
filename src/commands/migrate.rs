@@ -34,7 +34,7 @@ impl Command for Migrate {
         format!(
             r#"volt {}
     
-Migrates a project to either yarn,volt,npm or pnpm from your current proj.
+Migrates a project to either yarn, volt,npm or pnpm from your current proj.
 
 Usage: {} {} {} {}
 
@@ -56,7 +56,7 @@ Options:
 
     /// Execute the `volt migrate` command
     ///
-    /// Migrates a project to either yarn,volt,npm or pnpm from your current proj.
+    /// Migrates a project from yarn or npm to volt including lockfiles.
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)
     /// * `package_manager_name` - The  (`String`)
