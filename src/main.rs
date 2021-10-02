@@ -87,6 +87,7 @@ Commands:
         .author("XtremeDevX <xtremedevx@gmail.com>")
         .about("Manage your NPM packages")
         .override_help(volt_help.as_str())
+        .arg(Arg::new("version").short('v').long("version"))
         .subcommand(
             clap::App::new("add")
                 .about("Add a package to the dependencies for your project.")
