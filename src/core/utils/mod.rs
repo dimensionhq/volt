@@ -817,9 +817,9 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
 }
 
-/// package all steps for installation into 1 convinient function.
+/// package all steps for installation into 1 convenient function.
 pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> Result<()> {
-    // if there's an error (most likely a checksum verification error) while using insecure http, retry.
+    // if there's an error (most likely a checksum verification error) while using http, retry with https.
     if download_tarball(&app, &package, false).await.is_err() {
         // use https instead
         download_tarball(&app, &package, true)

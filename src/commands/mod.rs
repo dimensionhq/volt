@@ -2,7 +2,7 @@ pub mod add;
 pub mod audit;
 pub mod check;
 pub mod clone;
-pub mod compress;
+pub mod clean;
 pub mod create;
 pub mod deploy;
 pub mod fix;

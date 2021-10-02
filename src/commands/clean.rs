@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//! Compress node_modules into node_modules.pack.
+//! clean node_modules into node_modules.pack.
 
 use crate::App;
 use crate::{core::VERSION, Command};
@@ -33,10 +33,15 @@ lazy_static! {
     static ref REGEXES: Vec<Regex> = {
         vec![
             r"^.*/readme(?:.md|.txt|.markdown)?$",
+            r"^.*/readme.zh(?:.md|.txt|.markdown)?$",
             r"^.*/.npmignore$",
+            r"^.*/yarn.lock$",
+            r"^.*/npm-lock.json$",
             r"^.*/history(?:.md|.txt|.markdown)?$",
+            r"^.*/security(?:.md|.txt|.markdown)?$",
             r"^.*/.gitattributes$",
             r"^.*/.gitmodules$",
+            r"^.*/.prettierrc$",
             r"^.*/.travis.yml$",
             r"^.*/.binding.gyp$",
             r"^.*/contributing(?:.md|.txt|.markdown)?$",
@@ -96,6 +101,7 @@ lazy_static! {
             r"^.*/dockerfile$",
             r"^.*/.*.nuspec$",
             r"^.*/.*.csproj$",
+            r"^.*/.*.md$",
             r"^.*/thumbs.db$",
             r"^.*/.ds_store$",
             r"^.*/desktop.ini$",
@@ -109,7 +115,7 @@ lazy_static! {
     };
 }
 
-pub struct Compress {}
+pub struct Clean {}
 
 // minify a JSON file
 pub async fn minify(path: &PathBuf) -> Result<()> {
@@ -137,13 +143,13 @@ pub async fn minify(path: &PathBuf) -> Result<()> {
 }
 
 #[async_trait]
-impl Command for Compress {
-    /// Display a help menu for the `volt compress` command.
+impl Command for Clean {
+    /// Display a help menu for the `volt clean` command.
     fn help() -> String {
         format!(
             r#"volt {}
     
-Compress node_modules into node_modules.pack.
+Clean ./node_modules and reduce its size.
 Usage: {} {} {} {}
 Options: 
     
@@ -161,9 +167,9 @@ Options:
         )
     }
 
-    /// Execute the `volt compress` command
+    /// Execute the `volt clean` command
     ///
-    /// Compress node_modules into node_modules.pack.
+    /// Clean node_modules into node_modules.pack.
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)
     /// ## Examples

@@ -14,6 +14,8 @@
     limitations under the License.
 */
 
+use std::fs;
+use std::io::Write;
 use std::path::PathBuf;
 use std::{collections::HashMap, fs::read_to_string};
 
@@ -216,21 +218,21 @@ impl PackageJson {
         miette::bail!("No package.json found!")
     }
 
-    // pub fn save(&self) -> Result<()> {
-    //     let mut file = File::create("package.json").into_diagnostic()?;
+    pub fn save(&self) -> Result<()> {
+        let mut file = fs::File::create("package.json").into_diagnostic()?;
 
-    //     file.write(
-    //         serde_json::to_string_pretty(self)
-    //             .into_diagnostic()?
-    //             .as_bytes(),
-    //     )
-    //     .map_err(|e| VoltError::WriteFileError {
-    //         source: e,
-    //         name: String::from("package.json"),
-    //     })?;
+        file.write(
+            serde_json::to_string_pretty(self)
+                .into_diagnostic()?
+                .as_bytes(),
+        )
+        .map_err(|e| VoltError::WriteFileError {
+            source: e,
+            name: String::from("package.json"),
+        })?;
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     pub fn add_dependency(&mut self, package: Package) {
         self.dependencies
