@@ -60,6 +60,7 @@ tokio = { version = "1.10.0", features = ["fs", "macros", "rt-multi-thread"] }
 walkdir = "2.3.2"
 minifier = "0.0.41"
 fs_extra = "1.2.0"
+webbrowser = "0.5.5"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [

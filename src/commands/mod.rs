@@ -5,6 +5,7 @@ pub mod clone;
 pub mod clean;
 pub mod create;
 pub mod deploy;
+pub mod discord;
 pub mod fix;
 pub mod help;
 pub mod info;

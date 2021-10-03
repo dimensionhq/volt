@@ -22,7 +22,7 @@ use crate::core::command::Command;
 use crate::core::utils::app::App;
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
-use commands::{clean::Clean, init::Init};
+use commands::{clean::Clean, discord::Discord, init::Init};
 
 use crate::commands::add::*;
 
@@ -40,6 +40,10 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
             let app = Arc::new(App::initialize(args)?);
             Clean::exec(app).await
         }
+        Some(("discord", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Discord::exec(app).await
+        }
         _ => Ok(()),
     }
 }
@@ -55,12 +59,20 @@ Usage: {} [{}] [{}]
 Displays help information.
 
 Commands:
-  {} add"#,
+  {} add
+  {} audit
+  {} cache
+  {} check
+  {} clean"#,
         "volt".bright_green().bold(),
         "1.0.0",
         "volt".bright_green().bold(),
         "command".bright_cyan(),
         "flags".bright_blue(),
+        "-".bright_magenta(),
+        "-".bright_magenta(),
+        "-".bright_magenta(),
+        "-".bright_magenta(),
         "-".bright_magenta()
     );
 
@@ -81,6 +93,8 @@ Commands:
         "volt".bright_green().bold(),
         "[flags]".bright_blue(),
     );
+
+    let discord_usage = format!("{} discord", "volt".bright_green().bold());
 
     let app = clap::App::new("volt")
         .version("1.0.0")
@@ -109,6 +123,11 @@ Commands:
             clap::App::new("compress")
                 .about("Interactively create and edit your package.json file.")
                 .override_usage(compress_usage.as_str()),
+        )
+        .subcommand(
+            clap::App::new("discord")
+                .about("Join the official volt discord server.")
+                .override_usage(discord_usage.as_str()),
         );
 
     let matches = app.get_matches();
