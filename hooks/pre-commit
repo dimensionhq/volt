@@ -1,4 +1,4 @@
 #!/bin/sh
 cargo fmt --all
-
+git add .
 echo '✅ Formatted Files'
