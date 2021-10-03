@@ -18,7 +18,7 @@ use crate::{core::VERSION, App, Command};
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
-use std::sync::Arc;
+use std::{process, sync::Arc};
 
 pub struct Clone {}
 
@@ -61,24 +61,24 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        // let args: Vec<String> = app.args.clone();
+        let exit_code = process::Command::new("cmd")
+            .arg(
+                format!(
+                    "/C git clone {} --depth=1",
+                    app.args.value_of("repository").unwrap()
+                )
+                .as_str(),
+            )
+            .status()
+            .unwrap();
 
-        // if args.is_empty() {
-        //     println!("{} expected repository url", "error".error_style());
-        // }
-
-        // let exit_code = process::Command::new("cmd")
-        //     .arg(format!("/C git clone {} --depth=1", args[0]).as_str())
-        //     .status()
-        //     .unwrap();
-
-        // if exit_code.success() {
-        //     process::Command::new("volt")
-        //         .arg("install")
-        //         .spawn()
-        //         .unwrap();
-        // } else {
-        // }
+        if exit_code.success() {
+            process::Command::new("volt")
+                .arg("install")
+                .spawn()
+                .unwrap();
+        } else {
+        }
 
         Ok(())
     }

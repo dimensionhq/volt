@@ -22,7 +22,7 @@ use crate::core::command::Command;
 use crate::core::utils::app::App;
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
-use commands::{clean::Clean, discord::Discord, init::Init};
+use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
 
 use crate::commands::add::*;
 
@@ -32,11 +32,15 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
             let app = Arc::new(App::initialize(args)?);
             Add::exec(app).await
         }
+        Some(("clone", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Clone::exec(app).await
+        }
         Some(("init", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Init::exec(app).await
         }
-        Some(("compress", args)) => {
+        Some(("clean", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Clean::exec(app).await
         }
@@ -94,6 +98,12 @@ Commands:
         "[flags]".bright_blue(),
     );
 
+    let clone_usage = format!(
+        "{} clone {}",
+        "volt".bright_green().bold(),
+        "[flags]".bright_blue(),
+    );
+
     let discord_usage = format!("{} discord", "volt".bright_green().bold());
 
     let app = clap::App::new("volt")
@@ -109,6 +119,17 @@ Commands:
                 .arg(
                     Arg::new("package-names")
                         .about("Packages to add to the dependencies for your project.")
+                        .multiple_values(true)
+                        .required(true),
+                ),
+        )
+        .subcommand(
+            clap::App::new("clone")
+                .about("Clone a project and install dependencies.")
+                .override_usage(clone_usage.as_str())
+                .arg(
+                    Arg::new("repository")
+                        .about("Url of the repository to clone.")
                         .multiple_values(true)
                         .required(true),
                 ),
