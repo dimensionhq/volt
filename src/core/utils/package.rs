@@ -188,7 +188,6 @@ pub struct PackageJson {
     #[serde(default)]
     pub scripts: HashMap<String, String>,
 }
-
 impl PackageJson {
     pub fn open(_path: &str) -> Result<(Self, PathBuf)> {
         for parent in std::env::current_dir()
@@ -210,12 +209,10 @@ impl PackageJson {
                     serde_json::from_str(data.as_str()).into_diagnostic()?,
                     pkg_path,
                 ));
-            } else {
-                break;
             }
         }
 
-        miette::bail!("No package.json found!")
+        miette::bail!("No package.json found!");
     }
 
     pub fn save(&self) -> Result<()> {
