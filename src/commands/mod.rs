@@ -1,8 +1,8 @@
 pub mod add;
 pub mod audit;
 pub mod check;
-pub mod clone;
 pub mod clean;
+pub mod clone;
 pub mod create;
 pub mod deploy;
 pub mod discord;
