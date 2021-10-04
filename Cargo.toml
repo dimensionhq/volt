@@ -61,6 +61,7 @@ walkdir = "2.3.2"
 minifier = "0.0.41"
 fs_extra = "1.2.0"
 webbrowser = "0.5.5"
+serde_yaml = "0.8.21"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [

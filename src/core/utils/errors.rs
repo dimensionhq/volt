@@ -14,19 +14,22 @@ pub enum VoltError {
     #[diagnostic(code(volt::environment::home_dir))]
     GetHomeDirError,
 
-    // #[error("failed to initialize lz4 decoder")]
-    // #[diagnostic(code(volt::decode::lz4::initialize))]
-    // DecoderError(#[source] std::io::Error),
-    // #[error("failed to decode lz4 encoded data")]
-    // #[diagnostic(code(volt::decode::lz4::decode))]
-    // DecodeError(#[source] std::io::Error),
+    #[error("failed to initialize lz4 decoder")]
+    #[diagnostic(code(volt::decode::lz4::initialize))]
+    DecoderError(#[source] std::io::Error),
+
+    #[error("failed to decode lz4 encoded data")]
+    #[diagnostic(code(volt::decode::lz4::decode))]
+    DecodeError(#[source] std::io::Error),
+
     #[error("failed to recieve response from the registry")]
     #[diagnostic(code(volt::network))]
     NetworkError(isahc::Error),
 
-    // #[error("failed to recieve byte response")]
-    // #[diagnostic(code(volt::network::rec))]
-    // NetworkRecError(#[source] std::io::Error),
+    #[error("failed to recieve byte response")]
+    #[diagnostic(code(volt::network::rec))]
+    NetworkRecError(#[source] std::io::Error),
+
     #[error("failed to create directory")]
     #[diagnostic(code(volt::io::create_dir))]
     CreateDirError(#[source] std::io::Error),
@@ -71,21 +74,22 @@ pub enum VoltError {
     #[diagnostic(code(volt::integrity::convert))]
     DeserializeError,
 
-    // #[error("failed to build request client")]
-    // #[diagnostic(code(volt::network::builder))]
-    // RequestBuilderError(#[source] isahc::http::Error),
+    #[error("failed to build request client")]
+    #[diagnostic(code(volt::network::builder))]
+    RequestBuilderError(#[source] isahc::http::Error),
 
-    // #[error("failed to build recieve response text")]
-    // #[diagnostic(code(volt::io::rec::text))]
-    // IoTextRecError(#[source] std::io::Error),
+    #[error("failed to build recieve response text")]
+    #[diagnostic(code(volt::io::rec::text))]
+    IoTextRecError(#[source] std::io::Error),
 
-    // #[error("failed to find a hash that matches the specified version requirement: {version}")]
-    // #[diagnostic(code(volt::io::rec::text))]
-    // HashLookupError { version: String },
+    #[error("failed to find a hash that matches the specified version requirement: {version}")]
+    #[diagnostic(code(volt::io::rec::text))]
+    HashLookupError { version: String },
 
-    // #[error("failed to find a version that matches the specified version requirement for {name}")]
-    // #[diagnostic(code(volt::io::rec::text))]
-    // VersionLookupError { name: String },
+    #[error("failed to find a version that matches the specified version requirement for {name}")]
+    #[diagnostic(code(volt::io::rec::text))]
+    VersionLookupError { name: String },
+
     #[error("failed to read `{name}`")]
     #[diagnostic(code(volt::io::file::read))]
     ReadFileError {
@@ -99,7 +103,8 @@ pub enum VoltError {
         source: std::io::Error,
         name: String,
     },
-    // #[error("an unknown error occured.")]
-    // #[diagnostic(code(volt::unknown))]
-    // UnknownError,
+
+    #[error("an unknown error occured.")]
+    #[diagnostic(code(volt::unknown))]
+    UnknownError,
 }
