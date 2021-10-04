@@ -1,5 +1,5 @@
 use crate::{
-    commands::add::Package,
+    commands::add::PackageInfo,
     core::utils::{enable_ansi_support, errors::VoltError},
 };
 use clap::ArgMatches;
@@ -58,7 +58,7 @@ impl App {
     }
 
     /// Retrieve packages passed in
-    pub fn get_packages(&self) -> Result<Vec<Package>> {
+    pub fn get_packages(&self) -> Result<Vec<PackageInfo>> {
         let mut args = self
             .args
             .values_of("package-names")

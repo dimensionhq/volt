@@ -32,7 +32,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 
 #[derive(Clone, Debug)]
-pub struct Package {
+pub struct PackageInfo {
     pub name: String,
     pub version: Option<String>,
 }
@@ -223,6 +223,8 @@ impl Command for Add {
         }
 
         package_file.save()?;
+        global_lock_file.save()?;
+        lock_file.save()?;
 
         Ok(())
     }

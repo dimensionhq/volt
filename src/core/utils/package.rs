@@ -23,7 +23,7 @@ use super::errors::VoltError;
 use miette::{IntoDiagnostic, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::commands::add::Package;
+use crate::commands::add::PackageInfo;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -231,7 +231,7 @@ impl PackageJson {
         Ok(())
     }
 
-    pub fn add_dependency(&mut self, package: Package) {
+    pub fn add_dependency(&mut self, package: PackageInfo) {
         self.dependencies
             .insert(package.name, package.version.unwrap_or_default());
     }

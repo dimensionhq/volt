@@ -19,8 +19,10 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::io;
+use std::io::{self, BufWriter};
 use std::path::{Path, PathBuf};
+
+use miette::Result;
 
 use serde::{de, ser, Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
@@ -179,9 +181,10 @@ impl LockFile {
     // }
 
     // Saves a lock file to the same path it was opened from.
-    // pub fn save(&self) -> Result<(), LockFileError> {
-    //     let lock_file = File::create(&self.path).map_err(LockFileError::IO)?;
-    //     let writer = BufWriter::new(lock_file);
-    //     serde_json::to_writer(writer, &self.dependencies).map_err(LockFileError::Encode)
-    // }
+    pub fn save(&self) -> Result<()> {
+        let lock_file = File::create(&self.path).unwrap();
+        let writer = BufWriter::new(lock_file);
+        serde_yaml::to_writer(writer, &self.dependencies).unwrap();
+        Ok(())
+    }
 }

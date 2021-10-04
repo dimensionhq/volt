@@ -7,7 +7,7 @@ pub mod package;
 pub mod scripts;
 pub mod voltapi;
 
-use crate::commands::add::Package;
+use crate::commands::add::PackageInfo;
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
 use crate::Instant;
 use app::App;
@@ -123,29 +123,71 @@ pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
     })
 }
 
+pub async fn get_volt_response_multi(
+    versions: &Vec<(PackageInfo, String, VoltPackage, bool)>,
+    pb: &ProgressBar,
+) -> Vec<Result<VoltResponse>> {
+    versions
+        .into_iter()
+        .map(|(package_info, hash, package, no_deps)| {
+            get_volt_response(package_info, &hash, package.to_owned(), *no_deps)
+        })
+        .collect::<FuturesUnordered<_>>()
+        .inspect(|_| pb.inc(1))
+        .collect::<Vec<Result<VoltResponse>>>()
+        .await
+}
+
 // Get response from volt CDN
-pub async fn get_volt_response(package: Package) -> Result<VoltResponse> {
+pub async fn get_volt_response(
+    package_info: &PackageInfo,
+    hash: &String,
+    package: VoltPackage,
+    zero_deps: bool,
+) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
+    // only 1 package, zero dependencies
+    if zero_deps {
+        let mut versions: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
+
+        let mut nested_versions: HashMap<String, VoltPackage> = HashMap::new();
+
+        nested_versions.insert(
+            format!("{}{}", package.name, package.version),
+            package.clone(),
+        );
+
+        versions.insert(package.clone().version, nested_versions);
+
+        return Ok(VoltResponse {
+            version: package.version,
+            versions,
+        });
+    }
+
     // loop until MAX_RETRIES reached.
     loop {
-        let package_name = package.name.clone();
         // get a response
-        let mut response = isahc::get_async(format!(
-            "https://cdn.jsdelivr.net/npm/@voltpkg/{}/data.json",
-            package_name
-        ))
-        .await
-        .map_err(VoltError::NetworkError)?;
+        let mut response =
+            isahc::get_async(format!("http://push-2105.5centscdn.com/{}.json", hash))
+                .await
+                .map_err(VoltError::NetworkError)?;
 
         // check the status of the response
         match response.status() {
             // 200 (OK)
             StatusCode::OK => {
+                let mut buf: Vec<u8> = vec![];
+
+                response
+                    .copy_to(&mut buf)
+                    .await
+                    .map_err(VoltError::NetworkRecError)?;
+
                 let deserialized: JSONVoltResponse =
-                    serde_json::from_str(response.text().await.unwrap().as_str())
-                        .map_err(|_| VoltError::DeserializeError)?;
+                    serde_json::from_slice(&buf).map_err(|_| VoltError::DeserializeError)?;
 
                 let converted = convert(deserialized)?;
 
@@ -153,20 +195,20 @@ pub async fn get_volt_response(package: Package) -> Result<VoltResponse> {
             }
             // 429 (TOO_MANY_REQUESTS)
             StatusCode::TOO_MANY_REQUESTS => Err(VoltError::TooManyRequests {
-                url: format!("http://registry.voltpkg.com/{}", package_name),
-                package_name: package_name.to_string(),
+                url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                package_name: package_info.name.clone(),
             })?,
             // 400 (BAD_REQUEST)
             StatusCode::BAD_REQUEST => Err(VoltError::BadRequest {
-                url: format!("http://registry.voltpkg.com/{}", package_name),
-                package_name: package_name.to_string(),
+                url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                package_name: package_info.name.clone(),
             })?,
             // 404 (NOT_FOUND)
             StatusCode::NOT_FOUND => {
                 if retries == MAX_RETRIES {
                     Err(VoltError::PackageNotFound {
-                        url: format!("http://registry.voltpkg.com/{}", package_name),
-                        package_name: package_name.to_string(),
+                        url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                        package_name: package_info.name.clone(),
                     })?
                 }
             }
@@ -175,8 +217,8 @@ pub async fn get_volt_response(package: Package) -> Result<VoltResponse> {
                 // Stop at MAX_RETRIES
                 if retries == MAX_RETRIES {
                     Err(VoltError::NetworkUnknownError {
-                        url: format!("http://registry.voltpkg.com/{}", package_name),
-                        package_name: package_name.to_string(),
+                        url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                        package_name: package_info.name.clone(),
                         code: response.status().as_str().to_string(),
                     })?
                 }
@@ -186,19 +228,6 @@ pub async fn get_volt_response(package: Package) -> Result<VoltResponse> {
         // Increment no. retries
         retries += 1;
     }
-}
-
-pub async fn get_volt_response_multi(
-    packages: Vec<Package>,
-    pb: &ProgressBar,
-) -> Vec<Result<VoltResponse>> {
-    packages
-        .into_iter()
-        .map(|name| get_volt_response(name))
-        .collect::<FuturesUnordered<_>>()
-        .inspect(|_| pb.inc(1))
-        .collect::<Vec<Result<VoltResponse>>>()
-        .await
 }
 
 // #[cfg(windows)]
@@ -846,13 +875,13 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
 }
 
 pub async fn fetch_dep_tree(
-    packages: &Vec<Package>,
+    data: &Vec<(PackageInfo, String, VoltPackage, bool)>,
     progress_bar: &ProgressBar,
 ) -> Result<(Vec<VoltResponse>, f32)> {
     let start = Instant::now();
-    if packages.len() > 1 {
+    if data.len() > 1 {
         Ok((
-            get_volt_response_multi(packages.clone(), progress_bar)
+            get_volt_response_multi(data, progress_bar)
                 .await
                 .into_iter()
                 .collect::<Result<Vec<_>>>()?,
