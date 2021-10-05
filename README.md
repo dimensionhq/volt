@@ -13,6 +13,8 @@
 
 <img src="https://user-images.githubusercontent.com/63039748/122814035-b9696280-d2e4-11eb-8157-67a49f03190d.png">
 
+WARNING: Volt is still in the development stage and is not ready for use!
+
 **Rapid**: Volt is incredibly fast and powerful.
 
 **Reliable**: Volt is built to be reliable and dependable.
