@@ -16,7 +16,7 @@ limitations under the License.
 use crate::{
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
     core::utils::voltapi::VoltPackage,
-    core::utils::{constants::PROGRESS_CHARS, install_extract_package, print_elapsed},
+    core::utils::{constants::PROGRESS_CHARS, install_extract_package, npm, print_elapsed},
     core::utils::{fetch_dep_tree, package::PackageJson},
     core::{command::Command, VERSION},
     App,
@@ -117,8 +117,11 @@ impl Command for Add {
                 )),
         );
 
+        // Fetch npm data including hash to fetch dependencies
+        let data = npm::get_versions(&packages).await?;
+        println!("{:?}", data);
         // Fetch pre-flattened dependency trees from the registry
-        let (responses, elapsed) = fetch_dep_tree(&packages, &progress_bar).await?;
+        let (responses, elapsed) = fetch_dep_tree(&data, &progress_bar).await?;
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
 
