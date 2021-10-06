@@ -51,10 +51,12 @@ pub fn parse_versions(packages: &Vec<String>) -> Result<Vec<PackageInfo>> {
 
 // Get version from NPM
 pub async fn get_version(
-    pacakge_info: PackageInfo,
-) -> Result<(String, String, String, VoltPackage, bool)> {
+    package_info: PackageInfo,
+) -> Result<(PackageInfo, String, VoltPackage, bool)> {
     let mut retries = 0;
 
+    let package_name = package_info.name;
+    println!("{}", package_name);
     let count = package_name.matches("@").count();
 
     if (count == 1 && package_name.contains("/")) || (count == 0 && !package_name.contains("/")) {
@@ -149,8 +151,10 @@ pub async fn get_version(
                                     };
 
                                     return Ok((
-                                        package_name,
-                                        latest.to_string(),
+                                        PackageInfo {
+                                            name: package_name,
+                                            version: Some(latest.to_string()),
+                                        },
                                         hash,
                                         package,
                                         num_deps == 0,
@@ -303,8 +307,10 @@ pub async fn get_version(
                                         };
 
                                         return Ok((
-                                            package_name,
-                                            available_versions[0].to_string(),
+                                            PackageInfo {
+                                                name: package_name,
+                                                version: Some(available_versions[0].to_string()),
+                                            },
                                             hash,
                                             package,
                                             num_deps == 0,
@@ -454,8 +460,10 @@ pub async fn get_version(
                                         };
 
                                         return Ok((
-                                            package_name,
-                                            available_versions[0].to_string(),
+                                            PackageInfo {
+                                                name: package_name,
+                                                version: Some(available_versions[0].to_string()),
+                                            },
                                             hash,
                                             package,
                                             num_deps == 0,
@@ -497,13 +505,13 @@ pub async fn get_version(
 }
 
 pub async fn get_versions(
-    packages: &Vec<String>,
-) -> Result<Vec<(String, String, String, VoltPackage, bool)>> {
+    packages: &Vec<PackageInfo>,
+) -> Result<Vec<(PackageInfo, String, VoltPackage, bool)>> {
     packages
         .to_owned()
         .into_iter()
         .map(get_version)
         .collect::<FuturesOrdered<_>>()
-        .try_collect::<Vec<(String, String, String, VoltPackage, bool)>>()
+        .try_collect::<Vec<(PackageInfo, String, VoltPackage, bool)>>()
         .await
 }

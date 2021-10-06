@@ -889,7 +889,7 @@ pub async fn fetch_dep_tree(
         ))
     } else {
         Ok((
-            vec![get_volt_response(packages[0].clone()).await?],
+            vec![get_volt_response(&data[0].0, &data[0].1, data[0].2.clone(), data[0].3).await?],
             start.elapsed().as_secs_f32(),
         ))
     }
