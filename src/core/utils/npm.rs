@@ -56,13 +56,13 @@ pub async fn get_version(
     let mut retries = 0;
 
     let package_name = package_info.name;
-    println!("{}", package_name);
+
     let count = package_name.matches("@").count();
 
     if (count == 1 && package_name.contains("/")) || (count == 0 && !package_name.contains("/")) {
         loop {
             let client: Request<&str> =
-                Request::get(format!("http://registry.npmjs.org/{}", package_name))
+                Request::get(format!("https://registry.npmjs.org/{}", package_name))
                     .header(
                         "Accept",
                         "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
@@ -175,7 +175,7 @@ pub async fn get_version(
                 &mut StatusCode::NOT_FOUND => {
                     if retries == MAX_RETRIES {
                         return Err(VoltError::TooManyRequests {
-                            url: format!("http://registry.npmjs.org/{}", package_name),
+                            url: format!("https://registry.npmjs.org/{}", package_name),
                             package_name: package_name.to_string(),
                         })?;
                     }
@@ -183,7 +183,7 @@ pub async fn get_version(
                 _ => {
                     if retries == MAX_RETRIES {
                         return Err(VoltError::PackageNotFound {
-                            url: format!("http://registry.npmjs.org/{}", package_name),
+                            url: format!("https://registry.npmjs.org/{}", package_name),
                             package_name: package_name.to_string(),
                         })?;
                     }
@@ -202,7 +202,7 @@ pub async fn get_version(
                 let name = format!("@{}", input_version);
 
                 let client: Request<&str> = Request::get(format!(
-                    "http://registry.npmjs.org/{}",
+                    "https://registry.npmjs.org/{}",
                     package_name.replace(&name, "")
                 ))
                 .header(
@@ -331,14 +331,14 @@ pub async fn get_version(
                     &mut StatusCode::NOT_FOUND => {
                         if retries == MAX_RETRIES {
                             return Err(VoltError::TooManyRequests {
-                                url: format!("http://registry.npmjs.org/{}", package_name),
+                                url: format!("https://registry.npmjs.org/{}", package_name),
                                 package_name: package_name.to_string(),
                             })?;
                         }
                     }
                     _ => {
                         return Err(VoltError::PackageNotFound {
-                            url: format!("http://registry.npmjs.org/{}", package_name),
+                            url: format!("https://registry.npmjs.org/{}", package_name),
                             package_name: package_name.to_string(),
                         })?;
                     }
@@ -355,7 +355,7 @@ pub async fn get_version(
                 let name = format!("@{}", input_version);
 
                 let client: Request<&str> = Request::get(format!(
-                    "http://registry.npmjs.org/{}",
+                    "https://registry.npmjs.org/{}",
                     package_name.replace(&name, "")
                 ))
                 .header(
@@ -488,7 +488,7 @@ pub async fn get_version(
                         if retries == MAX_RETRIES {
                             if retries == MAX_RETRIES {
                                 return Err(VoltError::PackageNotFound {
-                                    url: format!("http://registry.npmjs.org/{}", package_name),
+                                    url: format!("https://registry.npmjs.org/{}", package_name),
                                     package_name: package_name.to_string(),
                                 })?;
                             }
