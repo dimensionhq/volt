@@ -112,7 +112,7 @@ impl Command for Add {
             ProgressStyle::default_bar()
                 .progress_chars(PROGRESS_CHARS)
                 .template(&format!(
-                    "{} [{{bar:40.magenta/blue}}] {{msg:.blue}}",
+                    "{} [{{bar:40.green/magenta}}] {{msg:.blue}}",
                     "Resolving Dependencies".bright_blue()
                 )),
         );
