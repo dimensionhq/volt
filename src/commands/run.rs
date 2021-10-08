@@ -66,7 +66,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         // if app.clone().args.len() == 1_usize {
         //     let package_json = PackageJson::from("package.json");
 

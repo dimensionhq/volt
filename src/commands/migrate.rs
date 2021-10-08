@@ -69,7 +69,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         // let packagemanagers: Vec<String> = PackageManager::options();
         // let mut packagemanager: String = String::new();
         // if app.args.len() == 1 {

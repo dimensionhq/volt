@@ -14,22 +14,20 @@ pub enum VoltError {
     #[diagnostic(code(volt::environment::home_dir))]
     GetHomeDirError,
 
-    #[error("failed to initialize lz4 decoder")]
-    #[diagnostic(code(volt::decode::lz4::initialize))]
-    DecoderError(#[source] std::io::Error),
+    // #[error("failed to initialize lz4 decoder")]
+    // #[diagnostic(code(volt::decode::lz4::initialize))]
+    // DecoderError(#[source] std::io::Error),
 
-    #[error("failed to decode lz4 encoded data")]
-    #[diagnostic(code(volt::decode::lz4::decode))]
-    DecodeError(#[source] std::io::Error),
-
+    // #[error("failed to decode lz4 encoded data")]
+    // #[diagnostic(code(volt::decode::lz4::decode))]
+    // DecodeError(#[source] std::io::Error),
     #[error("failed to recieve response from the registry")]
     #[diagnostic(code(volt::network))]
     NetworkError(isahc::Error),
 
-    #[error("failed to recieve byte response")]
-    #[diagnostic(code(volt::network::rec))]
-    NetworkRecError(#[source] std::io::Error),
-
+    // #[error("failed to recieve byte response")]
+    // #[diagnostic(code(volt::network::rec))]
+    // NetworkRecError(#[source] std::io::Error),
     #[error("failed to create directory")]
     #[diagnostic(code(volt::io::create_dir))]
     CreateDirError(#[source] std::io::Error),

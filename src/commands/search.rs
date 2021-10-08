@@ -78,7 +78,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         // if app.args.len() >= 2 {
         //     let package_name = &app.args[1];
 
