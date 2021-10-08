@@ -18,6 +18,8 @@ mod commands;
 mod core;
 use std::{sync::Arc, time::Instant};
 
+use crate::commands::node::*;
+
 use crate::commands::add::*;
 use crate::core::command::Command;
 use crate::core::utils::app::App;
@@ -47,6 +49,7 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
             let app = Arc::new(App::initialize(args)?);
             Discord::exec(app).await
         }
+        Some(("node", args)) => Node::download(args).await,
         _ => Ok(()),
     }
 }
@@ -57,16 +60,16 @@ async fn main() -> miette::Result<()> {
     let volt_help = format!(
         r#"{} {}
 
-Usage: {} [{}] [{}]
+        Usage: {} [{}] [{}]
 
-Displays help information.
+        Displays help information.
 
-Commands:
-  {} add
-  {} audit
-  {} cache
-  {} check
-  {} clean"#,
+        Commands:
+        {} add
+        {} audit
+        {} cache
+        {} check
+        {} clean"#,
         "volt".bright_green().bold(),
         "1.0.0",
         "volt".bright_green().bold(),
@@ -143,6 +146,33 @@ Commands:
             clap::App::new("compress")
                 .about("Interactively create and edit your package.json file.")
                 .override_usage(compress_usage.as_str()),
+        )
+        .subcommand(
+            clap::App::new("node")
+                .about("Manage node versions")
+                .subcommand(
+                    clap::App::new("use")
+                        .about("Switch current node version")
+                        .arg(Arg::new("version").about("version to use")),
+                )
+                .subcommand(
+                    clap::App::new("remove")
+                        .about("Uninstall a specified version of node")
+                        .arg(
+                            Arg::new("versions")
+                                .multiple_values(true)
+                                .about("version to remove"),
+                        ),
+                )
+                .subcommand(
+                    clap::App::new("install")
+                        .about("Install one or more versions of node")
+                        .arg(
+                            Arg::new("versions")
+                                .multiple_values(true)
+                                .about("version to install"),
+                        ),
+                ),
         )
         .subcommand(
             clap::App::new("discord")
