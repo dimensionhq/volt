@@ -11,8 +11,6 @@
     limitations under the License.
 */
 
-use std::io::Write;
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

@@ -1,6 +1,3 @@
-use isahc::config::Configurable;
-use isahc::config::SslOption;
-use isahc::config::VersionNegotiation;
 use miette::Result;
 
 use crate::commands::add::PackageInfo;
@@ -73,8 +70,7 @@ pub async fn get_version(
                     .header("accept-encoding", "gzip,deflate")
                     .header("connection", "keep-alive")
                     .header("host", "registry.npmjs.org")
-                    .version_negotiation(VersionNegotiation::http2())
-                    .ssl_options(SslOption::DANGER_ACCEPT_INVALID_CERTS)
+                    // .version_negotiation(VersionNegotiation::http11())
                     .body("")
                     .map_err(VoltError::RequestBuilderError)?;
 
@@ -223,8 +219,7 @@ pub async fn get_version(
                 .header("accept-encoding", "gzip, deflate, br")
                 .header("connection", "keep-alive")
                 .header("host", "registry.npmjs.org")
-                .version_negotiation(VersionNegotiation::http2())
-                .ssl_options(SslOption::DANGER_ACCEPT_INVALID_CERTS)
+                // .version_negotiation(VersionNegotiation::http11())
                 .body("")
                 .map_err(VoltError::RequestBuilderError)?;
 
@@ -384,8 +379,7 @@ pub async fn get_version(
                 .header("accept-encoding", "gzip, deflate, br")
                 .header("connection", "keep-alive")
                 .header("host", "registry.npmjs.org")
-                .version_negotiation(VersionNegotiation::http2())
-                .ssl_options(SslOption::DANGER_ACCEPT_INVALID_CERTS)
+                // .version_negotiation(VersionNegotiation::http11())
                 .body("")
                 .map_err(VoltError::RequestBuilderError)?;
 
