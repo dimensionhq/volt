@@ -50,11 +50,3 @@ pub struct JSONVoltPackage {
     pub dependencies: Option<Vec<String>>,
     pub peer_dependencies: Option<Vec<String>>,
 }
-
-impl VoltResponse {
-    pub fn save(self, path: String) {
-        let mut file = std::fs::File::create(path).unwrap();
-        file.write_all(serde_json::to_string(&self).unwrap().as_bytes())
-            .unwrap();
-    }
-}
