@@ -399,20 +399,18 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
         // url = url.replace("npmjs.org", random_registry);
 
         // Get Tarball File
+
         let builder = reqwest::ClientBuilder::new()
             .use_rustls_tls()
             .build()
-            .unwrap()
-            .get(package_instance.tarball);
+            .unwrap();
 
         // Tarball bytes response
         let bytes: bytes::Bytes = builder
+            .get(package_instance.tarball)
             .send()
             .await
-            .unwrap_or_else(|e| {
-                eprintln!("{:?}", e);
-                std::process::exit(1);
-            })
+            .unwrap()
             .bytes()
             .await
             .unwrap();
