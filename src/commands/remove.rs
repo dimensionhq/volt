@@ -69,7 +69,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         // if app.args.len() == 1 {
         //     println!("{}", Self::help());
         //     process::exit(1);

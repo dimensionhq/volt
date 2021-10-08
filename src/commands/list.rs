@@ -58,7 +58,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         // let flags = &app.flags;
 
         // let mut depth: u64 = 2;

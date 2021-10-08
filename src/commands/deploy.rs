@@ -61,7 +61,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(_app: Arc<App>) -> Result<()> {
         // let args: Vec<String> = app.args.clone();
         // if args.is_empty() {
         //     error!("expected commit name");

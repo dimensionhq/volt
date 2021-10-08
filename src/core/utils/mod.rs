@@ -19,14 +19,12 @@ use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use package::NpmPackage;
 use reqwest::StatusCode;
 use ssri::{Algorithm, Integrity};
 use std::{
     borrow::Cow,
     collections::HashMap,
     convert::TryFrom,
-    env::temp_dir,
     ffi::OsStr,
     fs::{read_to_string, File},
     io::Write,
@@ -179,15 +177,9 @@ pub async fn get_volt_response(
         match response.status() {
             // 200 (OK)
             StatusCode::OK => {
-                let mut buf: Vec<u8> = vec![];
-
-                response
-                    .copy_to(&mut buf)
-                    .await
-                    .map_err(VoltError::NetworkRecError)?;
-
                 let deserialized: JSONVoltResponse =
-                    serde_json::from_slice(&buf).map_err(|_| VoltError::DeserializeError)?;
+                    serde_json::from_str(&response.text().await.unwrap())
+                        .map_err(|_| VoltError::DeserializeError)?;
 
                 let converted = convert(deserialized)?;
 
@@ -380,7 +372,7 @@ pub async fn get_volt_response(
 // }
 
 /// downloads tarball file from package
-pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) -> Result<()> {
+pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
     let package_instance = package.clone();
 
     // @types/eslint
@@ -401,22 +393,29 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
 
     // if package is not already installed
     if !Path::new(&loc).exists() {
-        // Url to download tarball code files from
-        let mut url = package_instance.tarball;
         // let registries = vec!["yarnpkg.com"];
         // let random_registry = registries.choose(&mut rand::thread_rng()).unwrap();
 
         // url = url.replace("npmjs.org", random_registry);
 
-        if !secure {
-            url = url.replace("https", "http")
-        }
-
         // Get Tarball File
-        let res = reqwest::get(url).await.unwrap();
+        let builder = reqwest::ClientBuilder::new()
+            .use_rustls_tls()
+            .build()
+            .unwrap()
+            .get(package_instance.tarball);
 
         // Tarball bytes response
-        let bytes: bytes::Bytes = res.bytes().await.unwrap();
+        let bytes: bytes::Bytes = builder
+            .send()
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("{:?}", e);
+                std::process::exit(1);
+            })
+            .bytes()
+            .await
+            .unwrap();
 
         let algorithm;
 
@@ -569,100 +568,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, secure: bool) ->
     Ok(())
 }
 
-pub async fn download_tarball_create(
-    _app: &App,
-    package: &NpmPackage,
-    name: &str,
-) -> Result<String> {
-    let file_name = format!("{}-{}.tgz", name, package.dist_tags.get("latest").unwrap());
-    let temp_dir = temp_dir();
-
-    if !Path::new(&temp_dir.join("volt")).exists() {
-        std::fs::create_dir(Path::new(&temp_dir.join("volt")))
-            .map_err(VoltError::CreateDirError)?;
-    }
-
-    if name.starts_with('@') && name.contains("__") {
-        let package_dir_loc;
-
-        if cfg!(target_os = "windows") {
-            // Check if C:\Users\username\.volt exists
-            package_dir_loc = format!(
-                r"{}\.volt\{}",
-                std::env::var("USERPROFILE").unwrap(),
-                name.split("__").collect::<Vec<&str>>()[0]
-            );
-        } else {
-            // Check if ~/.volt\packagename exists
-            package_dir_loc = format!(
-                r"{}\.volt\{}",
-                std::env::var("HOME").unwrap(),
-                name.split("__").collect::<Vec<&str>>()[0]
-            );
-        }
-
-        if !Path::new(&package_dir_loc).exists() {
-            create_dir_all(&package_dir_loc).await.unwrap();
-        }
-    }
-
-    let path;
-
-    if cfg!(target_os = "windows") {
-        path = temp_dir.join(format!(r"volt\{}", file_name));
-    } else {
-        path = temp_dir.join(format!(r"volt/{}", file_name));
-    }
-
-    let path_str = path.to_string_lossy().to_string();
-    let package_version = package
-        .versions
-        .get(package.dist_tags.get("latest").unwrap())
-        .unwrap();
-
-    let bytes = std::fs::read(path_str.clone()).unwrap();
-
-    // Corrupt tar files may cause issues
-    // if let Ok(hash) = App::calc_hash(&bytes::Bytes::from(bytes)) {
-    //     // File exists, make sure it's not corrupted
-    //     if hash
-    //         == package
-    //             .versions
-    //             .get(package.dist_tags.get("latest").unwrap())
-    //             .unwrap()
-    //             .dist
-    //             .shasum
-    //     {
-    //         return Ok(path_str);
-    //     }
-    // }
-
-    let tarball = package_version.dist.tarball.replace("https", "http");
-
-    let res = reqwest::get(tarball).await.unwrap();
-
-    let bytes = res.bytes().await.unwrap();
-
-    // App::calc_hash(&bytes)?;
-
-    Ok(path_str)
-}
-
-pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
-    let sep: char;
-    if cfg!(target_os = "windows") {
-        sep = '\\';
-    } else {
-        sep = '/';
-    }
-    let mut pieces = path.rsplit(sep);
-
-    match pieces.next() {
-        Some(p) => p.into(),
-        None => path.into(),
-    }
-}
-
 /// Gets a config key from git using the git cli.
 /// Uses `gitoxide` to read from your git configuration.
 pub fn get_git_config(app: &App, key: &str) -> Option<String> {
@@ -710,6 +615,21 @@ pub fn get_git_config(app: &App, key: &str) -> Option<String> {
             }
         }
         _ => None,
+    }
+}
+
+pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
+    let sep: char;
+    if cfg!(target_os = "windows") {
+        sep = '\\';
+    } else {
+        sep = '/';
+    }
+    let mut pieces = path.rsplit(sep);
+
+    match pieces.next() {
+        Some(p) => p.into(),
+        None => path.into(),
     }
 }
 
@@ -849,15 +769,7 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 /// package all steps for installation into 1 convenient function.
 pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> Result<()> {
     // if there's an error (most likely a checksum verification error) while using http, retry with https.
-    if download_tarball(&app, &package, false).await.is_err() {
-        // use https instead
-        download_tarball(&app, &package, true)
-            .await
-            .unwrap_or_else(|_| {
-                println!("failed to download tarball");
-                std::process::exit(1);
-            });
-    }
+    if download_tarball(&app, &package).await.is_err() {}
 
     // generate the package's script
     generate_script(&app, package);

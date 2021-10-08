@@ -9,12 +9,13 @@ license = "Apache-2.0"
 description = "A fast, memory-safe package manager for the web."
 edition = "2018"
 default-run = "volt"
+build = "build.rs"
 
 [dependencies]
 async-trait = "0.1"
 base64 = "0.13.0"
 bytes = "1.0.1"
-clap = "3.0.0-beta.2"
+clap = { version = "3.0.0-beta.2", features = ["std", "color"], default-features = false }
 colored = "2.0"
 console = "0.14"
 dialoguer = "0.8"
@@ -24,14 +25,14 @@ futures = "0.3.15"
 futures-util = "0.3.15"
 git-config = "0.1.4"
 indicatif = "0.16"
-isahc = '1.4.1'
+isahc = { version = "1.5.0" , features = ["http2", "text-decoding"], default-features = false }
 jwalk = "0.6.0"
 lazy_static = "1.4"
 miette = { version = "3.0.1", features = ["fancy"] }
 prettytable-rs = "0.8.0"
 rand = "0.8.4"
-regex = "1"
-reqwest = "0.11.4"
+regex = "1.5.4"
+reqwest = { version = "0.11.4", features = ["rustls-tls"] }
 rslint_cli = "0.3.0"
 rslint_config = "0.1.0"
 rslint_core = "0.3.0"
@@ -57,7 +58,6 @@ tar = "0.4"
 termimad = "0.16.0"
 thiserror = "1.0"
 tokio = { version = "1.10.0", features = ["fs", "macros", "rt-multi-thread"] }
-walkdir = "2.3.2"
 minifier = "0.0.41"
 fs_extra = "1.2.0"
 webbrowser = "0.5.5"
