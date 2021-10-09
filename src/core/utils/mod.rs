@@ -19,7 +19,7 @@ use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use reqwest::StatusCode;
+use reqwest::{Client, StatusCode};
 use ssri::{Algorithm, Integrity};
 use std::{
     collections::HashMap,
@@ -36,6 +36,10 @@ use tokio::fs::create_dir_all;
 
 use crate::core::utils::constants::MAX_RETRIES;
 use crate::core::utils::voltapi::JSONVoltResponse;
+
+pub struct State {
+    pub http_client: Client,
+}
 
 /// convert a JSONVoltResponse -> VoltResponse
 pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
@@ -375,7 +379,7 @@ pub async fn get_volt_response(
 // }
 
 /// downloads tarball file from package
-pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
+pub async fn download_tarball(app: &App, package: &VoltPackage, builder: Client) -> Result<()> {
     let package_instance = package.clone();
 
     // @types/eslint
@@ -396,12 +400,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
 
     // if package is not already installed
     if !Path::new(&loc).exists() {
-        // Get Tarball File
-        let builder = reqwest::ClientBuilder::new()
-            .use_rustls_tls()
-            .build()
-            .unwrap();
-
         // Tarball bytes response
         let bytes: bytes::Bytes = builder
             .get(package_instance.tarball)
@@ -748,9 +746,16 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 }
 
 /// package all steps for installation into 1 convenient function.
-pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> Result<()> {
+pub async fn install_extract_package(
+    app: &Arc<App>,
+    package: &VoltPackage,
+    state: State,
+) -> Result<()> {
     // if there's an error (most likely a checksum verification error) while using http, retry with https.
-    if download_tarball(app, package).await.is_err() {}
+    if download_tarball(app, package, state.http_client)
+        .await
+        .is_err()
+    {}
 
     // generate the package's script
     generate_script(app, package);
