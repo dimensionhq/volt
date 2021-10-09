@@ -68,7 +68,7 @@ impl App {
 
         args.dedup();
 
-        Ok(parse_versions(&args)?)
+        parse_versions(&args)
     }
 
     /// Check if the app arguments contain the flags specified

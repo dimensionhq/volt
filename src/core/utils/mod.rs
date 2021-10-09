@@ -22,7 +22,6 @@ use miette::Result;
 use reqwest::StatusCode;
 use ssri::{Algorithm, Integrity};
 use std::{
-    borrow::Cow,
     collections::HashMap,
     convert::TryFrom,
     ffi::OsStr,
@@ -51,7 +50,7 @@ pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
         // @codemirror/state -> state
         let split = version
             .0
-            .split("@")
+            .split('@')
             .filter(|s| !s.is_empty())
             .collect::<Vec<&str>>();
 
@@ -59,13 +58,13 @@ pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
 
         if split.len() == 2 {
             package_name = split[0].to_string();
-            if package_name.contains("/") {
+            if package_name.contains('/') {
                 package_name = format!("@{}", package_name);
             }
         }
 
         // @codemirror/state@1.2.3 -> 1.2.3
-        let package_version = version.0.split("@").last().unwrap();
+        let package_version = version.0.split('@').last().unwrap();
 
         let integrity: Integrity =
             data.integrity
@@ -122,13 +121,13 @@ pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
 }
 
 pub async fn get_volt_response_multi(
-    versions: &Vec<(PackageInfo, String, VoltPackage, bool)>,
+    versions: &[(PackageInfo, String, VoltPackage, bool)],
     pb: &ProgressBar,
 ) -> Vec<Result<VoltResponse>> {
     versions
-        .into_iter()
+        .iter()
         .map(|(package_info, hash, package, no_deps)| {
-            get_volt_response(package_info, &hash, package.to_owned(), *no_deps)
+            get_volt_response(package_info, hash, package.to_owned(), *no_deps)
         })
         .collect::<FuturesUnordered<_>>()
         .inspect(|_| pb.inc(1))
@@ -139,7 +138,7 @@ pub async fn get_volt_response_multi(
 // Get response from volt CDN
 pub async fn get_volt_response(
     package_info: &PackageInfo,
-    hash: &String,
+    hash: &str,
     package: VoltPackage,
     zero_deps: bool,
 ) -> Result<VoltResponse> {
@@ -186,38 +185,42 @@ pub async fn get_volt_response(
                 return Ok(converted);
             }
             // 429 (TOO_MANY_REQUESTS)
-            StatusCode::TOO_MANY_REQUESTS => Err(VoltError::TooManyRequests {
-                url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                package_name: package_info.name.clone(),
-            })?,
-            // 400 (BAD_REQUEST)
-            StatusCode::BAD_REQUEST => Err(VoltError::BadRequest {
-                url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                package_name: package_info.name.clone(),
-            })?,
-            // 404 (NOT_FOUND)
-            StatusCode::NOT_FOUND => {
-                if retries == MAX_RETRIES {
-                    Err(VoltError::PackageNotFound {
-                        url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                        package_name: package_info.name.clone(),
-                    })?
+            StatusCode::TOO_MANY_REQUESTS => {
+                return Err(VoltError::TooManyRequests {
+                    url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                    package_name: package_info.name.clone(),
                 }
+                .into());
+            }
+            // 400 (BAD_REQUEST)
+            StatusCode::BAD_REQUEST => {
+                return Err(VoltError::BadRequest {
+                    url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                    package_name: package_info.name.clone(),
+                }
+                .into());
+            }
+            // 404 (NOT_FOUND)
+            StatusCode::NOT_FOUND if retries == MAX_RETRIES => {
+                return Err(VoltError::PackageNotFound {
+                    url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                    package_name: package_info.name.clone(),
+                }
+                .into());
             }
             // Other Errors
             _ => {
-                // Stop at MAX_RETRIES
                 if retries == MAX_RETRIES {
-                    Err(VoltError::NetworkUnknownError {
+                    return Err(VoltError::NetworkUnknownError {
                         url: format!("http://registry.voltpkg.com/{}", package_info.name),
                         package_name: package_info.name.clone(),
                         code: response.status().as_str().to_string(),
-                    })?
+                    }
+                    .into());
                 }
             }
         }
 
-        // Increment no. retries
         retries += 1;
     }
 }
@@ -235,7 +238,7 @@ pub async fn get_volt_response(
 
 //             // lib/index.js
 //             let path = format!("{}", &entry.display())
-//                 .replace(r"\", "/")
+//                 .replace(r"\", '/')
 //                 .replace(&app.volt_dir.display().to_string(), "");
 
 //             // node_modules/lib
@@ -244,7 +247,7 @@ pub async fn get_volt_response(
 //                 &path
 //                     .replace(
 //                         format!("{}", &app.volt_dir.display())
-//                             .replace(r"\", "/")
+//                             .replace(r"\", '/')
 //                             .as_str(),
 //                         ""
 //                     )
@@ -258,7 +261,7 @@ pub async fn get_volt_response(
 //                 "node_modules{}",
 //                 &path.replace(
 //                     format!("{}", &app.volt_dir.display())
-//                         .replace(r"\", "/")
+//                         .replace(r"\", '/')
 //                         .as_str(),
 //                     ""
 //                 )
@@ -271,7 +274,7 @@ pub async fn get_volt_response(
 //                         "node_modules{}",
 //                         &path.replace(
 //                             format!("{}", &app.volt_dir.display())
-//                                 .replace(r"\", "/")
+//                                 .replace(r"\", '/')
 //                                 .as_str(),
 //                             ""
 //                         )
@@ -292,7 +295,7 @@ pub async fn get_volt_response(
 //     let volt_directory = format!("{}", app.volt_dir.display());
 
 //     if !cfg!(target_os = "windows") {
-//         src = src.replace(r"\", "/");
+//         src = src.replace(r"\", '/');
 //     }
 
 //     for entry in WalkDir::new(src) {
@@ -304,7 +307,7 @@ pub async fn get_volt_response(
 
 //             // lib/index.js
 //             let path = format!("{}", &entry.path().display())
-//                 .replace(r"\", "/")
+//                 .replace(r"\", '/')
 //                 .replace(&volt_directory, "");
 
 //             // node_modules/lib
@@ -313,7 +316,7 @@ pub async fn get_volt_response(
 //                 &path
 //                     .replace(
 //                         format!("{}", &app.volt_dir.display())
-//                             .replace(r"\", "/")
+//                             .replace(r"\", '/')
 //                             .as_str(),
 //                         ""
 //                     )
@@ -327,7 +330,7 @@ pub async fn get_volt_response(
 //                 "node_modules{}",
 //                 &path.replace(
 //                     format!("{}", &app.volt_dir.display())
-//                         .replace(r"\", "/")
+//                         .replace(r"\", '/')
 //                         .as_str(),
 //                     ""
 //                 )
@@ -341,7 +344,7 @@ pub async fn get_volt_response(
 //                         std::env::current_dir().unwrap().to_string_lossy(),
 //                         &path.replace(
 //                             format!("{}", &app.volt_dir.display())
-//                                 .replace(r"\", "/")
+//                                 .replace(r"\", '/')
 //                                 .as_str(),
 //                             ""
 //                         )
@@ -357,7 +360,7 @@ pub async fn get_volt_response(
 //                                 "node_modules{}",
 //                                 &path.replace(
 //                                     format!("{}", &app.volt_dir.display())
-//                                         .replace(r"\", "/")
+//                                         .replace(r"\", '/')
 //                                         .as_str(),
 //                                     ""
 //                                 )
@@ -376,10 +379,10 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
     let package_instance = package.clone();
 
     // @types/eslint
-    if package_instance.name.starts_with('@') && package_instance.name.contains("/") {
+    if package_instance.name.starts_with('@') && package_instance.name.contains('/') {
         let package_directory_location = app
             .volt_dir
-            .join(&package.name.split("/").collect::<Vec<&str>>()[0]);
+            .join(&package.name.split('/').collect::<Vec<&str>>()[0]);
 
         if !Path::new(&package_directory_location).exists() {
             create_dir_all(&package_directory_location)
@@ -426,7 +429,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
             create_dir_all(&app.node_modules_dir).await.unwrap();
 
             // Delete package from node_modules
-            let node_modules_dep_path = app.node_modules_dir.join(&package.name);
+            let _node_modules_dep_path = app.node_modules_dir.join(&package.name);
 
             // TODO: fix this
             // if node_modules_dep_path.exists() {
@@ -437,11 +440,11 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
             let mut extract_directory = PathBuf::from(&app.volt_dir);
 
             // @types/eslint
-            if package.clone().name.starts_with('@') && package.clone().name.contains("/") {
+            if package.clone().name.starts_with('@') && package.clone().name.contains('/') {
                 if cfg!(target_os = "windows") {
-                    let name = package.clone().name.replace(r"/", r"\");
+                    let name = package.clone().name.replace('/', r"\");
 
-                    let split = name.split(r"\").collect::<Vec<&str>>();
+                    let split = name.split('\\').collect::<Vec<&str>>();
 
                     // C:\Users\xtrem\.volt\@types
                     extract_directory = extract_directory.join(split[0]);
@@ -554,7 +557,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
             )
             .unwrap();
         } else {
-            return Err(VoltError::ChecksumVerificationError)?;
+            return Err(VoltError::ChecksumVerificationError.into());
         }
     }
 
@@ -569,28 +572,28 @@ pub fn get_git_config(app: &App, key: &str) -> Option<String> {
             let config_path = app.home_dir.join(".gitconfig");
 
             if !config_path.exists() {
-                return None;
+                None
             } else {
                 let data = read_to_string(config_path).ok()?;
 
                 let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
                 let value = config.get_raw_value("user", None, "name").ok()?;
 
-                return Some(String::from_utf8_lossy(&value).to_owned().to_string());
+                Some(String::from_utf8_lossy(&value).to_owned().to_string())
             }
         }
         "user.email" => {
             let config_path = app.home_dir.join(".gitconfig");
 
             if !config_path.exists() {
-                return None;
+                None
             } else {
                 let data = read_to_string(config_path).ok()?;
 
                 let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
                 let value = config.get_raw_value("user", None, "email").ok()?;
 
-                return Some(String::from_utf8_lossy(&value).to_owned().to_string());
+                Some(String::from_utf8_lossy(&value).to_owned().to_string())
             }
         }
         "repository.url" => {
@@ -602,9 +605,9 @@ pub fn get_git_config(app: &App, key: &str) -> Option<String> {
                 let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
                 let value = config.get_raw_value("remote", Some("origin"), "url").ok()?;
 
-                return Some(String::from_utf8_lossy(&value).to_owned().to_string());
+                Some(String::from_utf8_lossy(&value).to_owned().to_string())
             } else {
-                return None;
+                None
             }
         }
         _ => None,
@@ -747,10 +750,10 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 /// package all steps for installation into 1 convenient function.
 pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> Result<()> {
     // if there's an error (most likely a checksum verification error) while using http, retry with https.
-    if download_tarball(&app, &package).await.is_err() {}
+    if download_tarball(app, package).await.is_err() {}
 
     // generate the package's script
-    generate_script(&app, package);
+    generate_script(app, package);
 
     // let directory = &app
     //     .volt_dir
@@ -765,7 +768,7 @@ pub async fn install_extract_package(app: &Arc<App>, package: &VoltPackage) -> R
 }
 
 pub async fn fetch_dep_tree(
-    data: &Vec<(PackageInfo, String, VoltPackage, bool)>,
+    data: &[(PackageInfo, String, VoltPackage, bool)],
     progress_bar: &ProgressBar,
 ) -> Result<(Vec<VoltResponse>, f32)> {
     let start = Instant::now();
@@ -800,21 +803,19 @@ pub fn print_elapsed(length: usize, elapsed: f32) {
                 elapsed
             );
         }
+    } else if elapsed < 0.001 {
+        println!(
+            "{}: resolved {} dependencies in {:.4}s.",
+            "success".bright_green(),
+            length,
+            elapsed
+        );
     } else {
-        if elapsed < 0.001 {
-            println!(
-                "{}: resolved {} dependencies in {:.4}s.",
-                "success".bright_green(),
-                length,
-                elapsed
-            );
-        } else {
-            println!(
-                "{}: resolved {} dependencies in {:.2}s.",
-                "success".bright_green(),
-                length,
-                elapsed
-            );
-        }
+        println!(
+            "{}: resolved {} dependencies in {:.2}s.",
+            "success".bright_green(),
+            length,
+            elapsed
+        );
     }
 }
