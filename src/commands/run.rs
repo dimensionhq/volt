@@ -113,7 +113,7 @@ Options:
 
         //         std::process::Command::new("cmd.exe")
         //             .arg("/C")
-        //             .arg(location.replace("/", r"\"))
+        //             .arg(location.replace('/', r"\"))
         //             .spawn()
         //             .unwrap();
         //     } else {

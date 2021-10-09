@@ -9,7 +9,6 @@ license = "Apache-2.0"
 description = "A fast, memory-safe package manager for the web."
 edition = "2018"
 default-run = "volt"
-build = "build.rs"
 
 [dependencies]
 async-trait = "0.1"
