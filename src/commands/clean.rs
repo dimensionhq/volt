@@ -25,7 +25,7 @@ use miette::{IntoDiagnostic, Result};
 use regex::Regex;
 use std::fs;
 use std::io::SeekFrom;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
@@ -118,7 +118,7 @@ lazy_static! {
 pub struct Clean {}
 
 // minify a JSON file
-pub async fn minify(path: &PathBuf) -> Result<()> {
+pub async fn minify(path: &Path) -> Result<()> {
     let mut contents = String::new();
 
     let mut file = tokio::fs::OpenOptions::new()
@@ -210,7 +210,7 @@ Options:
                         .to_str()
                         .unwrap()
                         .to_string()
-                        .replace(r"\", "/")
+                        .replace('\\', "/")
                         .to_lowercase();
 
                     let mut has_match = false;
@@ -229,11 +229,8 @@ Options:
 
                     if !has_match {
                         if let Some(extension) = path.extension() {
-                            match extension.to_str().unwrap() {
-                                "json" => {
-                                    minify_matches.push(path.clone());
-                                }
-                                _ => {}
+                            if extension.to_str().unwrap() == "json" {
+                                minify_matches.push(path.clone());
                             }
                         }
                     }
@@ -290,16 +287,10 @@ Options:
 
             workers.push(tokio::task::spawn_blocking(move || {
                 for entry in chunk {
-                    if entry.is_file() {
-                        match fs::remove_file(entry) {
-                            Ok(_) => matches_bar.inc(1),
-                            Err(_) => {}
-                        };
-                    } else if entry.is_dir() {
-                        match fs::remove_dir_all(entry) {
-                            Ok(_) => matches_bar.inc(1),
-                            Err(_) => {}
-                        };
+                    if entry.is_file() && fs::remove_file(&entry).is_ok()
+                        || entry.is_dir() && fs::remove_dir_all(&entry).is_ok()
+                    {
+                        matches_bar.inc(1)
                     }
                 }
             }));
@@ -316,12 +307,10 @@ Options:
 
             workers.push(tokio::task::spawn_blocking(move || {
                 for entry in chunk {
-                    if entry.is_dir() && entry.read_dir().unwrap().next().is_none() {
-                        match fs::remove_dir(entry) {
-                            Ok(_) => {}
-                            Err(_) => {}
-                        };
-                    }
+                    if entry.is_dir()
+                        && entry.read_dir().unwrap().next().is_none()
+                        && fs::remove_dir(entry).is_ok()
+                    {}
                 }
             }))
         }
