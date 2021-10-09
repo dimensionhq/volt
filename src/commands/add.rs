@@ -90,7 +90,7 @@ impl Command for Add {
         let mut packages = app.get_packages()?;
 
         // Load the existing package.json file
-        let (mut package_file, package_file_path) = PackageJson::open("package.json")?;
+        let (mut package_file, _package_file_path) = PackageJson::open("package.json")?;
 
         // Construct a path to the local and global lockfile.
         let lockfile_path = &app.lock_file_path;
@@ -141,7 +141,7 @@ impl Command for Add {
 
                 if let Some(peer_deps) = &object.peer_dependencies {
                     for dep in peer_deps {
-                        if !crate::core::utils::check_peer_dependency(&dep) {
+                        if !crate::core::utils::check_peer_dependency(dep) {
                             progress_bar.println(format!(
                                 "{}{} {} has unmet peer dependency {}",
                                 " warn ".black().bright_yellow(),
@@ -175,7 +175,7 @@ impl Command for Add {
                 let second_instance = object.clone();
 
                 global_lock_file.dependencies.insert(
-                    DependencyID(second_instance.name, second_instance.version.to_owned()),
+                    DependencyID(second_instance.name, second_instance.version),
                     DependencyLock {
                         name: object.name.clone(),
                         version: object.version.clone(),
@@ -212,7 +212,7 @@ impl Command for Add {
 
         dependencies
             .into_iter()
-            .map(|v| install_extract_package(&app, &v))
+            .map(|v| install_extract_package(&app, v))
             .collect::<FuturesUnordered<_>>()
             .inspect(|_| progress_bar.inc(1))
             .try_collect::<()>()

@@ -54,7 +54,7 @@ pub enum LockFileError {
 ///     DependencyLock {
 ///         name: "react".to_string(),
 ///         version: "1.2.6".to_string(),
-///         tarbal: String::new(),
+///         tarball: String::new(),
 ///         sha1: String::new(),
 ///     }
 /// );
@@ -121,7 +121,7 @@ impl ser::Serialize for DependencyID {
 
 impl Hash for DependencyID {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write(&format!("{}@{}", self.0, self.1).as_bytes());
+        state.write(format!("{}@{}", self.0, self.1).as_bytes());
     }
 }
 

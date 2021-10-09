@@ -23,7 +23,6 @@ use crate::core::utils;
 use crate::core::VERSION;
 use crate::error;
 
-use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
@@ -119,7 +118,7 @@ Options:
             let license = License::default();
 
             InitData {
-                name: name,
+                name,
                 version,
                 description,
                 main,
