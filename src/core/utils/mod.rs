@@ -393,13 +393,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
 
     // if package is not already installed
     if !Path::new(&loc).exists() {
-        // let registries = vec!["yarnpkg.com"];
-        // let random_registry = registries.choose(&mut rand::thread_rng()).unwrap();
-
-        // url = url.replace("npmjs.org", random_registry);
-
         // Get Tarball File
-
         let builder = reqwest::ClientBuilder::new()
             .use_rustls_tls()
             .build()
@@ -426,7 +420,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
             algorithm = Algorithm::Sha512;
         }
 
-        // Verify If Bytes == (Sha 512 | Sha 1) of Tarball
+        // Verify If Bytes == (Sha512 | Sha1) of Tarball
         if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
             // Create node_modules
             create_dir_all(&app.node_modules_dir).await.unwrap();
@@ -547,6 +541,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage) -> Result<()> {
                         {
                             Ok(_v) => {}
                             Err(err) => {
+                                println!("{:?}", err);
                                 let code = err.raw_os_error().unwrap();
 
                                 if code == 5 {
@@ -613,21 +608,6 @@ pub fn get_git_config(app: &App, key: &str) -> Option<String> {
             }
         }
         _ => None,
-    }
-}
-
-pub fn get_basename(path: &'_ str) -> Cow<'_, str> {
-    let sep: char;
-    if cfg!(target_os = "windows") {
-        sep = '\\';
-    } else {
-        sep = '/';
-    }
-    let mut pieces = path.rsplit(sep);
-
-    match pieces.next() {
-        Some(p) => p.into(),
-        None => path.into(),
     }
 }
 
