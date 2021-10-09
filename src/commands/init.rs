@@ -27,6 +27,7 @@ use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
+use std::time::Instant;
 
 use crate::App;
 use crate::Command;
@@ -80,20 +81,19 @@ Options:
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
-        let temp = utils::get_basename(&env::current_dir().unwrap().to_string_lossy()).to_string();
-        let split: Vec<&str> = temp.split('\\').collect::<Vec<&str>>();
-        let cwd: String = split[split.len() - 1].to_string();
+        let start = Instant::now();
+        // get cwd
+        let cwd = app
+            .current_dir
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
         let data = if app.has_flag("yes") {
             // Set name to current directory name
-            let name = env::current_dir()
-                .map(|dir| {
-                    dir.file_name()
-                        .map(|file_name| file_name.to_string_lossy().to_string())
-                })
-                .ok()
-                .flatten()
-                .unwrap_or_else(|| "app".to_string());
-
+            let name = cwd;
             let version = "0.1.0".to_string();
 
             let description = None;
@@ -119,7 +119,7 @@ Options:
             let license = License::default();
 
             InitData {
-                name,
+                name: name,
                 version,
                 description,
                 main,
@@ -154,7 +154,14 @@ Options:
                 loop {
                     let input: Input = Input {
                         message: String::from("name"),
-                        default: Some(split[split.len() - 1].to_string()), // Cwd does not impl Copy trait hence wrote it like this
+                        default: Some(
+                            app.current_dir
+                                .file_name()
+                                .unwrap()
+                                .to_str()
+                                .unwrap()
+                                .to_string(),
+                        ),
                         allow_empty: false,
                     };
 
@@ -300,7 +307,7 @@ Options:
             );
             std::process::exit(1);
         }
-
+        println!("{}", start.elapsed().as_secs_f32());
         println!("{}", "Successfully Initialized package.json".bright_green());
         Ok(())
     }
