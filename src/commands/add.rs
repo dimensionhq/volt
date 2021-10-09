@@ -16,7 +16,7 @@ limitations under the License.
 use crate::{
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
     core::utils::voltapi::VoltPackage,
-    core::utils::{constants::PROGRESS_CHARS, install_extract_package, npm, print_elapsed},
+    core::utils::{constants::PROGRESS_CHARS, install_extract_package, npm, print_elapsed, State},
     core::utils::{fetch_dep_tree, package::PackageJson},
     core::{command::Command, VERSION},
     App,
@@ -210,9 +210,24 @@ impl Command for Add {
 
         dependencies.dedup();
 
+        let client = reqwest::ClientBuilder::new()
+            .use_rustls_tls()
+            .build()
+            .unwrap();
+
         dependencies
             .into_iter()
-            .map(|v| install_extract_package(&app, v))
+            .map(|v| {
+                let client_clone = client.clone();
+
+                install_extract_package(
+                    &app,
+                    v,
+                    State {
+                        http_client: client_clone,
+                    },
+                )
+            })
             .collect::<FuturesUnordered<_>>()
             .inspect(|_| progress_bar.inc(1))
             .try_collect::<()>()
