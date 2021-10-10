@@ -19,7 +19,7 @@ use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use reqwest::{Client, StatusCode};
+use reqwest::StatusCode;
 use ssri::{Algorithm, Integrity};
 use std::{
     collections::HashMap,
@@ -37,9 +37,7 @@ use tokio::fs::create_dir_all;
 use crate::core::utils::constants::MAX_RETRIES;
 use crate::core::utils::voltapi::JSONVoltResponse;
 
-pub struct State {
-    pub http_client: Client,
-}
+pub struct State {}
 
 /// convert a JSONVoltResponse -> VoltResponse
 pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
@@ -379,7 +377,7 @@ pub async fn get_volt_response(
 // }
 
 /// downloads tarball file from package
-pub async fn download_tarball(app: &App, package: &VoltPackage, builder: Client) -> Result<()> {
+pub async fn download_tarball(app: &App, package: &VoltPackage, state: State) -> Result<()> {
     let package_instance = package.clone();
 
     // @types/eslint
@@ -398,10 +396,15 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, builder: Client)
     // location of extracted package
     let loc = app.volt_dir.join(&package.name);
 
+    let client = reqwest::ClientBuilder::new()
+        .use_rustls_tls()
+        .build()
+        .unwrap();
+
     // if package is not already installed
     if !Path::new(&loc).exists() {
         // Tarball bytes response
-        let bytes: bytes::Bytes = builder
+        let bytes: bytes::Bytes = client
             .get(package_instance.tarball)
             .send()
             .await
@@ -752,10 +755,7 @@ pub async fn install_extract_package(
     state: State,
 ) -> Result<()> {
     // if there's an error (most likely a checksum verification error) while using http, retry with https.
-    if download_tarball(app, package, state.http_client)
-        .await
-        .is_err()
-    {}
+    if download_tarball(app, package, state).await.is_err() {}
 
     // generate the package's script
     generate_script(app, package);
