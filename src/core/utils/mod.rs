@@ -9,7 +9,6 @@ pub mod voltapi;
 
 use crate::commands::add::PackageInfo;
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
-use crate::Instant;
 use app::App;
 use colored::Colorize;
 use errors::VoltError;
@@ -377,7 +376,7 @@ pub async fn get_volt_response(
 // }
 
 /// downloads tarball file from package
-pub async fn download_tarball(app: &App, package: &VoltPackage, state: State) -> Result<()> {
+pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -> Result<()> {
     let package_instance = package.clone();
 
     // @types/eslint
@@ -775,21 +774,16 @@ pub async fn install_extract_package(
 pub async fn fetch_dep_tree(
     data: &[(PackageInfo, String, VoltPackage, bool)],
     progress_bar: &ProgressBar,
-) -> Result<(Vec<VoltResponse>, f32)> {
-    let start = Instant::now();
+) -> Result<Vec<VoltResponse>> {
     if data.len() > 1 {
-        Ok((
-            get_volt_response_multi(data, progress_bar)
-                .await
-                .into_iter()
-                .collect::<Result<Vec<_>>>()?,
-            start.elapsed().as_secs_f32(),
-        ))
+        Ok(get_volt_response_multi(data, progress_bar)
+            .await
+            .into_iter()
+            .collect::<Result<Vec<_>>>()?)
     } else {
-        Ok((
-            vec![get_volt_response(&data[0].0, &data[0].1, data[0].2.clone(), data[0].3).await?],
-            start.elapsed().as_secs_f32(),
-        ))
+        Ok(vec![
+            get_volt_response(&data[0].0, &data[0].1, data[0].2.clone(), data[0].3).await?,
+        ])
     }
 }
 

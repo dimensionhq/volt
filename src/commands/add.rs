@@ -117,11 +117,13 @@ impl Command for Add {
                 )),
         );
 
+        let start = std::time::Instant::now();
+
         // Fetch npm data including hash to fetch dependencies
         let data = npm::get_versions(&packages).await?;
 
         // Fetch pre-flattened dependency trees from the registry
-        let (responses, elapsed) = fetch_dep_tree(&data, &progress_bar).await?;
+        let responses = fetch_dep_tree(&data, &progress_bar).await?;
 
         let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
 
@@ -132,7 +134,7 @@ impl Command for Add {
 
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
-        print_elapsed(dependencies.len(), elapsed);
+        print_elapsed(dependencies.len(), start.elapsed().as_secs_f32());
 
         let mut dependencies: Vec<_> = dependencies
             .iter()
