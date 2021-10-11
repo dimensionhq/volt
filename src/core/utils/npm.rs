@@ -1,3 +1,5 @@
+use isahc::config::Configurable;
+use isahc::config::SslOption;
 use miette::Result;
 
 use crate::commands::add::PackageInfo;
@@ -70,11 +72,12 @@ pub async fn get_version(
                     .header("accept-encoding", "gzip,deflate")
                     .header("connection", "keep-alive")
                     .header("host", "registry.npmjs.org")
+                    .ssl_options(SslOption::DANGER_ACCEPT_REVOKED_CERTS)
                     .body("")
                     .map_err(VoltError::RequestBuilderError)?;
 
             let mut response = client.send_async().await.unwrap_or_else(|e| {
-                println!("{}", e);
+                println!("{:?}", e);
                 std::process::exit(1);
             });
 
