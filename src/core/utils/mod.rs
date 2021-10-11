@@ -553,6 +553,15 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
         } else {
             return Err(VoltError::ChecksumVerificationError.into());
         }
+    } else {
+        // package is already downloaded and extracted to the ~/.volt folder.
+        let node_modules_path = Path::new("node_modules/").join(package_instance.name);
+
+        for entry in jwalk::WalkDir::new(loc) {
+            let entry = entry.unwrap();
+
+            std::fs::copy(entry.path(), node_modules_path.clone()).unwrap();
+        }
     }
 
     Ok(())
@@ -743,7 +752,6 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 
 /// package all steps for installation into 1 convenient function.
 pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State) -> Result<()> {
-    // if there's an error (most likely a checksum verification error) while using http, retry with https.
     if download_tarball(app, package, state).await.is_err() {}
 
     // generate the package's script
