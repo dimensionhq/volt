@@ -393,7 +393,9 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
     }
 
     // location of extracted package
-    let loc = app.volt_dir.join(&package.name);
+    let loc = app
+        .volt_dir
+        .join(format!("{}-{}", &package.name, &package.version));
 
     let client = reqwest::ClientBuilder::new()
         .use_rustls_tls()
@@ -427,14 +429,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
         if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
             // Create node_modules
             create_dir_all(&app.node_modules_dir).await.unwrap();
-
-            // Delete package from node_modules
-            let _node_modules_dep_path = app.node_modules_dir.join(&package.name);
-
-            // TODO: fix this
-            // if node_modules_dep_path.exists() {
-            //     remove_dir_all(&node_modules_dep_path).unwrap();
-            // }
 
             // Directory to extract tarball to
             let mut extract_directory = PathBuf::from(&app.volt_dir);
@@ -748,11 +742,7 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 }
 
 /// package all steps for installation into 1 convenient function.
-pub async fn install_extract_package(
-    app: &Arc<App>,
-    package: &VoltPackage,
-    state: State,
-) -> Result<()> {
+pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State) -> Result<()> {
     // if there's an error (most likely a checksum verification error) while using http, retry with https.
     if download_tarball(app, package, state).await.is_err() {}
 

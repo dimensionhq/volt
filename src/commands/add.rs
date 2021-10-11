@@ -16,7 +16,7 @@ limitations under the License.
 use crate::{
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
     core::utils::voltapi::VoltPackage,
-    core::utils::{constants::PROGRESS_CHARS, install_extract_package, npm, print_elapsed, State},
+    core::utils::{constants::PROGRESS_CHARS, install_package, npm, print_elapsed, State},
     core::utils::{fetch_dep_tree, package::PackageJson},
     core::{command::Command, VERSION},
     App,
@@ -214,7 +214,7 @@ impl Command for Add {
 
         dependencies
             .into_iter()
-            .map(|v| install_extract_package(&app, v, State {}))
+            .map(|v| install_package(&app, v, State {}))
             .collect::<FuturesUnordered<_>>()
             .inspect(|_| progress_bar.inc(1))
             .try_collect::<()>()
