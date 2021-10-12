@@ -385,7 +385,7 @@ pub async fn get_version(
             .header("accept-encoding", "gzip, deflate, br")
             .header("connection", "keep-alive")
             .header("host", "registry.npmjs.org")
-            // .version_negotiation(VersionNegotiation::http11())
+            .tcp_nodelay()
             .body("")
             .map_err(VoltError::RequestBuilderError)?;
 

@@ -14,8 +14,6 @@
     limitations under the License.
 */
 
-extern crate lazy_static;
-
 pub mod classes;
 pub mod command;
 pub mod io;

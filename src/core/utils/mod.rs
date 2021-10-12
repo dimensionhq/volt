@@ -13,6 +13,7 @@ use app::App;
 use colored::Colorize;
 use errors::VoltError;
 use flate2::read::GzDecoder;
+use fs_extra::dir::CopyOptions;
 use futures_util::{stream::FuturesUnordered, StreamExt};
 use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
@@ -556,12 +557,9 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
     } else {
         // package is already downloaded and extracted to the ~/.volt folder.
         let node_modules_path = Path::new("node_modules/").join(package_instance.name);
+        println!("{} -> {}", loc.display(), node_modules_path.display());
 
-        for entry in jwalk::WalkDir::new(loc) {
-            let entry = entry.unwrap();
-
-            std::fs::copy(entry.path(), node_modules_path.clone()).unwrap();
-        }
+        fs_extra::dir::copy(loc, node_modules_path, &CopyOptions::new()).unwrap();
     }
 
     Ok(())
