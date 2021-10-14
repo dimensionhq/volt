@@ -1,6 +1,6 @@
 [package]
 name = "volt"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   "Tejas Ravishankar <xtremedevx@gmail.com>",
   "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
