@@ -1,6 +1,6 @@
 [package]
 name = "volt"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   "Tejas Ravishankar <xtremedevx@gmail.com>",
   "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
@@ -16,7 +16,6 @@ base64 = "0.13.0"
 bytes = "1.0.1"
 clap = { version = "3.0.0-beta.2", features = ["std", "color"], default-features = false }
 colored = "2.0"
-console = "0.14"
 dialoguer = "0.8"
 dirs = "4.0.0"
 flate2 = "1.0"
@@ -33,7 +32,7 @@ rand = "0.8.4"
 regex = "1.5.4"
 reqwest = { version = "0.11.4", features = ["rustls-tls"] }
 rslint_cli = "0.3.0"
-rslint_config = "0.1.0"
+rslint_config = "0.2.0"
 rslint_core = "0.3.0"
 rslint_errors = "0.2.0"
 rslint_lexer = "0.2.0"

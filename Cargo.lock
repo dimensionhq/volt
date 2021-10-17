@@ -2199,7 +2199,7 @@ dependencies = [
  "heck",
  "num_cpus",
  "regex",
- "rslint_config",
+ "rslint_config 0.1.0",
  "rslint_core",
  "rslint_errors",
  "rslint_lexer",
@@ -2217,6 +2217,22 @@ name = "rslint_config"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08a8413466957b328eaf6766fb5dfa7dbba4c5f13f1d9e1568f5040abbea4fd0"
+dependencies = [
+ "dirs-next",
+ "heck",
+ "regex",
+ "rslint_core",
+ "rslint_errors",
+ "serde",
+ "serde_json",
+ "toml",
+]
+
+[[package]]
+name = "rslint_config"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af466c5222b5babe32adee783a24b4adf3049e7fffbb4d13e29ebced4fc93fbc"
 dependencies = [
  "dirs-next",
  "heck",
@@ -3188,7 +3204,7 @@ checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
 
 [[package]]
 name = "volt"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -3196,7 +3212,6 @@ dependencies = [
  "cacache",
  "clap 3.0.0-beta.4",
  "colored",
- "console",
  "dialoguer",
  "dirs 4.0.0",
  "flate2",
@@ -3216,7 +3231,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rslint_cli",
- "rslint_config",
+ "rslint_config 0.2.0",
  "rslint_core",
  "rslint_errors",
  "rslint_lexer",
