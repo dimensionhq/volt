@@ -21,7 +21,7 @@ use std::io;
 use std::iter;
 use std::str::FromStr;
 
-use console::{Key, Term};
+use dialoguer::console::{Key, Term};
 use dialoguer::theme::{SimpleTheme, Theme};
 
 pub(crate) struct TermThemeRenderer<'a> {
