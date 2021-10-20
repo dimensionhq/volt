@@ -13,12 +13,12 @@
 
 //! Handle an unknown command (can be listed in scripts).
 
-use crate::App;
-use crate::Command;
-use async_trait::async_trait;
+use crate::{App, Command};
 
+use async_trait::async_trait;
 use miette::Result;
 use serde::{Deserialize, Serialize};
+
 use std::{collections::HashMap, sync::Arc};
 
 pub struct Audit {}

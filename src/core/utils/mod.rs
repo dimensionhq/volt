@@ -8,7 +8,10 @@ pub mod scripts;
 pub mod voltapi;
 
 use crate::commands::add::PackageInfo;
+use crate::core::utils::constants::MAX_RETRIES;
+use crate::core::utils::voltapi::JSONVoltResponse;
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
+
 use app::App;
 use colored::Colorize;
 use errors::VoltError;
@@ -21,6 +24,9 @@ use isahc::AsyncReadResponseExt;
 use miette::Result;
 use reqwest::StatusCode;
 use ssri::{Algorithm, Integrity};
+use tar::Archive;
+use tokio::fs::create_dir_all;
+
 use std::{
     collections::HashMap,
     convert::TryFrom,
@@ -30,12 +36,6 @@ use std::{
     path::{Component, Path, PathBuf},
     sync::Arc,
 };
-
-use tar::Archive;
-use tokio::fs::create_dir_all;
-
-use crate::core::utils::constants::MAX_RETRIES;
-use crate::core::utils::voltapi::JSONVoltResponse;
 
 pub struct State {}
 

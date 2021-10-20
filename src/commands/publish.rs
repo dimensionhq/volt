@@ -13,11 +13,11 @@
 
 //! Check for outdated packages.
 
-use crate::App;
-use crate::Command;
+use crate::{App, Command};
 
 use async_trait::async_trait;
 use miette::Result;
+
 use std::sync::Arc;
 
 pub struct Publish {}

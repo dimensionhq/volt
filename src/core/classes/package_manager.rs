@@ -14,10 +14,10 @@
     limitations under the License.
 */
 
-use std::fmt;
-
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
+
+use std::fmt;
 
 #[derive(Serialize, Deserialize)]
 pub enum PackageManager {

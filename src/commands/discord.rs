@@ -1,9 +1,10 @@
+use crate::{core::VERSION, App, Command};
+
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
-use std::sync::Arc;
 
-use crate::core::{command::Command, utils::app::App, VERSION};
+use std::sync::Arc;
 
 pub struct Discord {}
 
