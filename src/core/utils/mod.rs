@@ -40,12 +40,12 @@ use std::{
 pub struct State {}
 
 /// convert a JSONVoltResponse -> VoltResponse
-pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
+pub fn convert(version: String, deserialized: JSONVoltResponse) -> Result<VoltResponse> {
     // initialize a hashmap to store the converted versions
     let mut converted_versions: HashMap<String, VoltPackage> = HashMap::new();
 
     // iterate through all listed dependencies of the latest version of the response
-    for version in deserialized.versions.get(&deserialized.latest).unwrap() {
+    for version in deserialized.versions {
         // access data in the hashmap, not name@version
         let data = version.1;
 
@@ -112,13 +112,9 @@ pub fn convert(deserialized: JSONVoltResponse) -> Result<VoltResponse> {
 
     // create a final hashmap
 
-    let mut final_res: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
-
-    final_res.insert(deserialized.latest.to_string(), converted_versions);
-
     Ok(VoltResponse {
-        version: deserialized.latest,
-        versions: final_res,
+        version,
+        versions: converted_versions,
     })
 }
 
@@ -149,16 +145,12 @@ pub async fn get_volt_response(
 
     // only 1 package, zero dependencies
     if zero_deps {
-        let mut versions: HashMap<String, HashMap<String, VoltPackage>> = HashMap::new();
+        let mut versions: HashMap<String, VoltPackage> = HashMap::new();
 
-        let mut nested_versions: HashMap<String, VoltPackage> = HashMap::new();
-
-        nested_versions.insert(
-            format!("{}{}", package.name, package.version),
+        versions.insert(
+            format!("{}@{}", package.clone().version, package.clone().name),
             package.clone(),
         );
-
-        versions.insert(package.clone().version, nested_versions);
 
         return Ok(VoltResponse {
             version: package.version,
@@ -178,11 +170,15 @@ pub async fn get_volt_response(
         match response.status() {
             // 200 (OK)
             StatusCode::OK => {
-                let deserialized: JSONVoltResponse =
-                    serde_json::from_str(&response.text().await.unwrap())
-                        .map_err(|_| VoltError::DeserializeError)?;
+                let deserialized: JSONVoltResponse = serde_json::from_str(
+                    &response.text().await.unwrap().trim(),
+                )
+                .unwrap_or_else(|e| {
+                    eprintln!("{}", e);
+                    std::process::exit(1);
+                });
 
-                let converted = convert(deserialized)?;
+                let converted = convert(package.version, deserialized)?;
 
                 return Ok(converted);
             }
@@ -376,7 +372,7 @@ pub async fn get_volt_response(
 //     }
 // }
 
-/// downloads tarball file from package
+/// downloads and extracts tarball file from package
 pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -> Result<()> {
     let package_instance = package.clone();
 
