@@ -14,16 +14,19 @@ default-run = "volt"
 async-trait = "0.1"
 base64 = "0.13.0"
 bytes = "1.0.1"
-clap = { version = "3.0.0-beta.2", features = ["std", "color"], default-features = false }
+clap = { version = "3.0.0-beta.2", features = [
+  "std",
+  "color",
+], default-features = false }
 colored = "2.0"
-dialoguer = "0.8"
+dialoguer = "0.8.0"
 dirs = "4.0.0"
 flate2 = "1.0"
 futures = "0.3.15"
 futures-util = "0.3.15"
 git-config = "0.1.4"
 indicatif = "0.16"
-isahc = "1.5.0"
+isahc = { version = "1.5.0", features = ["json"] }
 jwalk = "0.6.0"
 lazy_static = "1.4"
 miette = { version = "3.0.1", features = ["fancy"] }

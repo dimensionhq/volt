@@ -170,13 +170,7 @@ pub async fn get_volt_response(
         match response.status() {
             // 200 (OK)
             StatusCode::OK => {
-                let deserialized: JSONVoltResponse = serde_json::from_str(
-                    &response.text().await.unwrap().trim(),
-                )
-                .unwrap_or_else(|e| {
-                    eprintln!("{}", e);
-                    std::process::exit(1);
-                });
+                let deserialized = response.json().await.unwrap();
 
                 let converted = convert(package.version, deserialized)?;
 
