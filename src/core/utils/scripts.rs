@@ -13,15 +13,17 @@
 
 //! Handle an unknown command (can be listed in scripts).
 
-use std::sync::Arc;
-
 // use crate::core::utils::errors;
 // use crate::core::utils::package::PackageJson;
 use crate::App;
 use crate::Command;
+
 use async_trait::async_trait;
 // use colored::Colorize;
 use miette::Result;
+
+use std::sync::Arc;
+
 pub struct Script {}
 
 #[async_trait]

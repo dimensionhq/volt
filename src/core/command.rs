@@ -14,13 +14,12 @@
     limitations under the License.
 */
 
-use std::sync::Arc;
-
-use async_trait::async_trait;
-
 use crate::App;
 
+use async_trait::async_trait;
 use miette::Result;
+
+use std::sync::Arc;
 
 #[async_trait]
 pub trait Command {

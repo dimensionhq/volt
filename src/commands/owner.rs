@@ -15,10 +15,10 @@ limitations under the License.
 
 use crate::{App, Command};
 
-use std::sync::Arc;
-
 use async_trait::async_trait;
 use miette::Result;
+
+use std::sync::Arc;
 
 pub struct Owner {}
 

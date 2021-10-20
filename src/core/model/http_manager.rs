@@ -15,10 +15,12 @@
 */
 
 use crate::core::utils::package::NpmPackage;
+
 use isahc::http::StatusCode;
 use isahc::AsyncReadResponseExt;
-use std::io;
 use thiserror::Error;
+
+use std::io;
 
 #[derive(Error, Debug)]
 pub enum GetPackageError {

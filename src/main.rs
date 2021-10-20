@@ -16,14 +16,15 @@ limitations under the License.
 
 mod commands;
 mod core;
-use std::{sync::Arc, time::Instant};
 
 use crate::commands::add::*;
-use crate::core::command::Command;
-use crate::core::utils::app::App;
+use crate::core::{command::Command, utils::app::App};
+
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
 use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
+
+use std::{sync::Arc, time::Instant};
 
 pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
     match matches.subcommand() {

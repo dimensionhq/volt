@@ -14,26 +14,21 @@
     limitations under the License.
 */
 
-use crate::core::classes::init_data::InitData;
-use crate::core::classes::init_data::License;
-use crate::core::prompt::prompts::Confirm;
-use crate::core::prompt::prompts::Input;
-use crate::core::prompt::prompts::Select;
-use crate::core::utils;
-use crate::core::VERSION;
-use crate::error;
+use crate::{
+    core::{
+        classes::init_data::{InitData, License},
+        prompt::prompts::{Confirm, Input, Select},
+        utils, VERSION,
+    },
+    error, App, Command,
+};
 
-use std::fs::File;
-use std::io::Write;
-use std::sync::Arc;
-use std::time::Instant;
-
-use crate::App;
-use crate::Command;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
 use regex::Regex;
+
+use std::{fs::File, io::Write, sync::Arc, time::Instant};
 
 /// Struct implementation for the `Init` command.
 pub struct Init;
