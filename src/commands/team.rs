@@ -13,13 +13,12 @@ limitations under the License.
 
 //! Check for outdated packages.
 
-use std::sync::Arc;
+use crate::{App, Command};
 
 use async_trait::async_trait;
 use miette::Result;
-// use crate::App;
-use crate::App;
-use crate::Command;
+
+use std::sync::Arc;
 
 pub struct Team {}
 

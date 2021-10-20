@@ -13,12 +13,12 @@
 
 //! Login for a package.
 
-use std::sync::Arc;
+use crate::{App, Command};
 
-use crate::App;
-use crate::Command;
 use async_trait::async_trait;
 use miette::Result;
+
+use std::sync::Arc;
 
 pub struct Login {}
 #[async_trait]

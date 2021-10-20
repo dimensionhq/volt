@@ -13,13 +13,13 @@ limitations under the License.
 
 //! Compress node_modules into node_modules.pack.
 
-use std::sync::Arc;
+use crate::{core::VERSION, App, Command};
 
-use crate::App;
-use crate::{core::VERSION, Command};
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
+
+use std::sync::Arc;
 
 pub struct List;
 

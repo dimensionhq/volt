@@ -16,13 +16,16 @@
 
 #![allow(dead_code)]
 
-use std::fmt::{self, Debug, Display};
-use std::io;
-use std::iter;
-use std::str::FromStr;
+use dialoguer::{
+    console::{Key, Term},
+    theme::{SimpleTheme, Theme},
+};
 
-use console::{Key, Term};
-use dialoguer::theme::{SimpleTheme, Theme};
+use std::{
+    fmt::{self, Debug, Display},
+    io, iter,
+    str::FromStr,
+};
 
 pub(crate) struct TermThemeRenderer<'a> {
     term: &'a Term,

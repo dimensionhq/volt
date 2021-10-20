@@ -13,8 +13,8 @@ limitations under the License.
 
 //! clean node_modules into node_modules.pack.
 
-use crate::App;
-use crate::{core::VERSION, Command};
+use crate::{core::VERSION, App, Command};
+
 use async_trait::async_trait;
 use colored::Colorize;
 use futures::stream::FuturesUnordered;
@@ -23,11 +23,14 @@ use indicatif::{HumanBytes, ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
-use std::fs;
-use std::io::SeekFrom;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+
+use std::{
+    fs,
+    io::SeekFrom,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 lazy_static! {
     static ref REGEXES: Vec<Regex> = {

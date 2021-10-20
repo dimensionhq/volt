@@ -16,12 +16,12 @@
 
 //! Check for errors
 
-use crate::core::{command::Command, VERSION};
-use crate::App;
+use crate::{core::VERSION, App, Command};
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
+
 use std::sync::Arc;
 
 /// Struct implementation for the `Check` command.
