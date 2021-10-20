@@ -124,11 +124,13 @@ impl Command for Add {
         // Fetch pre-flattened dependency trees from the registry
         let responses = fetch_dep_tree(&data, &progress_bar).await?;
 
-        let mut dependencies: HashMap<String, VoltPackage> = HashMap::new();
+        let mut dependencies: Vec<VoltPackage> = vec![];
 
         for res in responses.iter() {
+            println!("{:?}", res);
             let current_version = res.versions.get(&res.version).unwrap();
-            dependencies.extend(current_version.to_owned());
+
+            dependencies.push(current_version.to_owned());
         }
 
         progress_bar.finish_with_message("[OK]".bright_green().to_string());
@@ -137,7 +139,7 @@ impl Command for Add {
 
         let mut dependencies: Vec<_> = dependencies
             .iter()
-            .map(|(_name, object)| {
+            .map(|object| {
                 let mut lock_dependencies: Vec<String> = vec![];
 
                 if let Some(peer_deps) = &object.peer_dependencies {

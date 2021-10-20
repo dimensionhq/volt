@@ -15,11 +15,11 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct VoltResponse {
     pub version: String,
     #[serde(flatten)]
-    pub versions: HashMap<String, HashMap<String, VoltPackage>>,
+    pub versions: HashMap<String, VoltPackage>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
@@ -35,17 +35,18 @@ pub struct VoltPackage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JSONVoltResponse {
-    pub latest: String,
-    pub schema: u8,
     #[serde(flatten)]
-    pub versions: HashMap<String, HashMap<String, JSONVoltPackage>>,
+    pub versions: HashMap<String, JSONVoltPackage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JSONVoltPackage {
     pub integrity: String,
     pub tarball: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bin: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_dependencies: Option<Vec<String>>,
 }
