@@ -13,14 +13,13 @@
 
 //! Display info about a package.
 
-use crate::{core::VERSION, Command};
+use crate::{core::VERSION, App, Command};
 
-use std::sync::Arc;
-
-use crate::App;
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
+
+use std::sync::Arc;
 
 pub struct Info {}
 

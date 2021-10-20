@@ -2,6 +2,7 @@ use crate::{
     commands::add::PackageInfo,
     core::utils::{enable_ansi_support, errors::VoltError},
 };
+
 use clap::ArgMatches;
 use dirs::home_dir;
 use miette::Result;

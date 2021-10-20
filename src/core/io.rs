@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use colored::Colorize;
-
 use crate::core::classes::meta::Meta;
+
+use colored::Colorize;
 
 pub fn write(text: String, metadata: Meta) {
     if !metadata.silent {

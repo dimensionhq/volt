@@ -14,10 +14,7 @@
 //! Handle an unknown command (can be listed in scripts).
 
 use miette::Result;
-// use regex::Regex;
-// use rslint_parser::Syntax;
-// use std::fs::{read_dir, read_to_string};
-// use std::path::Path;
+
 use std::sync::Arc;
 
 use async_trait::async_trait;
