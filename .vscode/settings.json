@@ -3,5 +3,6 @@
   "discord.lowerDetailsEditing": "Workspace: volt",
   "discord.lowerDetailsDebugging": "Debugging: volt",
   "python.pythonPath": "C:\\Users\\xtrem\\AppData\\Local\\Programs\\Python\\Python39\\python.exe",
-  "cmake.configureOnOpen": false
+  "cmake.configureOnOpen": false,
+  "editor.formatOnSave": true
 }

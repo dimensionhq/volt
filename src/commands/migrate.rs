@@ -18,11 +18,11 @@
 
 use crate::{core::VERSION, App, Command};
 
-use std::sync::Arc;
-
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
+
+use std::sync::Arc;
 
 /// Struct implementation for the `Migrate` command.
 pub struct Migrate;

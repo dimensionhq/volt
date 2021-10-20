@@ -14,16 +14,13 @@
     limitations under the License.
 */
 
-use std::sync::Arc;
-
-// use crate::commands::scripts::Script;
-use crate::core::VERSION;
-use crate::App;
-use crate::Command;
+use crate::{core::VERSION, App, Command};
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
+
+use std::sync::Arc;
 
 /// Struct implementation for the `Run` command.
 pub struct Run;
