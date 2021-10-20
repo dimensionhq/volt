@@ -22,13 +22,13 @@ use crate::{
     App,
 };
 
-use std::sync::Arc;
-
 use async_trait::async_trait;
 use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
+
+use std::{collections::HashMap, sync::Arc};
 
 #[derive(Clone, Debug)]
 pub struct PackageInfo {

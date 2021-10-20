@@ -1,19 +1,13 @@
-use isahc::config::Configurable;
-use isahc::config::SslOption;
-use miette::Result;
-
 use crate::commands::add::PackageInfo;
+use crate::core::utils::{constants::MAX_RETRIES, errors::VoltError, voltapi::VoltPackage};
 
-use crate::core::utils::constants::MAX_RETRIES;
-use crate::core::utils::errors::VoltError;
-use crate::core::utils::voltapi::VoltPackage;
-use futures::stream::FuturesOrdered;
-use futures::TryStreamExt;
-use isahc::http::StatusCode;
-use isahc::AsyncReadResponseExt;
-use isahc::Request;
-use isahc::RequestExt;
-
+use futures::{stream::FuturesOrdered, TryStreamExt};
+use isahc::{
+    config::{Configurable, SslOption},
+    http::StatusCode,
+    AsyncReadResponseExt, Request, RequestExt,
+};
+use miette::Result;
 use semver_rs::Version;
 use serde_json::Value;
 use ssri::{Algorithm, Integrity};

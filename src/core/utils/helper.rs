@@ -1,4 +1,5 @@
 use colored::{ColoredString, Colorize};
+
 use std::fmt::Display;
 
 pub trait CustomColorize: Colorize {

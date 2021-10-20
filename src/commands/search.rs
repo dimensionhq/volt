@@ -12,16 +12,15 @@
 */
 
 //! Search for a package.
+
+use crate::{core::VERSION, App, Command};
+
 use async_trait::async_trait;
 use colored::Colorize;
-
+use miette::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::App;
-use miette::Result;
 use std::sync::Arc;
-// use search::SearchResp;
-use crate::core::{command::Command, VERSION};
 
 // fn truncate(s: &str, max_chars: usize) -> String {
 //     match s.char_indices().nth(max_chars) {
