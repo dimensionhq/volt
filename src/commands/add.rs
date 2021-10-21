@@ -132,6 +132,8 @@ impl Command for Add {
             }
         }
 
+        progress_bar.finish_with_message("[OK]".bright_green().to_string());
+
         let mut dependencies: Vec<_> = dependencies
             .iter()
             .map(|object| {
@@ -140,13 +142,13 @@ impl Command for Add {
                 if let Some(peer_deps) = &object.peer_dependencies {
                     for dep in peer_deps {
                         if !crate::core::utils::check_peer_dependency(dep) {
-                            progress_bar.println(format!(
+                            println!(
                                 "{}{} {} has unmet peer dependency {}",
-                                " warn ".black().bright_yellow(),
+                                "warn ".black().bright_yellow(),
                                 ":",
                                 object.name.bright_cyan(),
                                 &dep.bright_yellow()
-                            ));
+                            );
                         }
                     }
                 }
@@ -186,8 +188,6 @@ impl Command for Add {
                 object
             })
             .collect();
-
-        progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
         print_elapsed(dependencies.len(), start.elapsed().as_secs_f32());
 
