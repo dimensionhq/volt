@@ -28,7 +28,7 @@ use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct PackageInfo {
@@ -127,15 +127,10 @@ impl Command for Add {
         let mut dependencies: Vec<VoltPackage> = vec![];
 
         for res in responses.iter() {
-            println!("{:?}", res);
-            let current_version = res.versions.get(&res.version).unwrap();
-
-            dependencies.push(current_version.to_owned());
+            for package in res.versions.values().into_iter() {
+                dependencies.push(package.to_owned());
+            }
         }
-
-        progress_bar.finish_with_message("[OK]".bright_green().to_string());
-
-        print_elapsed(dependencies.len(), start.elapsed().as_secs_f32());
 
         let mut dependencies: Vec<_> = dependencies
             .iter()
@@ -191,6 +186,10 @@ impl Command for Add {
                 object
             })
             .collect();
+
+        progress_bar.finish_with_message("[OK]".bright_green().to_string());
+
+        print_elapsed(dependencies.len(), start.elapsed().as_secs_f32());
 
         for dep in dependencies.iter() {
             for package in packages.iter_mut() {

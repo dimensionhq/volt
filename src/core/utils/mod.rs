@@ -170,7 +170,10 @@ pub async fn get_volt_response(
         match response.status() {
             // 200 (OK)
             StatusCode::OK => {
-                let deserialized = response.json().await.unwrap();
+                let deserialized = response
+                    .json()
+                    .await
+                    .map_err(|_| VoltError::DeserializeError)?;
 
                 let converted = convert(package.version, deserialized)?;
 
