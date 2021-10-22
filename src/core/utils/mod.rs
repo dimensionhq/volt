@@ -484,15 +484,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                             }
                         }
 
-                        std::fs::create_dir_all(
-                            node_modules_dep_path_instance
-                                .to_path_buf()
-                                .join(&new_path)
-                                .parent()
-                                .unwrap(),
-                        )
-                        .unwrap();
-
                         match entry
                             .unpack(node_modules_dep_path_instance.to_path_buf().join(&new_path))
                         {
@@ -507,7 +498,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                     let mut archive = Archive::new(gz_decoder);
 
                     for entry in archive.entries().unwrap() {
-                        let mut entry = entry.unwrap();
+                        let entry = entry.unwrap();
                         let path = entry.path().unwrap();
                         let mut new_path = PathBuf::new();
 
@@ -519,27 +510,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                             }
                         }
 
-                        std::fs::create_dir_all(
-                            extract_directory_instance
-                                .to_path_buf()
-                                .join(&new_path)
-                                .parent()
-                                .unwrap(),
-                        )
-                        .unwrap();
-
-                        match entry.unpack(extract_directory_instance.to_path_buf().join(&new_path))
-                        {
-                            Ok(_v) => {}
-                            Err(err) => {
-                                println!("{:?}", err);
-                                let code = err.raw_os_error().unwrap();
-
-                                if code == 5 {
-                                    continue;
-                                }
-                            }
-                        }
+                        // cacache::write(extract_directory.clone(), "key", b"value").unwrap();
                     }
                 })
             )
@@ -550,7 +521,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
     } else {
         // package is already downloaded and extracted to the ~/.volt folder.
         let node_modules_path = Path::new("node_modules/").join(package_instance.name);
-        println!("{} -> {}", loc.display(), node_modules_path.display());
 
         fs_extra::dir::copy(loc, node_modules_path, &CopyOptions::new()).unwrap();
     }

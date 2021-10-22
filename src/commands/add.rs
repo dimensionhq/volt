@@ -144,7 +144,7 @@ impl Command for Add {
                         if !crate::core::utils::check_peer_dependency(dep) {
                             println!(
                                 "{}{} {} has unmet peer dependency {}",
-                                "warn ".black().bright_yellow(),
+                                "warn".bright_yellow(),
                                 ":",
                                 object.name.bright_cyan(),
                                 &dep.bright_yellow()
