@@ -7,7 +7,7 @@ authors = [
 ]
 license = "Apache-2.0"
 description = "A fast, memory-safe package manager for the web."
-edition = "2018"
+edition = "2021"
 default-run = "volt"
 
 [dependencies]
