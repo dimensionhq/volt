@@ -79,7 +79,7 @@ winapi = { version = "0.3", features = [
 ] }
 tempfile = "3.2"
 scopeguard = "1.1"
-
+cacache = "9.0.0"
 
 [profile.release]
 opt-level = "s"
