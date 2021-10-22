@@ -1,7 +1,7 @@
 # If you edit this file, be sure to update
 # the github action as well
 [toolchain]
-channel = "nightly-2021-08-01"
+channel = "stable"
 components = [ "rustfmt", "clippy" ]
 profile = "minimal"
 
