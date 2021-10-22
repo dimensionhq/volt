@@ -1,3 +1,19 @@
+/*
+    Copyright 2021 Volt Contributors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
+
 pub mod app;
 pub mod constants;
 pub mod errors;
@@ -484,15 +500,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                             }
                         }
 
-                        std::fs::create_dir_all(
-                            node_modules_dep_path_instance
-                                .to_path_buf()
-                                .join(&new_path)
-                                .parent()
-                                .unwrap(),
-                        )
-                        .unwrap();
-
                         match entry
                             .unpack(node_modules_dep_path_instance.to_path_buf().join(&new_path))
                         {
@@ -507,7 +514,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                     let mut archive = Archive::new(gz_decoder);
 
                     for entry in archive.entries().unwrap() {
-                        let mut entry = entry.unwrap();
+                        let entry = entry.unwrap();
                         let path = entry.path().unwrap();
                         let mut new_path = PathBuf::new();
 
@@ -519,27 +526,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                             }
                         }
 
-                        std::fs::create_dir_all(
-                            extract_directory_instance
-                                .to_path_buf()
-                                .join(&new_path)
-                                .parent()
-                                .unwrap(),
-                        )
-                        .unwrap();
-
-                        match entry.unpack(extract_directory_instance.to_path_buf().join(&new_path))
-                        {
-                            Ok(_v) => {}
-                            Err(err) => {
-                                println!("{:?}", err);
-                                let code = err.raw_os_error().unwrap();
-
-                                if code == 5 {
-                                    continue;
-                                }
-                            }
-                        }
+                        // cacache::write(extract_directory.clone(), "key", b"value").unwrap();
                     }
                 })
             )
@@ -550,7 +537,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
     } else {
         // package is already downloaded and extracted to the ~/.volt folder.
         let node_modules_path = Path::new("node_modules/").join(package_instance.name);
-        println!("{} -> {}", loc.display(), node_modules_path.display());
 
         fs_extra::dir::copy(loc, node_modules_path, &CopyOptions::new()).unwrap();
     }

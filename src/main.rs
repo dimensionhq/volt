@@ -1,17 +1,17 @@
 /*
-Copyright 2021 Volt Contributors
+    Copyright 2021 Volt Contributors
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 mod commands;
@@ -92,7 +92,7 @@ Commands:
         "[flags]".bright_blue(),
     );
 
-    let compress_usage = format!(
+    let clean_usage = format!(
         "{} compress {}",
         "volt".bright_green().bold(),
         "[flags]".bright_blue(),
@@ -141,9 +141,9 @@ Commands:
                 .arg(Arg::new("yes").short('y').about("Use default options")),
         )
         .subcommand(
-            clap::App::new("compress")
-                .about("Interactively create and edit your package.json file.")
-                .override_usage(compress_usage.as_str()),
+            clap::App::new("clean")
+                .about("Clean node_modules and reduce its size.")
+                .override_usage(clean_usage.as_str()),
         )
         .subcommand(
             clap::App::new("discord")
