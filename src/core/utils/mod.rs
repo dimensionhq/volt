@@ -48,7 +48,7 @@ use std::{
     convert::TryFrom,
     ffi::OsStr,
     fs::{read_to_string, File},
-    io::Write,
+    io::{Read, Write},
     path::{Component, Path, PathBuf},
     sync::Arc,
 };
@@ -526,7 +526,11 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                             }
                         }
 
-                        // cacache::write(extract_directory.clone(), "key", b"value").unwrap();
+                        // let mut buffer = vec![];
+
+                        // entry.read_to_end(&mut buffer).unwrap();
+
+                        // let sri = cacache::write_hash_sync(extract_directory.clone(), &buffer).unwrap();
                     }
                 })
             )
