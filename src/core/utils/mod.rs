@@ -1,17 +1,17 @@
 /*
-    Copyright 2021 Volt Contributors
+Copyright 2021 Volt Contributors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 pub mod app;
@@ -38,7 +38,7 @@ use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use reqwest::StatusCode;
+use reqwest::{Client, StatusCode};
 use ssri::{Algorithm, Integrity};
 use tar::Archive;
 use tokio::fs::create_dir_all;
@@ -54,6 +54,10 @@ use std::{
 };
 
 pub struct State {}
+
+//pub struct State {
+//pub http_client: Client,
+//}
 
 /// convert a JSONVoltResponse -> VoltResponse
 pub fn convert(version: String, deserialized: JSONVoltResponse) -> Result<VoltResponse> {
@@ -525,8 +529,6 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                                 new_path.push(component)
                             }
                         }
-
-                        // cacache::write(extract_directory.clone(), "key", b"value").unwrap();
                     }
                 })
             )
