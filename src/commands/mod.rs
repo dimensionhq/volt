@@ -31,6 +31,7 @@ pub mod list;
 pub mod login;
 pub mod logout;
 pub mod migrate;
+pub mod node;
 pub mod outdated;
 pub mod owner;
 pub mod publish;
