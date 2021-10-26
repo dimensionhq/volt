@@ -48,7 +48,7 @@ use std::{
     convert::TryFrom,
     ffi::OsStr,
     fs::{read_to_string, File},
-    io::Write,
+    io::{Read, Write},
     path::{Component, Path, PathBuf},
     sync::Arc,
 };
