@@ -215,11 +215,6 @@ impl Command for Add {
 
         dependencies.dedup();
 
-        let client = reqwest::ClientBuilder::new()
-            .use_rustls_tls()
-            .build()
-            .unwrap();
-
         dependencies
             .into_iter()
             .map(|v| install_package(&app, v, State {}))
