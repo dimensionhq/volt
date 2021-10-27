@@ -33,7 +33,12 @@ miette = { version = "3.0.1", features = ["fancy"] }
 prettytable-rs = "0.8.0"
 rand = "0.8.4"
 regex = "1.5.4"
-reqwest = { version = "0.11.4", features = ["rustls-tls"] }
+reqwest = { version = "0.11.4", features = [
+  "blocking",
+  "json",
+  "rustls-tls",
+  "brotli",
+], default-features = false }
 rslint_cli = "0.3.0"
 rslint_config = "0.2.0"
 rslint_core = "0.3.0"
