@@ -28,6 +28,24 @@ use tempfile::tempdir;
 //use async_trait::async_trait;
 //use colored::Colorize;
 
+const PLATFORM: Os = if cfg!(target_os = "windows") {
+    Os::Windows
+} else if cfg!(target_os = "macos") {
+    Os::Macos
+} else if cfg!(target_os = "linux") {
+    Os::Linux
+} else {
+    Os::Unknown
+};
+
+const ARCH: Arch = if cfg!(target_arch = "X86") {
+    Arch::X86
+} else if cfg!(target_arch = "x86_64") {
+    Arch::X64
+} else {
+    Arch::Unknown
+};
+
 #[derive(Deserialize)]
 #[serde(untagged)]
 enum Lts {
@@ -97,30 +115,7 @@ impl Display for Arch {
     }
 }
 
-fn get_arch() -> Arch {
-    // "x86", "x86_64", "mips", "powerpc", "powerpc64", "arm", or "aarch64".
-    if cfg!(target_arch = "x86") {
-        Arch::X86
-    } else if cfg!(target_arch = "x86_64") {
-        Arch::X64
-    } else {
-        Arch::Unknown
-    }
-}
-
-fn get_platform() -> Os {
-    if cfg!(target_os = "windows") {
-        Os::Windows
-    } else if cfg!(target_os = "macos") {
-        Os::Macos
-    } else if cfg!(target_os = "linux") {
-        Os::Linux
-    } else {
-        Os::Unknown
-    }
-}
-
-/// Struct implementation for the `Add` command.
+/// Struct implementation for the `Node` command.
 #[derive(Clone)]
 pub struct Node {}
 
@@ -140,7 +135,6 @@ impl Node {
             }
             _ => {}
         }
-
         Ok(())
     }
 }
@@ -155,9 +149,6 @@ async fn download_node_version(versions: Vec<&str>) {
     let dir: tempfile::TempDir = tempdir().unwrap();
     println!("Got tempdir: {}", dir.path().to_str().unwrap());
 
-    let arch = get_arch();
-    let os = get_platform();
-
     let mirror = "https://nodejs.org/dist";
 
     let _node_versions: Vec<NodeVersion> = reqwest::get(format!("{}/index.json", mirror))
@@ -170,7 +161,7 @@ async fn download_node_version(versions: Vec<&str>) {
     for v in versions {
         let mut download_url = format!("{}/", mirror);
         if let Ok(_) = v.parse::<Version>() {
-            if arch == Arch::X86 && (os == Os::Macos || os == Os::Linux) {
+            if ARCH == Arch::X86 && (PLATFORM == Os::Macos || PLATFORM == Os::Linux) {
                 let major = v.split('.').next().unwrap().parse::<u8>().unwrap();
 
                 if major >= 10 {
@@ -193,17 +184,17 @@ async fn download_node_version(versions: Vec<&str>) {
                 return;
             }
 
-            if os == Os::Windows {
-                download_url = format!("{}/win-{}/node.exe", download_url, arch);
+            if PLATFORM == Os::Windows {
+                download_url = format!("{}/win-{}/node.exe", download_url, ARCH);
             } else {
-                download_url = format!("{}/node-v{}-{}-{}.tar.gz", download_url, v, os, arch);
+                download_url = format!("{}/node-v{}-{}-{}.tar.gz", download_url, v, PLATFORM, ARCH);
             }
         } else if let Ok(_) = v.parse::<Range>() {
             //
             // TODO: Handle ranges with special chars like ^10.3
             //
 
-            if arch == Arch::X86 && (os == Os::Macos || os == Os::Linux) {
+            if ARCH == Arch::X86 && (PLATFORM == Os::Macos || PLATFORM == Os::Linux) {
                 let major = v.split('.').next().unwrap();
                 if major.parse::<u8>().unwrap() >= 10 {
                     println!("32 bit versions are not available for macos and linux after version 10.0.0!");
