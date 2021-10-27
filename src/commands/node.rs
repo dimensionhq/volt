@@ -1,4 +1,5 @@
 /*
+<<<<<<< HEAD
   Copyright 2021 Volt Contributors
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,6 +31,54 @@ use colored::Colorize;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
+=======
+Copyright 2021 Volt Contributors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+//! Manage local node versions
+/*use crate::{
+    core::{command::Command, VERSION},
+    App,
+};*/
+
+use std::str;
+use std::{fmt::Display, fs::File, io::Write};
+
+use clap::ArgMatches;
+use miette::Result;
+use node_semver::{Range, Version};
+use serde::{Deserialize, Deserializer};
+use tempfile::tempdir;
+//use async_trait::async_trait;
+//use colored::Colorize;
+
+const PLATFORM: Os = if cfg!(target_os = "windows") {
+    Os::Windows
+} else if cfg!(target_os = "macos") {
+    Os::Macos
+} else if cfg!(target_os = "linux") {
+    Os::Linux
+} else {
+    Os::Unknown
+};
+
+const ARCH: Arch = if cfg!(target_arch = "X86") {
+    Arch::X86
+} else if cfg!(target_arch = "x86_64") {
+    Arch::X64
+} else {
+    Arch::Unknown
+};
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
 
 #[derive(Deserialize)]
 #[serde(untagged)]
@@ -69,6 +118,10 @@ enum Os {
     Linux,
     Unknown,
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
 impl Display for Os {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let s = match self {
@@ -99,6 +152,7 @@ impl Display for Arch {
     }
 }
 
+<<<<<<< HEAD
 fn get_arch() -> Arch {
     // "x86", "x86_64", "mips", "powerpc", "powerpc64", "arm", or "aarch64".
     if cfg!(target_arch = "x86") {
@@ -123,6 +177,9 @@ fn get_platform() -> Os {
 }
 
 /// Struct implementation for the `Add` command.
+=======
+/// Struct implementation for the `Node` command.
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
 #[derive(Clone)]
 pub struct Node {}
 
@@ -134,7 +191,10 @@ impl Node {
             }
             Some(("install", versions)) => {
                 let v: Vec<&str> = versions.values_of("versions").unwrap().collect();
+<<<<<<< HEAD
                 println!("Installing version {:?}", v);
+=======
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
                 download_node_version(v).await;
             }
             Some(("remove", versions)) => {
@@ -143,7 +203,10 @@ impl Node {
             }
             _ => {}
         }
+<<<<<<< HEAD
 
+=======
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
         Ok(())
     }
 }
@@ -151,11 +214,20 @@ impl Node {
 // 32bit macos/linux systems cannot download a version of node >= 10.0.0
 // They stopped making 32bit builds after that version
 // https://nodejs.org/dist/
+<<<<<<< HEAD
 async fn download_node_version(versions: Vec<&str>) {
     let arch = get_arch();
     let os = get_platform();
 
     let _v10 = "10".parse::<Range>().unwrap();
+=======
+// TODO: Handle errors with file already existing and handle file creation/deletion errors
+async fn download_node_version(versions: Vec<&str>) {
+    // TODO: Only make a tempdir if we have versions to download, i.e. verify all versions before
+    // creating the directory
+    let dir: tempfile::TempDir = tempdir().unwrap();
+    println!("Got tempdir: {}", dir.path().to_str().unwrap());
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
 
     let mirror = "https://nodejs.org/dist";
 
@@ -169,7 +241,11 @@ async fn download_node_version(versions: Vec<&str>) {
     for v in versions {
         let mut download_url = format!("{}/", mirror);
         if let Ok(_) = v.parse::<Version>() {
+<<<<<<< HEAD
             if arch == Arch::X86 && (os == Os::Macos || os == Os::Linux) {
+=======
+            if ARCH == Arch::X86 && (PLATFORM == Os::Macos || PLATFORM == Os::Linux) {
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
                 let major = v.split('.').next().unwrap().parse::<u8>().unwrap();
 
                 if major >= 10 {
@@ -192,6 +268,7 @@ async fn download_node_version(versions: Vec<&str>) {
                 return;
             }
 
+<<<<<<< HEAD
             if os == Os::Windows {
                 download_url = format!("{}/win-{}/node.exe", download_url, arch);
             } else {
@@ -204,23 +281,44 @@ async fn download_node_version(versions: Vec<&str>) {
              *     x, arch, os
              * );
              */
+=======
+            if PLATFORM == Os::Windows {
+                download_url = format!("{}/win-{}/node.exe", download_url, ARCH);
+            } else {
+                download_url = format!("{}/node-v{}-{}-{}.tar.gz", download_url, v, PLATFORM, ARCH);
+            }
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
         } else if let Ok(_) = v.parse::<Range>() {
             //
             // TODO: Handle ranges with special chars like ^10.3
             //
 
+<<<<<<< HEAD
             if arch == Arch::X86 && os == Os::Macos || os == Os::Linux {
+=======
+            if ARCH == Arch::X86 && (PLATFORM == Os::Macos || PLATFORM == Os::Linux) {
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
                 let major = v.split('.').next().unwrap();
                 if major.parse::<u8>().unwrap() >= 10 {
                     println!("32 bit versions are not available for macos and linux after version 10.0.0!");
                     return;
                 }
             }
+<<<<<<< HEAD
         } else {
             println!("Unable to downlaod {} -- not a valid version!", v);
             continue;
         }
 
+=======
+            todo!("Need to handle ranges");
+        } else {
+            println!("Unable to download {} -- not a valid version!", v);
+            continue;
+        }
+
+        println!("Installing version {}", v);
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
         let response = reqwest::get(&download_url).await.unwrap();
 
         let mut dest = {
@@ -229,6 +327,7 @@ async fn download_node_version(versions: Vec<&str>) {
                 .path_segments()
                 .and_then(|segments| segments.last())
                 .and_then(|name| if name.is_empty() { None } else { Some(name) })
+<<<<<<< HEAD
                 .unwrap_or("tmp.bin");
 
             println!("file to download: '{}'", fname);
@@ -301,12 +400,30 @@ async fn download_node_version(versions: Vec<&str>) {
 }
 
 #[async_trait]
+=======
+                .unwrap();
+
+            println!("file to download: '{}'", fname);
+            let fname = dir.path().join(fname);
+            File::create(fname).unwrap()
+        };
+
+        let content = response.bytes().await.unwrap();
+
+        dest.write_all(&content).unwrap();
+        println!("\n---\n");
+    }
+}
+
+/*#[async_trait]
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
 impl Command for Node {
     /// Display a help menu for the `volt add` command.
     fn help() -> String {
         format!(
             r#"volt {}
 
+<<<<<<< HEAD
       Add a package to your project's dependencies.
       Usage: {} {} {} {}
       Options:
@@ -315,6 +432,16 @@ impl Command for Node {
       {} {} Output verbose messages on internal operations.
       {} {} Adds package as a dev dependency
       {} {} Disable progress bar."#,
+=======
+            Manage NodeJS versions
+            Usage: {} {} {} {}
+            Options:
+
+            {} {} Output the version number.
+            {} {} Output verbose messages on internal operations.
+            {} {} Adds package as a dev dependency
+            {} {} Disable progress bar."#,
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
             VERSION.bright_green().bold(),
             "volt".bright_green().bold(),
             "add".bright_purple(),
@@ -331,7 +458,11 @@ impl Command for Node {
         )
     }
 
+<<<<<<< HEAD
     /// Execute the `volt add` command
+=======
+    /// Execute the `volt node` command
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a
     ///
     /// Adds a package to dependencies for your project.
     /// ## Arguments
@@ -353,6 +484,7 @@ impl Command for Node {
             break;
         }
         Ok(())
+<<<<<<< HEAD
         /*
          *         // Get input packages
          *         let mut packages = app.get_packages()?;
@@ -501,3 +633,7 @@ impl Command for Node {
          */
     }
 }
+=======
+    }
+}*/
+>>>>>>> e56eb72395529f1dd21931ce99282f6812000e6a

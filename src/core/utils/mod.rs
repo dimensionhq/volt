@@ -1,17 +1,17 @@
 /*
-    Copyright 2021 Volt Contributors
+Copyright 2021 Volt Contributors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 pub mod app;
@@ -38,7 +38,7 @@ use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use reqwest::StatusCode;
+use reqwest::{Client, StatusCode};
 use ssri::{Algorithm, Integrity};
 use tar::Archive;
 use tokio::fs::create_dir_all;
@@ -48,12 +48,16 @@ use std::{
     convert::TryFrom,
     ffi::OsStr,
     fs::{read_to_string, File},
-    io::Write,
+    io::{Read, Write},
     path::{Component, Path, PathBuf},
     sync::Arc,
 };
 
 pub struct State {}
+
+//pub struct State {
+//pub http_client: Client,
+//}
 
 /// convert a JSONVoltResponse -> VoltResponse
 pub fn convert(version: String, deserialized: JSONVoltResponse) -> Result<VoltResponse> {
@@ -177,10 +181,9 @@ pub async fn get_volt_response(
     // loop until MAX_RETRIES reached.
     loop {
         // get a response
-        let mut response =
-            isahc::get_async(format!("http://push-2105.5centscdn.com/{}.json", hash))
-                .await
-                .map_err(VoltError::NetworkError)?;
+        let mut response = isahc::get_async(format!("http://registry.voltpkg.com/{}.json", hash))
+            .await
+            .map_err(VoltError::NetworkError)?;
 
         // check the status of the response
         match response.status() {
@@ -386,11 +389,14 @@ pub async fn get_volt_response(
 // }
 
 /// downloads and extracts tarball file from package
-pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -> Result<()> {
+pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) -> Result<()> {
     let package_instance = package.clone();
 
+    let package_name = package.name.clone();
+    let package_version = package.version.clone();
+
     // @types/eslint
-    if package_instance.name.starts_with('@') && package_instance.name.contains('/') {
+    if package_name.starts_with('@') && package_name.contains('/') {
         let package_directory_location = app
             .volt_dir
             .join(&package.name.split('/').collect::<Vec<&str>>()[0]);
@@ -405,7 +411,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
     // location of extracted package
     let loc = app
         .volt_dir
-        .join(format!("{}-{}", &package.name, &package.version));
+        .join(format!("{}-{}", &package_name, &package_version));
 
     let client = reqwest::ClientBuilder::new()
         .use_rustls_tls()
@@ -461,11 +467,8 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                 }
             }
 
-            extract_directory = extract_directory.join(format!(
-                "{}-{}",
-                package.clone().name,
-                package.clone().version
-            ));
+            extract_directory =
+                extract_directory.join(format!("{}-{}", &package_name, &package_version,));
 
             // Initialize tarfile decoder while directly passing in bytes
 
@@ -473,11 +476,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
 
             let bytes_ref = bytes.clone();
 
-            let extract_directory_instance = extract_directory.clone();
-
             let node_modules_dep_path_instance = app.node_modules_dir.clone();
-            let pkg_name = package.clone().name;
-            let pkg_name_instance = package.clone().name;
 
             futures::try_join!(
                 tokio::task::spawn_blocking(move || {
@@ -494,7 +493,7 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
 
                         for component in path.components() {
                             if component.as_os_str() == "package" {
-                                new_path.push(Component::Normal(OsStr::new(&pkg_name)));
+                                new_path.push(Component::Normal(OsStr::new(&package.name)));
                             } else {
                                 new_path.push(component)
                             }
@@ -514,19 +513,28 @@ pub async fn download_tarball(app: &App, package: &VoltPackage, _state: State) -
                     let mut archive = Archive::new(gz_decoder);
 
                     for entry in archive.entries().unwrap() {
-                        let entry = entry.unwrap();
-                        let path = entry.path().unwrap();
-                        let mut new_path = PathBuf::new();
+                        let mut entry = entry.unwrap();
+                        // let path = entry.path().unwrap();
+                        // let mut new_path = PathBuf::new();
 
-                        for component in path.components() {
-                            if component.as_os_str() == "package" {
-                                new_path.push(Component::Normal(OsStr::new(&pkg_name_instance)));
-                            } else {
-                                new_path.push(component)
-                            }
-                        }
+                        // for component in path.components() {
+                        //     if component.as_os_str() == "package" {
+                        //         new_path.push(Component::Normal(OsStr::new(&pkg_name_instance)));
+                        //     } else {
+                        //         new_path.push(component)
+                        //     }
+                        // }
 
-                        // cacache::write(extract_directory.clone(), "key", b"value").unwrap();
+                        let mut buffer = vec![];
+
+                        entry.read_to_end(&mut buffer).unwrap();
+
+                        let sri = cacache::write_sync(
+                            extract_directory.clone(),
+                            format!("pkg::{}::{}", &package_name, &package_version),
+                            &buffer,
+                        )
+                        .unwrap();
                     }
                 })
             )
@@ -729,7 +737,7 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 
 /// package all steps for installation into 1 convenient function.
 pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State) -> Result<()> {
-    if download_tarball(app, package, state).await.is_err() {}
+    if download_tarball(app, package.clone(), state).await.is_err() {}
 
     // generate the package's script
     generate_script(app, package);
