@@ -1,21 +1,20 @@
 /*
-Copyright 2021 Volt Contributors
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+ *    Copyright 2021 Volt Contributors
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
 
 //! Manage local node versions
-/*use crate::{
-    core::{command::Command, VERSION},
-    App,
-};*/
 
 use std::str;
 use std::{fmt::Display, fs::File, io::Write};
@@ -25,8 +24,6 @@ use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
 use tempfile::tempdir;
-//use async_trait::async_trait;
-//use colored::Colorize;
 
 const PLATFORM: Os = if cfg!(target_os = "windows") {
     Os::Windows
@@ -143,11 +140,12 @@ impl Node {
 // They stopped making 32bit builds after that version
 // https://nodejs.org/dist/
 // TODO: Handle errors with file already existing and handle file creation/deletion errors
+// TODO: Only make a tempdir if we have versions to download, i.e. verify all versions before
+//       creating the directory
 async fn download_node_version(versions: Vec<&str>) {
-    // TODO: Only make a tempdir if we have versions to download, i.e. verify all versions before
-    // creating the directory
+    tracing::debug!("On platform '{}' and arch '{}'", PLATFORM, ARCH);
     let dir: tempfile::TempDir = tempdir().unwrap();
-    println!("Got tempdir: {}", dir.path().to_str().unwrap());
+    tracing::debug!("Temp dir is {:?}", dir);
 
     let mirror = "https://nodejs.org/dist";
 
@@ -173,15 +171,15 @@ async fn download_node_version(versions: Vec<&str>) {
             let mut found = false;
             for n in &_node_versions {
                 if v == n.version.to_string() {
-                    // println!("Found matching version: {:?}", n);
                     download_url = format!("{}v{}", download_url, n.version);
                     found = true;
+                    tracing::debug!("found version '{}' with URL '{}'", v, download_url);
                 }
             }
 
             if !found {
                 println!("Unable to find version {}!", v);
-                return;
+                continue;
             }
 
             if PLATFORM == Os::Windows {
@@ -189,6 +187,8 @@ async fn download_node_version(versions: Vec<&str>) {
             } else {
                 download_url = format!("{}/node-v{}-{}-{}.tar.gz", download_url, v, PLATFORM, ARCH);
             }
+
+            tracing::debug!("Got final URL '{}'", download_url);
         } else if let Ok(_) = v.parse::<Range>() {
             //
             // TODO: Handle ranges with special chars like ^10.3
@@ -231,57 +231,57 @@ async fn download_node_version(versions: Vec<&str>) {
 }
 
 /*#[async_trait]
-impl Command for Node {
-    /// Display a help menu for the `volt add` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
+  impl Command for Node {
+/// Display a help menu for the `volt add` command.
+fn help() -> String {
+format!(
+r#"volt {}
 
-            Manage NodeJS versions
-            Usage: {} {} {} {}
-            Options:
+Manage NodeJS versions
+Usage: {} {} {} {}
+Options:
 
-            {} {} Output the version number.
-            {} {} Output verbose messages on internal operations.
-            {} {} Adds package as a dev dependency
-            {} {} Disable progress bar."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "add".bright_purple(),
-            "[packages]".white(),
-            "[flags]".white(),
-            "--version".blue(),
-            "(-ver)".yellow(),
-            "--verbose".blue(),
-            "(-v)".yellow(),
-            "--dev".blue(),
-            "(-D)".yellow(),
-            "--no-progress".blue(),
-            "(-np)".yellow()
-        )
-    }
+{} {} Output the version number.
+{} {} Output verbose messages on internal operations.
+{} {} Adds package as a dev dependency
+{} {} Disable progress bar."#,
+VERSION.bright_green().bold(),
+"volt".bright_green().bold(),
+"add".bright_purple(),
+"[packages]".white(),
+"[flags]".white(),
+"--version".blue(),
+"(-ver)".yellow(),
+"--verbose".blue(),
+"(-v)".yellow(),
+"--dev".blue(),
+"(-D)".yellow(),
+"--no-progress".blue(),
+"(-np)".yellow()
+)
+}
 
-    /// Execute the `volt node` command
-    ///
-    /// Adds a package to dependencies for your project.
-    /// ## Arguments
-    /// * `app` - Instance of the command (`Arc<App>`)
-    /// ## Examples
-    /// ```rust
-    /// // Add react to your dependencies with logging level verbose
-    /// // .exec() is an async call so you need to await it
-    /// Add.exec(app).await;
-    /// ```
-    /// ## Returns
-    /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        println!("In Node Exec!");
-        let x = app.get_packages();
-        let x = x.unwrap();
-        for a in x {
-            println!("{:?}", a);
-            break;
-        }
-        Ok(())
-    }
+/// Execute the `volt node` command
+///
+/// Adds a package to dependencies for your project.
+/// ## Arguments
+/// * `app` - Instance of the command (`Arc<App>`)
+/// ## Examples
+/// ```rust
+/// // Add react to your dependencies with logging level verbose
+/// // .exec() is an async call so you need to await it
+/// Add.exec(app).await;
+/// ```
+/// ## Returns
+/// * `Result<()>`
+async fn exec(app: Arc<App>) -> Result<()> {
+println!("In Node Exec!");
+let x = app.get_packages();
+let x = x.unwrap();
+for a in x {
+println!("{:?}", a);
+break;
+}
+Ok(())
+}
 }*/
