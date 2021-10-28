@@ -65,6 +65,8 @@ webbrowser = "0.5.5"
 serde_yaml = "0.8.21"
 chrono = { version = "0.4.19", features = ["serde"] }
 tempfile = "3.2"
+tracing = "0.1"
+tracing-subscriber = {version = "0.3", features = ["env-filter"]}
 
 
 [target.'cfg(windows)'.dependencies]
