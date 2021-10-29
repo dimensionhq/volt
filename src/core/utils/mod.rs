@@ -477,11 +477,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
             let bytes_ref = bytes.clone();
 
             let node_modules_dep_path_instance = app.node_modules_dir.clone();
-
             futures::try_join!(
                 tokio::task::spawn_blocking(move || {
-                    // Extract the data into extract_directory
-
                     let node_gz_decoder = GzDecoder::new(&**bytes_ref);
 
                     let mut node_archive = Archive::new(node_gz_decoder);
@@ -531,7 +528,10 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
 
                         let sri = cacache::write_sync(
                             extract_directory.clone(),
-                            format!("pkg::{}::{}", &package_name, &package_version),
+                            format!(
+                                "pkg::{}::{}::{}",
+                                &package_name, &package_version, package.integrity
+                            ),
                             &buffer,
                         )
                         .unwrap();
