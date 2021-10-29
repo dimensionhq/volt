@@ -20,17 +20,19 @@ use crate::{core::VERSION, App, Command};
 
 use async_trait::async_trait;
 use colored::Colorize;
+use isahc::AsyncReadResponseExt;
 use miette::Result;
+use prettytable::{cell, row, Table};
 use serde::{Deserialize, Serialize};
 
 use std::sync::Arc;
 
-// fn truncate(s: &str, max_chars: usize) -> String {
-//     match s.char_indices().nth(max_chars) {
-//         None => s.to_string(),
-//         Some((idx, _)) => (s[..idx].to_owned() + "...").to_string(),
-//     }
-// }
+fn truncate(s: &str, max_chars: usize) -> String {
+    match s.char_indices().nth(max_chars) {
+        None => s.to_string(),
+        Some((idx, _)) => (s[..idx].to_owned() + "..."),
+    }
+}
 
 pub struct Search {}
 
@@ -47,11 +49,11 @@ impl Command for Search {
         format!(
             r#"volt {}
 
-Searches for a package 
+Searches for a package
 
 Usage: {} {} {} {}
 
-Options: 
+Options:
 
   {} {} Output the version number.
   {} {} Output verbose messages on internal operations."#,
@@ -80,45 +82,33 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
-        // if app.args.len() >= 2 {
-        //     let package_name = &app.args[1];
+    async fn exec(app: Arc<App>) -> Result<()> {
+        let query = app.args.value_of("query").unwrap();
 
-        //     let response = isahc::get_async(format!(
-        //         "http://www.npmjs.com/search/suggestions?q={}",
-        //         package_name
-        //     ))
-        //     .await
-        //     .unwrap_or_else(|_| {
-        //         error!("package does not exist");
-        //         std::process::exit(1);
-        //     })
-        //     .text()
-        //     .await
-        //     .unwrap_or_else(|_| {
-        //         error!("package does not exist");
-        //         std::process::exit(1);
-        //     });
-        //     let s: Vec<SearchData> = serde_json::from_str(&response).unwrap_or_else(|e| {
-        //         error!("failed to parse response from server {}", e.to_string());
+        let response =
+            isahc::get_async(format!("https://npmjs.com/search/suggestions?q={}", query))
+                .await
+                .unwrap()
+                .text()
+                .await
+                .unwrap();
 
-        //         std::process::exit(1);
-        //     });
+        let s: Vec<SearchData> = serde_json::from_str(&response).unwrap();
 
-        //     let mut table = Table::new();
-        //     table.add_row(row![
-        //         "Name".green().bold(),
-        //         "Version".green().bold(),
-        //         "Description".green().bold()
-        //     ]);
-        //     for i in s.iter() {
-        //         table.add_row(row![i.name, i.version, truncate(&i.description, 35)]);
-        //     }
-        //     table.printstd();
+        let mut table = Table::new();
 
-        //     // let u: SearchResp = s;
-        //     // panic!("{:#?}", s);
-        // }
+        table.add_row(row![
+            "Name".bright_green().bold(),
+            "Version".bright_green().bold(),
+            "Description".bright_green().bold()
+        ]);
+
+        for i in s.iter() {
+            table.add_row(row![i.name, i.version, truncate(&i.description, 35)]);
+        }
+
+        table.printstd();
+
         Ok(())
     }
 }

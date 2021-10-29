@@ -31,8 +31,8 @@ impl Command for Info {
     fn help() -> String {
         format!(
             r#"volt {}
-    
-Shows the information of a package 
+
+Shows the information of a package
 
 Usage: {} {} {}
 
