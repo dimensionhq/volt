@@ -106,7 +106,7 @@ async fn main() -> miette::Result<()> {
     );
 
     let clean_usage = format!(
-        "{} compress {}",
+        "{} clean {}",
         "volt".bright_green().bold(),
         "[flags]".bright_blue(),
     );
@@ -156,7 +156,12 @@ async fn main() -> miette::Result<()> {
         .subcommand(
             clap::App::new("clean")
                 .about("Clean node_modules and reduce its size.")
-                .override_usage(clean_usage.as_str()),
+                .override_usage(clean_usage.as_str())
+                .arg(
+                    Arg::new("remove-licenses")
+                        .long("remove-licenses")
+                        .about("Remove licenses and default files"),
+                ),
         )
         .subcommand(
             clap::App::new("node")
