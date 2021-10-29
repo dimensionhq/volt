@@ -38,7 +38,7 @@ use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use reqwest::{Client, StatusCode};
+use reqwest::StatusCode;
 use ssri::{Algorithm, Integrity};
 use tar::Archive;
 use tokio::fs::create_dir_all;
