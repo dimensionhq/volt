@@ -408,6 +408,27 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
         }
     }
 
+    // Directory to extract tarball to
+    let mut extract_directory = PathBuf::from(&app.volt_dir);
+
+    // @types/eslint
+    if package.clone().name.starts_with('@') && package.clone().name.contains('/') {
+        if cfg!(target_os = "windows") {
+            let name = package.clone().name.replace('/', r"\");
+
+            let split = name.split('\\').collect::<Vec<&str>>();
+
+            // C:\Users\xtrem\.volt\@types
+            extract_directory = extract_directory.join(split[0]);
+        } else {
+            let name = package.clone().name;
+            let split = name.split('/').collect::<Vec<&str>>();
+
+            // ~/.volt/@types
+            extract_directory = extract_directory.join(split[0]);
+        }
+    }
+
     // location of extracted package
     let loc = app
         .volt_dir
@@ -446,27 +467,6 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
             // Create node_modules
             create_dir_all(&app.node_modules_dir).await.unwrap();
 
-            // Directory to extract tarball to
-            let mut extract_directory = PathBuf::from(&app.volt_dir);
-
-            // @types/eslint
-            if package.clone().name.starts_with('@') && package.clone().name.contains('/') {
-                if cfg!(target_os = "windows") {
-                    let name = package.clone().name.replace('/', r"\");
-
-                    let split = name.split('\\').collect::<Vec<&str>>();
-
-                    // C:\Users\xtrem\.volt\@types
-                    extract_directory = extract_directory.join(split[0]);
-                } else {
-                    let name = package.clone().name;
-                    let split = name.split('/').collect::<Vec<&str>>();
-
-                    // ~/.volt/@types
-                    extract_directory = extract_directory.join(split[0]);
-                }
-            }
-
             // Initialize tarfile decoder while directly passing in bytes
 
             let bytes = Arc::new(bytes);
@@ -474,6 +474,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
             let bytes_ref = bytes.clone();
 
             let node_modules_dep_path_instance = app.node_modules_dir.clone();
+
             futures::try_join!(
                 tokio::task::spawn_blocking(move || {
                     let node_gz_decoder = GzDecoder::new(&**bytes_ref);
@@ -541,9 +542,15 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
         }
     } else {
         // package is already downloaded and extracted to the ~/.volt folder.
-        let node_modules_path = Path::new("node_modules/").join(package_instance.name);
 
-        fs_extra::dir::copy(loc, node_modules_path, &CopyOptions::new()).unwrap();
+        let buf = cacache::read_sync(
+            extract_directory,
+            format!(
+                "pkg::{}::{}::{}",
+                &package_name, &package_version, package.integrity
+            ),
+        )
+        .unwrap();
     }
 
     Ok(())
