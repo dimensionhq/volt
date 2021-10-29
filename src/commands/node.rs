@@ -84,10 +84,10 @@ enum Os {
 
 impl Display for Os {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let s = match self {
-            &Os::Windows => "win",
-            &Os::Macos => "darwin",
-            &Os::Linux => "linux",
+        let s = match &self {
+            Os::Windows => "win",
+            Os::Macos => "darwin",
+            Os::Linux => "linux",
             _ => unreachable!(),
         };
         write!(f, "{}", s)
@@ -103,9 +103,9 @@ enum Arch {
 
 impl Display for Arch {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let s = match self {
-            &Arch::X86 => "x86",
-            &Arch::X64 => "x64",
+        let s = match *self {
+            Arch::X86 => "x86",
+            Arch::X64 => "x64",
             _ => unreachable!(),
         };
         write!(f, "{}", s)
@@ -158,7 +158,7 @@ async fn download_node_version(versions: Vec<&str>) {
 
     for v in versions {
         let mut download_url = format!("{}/", mirror);
-        if let Ok(_) = v.parse::<Version>() {
+        if v.parse::<Version>().is_ok() {
             if ARCH == Arch::X86 && (PLATFORM == Os::Macos || PLATFORM == Os::Linux) {
                 let major = v.split('.').next().unwrap().parse::<u8>().unwrap();
 
@@ -189,7 +189,7 @@ async fn download_node_version(versions: Vec<&str>) {
             }
 
             tracing::debug!("Got final URL '{}'", download_url);
-        } else if let Ok(_) = v.parse::<Range>() {
+        } else if v.parse::<Range>().is_ok() {
             //
             // TODO: Handle ranges with special chars like ^10.3
             //

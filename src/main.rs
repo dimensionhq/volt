@@ -23,6 +23,7 @@ use crate::core::{command::Command, utils::app::App};
 
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
+use commands::search::Search;
 use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
 use tracing::{self, Level};
 use tracing_subscriber::filter::EnvFilter;
@@ -52,6 +53,10 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
             let app = Arc::new(App::initialize(args)?);
             Discord::exec(app).await
         }
+        Some(("search", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Search::exec(app).await
+        }
         Some(("node", args)) => Node::download(args).await,
         _ => Ok(()),
     }
@@ -62,7 +67,8 @@ async fn main() -> miette::Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(Level::TRACE)
         .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or(EnvFilter::from_str("volt=info").unwrap()),
+            EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::from_str("volt=info").unwrap()),
         )
         .without_time()
         .init();
@@ -71,16 +77,16 @@ async fn main() -> miette::Result<()> {
     let volt_help = format!(
         r#"{} {}
 
-        Usage: {} [{}] [{}]
+Usage: {} [{}] [{}]
 
-        Displays help information.
+Displays help information.
 
-        Commands:
-        {} add
-        {} audit
-        {} cache
-        {} check
-        {} clean"#,
+Commands:
+  {} add
+  {} audit
+  {} cache
+  {} check
+  {} clean"#,
         "volt".bright_green().bold(),
         "1.0.0",
         "volt".bright_green().bold(),
@@ -114,6 +120,13 @@ async fn main() -> miette::Result<()> {
     let clone_usage = format!(
         "{} clone {}",
         "volt".bright_green().bold(),
+        "[flags]".bright_blue(),
+    );
+
+    let search_usage = format!(
+        "{} search {} {}",
+        "volt".bright_green().bold(),
+        "<query>".bright_cyan().bold(),
         "[flags]".bright_blue(),
     );
 
@@ -194,6 +207,16 @@ async fn main() -> miette::Result<()> {
             clap::App::new("discord")
                 .about("Join the official volt discord server.")
                 .override_usage(discord_usage.as_str()),
+        )
+        .subcommand(
+            clap::App::new("search")
+                .about("Search for a package.")
+                .override_usage(search_usage.as_str())
+                .arg(
+                    Arg::new("query")
+                        .about("The search query string")
+                        .required(true),
+                ),
         );
 
     let matches = app.get_matches();

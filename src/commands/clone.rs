@@ -32,11 +32,11 @@ impl Command for Clone {
     fn help() -> String {
         format!(
             r#"volt {}
-    
+
 Clone a project and setup a project from a repository.
 Usage: {} {} {} {}
-Options: 
-    
+Options:
+
   {} {} Output verbose messages on internal operations.
   {} {} Disable progress bar."#,
             VERSION.bright_green().bold(),

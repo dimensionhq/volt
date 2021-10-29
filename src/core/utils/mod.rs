@@ -467,9 +467,6 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
                 }
             }
 
-            extract_directory =
-                extract_directory.join(format!("{}-{}", &package_name, &package_version,));
-
             // Initialize tarfile decoder while directly passing in bytes
 
             let bytes = Arc::new(bytes);
@@ -526,7 +523,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
 
                         entry.read_to_end(&mut buffer).unwrap();
 
-                        let sri = cacache::write_sync(
+                        cacache::write_sync(
                             extract_directory.clone(),
                             format!(
                                 "pkg::{}::{}::{}",
