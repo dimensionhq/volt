@@ -32,7 +32,6 @@ use app::App;
 use colored::Colorize;
 use errors::VoltError;
 use flate2::read::GzDecoder;
-use fs_extra::dir::CopyOptions;
 use futures_util::{stream::FuturesUnordered, StreamExt};
 use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
@@ -551,6 +550,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
             ),
         )
         .unwrap();
+
+        println!("{}", String::from_utf8(buf).unwrap());
     }
 
     Ok(())
