@@ -201,6 +201,7 @@ impl Command for Add {
             }
         }
 
+        // Create progress bar for package installation
         let progress_bar = ProgressBar::new(dependencies.len() as u64);
 
         progress_bar.set_style(
@@ -212,6 +213,7 @@ impl Command for Add {
                 )),
         );
 
+        // Remove duplicate dependencies
         dependencies.dedup();
 
         dependencies
