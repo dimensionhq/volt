@@ -492,7 +492,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
                                 new_path.push(component)
                             }
                         }
-
+                        println!("{}", new_path.display());
                         match entry
                             .unpack(node_modules_dep_path_instance.to_path_buf().join(&new_path))
                         {

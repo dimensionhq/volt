@@ -67,6 +67,8 @@ chrono = { version = "0.4.19", features = ["serde"] }
 tempfile = "3.2"
 tracing = "0.1"
 tracing-subscriber = {version = "0.3", features = ["env-filter"]}
+termsize = "0.1.6"
+comfy-table = "*"
 
 
 [target.'cfg(windows)'.dependencies]
@@ -86,7 +88,7 @@ scopeguard = "1.1"
 cacache = "9.0.0"
 
 [profile.release]
-opt-level = "s"
+opt-level = 3
 lto = "fat"
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = 'abort'
