@@ -34,13 +34,30 @@ fn truncate(s: &str, max_chars: usize) -> String {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct Objects {
+    objects: Vec<SearchResults>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SearchResults {
+    package: SearchResult,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SearchResult {
+    name: String,
+    version: String,
+    description: String,
+}
+
 pub struct Search {}
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct SearchData {
     pub name: String,
     pub version: String,
-    pub description: String,
+    pub description: Option<String>,
 }
 
 #[async_trait]
@@ -85,15 +102,17 @@ Options:
     async fn exec(app: Arc<App>) -> Result<()> {
         let query = app.args.value_of("query").unwrap();
 
-        let response =
-            isahc::get_async(format!("https://npmjs.com/search/suggestions?q={}", query))
-                .await
-                .unwrap()
-                .text()
-                .await
-                .unwrap();
+        let response = isahc::get_async(format!(
+            "https://registry.npmjs.org/-/v1/search?text={}&popularity=1.0",
+            query
+        ))
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap();
 
-        let s: Vec<SearchData> = serde_json::from_str(&response).unwrap();
+        let s: Objects = serde_json::from_str(&response).unwrap();
 
         let mut table = Table::new();
 
@@ -103,8 +122,12 @@ Options:
             "Description".bright_green().bold()
         ]);
 
-        for i in s.iter() {
-            table.add_row(row![i.name, i.version, truncate(&i.description, 35)]);
+        for i in s.objects.iter() {
+            table.add_row(row![
+                i.package.name,
+                i.package.version,
+                truncate(&i.package.description, 35)
+            ]);
         }
 
         table.printstd();
