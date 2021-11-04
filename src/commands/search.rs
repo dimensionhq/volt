@@ -20,7 +20,10 @@ use crate::{core::VERSION, App, Command};
 
 use async_trait::async_trait;
 use colored::Colorize;
-use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, ContentArrangement, Table};
+use comfy_table::{
+    modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement,
+    Table,
+};
 use isahc::AsyncReadResponseExt;
 use miette::Result;
 use serde::{Deserialize, Serialize};
@@ -115,16 +118,26 @@ Options:
             .set_content_arrangement(ContentArrangement::Dynamic);
 
         table.set_header(vec![
-            "Name".bright_green().bold(),
-            "Version".bright_green().bold(),
-            "Description".bright_green().bold(),
+            Cell::new("Name")
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold),
+            Cell::new("Version")
+                .fg(Color::Blue)
+                .add_attribute(Attribute::Bold),
+            Cell::new("Description")
+                .fg(Color::Yellow)
+                .add_attribute(Attribute::Bold),
         ]);
 
         for i in s.objects.iter() {
             table.add_row(vec![
-                &i.package.name,
-                &i.package.version,
-                &i.package.description,
+                Cell::new(&i.package.name),
+                Cell::new(&i.package.version),
+                Cell::new(
+                    &i.package
+                        .description
+                        .replace(query, &query.bright_cyan().underline().to_string()),
+                ),
             ]);
         }
 
