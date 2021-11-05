@@ -466,13 +466,14 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
             // Create node_modules
             create_dir_all(&app.node_modules_dir).await.unwrap();
 
+            // let node_modules_dep_path = app.node_modules_dir.join(&package.name);
+            let node_modules_dep_path = app.node_modules_dir.clone();
+
             // Initialize tarfile decoder while directly passing in bytes
 
             let bytes = Arc::new(bytes);
 
             let bytes_ref = bytes.clone();
-
-            let node_modules_dep_path_instance = app.node_modules_dir.clone();
 
             futures::try_join!(
                 tokio::task::spawn_blocking(move || {
@@ -492,12 +493,21 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
                                 new_path.push(component)
                             }
                         }
-                        println!("{}", new_path.display());
-                        match entry
-                            .unpack(node_modules_dep_path_instance.to_path_buf().join(&new_path))
-                        {
+
+                        std::fs::create_dir_all(
+                            node_modules_dep_path
+                                .to_path_buf()
+                                .join(&new_path)
+                                .parent()
+                                .unwrap(),
+                        )
+                        .unwrap();
+
+                        match entry.unpack(node_modules_dep_path.to_path_buf().join(&new_path)) {
                             Ok(_v) => {}
-                            Err(_err) => {}
+                            Err(err) => {
+                                println!("{:?}", err);
+                            }
                         }
                     }
                 }),
