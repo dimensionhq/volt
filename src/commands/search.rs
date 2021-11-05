@@ -20,19 +20,15 @@ use crate::{core::VERSION, App, Command};
 
 use async_trait::async_trait;
 use colored::Colorize;
+use comfy_table::{
+    modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement,
+    Table,
+};
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use prettytable::{cell, row, Table};
 use serde::{Deserialize, Serialize};
 
 use std::sync::Arc;
-
-fn truncate(s: &str, max_chars: usize) -> String {
-    match s.char_indices().nth(max_chars) {
-        None => s.to_string(),
-        Some((idx, _)) => (s[..idx].to_owned() + "..."),
-    }
-}
 
 #[derive(Serialize, Deserialize)]
 pub struct Objects {
@@ -116,21 +112,36 @@ Options:
 
         let mut table = Table::new();
 
-        table.add_row(row![
-            "Name".bright_green().bold(),
-            "Version".bright_green().bold(),
-            "Description".bright_green().bold()
+        table
+            .load_preset(UTF8_FULL)
+            .apply_modifier(UTF8_ROUND_CORNERS)
+            .set_content_arrangement(ContentArrangement::Dynamic);
+
+        table.set_header(vec![
+            Cell::new("Name")
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold),
+            Cell::new("Version")
+                .fg(Color::Blue)
+                .add_attribute(Attribute::Bold),
+            Cell::new("Description")
+                .fg(Color::Yellow)
+                .add_attribute(Attribute::Bold),
         ]);
 
         for i in s.objects.iter() {
-            table.add_row(row![
-                i.package.name,
-                i.package.version,
-                truncate(&i.package.description, 35)
+            table.add_row(vec![
+                Cell::new(&i.package.name),
+                Cell::new(&i.package.version),
+                Cell::new(
+                    &i.package
+                        .description
+                        .replace(query, &query.bright_cyan().underline().to_string()),
+                ),
             ]);
         }
 
-        table.printstd();
+        println!("{}", table);
 
         Ok(())
     }
