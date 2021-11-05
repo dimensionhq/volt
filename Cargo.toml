@@ -53,20 +53,16 @@ sha-1 = "0.9"
 sha2 = "0.9.5"
 ssri = "7.0.0"
 structopt = "0.3"
-syntect = "4.5.0"
 tar = "0.4"
-termimad = "0.16.0"
 thiserror = "1.0"
 tokio = { version = "1.10.0", features = ["fs", "macros", "rt-multi-thread"] }
 minifier = "0.0.41"
 fs_extra = "1.2.0"
 webbrowser = "0.5.5"
 serde_yaml = "0.8.21"
-chrono = { version = "0.4.19", features = ["serde"] }
 tempfile = "3.2"
 tracing = "0.1"
 tracing-subscriber = {version = "0.3", features = ["env-filter"]}
-termsize = "0.1.6"
 comfy-table = "*"
 
 
