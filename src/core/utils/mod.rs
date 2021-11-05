@@ -428,18 +428,21 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
         }
     }
 
-    // location of extracted package
-    let loc = app
-        .volt_dir
-        .join(format!("{}-{}", &package_name, &package_version));
-
     let client = reqwest::ClientBuilder::new()
         .use_rustls_tls()
         .build()
         .unwrap();
 
+    let existing_check = cacache::read_sync(
+        &extract_directory,
+        format!(
+            "pkg::{}::{}::{}",
+            &package_name, &package_version, package.integrity
+        ),
+    );
+
     // if package is not already installed
-    if !Path::new(&loc).exists() {
+    if existing_check.is_err() {
         // Tarball bytes response
         let bytes: bytes::Bytes = client
             .get(package_instance.tarball)
@@ -518,17 +521,6 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
 
                     for entry in archive.entries().unwrap() {
                         let mut entry = entry.unwrap();
-                        // let path = entry.path().unwrap();
-                        // let mut new_path = PathBuf::new();
-
-                        // for component in path.components() {
-                        //     if component.as_os_str() == "package" {
-                        //         new_path.push(Component::Normal(OsStr::new(&pkg_name_instance)));
-                        //     } else {
-                        //         new_path.push(component)
-                        //     }
-                        // }
-
                         let mut buffer = vec![];
 
                         entry.read_to_end(&mut buffer).unwrap();
@@ -551,17 +543,9 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
         }
     } else {
         // package is already downloaded and extracted to the ~/.volt folder.
+        let _buf = existing_check.unwrap();
 
-        let buf = cacache::read_sync(
-            extract_directory,
-            format!(
-                "pkg::{}::{}::{}",
-                &package_name, &package_version, package.integrity
-            ),
-        )
-        .unwrap();
-
-        println!("{}", String::from_utf8(buf).unwrap());
+        // println!("{}", String::from_utf8(buf).unwrap());
     }
 
     Ok(())
