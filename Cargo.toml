@@ -86,4 +86,3 @@ cacache = "9.0.0"
 opt-level = 3
 lto = "fat"
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
-panic = 'abort'
