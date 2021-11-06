@@ -6277,8 +6277,8 @@ impl Command for Login {
                     println!("\n{}: your password matches one of npm's unacceptable passwords (https://www.npmjs.com/signup/common-passwords).\nFor more details, check out https://docs.npmjs.com/creating-a-strong-password\n",
                         " ERROR ".black().on_bright_red(),
                     );
-                    continue;
                 }
+                continue;
             }
         }
 
