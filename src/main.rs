@@ -23,6 +23,7 @@ use crate::core::{command::Command, utils::app::App};
 
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
+use commands::login::Login;
 use commands::search::Search;
 use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
 use tracing::{self, Level};
@@ -56,6 +57,10 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
         Some(("search", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Search::exec(app).await
+        }
+        Some(("login", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Login::exec(app).await
         }
         Some(("node", args)) => Node::download(args).await,
         _ => Ok(()),
@@ -127,6 +132,12 @@ Commands:
         "{} search {} {}",
         "volt".bright_green().bold(),
         "<query>".bright_cyan().bold(),
+        "[flags]".bright_blue(),
+    );
+
+    let login_usage = format!(
+        "{} login {}",
+        "volt".bright_green().bold(),
         "[flags]".bright_blue(),
     );
 
@@ -217,6 +228,12 @@ Commands:
                         .about("The search query string")
                         .required(true),
                 ),
+        )
+        .subcommand(
+            clap::App::new("login")
+                .about("Login to the npm registry.")
+                .override_help("hi")
+                .override_usage(login_usage.as_str()),
         );
 
     let matches = app.get_matches();
