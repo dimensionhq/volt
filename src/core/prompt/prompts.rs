@@ -218,7 +218,7 @@ impl Select {
 
         input
             .with_prompt(&self.message)
-            .paged(self.paged)
+            //.paged(self.paged)
             .items(&self.items);
         if self.selected.is_some() {
             input.default(self.selected.unwrap() - 1);
