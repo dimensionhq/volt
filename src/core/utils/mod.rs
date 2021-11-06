@@ -519,22 +519,32 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
 
                     let mut archive = Archive::new(gz_decoder);
 
+                    let mut cas_file_map: HashMap<String, String> = HashMap::new();
+
                     for entry in archive.entries().unwrap() {
                         let mut entry = entry.unwrap();
                         let mut buffer = vec![];
 
                         entry.read_to_end(&mut buffer).unwrap();
 
-                        cacache::write_sync(
-                            extract_directory.clone(),
-                            format!(
-                                "pkg::{}::{}::{}",
-                                &package_name, &package_version, package.integrity
-                            ),
-                            &buffer,
-                        )
-                        .unwrap();
+                        let sri =
+                            cacache::write_hash_sync(extract_directory.clone(), &buffer).unwrap();
+
+                        cas_file_map.insert(
+                            entry.path().unwrap().to_str().unwrap().to_string(),
+                            sri.to_string(),
+                        );
                     }
+
+                    cacache::write_sync(
+                        extract_directory.clone(),
+                        format!(
+                            "pkg::{}::{}::{}",
+                            &package_name, &package_version, package.integrity
+                        ),
+                        serde_json::to_string(&cas_file_map).unwrap(),
+                    )
+                    .unwrap();
                 })
             )
             .unwrap();
@@ -543,9 +553,10 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
         }
     } else {
         // package is already downloaded and extracted to the ~/.volt folder.
-        let _buf = existing_check.unwrap();
+        let buf = existing_check.unwrap();
 
-        // println!("{}", String::from_utf8(buf).unwrap());
+        println!("{}", String::from_utf8(buf).unwrap());
+        std::process::exit(1);
     }
 
     Ok(())
