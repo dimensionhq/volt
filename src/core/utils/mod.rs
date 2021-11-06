@@ -519,7 +519,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
 
                     let mut archive = Archive::new(gz_decoder);
 
-                    let mut cas_file_map: HashMap<String, String> = HashMap::new();
+                    let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
 
                     for entry in archive.entries().unwrap() {
                         let mut entry = entry.unwrap();
@@ -530,10 +530,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
                         let sri =
                             cacache::write_hash_sync(extract_directory.clone(), &buffer).unwrap();
 
-                        cas_file_map.insert(
-                            entry.path().unwrap().to_str().unwrap().to_string(),
-                            sri.to_string(),
-                        );
+                        cas_file_map
+                            .insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
                     }
 
                     cacache::write_sync(
@@ -555,7 +553,24 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
         // package is already downloaded and extracted to the ~/.volt folder.
         let buf = existing_check.unwrap();
 
-        println!("{}", String::from_utf8(buf).unwrap());
+        let cas_file_map: HashMap<String, Integrity> =
+            serde_json::from_str(&String::from_utf8(buf).unwrap()).unwrap();
+
+        for item in cas_file_map.iter() {
+            let data =
+                String::from_utf8(cacache::read_hash_sync(&extract_directory, item.1).unwrap())
+                    .unwrap();
+
+            // generate node_modules path
+            let path = app.node_modules_dir.join(format!(
+                "{}/{}",
+                package.name,
+                item.0.strip_prefix("package/").unwrap()
+            ));
+
+            println!("{}", path.display());
+        }
+
         std::process::exit(1);
     }
 
