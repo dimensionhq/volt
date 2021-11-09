@@ -16,6 +16,7 @@
 
 //! Manage local node versions
 
+use std::path::Path;
 use std::str;
 use std::{fmt::Display, fs::File, io::Write};
 
@@ -24,6 +25,9 @@ use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
 use tempfile::tempdir;
+use tokio::fs;
+//use async_trait::async_trait;
+//use colored::Colorize;
 
 const PLATFORM: Os = if cfg!(target_os = "windows") {
     Os::Windows
@@ -81,7 +85,6 @@ enum Os {
     Linux,
     Unknown,
 }
-
 impl Display for Os {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let s = match &self {
@@ -207,6 +210,32 @@ async fn download_node_version(versions: Vec<&str>) {
             continue;
         }
 
+        let node_path = {
+            if PLATFORM == Os::Windows {
+                let homedir = dirs::home_dir().unwrap();
+                let node_path = format!("{}\\AppData\\Local\\Volt\\Node\\{}", homedir.display(), v);
+                println!("Will install under: {}", node_path);
+                fs::create_dir_all(&node_path).await.unwrap();
+
+                format!("{}\\node.exe", &node_path)
+            }
+            /*
+            else if (PLATFORM == Os::Linux) {
+            }
+            else if (PLATFORM == Os::Macos) {
+            }
+            */
+            else {
+                println!("OS not supported.");
+                continue;
+            }
+        };
+
+        if Path::new(&node_path).exists() {
+            println!("Node.js v{} is already installed!", v);
+            continue;
+        }
+
         println!("Installing version {}", v);
         let response = reqwest::get(&download_url).await.unwrap();
 
@@ -219,8 +248,8 @@ async fn download_node_version(versions: Vec<&str>) {
                 .unwrap();
 
             println!("file to download: '{}'", fname);
-            let fname = dir.path().join(fname);
-            File::create(fname).unwrap()
+            let _fname = dir.path().join(format!("{}", fname));
+            File::create(&node_path).unwrap()
         };
 
         let content = response.bytes().await.unwrap();

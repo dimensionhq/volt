@@ -18,12 +18,12 @@
 mod commands;
 mod core;
 
-use crate::commands::{add::*, node::*};
 use crate::core::{command::Command, utils::app::App};
-
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
+use commands::add::Add;
 use commands::login::Login;
+use commands::node::Node;
 use commands::search::Search;
 use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
 use tracing::{self, Level};
@@ -143,6 +143,12 @@ Commands:
 
     let discord_usage = format!("{} discord", "volt".bright_green().bold());
 
+    let compress_usage = format!(
+        "{} compress {}",
+        "volt".bright_green().bold(),
+        "[flags]".bright_blue(),
+    );
+
     let app = clap::App::new("volt")
         .version("1.0.0")
         .author("XtremeDevX <xtremedevx@gmail.com>")
@@ -159,6 +165,12 @@ Commands:
                         .multiple_values(true)
                         .required(true),
                 ),
+        )
+        .subcommand(
+            clap::App::new("clean")
+                .about("Optimizes your node_modules by removing redundant files and folders.")
+                .override_usage(clean_usage.as_str())
+                .arg(Arg::new("remove-licenses").long("remove-licenses")),
         )
         .subcommand(
             clap::App::new("clone")
@@ -178,13 +190,35 @@ Commands:
                 .arg(Arg::new("yes").short('y').about("Use default options")),
         )
         .subcommand(
-            clap::App::new("clean")
-                .about("Clean node_modules and reduce its size.")
-                .override_usage(clean_usage.as_str())
-                .arg(
-                    Arg::new("remove-licenses")
-                        .long("remove-licenses")
-                        .about("Remove licenses and default files"),
+            clap::App::new("compress")
+                .about("Interactively create and edit your package.json file.")
+                .override_usage(compress_usage.as_str()),
+        )
+        .subcommand(
+            clap::App::new("node")
+                .about("Manage node versions")
+                .subcommand(
+                    clap::App::new("use")
+                        .about("Switch current node version")
+                        .arg(Arg::new("version").about("version to use")),
+                )
+                .subcommand(
+                    clap::App::new("remove")
+                        .about("Uninstall a specified version of node")
+                        .arg(
+                            Arg::new("versions")
+                                .multiple_values(true)
+                                .about("version to remove"),
+                        ),
+                )
+                .subcommand(
+                    clap::App::new("install")
+                        .about("Install one or more versions of node")
+                        .arg(
+                            Arg::new("versions")
+                                .multiple_values(true)
+                                .about("version to install"),
+                        ),
                 ),
         )
         .subcommand(
