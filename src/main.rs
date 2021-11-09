@@ -18,7 +18,10 @@
 mod commands;
 mod core;
 
-use crate::commands::{add::*, node::*};
+use crate::commands::node::*;
+
+use crate::commands::add::*;
+use crate::commands::node::*;
 use crate::core::{command::Command, utils::app::App};
 
 use clap::{Arg, ArgMatches};
@@ -143,6 +146,12 @@ Commands:
 
     let discord_usage = format!("{} discord", "volt".bright_green().bold());
 
+    let compress_usage = format!(
+        "{} compress {}",
+        "volt".bright_green().bold(),
+        "[flags]".bright_blue(),
+    );
+
     let app = clap::App::new("volt")
         .version("1.0.0")
         .author("XtremeDevX <xtremedevx@gmail.com>")
@@ -178,13 +187,35 @@ Commands:
                 .arg(Arg::new("yes").short('y').about("Use default options")),
         )
         .subcommand(
-            clap::App::new("clean")
-                .about("Clean node_modules and reduce its size.")
-                .override_usage(clean_usage.as_str())
-                .arg(
-                    Arg::new("remove-licenses")
-                        .long("remove-licenses")
-                        .about("Remove licenses and default files"),
+            clap::App::new("compress")
+                .about("Interactively create and edit your package.json file.")
+                .override_usage(compress_usage.as_str()),
+        )
+        .subcommand(
+            clap::App::new("node")
+                .about("Manage node versions")
+                .subcommand(
+                    clap::App::new("use")
+                        .about("Switch current node version")
+                        .arg(Arg::new("version").about("version to use")),
+                )
+                .subcommand(
+                    clap::App::new("remove")
+                        .about("Uninstall a specified version of node")
+                        .arg(
+                            Arg::new("versions")
+                                .multiple_values(true)
+                                .about("version to remove"),
+                        ),
+                )
+                .subcommand(
+                    clap::App::new("install")
+                        .about("Install one or more versions of node")
+                        .arg(
+                            Arg::new("versions")
+                                .multiple_values(true)
+                                .about("version to install"),
+                        ),
                 ),
         )
         .subcommand(
