@@ -99,7 +99,7 @@ cargo test
 | Init     | 🏗️           |
 | Install  | 🏗️           |
 | List     | 🏗️           |
-| Login    | ❌           |
+| Login    | 🏗️           |
 | Logout   | ❌           |
 | Migrate  | 🏗️           |
 | Mod      | ❌           |
