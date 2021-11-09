@@ -123,7 +123,7 @@ impl Command for Add {
 
         // Fetch npm data including hash to fetch dependencies
         let data = npm::get_versions(&packages).await?;
-
+        println!("{:?}", data);
         // Fetch pre-flattened dependency trees from the registry
         let responses = fetch_dep_tree(&data, &progress_bar).await?;
 
@@ -146,9 +146,8 @@ impl Command for Add {
                     for dep in peer_deps {
                         if !crate::core::utils::check_peer_dependency(dep) {
                             println!(
-                                "{}{} {} has unmet peer dependency {}",
+                                "{}: {} has unmet peer dependency {}",
                                 "warn".bright_yellow(),
-                                ":",
                                 object.name.bright_cyan(),
                                 &dep.bright_yellow()
                             );
@@ -202,6 +201,7 @@ impl Command for Add {
             }
         }
 
+        // Create progress bar for package installation
         let progress_bar = ProgressBar::new(dependencies.len() as u64);
 
         progress_bar.set_style(
@@ -213,6 +213,7 @@ impl Command for Add {
                 )),
         );
 
+        // Remove duplicate dependencies
         dependencies.dedup();
 
         dependencies

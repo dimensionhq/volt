@@ -22,7 +22,6 @@ use colored::Colorize;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
 use indicatif::{HumanBytes, ProgressBar, ProgressStyle};
-use lazy_static::lazy_static;
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
@@ -33,92 +32,6 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-
-lazy_static! {
-    static ref REGEXES: Vec<Regex> = {
-        vec![
-            r"^.*/readme(?:.md|.txt|.markdown)?$",
-            r"^.*/readme.zh(?:.md|.txt|.markdown)?$",
-            r"^.*/.npmignore$",
-            r"^.*/yarn.lock$",
-            r"^.*/npm-lock.json$",
-            r"^.*/history(?:.md|.txt|.markdown)?$",
-            r"^.*/security(?:.md|.txt|.markdown)?$",
-            r"^.*/.gitattributes$",
-            r"^.*/.gitmodules$",
-            r"^.*/.prettierrc$",
-            r"^.*/.travis.yml$",
-            r"^.*/.binding.gyp$",
-            r"^.*/contributing(?:.md|.txt|.markdown)?$",
-            r"^.*/composer.json$",
-            r"^.*/makefile$",
-            r"^.*/gemfile$",
-            r"^.*/rakefile$",
-            r"^.*/.coveralls.yml$",
-            r"^.*/examples?/.*$",
-            r"^.*/changelog(?:.md|.txt|.markdown)?$",
-            r"^.*/changes(?:.md|.txt|.markdown)?$",
-            r"^.*/.jshintrc$",
-            r"^.*/bower.json$",
-            r"^.*/appveyor.yml$",
-            r"^.*/.*.log$",
-            r"^.*/.*.tlog$",
-            r"^.*/.*.patch$",
-            r"^.*/.*.sln$",
-            r"^.*/.*.pdb$",
-            r"^.*/.*.vcxproj$",
-            r"^.*/.*.gitignore$",
-            r"^.*/.*.vimrc$",
-            r"^.*/.*.idea$",
-            r"^.*/samples?/.*$",
-            r"^.*/tests?/.*$",
-            r"^.*/testing/.*$",
-            r"^.*/.eslintrc$",
-            r"^.*/.jamignore$",
-            r"^.*/.jscsrc$",
-            r"^.*/.*.todo$",
-            r"^.*/.*.js.map$",
-            r"^.*/contributors(?:.md|.txt|.markdown)?$",
-            r"^.*/.*.orig$",
-            r"^.*/.*.rej$",
-            r"^.*/.zuul.yml$",
-            r"^.*/.editorconfig$",
-            r"^.*/.npmrc$",
-            r"^.*/.jshintignore$",
-            r"^.*/.eslintignore$",
-            r"^.*/.*.lint$",
-            r"^.*/.*.lintignore$",
-            r"^.*/cakefile$",
-            r"^.*/.istanbul.yml$",
-            r"^.*/mocha.opts$",
-            r"^.*/.*.gradle$",
-            r"^.*/.*.tern-port$",
-            r"^.*/.gitkeep$",
-            r"^.*/.dntrc$",
-            r"^.*/.*.watchr$",
-            r"^.*/.jsbeautifyrc$",
-            r"^.*/cname$",
-            r"^.*/screenshots?/.*$",
-            r"^.*/.dir-locals.el$",
-            r"^.*/jsl.conf$",
-            r"^.*/jsstyle$",
-            r"^.*/benchmarks?/.*$",
-            r"^.*/dockerfile$",
-            r"^.*/.*.nuspec$",
-            r"^.*/.*.csproj$",
-            r"^.*/.*.md$",
-            r"^.*/thumbs.db$",
-            r"^.*/.ds_store$",
-            r"^.*/desktop.ini$",
-            r"^.*/npm-debug.log$",
-            r"^.*/.wercker.yml$",
-            r"^.*/.flowconfig$",
-        ]
-        .into_iter()
-        .map(|v| Regex::new(v).unwrap())
-        .collect()
-    };
-}
 
 pub struct Clean {}
 
@@ -153,11 +66,11 @@ impl Command for Clean {
     fn help() -> String {
         format!(
             r#"volt {}
-    
+
 Clean ./node_modules and reduce its size.
 Usage: {} {} {} {}
-Options: 
-    
+Options:
+
   {} {} Output verbose messages on internal operations.
   {} {} Disable progress bar."#,
             VERSION.bright_green().bold(),
@@ -185,7 +98,96 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
+        let mut regexes: Vec<Regex> = {
+            vec![
+                r"^.*/readme(?:.md|.txt|.markdown)?$",
+                r"^.*/.npmignore$",
+                r"^.*/yarn.lock$",
+                r"^.*/npm-lock.json$",
+                r"^.*/history(?:.md|.txt|.markdown)?$",
+                r"^.*/security(?:.md|.txt|.markdown)?$",
+                r"^.*/.gitattributes$",
+                r"^.*/.gitmodules$",
+                r"^.*/.prettierrc$",
+                r"^.*/.travis.yml$",
+                r"^.*/.binding.gyp$",
+                r"^.*/contributing(?:.md|.txt|.markdown)?$",
+                r"^.*/composer.json$",
+                r"^.*/makefile$",
+                r"^.*/gemfile$",
+                r"^.*/rakefile$",
+                r"^.*/.coveralls.yml$",
+                r"^.*/examples?/.*$",
+                r"^.*/changelog(?:.md|.txt|.markdown)?$",
+                r"^.*/changes(?:.md|.txt|.markdown)?$",
+                r"^.*/.jshintrc$",
+                r"^.*/bower.json$",
+                r"^.*/appveyor.yml$",
+                r"^.*/.*.log$",
+                r"^.*/.*.tlog$",
+                r"^.*/.*.patch$",
+                r"^.*/.*.sln$",
+                r"^.*/.*.pdb$",
+                r"^.*/.*.vcxproj$",
+                r"^.*/.*.gitignore$",
+                r"^.*/.*.vimrc$",
+                r"^.*/.*.idea$",
+                r"^.*/samples?/.*$",
+                r"^.*/tests?/.*$",
+                r"^.*/testing/.*$",
+                r"^.*/.eslintrc$",
+                r"^.*/.jamignore$",
+                r"^.*/.jscsrc$",
+                r"^.*/.*.todo$",
+                r"^.*/.*.js.map$",
+                r"^.*/contributors(?:.md|.txt|.markdown)?$",
+                r"^.*/.*.orig$",
+                r"^.*/.*.rej$",
+                r"^.*/.zuul.yml$",
+                r"^.*/.editorconfig$",
+                r"^.*/.npmrc$",
+                r"^.*/.jshintignore$",
+                r"^.*/.eslintignore$",
+                r"^.*/.*.lint$",
+                r"^.*/.*.lintignore$",
+                r"^.*/cakefile$",
+                r"^.*/.istanbul.yml$",
+                r"^.*/mocha.opts$",
+                r"^.*/.*.gradle$",
+                r"^.*/.*.tern-port$",
+                r"^.*/.gitkeep$",
+                r"^.*/.dntrc$",
+                r"^.*/.*.watchr$",
+                r"^.*/.jsbeautifyrc$",
+                r"^.*/cname$",
+                r"^.*/screenshots?/.*$",
+                r"^.*/.dir-locals.el$",
+                r"^.*/jsl.conf$",
+                r"^.*/jsstyle$",
+                r"^.*/benchmarks?/.*$",
+                r"^.*/dockerfile$",
+                r"^.*/.*.nuspec$",
+                r"^.*/.*.csproj$",
+                r"^.*/.*.md$",
+                r"^.*/thumbs.db$",
+                r"^.*/.ds_store$",
+                r"^.*/desktop.ini$",
+                r"^.*/npm-debug.log$",
+                r"^.*/.wercker.yml$",
+                r"^.*/.flowconfig$",
+            ]
+            .into_iter()
+            .map(|v| Regex::new(v).unwrap())
+            .collect()
+        };
+
+        // Append the LICENSE regexes if the flag is specified
+        if app.has_flag("remove-licenses") {
+            // push a new regex into my REGEXES static var
+            regexes.push(Regex::new(r"^.*/license(?:.md|.txt|.markdown)?$").unwrap())
+        }
+
         let mut matches: Vec<PathBuf> = vec![];
         let mut minify_files: Vec<PathBuf> = vec![];
         let mut node_modules_contents: Vec<PathBuf> = vec![];
@@ -200,8 +202,12 @@ Options:
             node_modules_contents.push(path.clone());
         }
 
+        let regexes = Arc::new(regexes);
+
         for chunks in node_modules_contents.chunks(150) {
             let chunk = chunks.to_vec();
+
+            let regexes = regexes.clone();
 
             workers.push(tokio::task::spawn_blocking(move || {
                 let mut regex_matches = vec![];
@@ -220,11 +226,7 @@ Options:
 
                     let mut has_match = false;
 
-                    for regex in REGEXES.iter() {
-                        if path_str.contains("npmignore") {
-                            println!("{}", path_str);
-                        }
-
+                    for regex in regexes.iter() {
                         if regex.is_match(&path_str) {
                             regex_matches.push(path.clone());
                             has_match = true;

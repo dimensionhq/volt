@@ -32,7 +32,7 @@ impl Command for Help {
     fn help() -> String {
         format!(
             r#"volt {}
-    
+
 Displays help information.
 
 Usage: {} {} {}

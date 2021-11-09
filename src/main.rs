@@ -1,18 +1,19 @@
 /*
-    Copyright 2021 Volt Contributors
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+ *
+ *    Copyright 2021 Volt Contributors
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
 
 mod commands;
 mod core;
@@ -25,8 +26,13 @@ use crate::core::{command::Command, utils::app::App};
 
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
+use commands::login::Login;
+use commands::search::Search;
 use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
+use tracing::{self, Level};
+use tracing_subscriber::filter::EnvFilter;
 
+use std::str::FromStr;
 use std::{sync::Arc, time::Instant};
 
 pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
@@ -51,6 +57,14 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
             let app = Arc::new(App::initialize(args)?);
             Discord::exec(app).await
         }
+        Some(("search", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Search::exec(app).await
+        }
+        Some(("login", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Login::exec(app).await
+        }
         Some(("node", args)) => Node::download(args).await,
         _ => Ok(()),
     }
@@ -58,20 +72,29 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
 
 #[tokio::main]
 async fn main() -> miette::Result<()> {
+    tracing_subscriber::fmt()
+        .with_max_level(Level::TRACE)
+        .with_env_filter(
+            EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::from_str("volt=info").unwrap()),
+        )
+        .without_time()
+        .init();
+
     let start = Instant::now();
     let volt_help = format!(
         r#"{} {}
 
-        Usage: {} [{}] [{}]
+Usage: {} [{}] [{}]
 
-        Displays help information.
+Displays help information.
 
-        Commands:
-        {} add
-        {} audit
-        {} cache
-        {} check
-        {} clean"#,
+Commands:
+  {} add
+  {} audit
+  {} cache
+  {} check
+  {} clean"#,
         "volt".bright_green().bold(),
         "1.0.0",
         "volt".bright_green().bold(),
@@ -97,13 +120,26 @@ async fn main() -> miette::Result<()> {
     );
 
     let clean_usage = format!(
-        "{} compress {}",
+        "{} clean {}",
         "volt".bright_green().bold(),
         "[flags]".bright_blue(),
     );
 
     let clone_usage = format!(
         "{} clone {}",
+        "volt".bright_green().bold(),
+        "[flags]".bright_blue(),
+    );
+
+    let search_usage = format!(
+        "{} search {} {}",
+        "volt".bright_green().bold(),
+        "<query>".bright_cyan().bold(),
+        "[flags]".bright_blue(),
+    );
+
+    let login_usage = format!(
+        "{} login {}",
         "volt".bright_green().bold(),
         "[flags]".bright_blue(),
     );
@@ -213,6 +249,22 @@ async fn main() -> miette::Result<()> {
             clap::App::new("discord")
                 .about("Join the official volt discord server.")
                 .override_usage(discord_usage.as_str()),
+        )
+        .subcommand(
+            clap::App::new("search")
+                .about("Search for a package.")
+                .override_usage(search_usage.as_str())
+                .arg(
+                    Arg::new("query")
+                        .about("The search query string")
+                        .required(true),
+                ),
+        )
+        .subcommand(
+            clap::App::new("login")
+                .about("Login to the npm registry.")
+                .override_help("hi")
+                .override_usage(login_usage.as_str()),
         );
 
     let matches = app.get_matches();
