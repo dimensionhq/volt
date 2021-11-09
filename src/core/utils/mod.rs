@@ -557,9 +557,9 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
             serde_json::from_str(&String::from_utf8(buf).unwrap()).unwrap();
 
         for item in cas_file_map.iter() {
-            let data =
-                String::from_utf8(cacache::read_hash_sync(&extract_directory, item.1).unwrap())
-                    .unwrap();
+            let contents = cacache::read_hash_sync(&extract_directory, item.1).unwrap();
+
+            let data = String::from_utf8(contents).unwrap();
 
             // generate node_modules path
             let path = app.node_modules_dir.join(format!(
@@ -568,10 +568,11 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
                 item.0.strip_prefix("package/").unwrap()
             ));
 
-            println!("{}", path.display());
-        }
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
 
-        std::process::exit(1);
+            let mut file = File::create(path).unwrap();
+            file.write_all(data.as_bytes()).unwrap();
+        }
     }
 
     Ok(())
