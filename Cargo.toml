@@ -32,8 +32,13 @@ lazy_static = "1.4.0"
 miette = { version = "3.2.0", features = ["fancy"] }
 rand = "0.8.4"
 regex = "1.5.4"
-reqwest = { version = "0.11.6", features = ["blocking", "json", "rustls-tls", "brotli"], default-features = false }
-rslint_cli = "0.3.1"
+reqwest = { version = "0.11.4", features = [
+  "blocking",
+  "json",
+  "rustls-tls",
+  "brotli",
+], default-features = false }
+rslint_cli = "0.3.0"
 rslint_config = "0.2.0"
 rslint_core = "0.3.0"
 rslint_errors = "0.2.0"
@@ -69,15 +74,15 @@ comfy-table = "4.1.1"
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = [
   "errhandlingapi",
-    "fileapi",
-    "guiddef",
-    "handleapi",
-    "ioapiset",
-    "processthreadsapi",
-    "securitybaseapi",
-    "winbase",
-    "winioctl",
-    "winnt",
+  "fileapi",
+  "guiddef",
+  "handleapi",
+  "ioapiset",
+  "processthreadsapi",
+  "securitybaseapi",
+  "winbase",
+  "winioctl",
+  "winnt",
 ] }
 scopeguard = "1.1.0"
 cacache = "9.0.0"
