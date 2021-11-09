@@ -18,15 +18,12 @@
 mod commands;
 mod core;
 
-use crate::commands::node::*;
-
-use crate::commands::add::*;
-use crate::commands::node::*;
 use crate::core::{command::Command, utils::app::App};
-
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
+use commands::add::Add;
 use commands::login::Login;
+use commands::node::Node;
 use commands::search::Search;
 use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
 use tracing::{self, Level};
@@ -168,6 +165,12 @@ Commands:
                         .multiple_values(true)
                         .required(true),
                 ),
+        )
+        .subcommand(
+            clap::App::new("clean")
+                .about("Optimizes your node_modules by removing redundant files and folders.")
+                .override_usage(clean_usage.as_str())
+                .arg(Arg::new("remove-licenses").long("remove-licenses")),
         )
         .subcommand(
             clap::App::new("clone")

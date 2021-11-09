@@ -211,7 +211,7 @@ async fn download_node_version(versions: Vec<&str>) {
         }
 
         let node_path = {
-            if (PLATFORM == Os::Windows) {
+            if PLATFORM == Os::Windows {
                 let homedir = dirs::home_dir().unwrap();
                 let node_path = format!("{}\\AppData\\Local\\Volt\\Node\\{}", homedir.display(), v);
                 println!("Will install under: {}", node_path);
@@ -248,7 +248,7 @@ async fn download_node_version(versions: Vec<&str>) {
                 .unwrap();
 
             println!("file to download: '{}'", fname);
-            let fname = dir.path().join(format!("{}", fname));
+            let _fname = dir.path().join(format!("{}", fname));
             File::create(&node_path).unwrap()
         };
 

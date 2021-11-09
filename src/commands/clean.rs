@@ -87,7 +87,7 @@ Options:
 
     /// Execute the `volt clean` command
     ///
-    /// Clean node_modules into node_modules.pack.
+    /// Clean node_modules and removes redundant files.
     /// ## Arguments
     /// * `app` - Instance of the command (`Arc<App>`)
     /// ## Examples
