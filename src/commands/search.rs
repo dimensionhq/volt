@@ -133,7 +133,7 @@ Options:
             table.add_row(vec![
                 Cell::new(&i.package.name),
                 Cell::new(&i.package.version),
-                Cell::new(&i.package.description.replace(query, &query.bright_cyan())),
+                Cell::new(&i.package.description),
             ]);
         }
 
