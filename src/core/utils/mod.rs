@@ -32,13 +32,12 @@ use app::App;
 use colored::Colorize;
 use errors::VoltError;
 use flate2::read::GzDecoder;
-use fs_extra::dir::CopyOptions;
 use futures_util::{stream::FuturesUnordered, StreamExt};
 use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use reqwest::{Client, StatusCode};
+use reqwest::StatusCode;
 use ssri::{Algorithm, Integrity};
 use tar::Archive;
 use tokio::fs::create_dir_all;
@@ -408,18 +407,42 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
         }
     }
 
-    // location of extracted package
-    let loc = app
-        .volt_dir
-        .join(format!("{}-{}", &package_name, &package_version));
+    // Directory to extract tarball to
+    let mut extract_directory = PathBuf::from(&app.volt_dir);
+
+    // @types/eslint
+    if package.clone().name.starts_with('@') && package.clone().name.contains('/') {
+        if cfg!(target_os = "windows") {
+            let name = package.clone().name.replace('/', r"\");
+
+            let split = name.split('\\').collect::<Vec<&str>>();
+
+            // C:\Users\xtrem\.volt\@types
+            extract_directory = extract_directory.join(split[0]);
+        } else {
+            let name = package.clone().name;
+            let split = name.split('/').collect::<Vec<&str>>();
+
+            // ~/.volt/@types
+            extract_directory = extract_directory.join(split[0]);
+        }
+    }
 
     let client = reqwest::ClientBuilder::new()
         .use_rustls_tls()
         .build()
         .unwrap();
 
+    let existing_check = cacache::read_sync(
+        &extract_directory,
+        format!(
+            "pkg::{}::{}::{}",
+            &package_name, &package_version, package.integrity
+        ),
+    );
+
     // if package is not already installed
-    if !Path::new(&loc).exists() {
+    if existing_check.is_err() {
         // Tarball bytes response
         let bytes: bytes::Bytes = client
             .get(package_instance.tarball)
@@ -446,29 +469,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
             // Create node_modules
             create_dir_all(&app.node_modules_dir).await.unwrap();
 
-            // Directory to extract tarball to
-            let mut extract_directory = PathBuf::from(&app.volt_dir);
-
-            // @types/eslint
-            if package.clone().name.starts_with('@') && package.clone().name.contains('/') {
-                if cfg!(target_os = "windows") {
-                    let name = package.clone().name.replace('/', r"\");
-
-                    let split = name.split('\\').collect::<Vec<&str>>();
-
-                    // C:\Users\xtrem\.volt\@types
-                    extract_directory = extract_directory.join(split[0]);
-                } else {
-                    let name = package.clone().name;
-                    let split = name.split('/').collect::<Vec<&str>>();
-
-                    // ~/.volt/@types
-                    extract_directory = extract_directory.join(split[0]);
-                }
-            }
-
-            extract_directory =
-                extract_directory.join(format!("{}-{}", &package_name, &package_version,));
+            // let node_modules_dep_path = app.node_modules_dir.join(&package.name);
+            let node_modules_dep_path = app.node_modules_dir.clone();
 
             // Initialize tarfile decoder while directly passing in bytes
 
@@ -476,12 +478,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
 
             let bytes_ref = bytes.clone();
 
-            let node_modules_dep_path_instance = app.node_modules_dir.clone();
-
             futures::try_join!(
                 tokio::task::spawn_blocking(move || {
-                    // Extract the data into extract_directory
-
                     let node_gz_decoder = GzDecoder::new(&**bytes_ref);
 
                     let mut node_archive = Archive::new(node_gz_decoder);
@@ -499,11 +497,20 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
                             }
                         }
 
-                        match entry
-                            .unpack(node_modules_dep_path_instance.to_path_buf().join(&new_path))
-                        {
+                        std::fs::create_dir_all(
+                            node_modules_dep_path
+                                .to_path_buf()
+                                .join(&new_path)
+                                .parent()
+                                .unwrap(),
+                        )
+                        .unwrap();
+
+                        match entry.unpack(node_modules_dep_path.to_path_buf().join(&new_path)) {
                             Ok(_v) => {}
-                            Err(_err) => {}
+                            Err(err) => {
+                                println!("{:?}", err);
+                            }
                         }
                     }
                 }),
@@ -512,30 +519,30 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
 
                     let mut archive = Archive::new(gz_decoder);
 
+                    let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
+
                     for entry in archive.entries().unwrap() {
                         let mut entry = entry.unwrap();
-                        // let path = entry.path().unwrap();
-                        // let mut new_path = PathBuf::new();
-
-                        // for component in path.components() {
-                        //     if component.as_os_str() == "package" {
-                        //         new_path.push(Component::Normal(OsStr::new(&pkg_name_instance)));
-                        //     } else {
-                        //         new_path.push(component)
-                        //     }
-                        // }
-
                         let mut buffer = vec![];
 
                         entry.read_to_end(&mut buffer).unwrap();
 
-                        let sri = cacache::write_sync(
-                            extract_directory.clone(),
-                            format!("pkg::{}::{}", &package_name, &package_version),
-                            &buffer,
-                        )
-                        .unwrap();
+                        let sri =
+                            cacache::write_hash_sync(extract_directory.clone(), &buffer).unwrap();
+
+                        cas_file_map
+                            .insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
                     }
+
+                    cacache::write_sync(
+                        extract_directory.clone(),
+                        format!(
+                            "pkg::{}::{}::{}",
+                            &package_name, &package_version, package.integrity
+                        ),
+                        serde_json::to_string(&cas_file_map).unwrap(),
+                    )
+                    .unwrap();
                 })
             )
             .unwrap();
@@ -544,9 +551,27 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
         }
     } else {
         // package is already downloaded and extracted to the ~/.volt folder.
-        let node_modules_path = Path::new("node_modules/").join(package_instance.name);
+        let buf = existing_check.unwrap();
 
-        fs_extra::dir::copy(loc, node_modules_path, &CopyOptions::new()).unwrap();
+        let cas_file_map: HashMap<String, Integrity> =
+            serde_json::from_str(&String::from_utf8(buf).unwrap()).unwrap();
+
+        for item in cas_file_map.iter() {
+            let data =
+                String::from_utf8(cacache::read_hash_sync(&extract_directory, item.1).unwrap())
+                    .unwrap();
+
+            // generate node_modules path
+            let path = app.node_modules_dir.join(format!(
+                "{}/{}",
+                package.name,
+                item.0.strip_prefix("package/").unwrap()
+            ));
+
+            println!("{}", path.display());
+        }
+
+        std::process::exit(1);
     }
 
     Ok(())

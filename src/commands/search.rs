@@ -20,17 +20,32 @@ use crate::{core::VERSION, App, Command};
 
 use async_trait::async_trait;
 use colored::Colorize;
+use comfy_table::{
+    modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement,
+    Table,
+};
+use isahc::AsyncReadResponseExt;
 use miette::Result;
 use serde::{Deserialize, Serialize};
 
 use std::sync::Arc;
 
-// fn truncate(s: &str, max_chars: usize) -> String {
-//     match s.char_indices().nth(max_chars) {
-//         None => s.to_string(),
-//         Some((idx, _)) => (s[..idx].to_owned() + "...").to_string(),
-//     }
-// }
+#[derive(Serialize, Deserialize)]
+pub struct Objects {
+    objects: Vec<SearchResults>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SearchResults {
+    package: SearchResult,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SearchResult {
+    name: String,
+    version: String,
+    description: String,
+}
 
 pub struct Search {}
 
@@ -38,7 +53,7 @@ pub struct Search {}
 pub struct SearchData {
     pub name: String,
     pub version: String,
-    pub description: String,
+    pub description: Option<String>,
 }
 
 #[async_trait]
@@ -47,11 +62,11 @@ impl Command for Search {
         format!(
             r#"volt {}
 
-Searches for a package 
+Searches for a package
 
 Usage: {} {} {} {}
 
-Options: 
+Options:
 
   {} {} Output the version number.
   {} {} Output verbose messages on internal operations."#,
@@ -80,45 +95,54 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
-        // if app.args.len() >= 2 {
-        //     let package_name = &app.args[1];
+    async fn exec(app: Arc<App>) -> Result<()> {
+        let query = app.args.value_of("query").unwrap();
 
-        //     let response = isahc::get_async(format!(
-        //         "http://www.npmjs.com/search/suggestions?q={}",
-        //         package_name
-        //     ))
-        //     .await
-        //     .unwrap_or_else(|_| {
-        //         error!("package does not exist");
-        //         std::process::exit(1);
-        //     })
-        //     .text()
-        //     .await
-        //     .unwrap_or_else(|_| {
-        //         error!("package does not exist");
-        //         std::process::exit(1);
-        //     });
-        //     let s: Vec<SearchData> = serde_json::from_str(&response).unwrap_or_else(|e| {
-        //         error!("failed to parse response from server {}", e.to_string());
+        let response = isahc::get_async(format!(
+            "https://registry.npmjs.org/-/v1/search?text={}&popularity=1.0",
+            query
+        ))
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap();
 
-        //         std::process::exit(1);
-        //     });
+        let s: Objects = serde_json::from_str(&response).unwrap();
 
-        //     let mut table = Table::new();
-        //     table.add_row(row![
-        //         "Name".green().bold(),
-        //         "Version".green().bold(),
-        //         "Description".green().bold()
-        //     ]);
-        //     for i in s.iter() {
-        //         table.add_row(row![i.name, i.version, truncate(&i.description, 35)]);
-        //     }
-        //     table.printstd();
+        let mut table = Table::new();
 
-        //     // let u: SearchResp = s;
-        //     // panic!("{:#?}", s);
-        // }
+        table
+            .load_preset(UTF8_FULL)
+            .apply_modifier(UTF8_ROUND_CORNERS)
+            .set_content_arrangement(ContentArrangement::Dynamic);
+
+        table.set_header(vec![
+            Cell::new("Name")
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold),
+            Cell::new("Version")
+                .fg(Color::Blue)
+                .add_attribute(Attribute::Bold),
+            Cell::new("Description")
+                .fg(Color::Yellow)
+                .add_attribute(Attribute::Bold),
+        ]);
+
+        for i in s.objects.iter() {
+            table.add_row(vec![
+                Cell::new(&i.package.name),
+                Cell::new(&i.package.version),
+                Cell::new(
+                    &i.package
+                        .description
+                        .replace(query, &query.bright_cyan().underline().to_string()),
+                ),
+            ]);
+        }
+
+        println!("{}", table);
+
         Ok(())
     }
 }

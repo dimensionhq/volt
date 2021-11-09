@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">Volt</h1>
-<h4 align="center">Rapid, reliable and robust package management.</h4>
+<h4 align="center">Rapid, reliable and robust Javascript package management.</h4>
 <br>
 
 <p align="center">
@@ -99,9 +99,9 @@ cargo test
 | Init     | 🏗️           |
 | Install  | 🏗️           |
 | List     | 🏗️           |
-| Login    | ❌           |
+| Login    | 🏗️           |
 | Logout   | ❌           |
-| Migrate  | ❌           |
+| Migrate  | 🏗️           |
 | Mod      | ❌           |
 | Outdated | ❌           |
 | Owner    | ❌           |

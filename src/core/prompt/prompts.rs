@@ -44,7 +44,7 @@ impl Confirm {
             prompt_style: console::Style::new(),
             prompt_prefix: console::style(String::from("?")).yellow().bright(),
             prompt_suffix: console::style(String::from(">")).blue().dim(),
-            success_prefix: console::style(String::from("√")).green().bright(),
+            success_prefix: console::style(String::from("✔")).green().bright(),
             success_suffix: console::style(String::from("·")).blue().dim(),
             error_prefix: console::style(String::from("❌")).bright().red(),
             error_style: console::Style::new(),
@@ -52,7 +52,7 @@ impl Confirm {
             values_style: console::Style::new(),
             active_item_style: console::Style::new(),
             inactive_item_style: console::Style::new(),
-            active_item_prefix: console::style(String::from("√")).bright().green(),
+            active_item_prefix: console::style(String::from("✔")).bright().green(),
             inactive_item_prefix: console::style(String::from(" ")),
             checked_item_prefix: console::style(String::from("")),
             unchecked_item_prefix: console::style(String::from("")),
@@ -93,7 +93,7 @@ impl Input {
             prompt_style: console::Style::new(),
             prompt_prefix: console::style(String::from("?")).yellow().bright(),
             prompt_suffix: console::style(String::from(">")).blue().dim(),
-            success_prefix: console::style(String::from("√")).green().bright(),
+            success_prefix: console::style(String::from("✔")).green().bright(),
             success_suffix: console::style(String::from("·")).blue().dim(),
             error_prefix: console::style(String::from("❌")).bright().red(),
             error_style: console::Style::new(),
@@ -101,7 +101,7 @@ impl Input {
             values_style: console::Style::new(),
             active_item_style: console::Style::new(),
             inactive_item_style: console::Style::new(),
-            active_item_prefix: console::style(String::from("√")).bright().green(),
+            active_item_prefix: console::style(String::from("✔")).bright().green(),
             inactive_item_prefix: console::style(String::from(" ")),
             checked_item_prefix: console::style(String::from("")),
             unchecked_item_prefix: console::style(String::from("")),
@@ -197,7 +197,7 @@ impl Select {
             prompt_style: console::Style::new().bold(),
             prompt_prefix: console::style(String::from("?")).yellow().bright(),
             prompt_suffix: console::style(String::from(">")).blue().dim(),
-            success_prefix: console::style(String::from("√")).green().bright(),
+            success_prefix: console::style(String::from("✔")).green().bright(),
             success_suffix: console::style(String::from("·")).blue().dim(),
             error_prefix: console::style(String::from("❌")).bright().red(),
             error_style: console::Style::new(),
@@ -205,7 +205,7 @@ impl Select {
             values_style: console::Style::new(),
             active_item_style: console::Style::new(),
             inactive_item_style: console::Style::new(),
-            active_item_prefix: console::style(String::from("√")).bright().green(),
+            active_item_prefix: console::style(String::from("✔")).bright().green(),
             inactive_item_prefix: console::style(String::from(" ")),
             checked_item_prefix: console::style(String::from("")),
             unchecked_item_prefix: console::style(String::from("")),
@@ -218,7 +218,7 @@ impl Select {
 
         input
             .with_prompt(&self.message)
-            .paged(self.paged)
+            //.paged(self.paged)
             .items(&self.items);
         if self.selected.is_some() {
             input.default(self.selected.unwrap() - 1);
