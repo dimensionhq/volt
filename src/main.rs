@@ -266,7 +266,7 @@ Commands:
         .subcommand(
             clap::App::new("login")
                 .about("Login to the npm registry.")
-                .override_help("hi")
+                .override_help("todo")
                 .override_usage(login_usage.as_str()),
         );
 
