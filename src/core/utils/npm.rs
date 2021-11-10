@@ -17,7 +17,9 @@ limitations under the License.
 use crate::commands::add::PackageInfo;
 use crate::core::utils::{constants::MAX_RETRIES, errors::VoltError, voltapi::VoltPackage};
 
+use futures::StreamExt;
 use futures::{stream::FuturesOrdered, TryStreamExt};
+use indicatif::ProgressBar;
 use isahc::{
     config::{Configurable, SslOption},
     http::StatusCode,
@@ -64,6 +66,7 @@ pub fn parse_versions(packages: &[String]) -> Result<Vec<PackageInfo>> {
 // Get version from NPM
 pub async fn get_version(
     package_info: PackageInfo,
+    progress_bar: &ProgressBar,
 ) -> Result<(PackageInfo, String, VoltPackage, bool)> {
     let mut retries = 0;
 
@@ -93,12 +96,15 @@ pub async fn get_version(
 
             match *response.status_mut() {
                 StatusCode::OK => {
+                    progress_bar.inc(1);
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
+                    progress_bar.inc(1);
 
                     match serde_json::from_str::<Value>(&text).unwrap()["dist-tags"]["latest"]
                         .as_str()
                     {
                         Some(latest) => {
+                            progress_bar.inc(1);
                             let num_deps;
 
                             match serde_json::from_str::<Value>(&text).unwrap()["versions"][latest]
@@ -236,6 +242,7 @@ pub async fn get_version(
             // .version_negotiation(VersionNegotiation::http11())
             .body("")
             .map_err(VoltError::RequestBuilderError)?;
+            progress_bar.inc(1);
 
             let mut response = client.send_async().await.unwrap_or_else(|e| {
                 println!("{}", e);
@@ -244,10 +251,13 @@ pub async fn get_version(
 
             match *response.status_mut() {
                 StatusCode::OK => {
+                    progress_bar.inc(1);
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
+                    progress_bar.inc(1);
 
                     match serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object() {
                         Some(value) => {
+                            progress_bar.inc(1);
                             let mut available_versions = value
                                 .keys()
                                 .filter_map(|k| Version::new(k).parse().ok())
@@ -534,12 +544,14 @@ pub async fn get_version(
 
 pub async fn get_versions(
     packages: &[PackageInfo],
+    bar: &ProgressBar,
 ) -> Result<Vec<(PackageInfo, String, VoltPackage, bool)>> {
     packages
         .to_owned()
         .into_iter()
-        .map(get_version)
+        .map(|v| get_version(v, bar))
         .collect::<FuturesOrdered<_>>()
+        // .inspect()
         .try_collect::<Vec<(PackageInfo, String, VoltPackage, bool)>>()
         .await
 }

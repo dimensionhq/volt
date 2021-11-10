@@ -6248,7 +6248,7 @@ impl Command for Login {
                 && !password.contains(&username.to_lowercase())
                 && !unacceptable_passwords.contains(&password.as_str())
                 && username.to_lowercase() == username
-                && urlencoding::encode(username.as_str()) == username
+                && encode(username.as_str()) == username
             {
                 // Continue Login
 
@@ -6275,7 +6275,7 @@ impl Command for Login {
                         " ERROR ".black().on_bright_red(),
                     );
                     continue;
-                } else if urlencoding::encode(username.as_str()) != username {
+                } else if encode(username.as_str()) != username {
                     println!(
                         "\n{}: your username must be url-safe",
                         " ERROR ".black().on_bright_red()

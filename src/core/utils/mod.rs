@@ -29,7 +29,6 @@ use crate::core::utils::voltapi::JSONVoltResponse;
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
 
 use app::App;
-use colored::Colorize;
 use errors::VoltError;
 use flate2::read::GzDecoder;
 use futures_util::{stream::FuturesUnordered, StreamExt};
@@ -139,7 +138,6 @@ pub fn convert(version: String, deserialized: JSONVoltResponse) -> Result<VoltRe
 
 pub async fn get_volt_response_multi(
     versions: &[(PackageInfo, String, VoltPackage, bool)],
-    pb: &ProgressBar,
 ) -> Vec<Result<VoltResponse>> {
     versions
         .iter()
@@ -147,7 +145,6 @@ pub async fn get_volt_response_multi(
             get_volt_response(package_info, hash, package.to_owned(), *no_deps)
         })
         .collect::<FuturesUnordered<_>>()
-        .inspect(|_| pb.inc(1))
         .collect::<Vec<Result<VoltResponse>>>()
         .await
 }
@@ -782,10 +779,9 @@ pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State
 
 pub async fn fetch_dep_tree(
     data: &[(PackageInfo, String, VoltPackage, bool)],
-    progress_bar: &ProgressBar,
 ) -> Result<Vec<VoltResponse>> {
     if data.len() > 1 {
-        Ok(get_volt_response_multi(data, progress_bar)
+        Ok(get_volt_response_multi(data)
             .await
             .into_iter()
             .collect::<Result<Vec<_>>>()?)
@@ -797,33 +793,33 @@ pub async fn fetch_dep_tree(
 }
 
 pub fn print_elapsed(length: usize, elapsed: f32) {
-    if length == 1 {
-        if elapsed < 0.001 {
-            println!(
-                "{}: resolved 1 dependency in {:.5}s.",
-                "success".bright_green(),
-                elapsed
-            );
-        } else {
-            println!(
-                "{}: resolved 1 dependency in {:.2}s.",
-                "success".bright_green(),
-                elapsed
-            );
-        }
-    } else if elapsed < 0.001 {
-        println!(
-            "{}: resolved {} dependencies in {:.4}s.",
-            "success".bright_green(),
-            length,
-            elapsed
-        );
-    } else {
-        println!(
-            "{}: resolved {} dependencies in {:.2}s.",
-            "success".bright_green(),
-            length,
-            elapsed
-        );
-    }
+    // if length == 1 {
+    //     if elapsed < 0.001 {
+    //         println!(
+    //             "{}: resolved 1 dependency in {:.5}s.",
+    //             "success".bright_green(),
+    //             elapsed
+    //         );
+    //     } else {
+    //         println!(
+    //             "{}: resolved 1 dependency in {:.2}s.",
+    //             "success".bright_green(),
+    //             elapsed
+    //         );
+    //     }
+    // } else if elapsed < 0.001 {
+    //     println!(
+    //         "{}: resolved {} dependencies in {:.4}s.",
+    //         "success".bright_green(),
+    //         length,
+    //         elapsed
+    //     );
+    // } else {
+    //     println!(
+    //         "{}: resolved {} dependencies in {:.2}s.",
+    //         "success".bright_green(),
+    //         length,
+    //         elapsed
+    //     );
+    // }
 }

@@ -106,26 +106,15 @@ impl Command for Add {
         let mut global_lock_file =
             LockFile::load(global_lockfile).unwrap_or_else(|_| LockFile::new(global_lockfile));
 
-        // Create progress bar for resolving dependencies.
+        let mut bar = ProgressBar::new((packages.len() * 3) as u64);
 
-        let progress_bar = ProgressBar::new(packages.len() as u64);
-
-        progress_bar.set_style(
-            ProgressStyle::default_bar()
-                .progress_chars(PROGRESS_CHARS)
-                .template(&format!(
-                    "{} [{{bar:40.green/magenta}}] {{msg:.blue}}",
-                    "Resolving Dependencies".bright_blue()
-                )),
-        );
-
-        let start = std::time::Instant::now();
+        bar.set_style(ProgressStyle::default_bar().progress_chars(PROGRESS_CHARS));
 
         // Fetch npm data including hash to fetch dependencies
-        let data = npm::get_versions(&packages).await?;
+        let data = npm::get_versions(&packages, &bar).await?;
 
         // Fetch pre-flattened dependency trees from the registry
-        let responses = fetch_dep_tree(&data, &progress_bar).await?;
+        let responses = fetch_dep_tree(&data).await?;
 
         let mut dependencies: Vec<VoltPackage> = vec![];
 
@@ -134,8 +123,6 @@ impl Command for Add {
                 dependencies.push(package.to_owned());
             }
         }
-
-        progress_bar.finish_with_message("[OK]".bright_green().to_string());
 
         let mut dependencies: Vec<_> = dependencies
             .iter()
@@ -191,8 +178,6 @@ impl Command for Add {
             })
             .collect();
 
-        print_elapsed(dependencies.len(), start.elapsed().as_secs_f32());
-
         for dep in dependencies.iter() {
             for package in packages.iter_mut() {
                 if dep.name == package.name {
@@ -201,18 +186,6 @@ impl Command for Add {
             }
         }
 
-        // Create progress bar for package installation
-        let progress_bar = ProgressBar::new(dependencies.len() as u64);
-
-        progress_bar.set_style(
-            ProgressStyle::default_bar()
-                .progress_chars(PROGRESS_CHARS)
-                .template(&format!(
-                    "{} [{{bar:40.green/magenta}}] {{msg:.blue}}",
-                    "Installing Packages".bright_blue()
-                )),
-        );
-
         // Remove duplicate dependencies
         dependencies.dedup();
 
@@ -220,18 +193,18 @@ impl Command for Add {
             .into_iter()
             .map(|v| install_package(&app, v, State {}))
             .collect::<FuturesUnordered<_>>()
-            .inspect(|_| progress_bar.inc(1))
             .try_collect::<()>()
             .await
             .unwrap();
-
-        progress_bar.finish();
 
         for package in packages {
             package_file.add_dependency(package);
         }
 
+        // Save package.json
         package_file.save()?;
+
+        // Save lockfiles
         global_lock_file.save()?;
         lock_file.save()?;
 
