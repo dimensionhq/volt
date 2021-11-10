@@ -115,7 +115,7 @@ Options:
         table
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS)
-            .set_content_arrangement(ContentArrangement::Dynamic);
+            .set_content_arrangement(ContentArrangement::DynamicFullWidth);
 
         table.set_header(vec![
             Cell::new("Name")
@@ -130,10 +130,17 @@ Options:
         ]);
 
         for i in s.objects.iter() {
+            let mut description: String = i.package.description.clone();
+
+            if i.package.description.len() > 150 {
+                description.truncate(147);
+                description = format!("{}...", description);
+            }
+
             table.add_row(vec![
                 Cell::new(&i.package.name),
                 Cell::new(&i.package.version),
-                Cell::new(&i.package.description.replace(query, &query.bright_cyan())),
+                Cell::new(description),
             ]);
         }
 
