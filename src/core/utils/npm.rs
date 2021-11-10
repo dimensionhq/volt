@@ -242,7 +242,6 @@ pub async fn get_version(
             // .version_negotiation(VersionNegotiation::http11())
             .body("")
             .map_err(VoltError::RequestBuilderError)?;
-            progress_bar.inc(1);
 
             let mut response = client.send_async().await.unwrap_or_else(|e| {
                 println!("{}", e);
@@ -415,11 +414,14 @@ pub async fn get_version(
 
             match *response.status_mut() {
                 StatusCode::OK => {
+                    progress_bar.inc(1);
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
+                    progress_bar.inc(1);
 
                     if let Some(value) =
                         serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object()
                     {
+                        progress_bar.inc(1);
                         let mut available_versions = value
                             .keys()
                             .filter_map(|k| Version::new(k).parse().ok())
