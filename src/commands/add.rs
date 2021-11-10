@@ -123,7 +123,7 @@ impl Command for Add {
 
         // Fetch npm data including hash to fetch dependencies
         let data = npm::get_versions(&packages).await?;
-        println!("{:?}", data);
+
         // Fetch pre-flattened dependency trees from the registry
         let responses = fetch_dep_tree(&data, &progress_bar).await?;
 
