@@ -543,7 +543,7 @@ pub async fn get_versions(
         .into_iter()
         .map(|v| {
             bar.set_message(format!("{}:{}", "npm".bright_magenta().bold(), v.name));
-            return get_version(v);
+            get_version(v)
         })
         .collect::<FuturesOrdered<_>>()
         .try_collect::<Vec<(PackageInfo, String, VoltPackage, bool)>>()
