@@ -31,7 +31,7 @@ use futures::{stream::FuturesUnordered, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 
-use std::sync::Arc;
+use std::{sync::Arc, thread::sleep_ms, time::Instant};
 
 #[derive(Clone, Debug)]
 pub struct PackageInfo {
@@ -106,6 +106,8 @@ impl Command for Add {
         let mut global_lock_file =
             LockFile::load(global_lockfile).unwrap_or_else(|_| LockFile::new(global_lockfile));
 
+        let resolve_start = Instant::now();
+
         let bar = ProgressBar::new_spinner()
             .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"))
             .with_message(packages[0].name.clone());
@@ -120,20 +122,24 @@ impl Command for Add {
 
         let mut dependencies: Vec<VoltPackage> = vec![];
 
-        let mut total_arr: Vec<u64> = vec![];
+        let mut total = 0;
 
         for res in responses.iter() {
-            let mut total = 0;
-
             for package in res.versions.values().into_iter() {
                 total += 1;
                 dependencies.push(package.to_owned());
             }
-
-            total_arr.push(total);
         }
 
-        bar.println(format!("{:?}", total_arr));
+        bar.finish_and_clear();
+
+        println!(
+            "{} Resolved {} dependencies",
+            format!("[{:.2}{}]", resolve_start.elapsed().as_secs_f32(), "s")
+                .truecolor(156, 156, 156)
+                .bold(),
+            total
+        );
 
         let mut dependencies: Vec<_> = dependencies
             .iter()
@@ -199,8 +205,6 @@ impl Command for Add {
 
         // Remove duplicate dependencies
         dependencies.dedup();
-
-        bar.finish_at_current_pos();
 
         dependencies
             .into_iter()
