@@ -19,15 +19,15 @@ limitations under the License.
 use crate::{
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
     core::utils::voltapi::VoltPackage,
-    core::utils::{constants::PROGRESS_CHARS, install_package, npm, print_elapsed, State},
     core::utils::{fetch_dep_tree, package::PackageJson},
+    core::utils::{install_package, npm, State},
     core::{command::Command, VERSION},
     App,
 };
 
 use async_trait::async_trait;
 use colored::Colorize;
-use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
+use futures::{stream::FuturesUnordered, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 
@@ -106,23 +106,34 @@ impl Command for Add {
         let mut global_lock_file =
             LockFile::load(global_lockfile).unwrap_or_else(|_| LockFile::new(global_lockfile));
 
-        let mut bar = ProgressBar::new((packages.len() * 3) as u64);
+        let bar = ProgressBar::new_spinner()
+            .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"))
+            .with_message(packages[0].name.clone());
 
-        bar.set_style(ProgressStyle::default_bar().progress_chars(PROGRESS_CHARS));
+        bar.enable_steady_tick(30);
 
         // Fetch npm data including hash to fetch dependencies
         let data = npm::get_versions(&packages, &bar).await?;
 
         // Fetch pre-flattened dependency trees from the registry
-        let responses = fetch_dep_tree(&data).await?;
+        let responses = fetch_dep_tree(&data, &bar).await?;
 
         let mut dependencies: Vec<VoltPackage> = vec![];
 
+        let mut total_arr: Vec<u64> = vec![];
+
         for res in responses.iter() {
+            let mut total = 0;
+
             for package in res.versions.values().into_iter() {
+                total += 1;
                 dependencies.push(package.to_owned());
             }
+
+            total_arr.push(total);
         }
+
+        bar.println(format!("{:?}", total_arr));
 
         let mut dependencies: Vec<_> = dependencies
             .iter()
@@ -188,6 +199,8 @@ impl Command for Add {
 
         // Remove duplicate dependencies
         dependencies.dedup();
+
+        bar.finish_at_current_pos();
 
         dependencies
             .into_iter()

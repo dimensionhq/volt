@@ -29,6 +29,7 @@ use crate::core::utils::voltapi::JSONVoltResponse;
 use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
 
 use app::App;
+use colored::Colorize;
 use errors::VoltError;
 use flate2::read::GzDecoder;
 use futures_util::{stream::FuturesUnordered, StreamExt};
@@ -138,10 +139,17 @@ pub fn convert(version: String, deserialized: JSONVoltResponse) -> Result<VoltRe
 
 pub async fn get_volt_response_multi(
     versions: &[(PackageInfo, String, VoltPackage, bool)],
+    bar: &ProgressBar,
 ) -> Vec<Result<VoltResponse>> {
     versions
         .iter()
         .map(|(package_info, hash, package, no_deps)| {
+            bar.set_message(format!(
+                "{}{}{}",
+                "volt".bright_green().bold(),
+                "::".bright_black().bold(),
+                package_info.name
+            ));
             get_volt_response(package_info, hash, package.to_owned(), *no_deps)
         })
         .collect::<FuturesUnordered<_>>()
@@ -234,7 +242,6 @@ pub async fn get_volt_response(
         retries += 1;
     }
 }
-
 // #[cfg(windows)]
 // pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
 //     for entry in WalkDir::new(src) {
@@ -779,47 +786,55 @@ pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State
 
 pub async fn fetch_dep_tree(
     data: &[(PackageInfo, String, VoltPackage, bool)],
+    bar: &ProgressBar,
 ) -> Result<Vec<VoltResponse>> {
     if data.len() > 1 {
-        Ok(get_volt_response_multi(data)
+        Ok(get_volt_response_multi(data, bar)
             .await
             .into_iter()
             .collect::<Result<Vec<_>>>()?)
     } else {
+        bar.set_message(format!(
+            "{}{}{}",
+            "volt".bright_green().bold(),
+            "::".bright_black(),
+            data[0].0.name
+        ));
+
         Ok(vec![
             get_volt_response(&data[0].0, &data[0].1, data[0].2.clone(), data[0].3).await?,
         ])
     }
 }
 
-pub fn print_elapsed(length: usize, elapsed: f32) {
-    // if length == 1 {
-    //     if elapsed < 0.001 {
-    //         println!(
-    //             "{}: resolved 1 dependency in {:.5}s.",
-    //             "success".bright_green(),
-    //             elapsed
-    //         );
-    //     } else {
-    //         println!(
-    //             "{}: resolved 1 dependency in {:.2}s.",
-    //             "success".bright_green(),
-    //             elapsed
-    //         );
-    //     }
-    // } else if elapsed < 0.001 {
-    //     println!(
-    //         "{}: resolved {} dependencies in {:.4}s.",
-    //         "success".bright_green(),
-    //         length,
-    //         elapsed
-    //     );
-    // } else {
-    //     println!(
-    //         "{}: resolved {} dependencies in {:.2}s.",
-    //         "success".bright_green(),
-    //         length,
-    //         elapsed
-    //     );
-    // }
-}
+// pub fn print_elapsed(length: usize, elapsed: f32) {
+// if length == 1 {
+//     if elapsed < 0.001 {
+//         println!(
+//             "{}: resolved 1 dependency in {:.5}s.",
+//             "success".bright_green(),
+//             elapsed
+//         );
+//     } else {
+//         println!(
+//             "{}: resolved 1 dependency in {:.2}s.",
+//             "success".bright_green(),
+//             elapsed
+//         );
+//     }
+// } else if elapsed < 0.001 {
+//     println!(
+//         "{}: resolved {} dependencies in {:.4}s.",
+//         "success".bright_green(),
+//         length,
+//         elapsed
+//     );
+// } else {
+//     println!(
+//         "{}: resolved {} dependencies in {:.2}s.",
+//         "success".bright_green(),
+//         length,
+//         elapsed
+//     );
+// }
+// }
