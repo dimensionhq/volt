@@ -31,7 +31,7 @@ use futures::{stream::FuturesUnordered, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 
-use std::{sync::Arc, thread::sleep_ms, time::Instant};
+use std::{sync::Arc, time::Instant};
 
 #[derive(Clone, Debug)]
 pub struct PackageInfo {

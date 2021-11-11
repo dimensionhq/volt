@@ -218,6 +218,9 @@ async fn download_node_version(versions: Vec<&str>) {
                 fs::create_dir_all(&node_path).await.unwrap();
 
                 format!("{}\\node.exe", &node_path)
+            } else {
+                println!("OS not supported.");
+                continue;
             }
             /*
             else if (PLATFORM == Os::Linux) {
@@ -225,10 +228,6 @@ async fn download_node_version(versions: Vec<&str>) {
             else if (PLATFORM == Os::Macos) {
             }
             */
-            else {
-                println!("OS not supported.");
-                continue;
-            }
         };
 
         if Path::new(&node_path).exists() {
@@ -248,7 +247,7 @@ async fn download_node_version(versions: Vec<&str>) {
                 .unwrap();
 
             println!("file to download: '{}'", fname);
-            let _fname = dir.path().join(format!("{}", fname));
+            let _fname = dir.path().join(fname.to_string());
             File::create(&node_path).unwrap()
         };
 
