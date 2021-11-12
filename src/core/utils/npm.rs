@@ -29,6 +29,7 @@ use miette::Result;
 use semver_rs::Version;
 use serde_json::Value;
 use ssri::{Algorithm, Integrity};
+use std::time::Instant;
 
 pub fn parse_versions(packages: &[String]) -> Result<Vec<PackageInfo>> {
     let mut parsed: Vec<PackageInfo> = vec![];
@@ -97,16 +98,15 @@ pub async fn get_version(
                 StatusCode::OK => {
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
-                    match serde_json::from_str::<Value>(&text).unwrap()["dist-tags"]["latest"]
-                        .as_str()
-                    {
+                    let start = Instant::now();
+
+                    let json = serde_json::from_str::<Value>(&text).unwrap();
+
+                    match json["dist-tags"]["latest"].as_str() {
                         Some(latest) => {
                             let num_deps;
 
-                            match serde_json::from_str::<Value>(&text).unwrap()["versions"][latest]
-                                ["dependencies"]
-                                .as_object()
-                            {
+                            match json["versions"][latest]["dependencies"].as_object() {
                                 Some(value) => {
                                     num_deps = value.keys().count();
                                 }
@@ -117,11 +117,9 @@ pub async fn get_version(
 
                             let package: VoltPackage;
 
-                            match serde_json::from_str::<Value>(&text).unwrap()["versions"][latest]
-                                ["dist"]
-                                .as_object()
-                            {
+                            match json["versions"][latest]["dist"].as_object() {
                                 Some(value) => {
+                                    println!("\n\n\n\n\n\n{}\n\n", start.elapsed().as_secs_f64());
                                     let hash_string: String;
 
                                     if value.contains_key("integrity") {
@@ -248,7 +246,9 @@ pub async fn get_version(
                 StatusCode::OK => {
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
-                    match serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object() {
+                    let json = serde_json::from_str::<Value>(&text).unwrap();
+
+                    match json["versions"].as_object() {
                         Some(value) => {
                             let mut available_versions = value
                                 .keys()
@@ -267,8 +267,8 @@ pub async fn get_version(
 
                             let num_deps;
 
-                            match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                                [available_versions[0].to_string()]["dependencies"]
+                            match json["versions"][available_versions[0].to_string()]
+                                ["dependencies"]
                                 .as_object()
                             {
                                 Some(value) => {
@@ -281,8 +281,7 @@ pub async fn get_version(
 
                             let package: VoltPackage;
 
-                            match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                                [available_versions[0].to_string()]["dist"]
+                            match json["versions"][available_versions[0].to_string()]["dist"]
                                 .as_object()
                             {
                                 Some(value) => {
@@ -409,9 +408,9 @@ pub async fn get_version(
                 StatusCode::OK => {
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
-                    if let Some(value) =
-                        serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object()
-                    {
+                    let json = serde_json::from_str::<Value>(&text).unwrap();
+
+                    if let Some(value) = json["versions"].as_object() {
                         let mut available_versions = value
                             .keys()
                             .filter_map(|k| Version::new(k).parse().ok())
@@ -427,8 +426,7 @@ pub async fn get_version(
 
                         let num_deps;
 
-                        match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                            [available_versions[0].to_string()]["dependencies"]
+                        match json["versions"][available_versions[0].to_string()]["dependencies"]
                             .as_object()
                         {
                             Some(value) => {
@@ -441,8 +439,7 @@ pub async fn get_version(
 
                         let package: VoltPackage;
 
-                        match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                            [available_versions[0].to_string()]["dist"]
+                        match json["versions"][available_versions[0].to_string()]["dist"]
                             .as_object()
                         {
                             Some(value) => {

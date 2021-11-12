@@ -112,7 +112,7 @@ impl Command for Add {
             .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"))
             .with_message(packages[0].name.clone());
 
-        bar.enable_steady_tick(30);
+        bar.enable_steady_tick(10);
 
         // Fetch npm data including hash to fetch dependencies
         let data = npm::get_versions(&packages, &bar).await?;
@@ -138,7 +138,7 @@ impl Command for Add {
             format!("[{:.2}{}]", resolve_start.elapsed().as_secs_f32(), "s")
                 .truecolor(156, 156, 156)
                 .bold(),
-            total
+            total.to_string().truecolor(196, 206, 255).bold()
         );
 
         let mut dependencies: Vec<_> = dependencies
