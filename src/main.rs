@@ -19,18 +19,20 @@ mod commands;
 mod core;
 
 use crate::core::{command::Command, utils::app::App};
+
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
-use commands::add::Add;
-use commands::login::Login;
-use commands::node::Node;
-use commands::search::Search;
-use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
+use commands::{
+    add::Add,
+    login::Login,
+    node::Node,
+    search::Search,
+    {clean::Clean, clone::Clone, discord::Discord, init::Init},
+};
 use tracing::{self, Level};
 use tracing_subscriber::filter::EnvFilter;
 
-use std::str::FromStr;
-use std::{sync::Arc, time::Instant};
+use std::{str::FromStr, sync::Arc, time::Instant};
 
 pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
     match matches.subcommand() {
