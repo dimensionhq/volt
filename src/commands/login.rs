@@ -16,14 +16,15 @@
 
 //! Login for a package.
 
-use crate::{App, Command};
-
-use crate::core::prompt::prompts::{Input, Secret};
-use urlencoding::encode;
+use crate::{
+    core::prompt::prompts::{Input, Secret},
+    App, Command,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
+use urlencoding::encode;
 
 use std::sync::Arc;
 

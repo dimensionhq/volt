@@ -16,16 +16,15 @@
 
 //! Manage local node versions
 
-use std::path::Path;
-use std::str;
-use std::{fmt::Display, fs::File, io::Write};
-
 use clap::ArgMatches;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
 use tempfile::tempdir;
 use tokio::fs;
+
+use std::{fmt::Display, fs::File, io::Write, path::Path, str};
+
 //use async_trait::async_trait;
 //use colored::Colorize;
 

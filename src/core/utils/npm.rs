@@ -14,8 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::commands::add::PackageInfo;
-use crate::core::utils::{constants::MAX_RETRIES, errors::VoltError, voltapi::VoltPackage};
+use crate::{
+    commands::add::PackageInfo,
+    core::utils::{constants::MAX_RETRIES, errors::VoltError, voltapi::VoltPackage},
+};
 
 use colored::Colorize;
 use futures::{stream::FuturesOrdered, TryStreamExt};
@@ -29,6 +31,7 @@ use miette::Result;
 use semver_rs::Version;
 use serde_json::Value;
 use ssri::{Algorithm, Integrity};
+
 use std::time::Instant;
 
 pub fn parse_versions(packages: &[String]) -> Result<Vec<PackageInfo>> {
