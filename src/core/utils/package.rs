@@ -14,16 +14,18 @@
     limitations under the License.
 */
 
+use super::errors::VoltError;
 use crate::commands::add::PackageInfo;
 
-use super::errors::VoltError;
 use miette::{IntoDiagnostic, Result};
 use serde::{Deserialize, Serialize};
 
-use std::fs;
-use std::io::Write;
-use std::path::PathBuf;
-use std::{collections::HashMap, fs::read_to_string};
+use std::{
+    fs,
+    io::Write,
+    path::PathBuf,
+    {collections::HashMap, fs::read_to_string},
+};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

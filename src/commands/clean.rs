@@ -17,10 +17,10 @@
 //! Clean ./node_modules and reduce its size.
 
 use crate::{core::VERSION, App, Command};
+
 use async_trait::async_trait;
 use colored::Colorize;
-use futures::stream::FuturesUnordered;
-use futures::StreamExt;
+use futures::{stream::FuturesUnordered, StreamExt};
 use indicatif::{HumanBytes, ProgressBar, ProgressStyle};
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
