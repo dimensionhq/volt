@@ -98,8 +98,6 @@ pub async fn get_version(
                 StatusCode::OK => {
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
-                    let start = Instant::now();
-
                     let json = serde_json::from_str::<Value>(&text).unwrap();
 
                     match json["dist-tags"]["latest"].as_str() {
@@ -119,7 +117,6 @@ pub async fn get_version(
 
                             match json["versions"][latest]["dist"].as_object() {
                                 Some(value) => {
-                                    println!("\n\n\n\n\n\n{}\n\n", start.elapsed().as_secs_f64());
                                     let hash_string: String;
 
                                     if value.contains_key("integrity") {
@@ -233,7 +230,6 @@ pub async fn get_version(
             .header("accept-encoding", "gzip, deflate, br")
             .header("connection", "keep-alive")
             .header("host", "registry.npmjs.org")
-            // .version_negotiation(VersionNegotiation::http11())
             .body("")
             .map_err(VoltError::RequestBuilderError)?;
 
