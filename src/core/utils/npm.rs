@@ -32,8 +32,6 @@ use semver_rs::Version;
 use serde_json::Value;
 use ssri::{Algorithm, Integrity};
 
-use std::time::Instant;
-
 pub fn parse_versions(packages: &[String]) -> Result<Vec<PackageInfo>> {
     let mut parsed: Vec<PackageInfo> = vec![];
 
