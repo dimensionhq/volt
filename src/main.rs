@@ -23,11 +23,8 @@ use crate::core::{command::Command, utils::app::App};
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
 use commands::{
-    add::Add,
-    login::Login,
-    node::Node,
-    search::Search,
-    {clean::Clean, clone::Clone, discord::Discord, init::Init},
+    add::Add, clean::Clean, clone::Clone, discord::Discord, info::Info, init::Init, login::Login,
+    node::Node, search::Search,
 };
 use tracing::{self, Level};
 use tracing_subscriber::filter::EnvFilter;
@@ -63,6 +60,10 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
         Some(("login", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Login::exec(app).await
+        }
+        Some(("info", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Info::exec(app).await
         }
         Some(("node", args)) => Node::download(args).await,
         _ => Ok(()),
@@ -143,13 +144,13 @@ Commands:
         "[flags]".bright_blue(),
     );
 
-    let discord_usage = format!("{} discord", "volt".bright_green().bold());
-
-    let compress_usage = format!(
-        "{} compress {}",
+    let info_usage = format!(
+        "{} info {}",
         "volt".bright_green().bold(),
         "[flags]".bright_blue(),
     );
+
+    let discord_usage = format!("{} discord", "volt".bright_green().bold());
 
     let app = clap::App::new("volt")
         .version("1.0.0")
@@ -190,11 +191,6 @@ Commands:
                 .about("Interactively create and edit your package.json file.")
                 .override_usage(init_usage.as_str())
                 .arg(Arg::new("yes").short('y').about("Use default options")),
-        )
-        .subcommand(
-            clap::App::new("compress")
-                .about("Interactively create and edit your package.json file.")
-                .override_usage(compress_usage.as_str()),
         )
         .subcommand(
             clap::App::new("node")
@@ -264,6 +260,12 @@ Commands:
                         .about("The search query string")
                         .required(true),
                 ),
+        )
+        .subcommand(
+            clap::App::new("info")
+                .about("Display information about a package.")
+                .override_help("todo")
+                .override_usage(info_usage.as_str()),
         )
         .subcommand(
             clap::App::new("login")

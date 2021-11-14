@@ -22,7 +22,6 @@ pub mod create;
 pub mod deploy;
 pub mod discord;
 pub mod fix;
-pub mod help;
 pub mod info;
 pub mod init;
 pub mod install;
