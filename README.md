@@ -126,7 +126,7 @@ cargo test
 
 ## Versioning
 
-We use [semver](https://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/github.com/voltpkg/volt/tags).
+We use [semver](https://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/voltpkg/volt/tags).
 
 ## License
 
