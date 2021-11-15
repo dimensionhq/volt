@@ -16,8 +16,9 @@
 
 //! Manage local node versions
 
+use std::env;
 use std::path::Path;
-use std::str;
+use std::str::{self, FromStr};
 use std::{fmt::Display, fs::File, io::Write};
 
 use clap::ArgMatches;
@@ -123,7 +124,8 @@ impl Node {
     pub async fn download(args: &ArgMatches) -> Result<()> {
         match args.subcommand() {
             Some(("use", version)) => {
-                println!("Using version {}", version.value_of("version").unwrap());
+                let v: String = String::from(version.value_of("version").unwrap());
+                use_node_version(v).await;
             }
             Some(("install", versions)) => {
                 let v: Vec<&str> = versions.values_of("versions").unwrap().collect();
@@ -211,7 +213,7 @@ async fn download_node_version(versions: Vec<&str>) {
         }
 
         let node_path = {
-            if (PLATFORM == Os::Windows) {
+            if PLATFORM == Os::Windows {
                 let homedir = dirs::home_dir().unwrap();
                 let node_path = format!("{}\\AppData\\Local\\Volt\\Node\\{}", homedir.display(), v);
                 println!("Will install under: {}", node_path);
@@ -248,7 +250,7 @@ async fn download_node_version(versions: Vec<&str>) {
                 .unwrap();
 
             println!("file to download: '{}'", fname);
-            let fname = dir.path().join(format!("{}", fname));
+            let _fname = dir.path().join(format!("{}", fname));
             File::create(&node_path).unwrap()
         };
 
@@ -256,6 +258,56 @@ async fn download_node_version(versions: Vec<&str>) {
 
         dest.write_all(&content).unwrap();
         println!("\n---\n");
+    }
+}
+
+async fn use_node_version(version: String) {
+    if PLATFORM == Os::Windows {
+        let homedir = dirs::home_dir().unwrap();
+        let node_path = format!(
+            "{}\\AppData\\Local\\Volt\\Node\\{}\\node.exe",
+            homedir.display(),
+            version
+        );
+        let path = Path::new(&node_path);
+
+        if path.exists() {
+            println!("Using version {}", version);
+            let link_dir = format!("{}\\AppData\\Local\\Volt\\bin", homedir.display());
+            fs::create_dir_all(&link_dir).await.unwrap();
+
+            let link = format!("{}\\{}", link_dir, "node.exe");
+            println!("{}\n{}", node_path, link);
+
+            let symlink = std::os::windows::fs::symlink_file(node_path, link);
+            match symlink {
+                Ok(_) => {}
+                Err(_) => {
+                    println!("Error: \"volt node use\" must be run as an administrator on Windows!")
+                }
+            }
+            let path = env::var("PATH").unwrap();
+            if !path.contains(&link_dir) {
+                //env_perm::append("PATH", &link_dir);
+                println!("nothing changed lol");
+                println!("PATH environment variable updated.\nYou will need to restart your terminal for changes to apply.");
+            }
+            println!("{}", path);
+        } else {
+            println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version);
+        }
+    } else if PLATFORM == Os::Linux {
+        let homedir = dirs::home_dir().unwrap();
+        let node_path = format!("{}/.volt/Node/{}/node", homedir.display(), version);
+        let path = Path::new(&node_path);
+
+        if path.exists() {
+            let link_dir = format!("{}/.local/bin", homedir.display());
+            let link = format!("{}/{}", link_dir, "node.exe");
+            let symlink = std::os::unix::fs::symlink(node_path, link);
+        } else {
+            println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version)
+        }
     }
 }
 
