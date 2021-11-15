@@ -23,10 +23,14 @@ pub mod package;
 pub mod scripts;
 pub mod voltapi;
 
-use crate::commands::add::PackageInfo;
-use crate::core::utils::constants::MAX_RETRIES;
-use crate::core::utils::voltapi::JSONVoltResponse;
-use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
+use crate::{
+    commands::add::PackageInfo,
+    core::{
+        utils::constants::MAX_RETRIES,
+        utils::voltapi::JSONVoltResponse,
+        utils::voltapi::{VoltPackage, VoltResponse},
+    },
+};
 
 use app::App;
 use colored::Colorize;

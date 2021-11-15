@@ -14,8 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::commands::add::PackageInfo;
-use crate::core::utils::{constants::MAX_RETRIES, errors::VoltError, voltapi::VoltPackage};
+use crate::{
+    commands::add::PackageInfo,
+    core::utils::{constants::MAX_RETRIES, errors::VoltError, voltapi::VoltPackage},
+};
 
 use colored::Colorize;
 use futures::{stream::FuturesOrdered, TryStreamExt};
