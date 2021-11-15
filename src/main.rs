@@ -24,6 +24,7 @@ use colored::Colorize;
 use commands::add::Add;
 use commands::login::Login;
 use commands::node::Node;
+use commands::run::Run;
 use commands::search::Search;
 use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
 use tracing::{self, Level};
@@ -61,6 +62,10 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
         Some(("login", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Login::exec(app).await
+        }
+        Some(("run", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Run::exec(app).await
         }
         Some(("node", args)) => Node::download(args).await,
         _ => Ok(()),
@@ -139,6 +144,12 @@ Commands:
         "{} login {}",
         "volt".bright_green().bold(),
         "[flags]".bright_blue(),
+    );
+
+    let run_usage = format!(
+        "{} run {}",
+        "volt".bright_green().bold(),
+        "[flags]".bright_blue()
     );
 
     let discord_usage = format!("{} discord", "volt".bright_green().bold());
@@ -260,6 +271,16 @@ Commands:
                 .arg(
                     Arg::new("query")
                         .about("The search query string")
+                        .required(true),
+                ),
+        )
+        .subcommand(
+            clap::App::new("run")
+                .about("Run a defined package script.")
+                .override_usage(run_usage.as_str())
+                .arg(
+                    Arg::new("script-name")
+                        .about("Name of the script to be run")
                         .required(true),
                 ),
         )

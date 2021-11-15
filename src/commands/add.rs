@@ -27,7 +27,7 @@ use crate::{
 
 use async_trait::async_trait;
 use colored::Colorize;
-use futures::{stream::FuturesUnordered, TryStreamExt};
+use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 
@@ -206,13 +206,34 @@ impl Command for Add {
         // Remove duplicate dependencies
         dependencies.dedup();
 
+        let install_start = Instant::now();
+
+        let bar = ProgressBar::new(dependencies.len() as u64);
+
+        bar.set_style(
+            ProgressStyle::default_bar()
+                .template("[{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+                .progress_chars("=>-"),
+        );
+
         dependencies
             .into_iter()
             .map(|v| install_package(&app, v, State {}))
             .collect::<FuturesUnordered<_>>()
+            .inspect(|_| bar.inc(1))
             .try_collect::<()>()
             .await
             .unwrap();
+
+        bar.finish_and_clear();
+
+        println!(
+            "{} Installed {} dependencies",
+            format!("[{:.2}{}]", install_start.elapsed().as_secs_f32(), "s")
+                .truecolor(156, 156, 156)
+                .bold(),
+            total.to_string().truecolor(196, 206, 255).bold()
+        );
 
         for package in packages {
             package_file.add_dependency(package);
