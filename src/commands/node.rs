@@ -25,6 +25,7 @@ use clap::ArgMatches;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
+use std::process::Command;
 use tempfile::tempdir;
 use tokio::fs;
 //use async_trait::async_trait;
@@ -133,7 +134,7 @@ impl Node {
             }
             Some(("remove", versions)) => {
                 let v: Vec<&str> = versions.values_of("versions").unwrap().collect();
-                println!("Removing version {:?}", v);
+                remove_node_version(v).await;
             }
             _ => {}
         }
@@ -261,6 +262,34 @@ async fn download_node_version(versions: Vec<&str>) {
     }
 }
 
+async fn remove_node_version(versions: Vec<&str>) {
+    if PLATFORM == Os::Windows {
+        for version in versions {
+            let homedir = dirs::home_dir().unwrap();
+            let node_path = format!(
+                "{}\\AppData\\Local\\Volt\\Node\\{}",
+                homedir.display(),
+                version
+            );
+            let path = Path::new(&node_path);
+            println!("{}", path.display());
+            if path.exists() {
+                fs::remove_dir_all(&path).await.unwrap();
+                println!("Removed version {}", version);
+            } else {
+                println!(
+                    "Failed to remove NodeJS version {}.\nThat version was not installed.",
+                    version
+                );
+            }
+        }
+    } else if PLATFORM == Os::Linux {
+    } else if PLATFORM == Os::Macos {
+    } else {
+        println!("OS is not supported!");
+    }
+}
+
 async fn use_node_version(version: String) {
     if PLATFORM == Os::Windows {
         let homedir = dirs::home_dir().unwrap();
@@ -275,10 +304,13 @@ async fn use_node_version(version: String) {
             println!("Using version {}", version);
             let link_dir = format!("{}\\AppData\\Local\\Volt\\bin", homedir.display());
             fs::create_dir_all(&link_dir).await.unwrap();
-
+            let link_file = format!("{}\\AppData\\Local\\Volt\\bin\\node.exe", homedir.display());
+            let link_file = Path::new(&link_file);
+            if link_file.exists() {
+                fs::remove_file(link_file).await.unwrap();
+            }
             let link = format!("{}\\{}", link_dir, "node.exe");
             println!("{}\n{}", node_path, link);
-
             let symlink = std::os::windows::fs::symlink_file(node_path, link);
             match symlink {
                 Ok(_) => {}
@@ -287,12 +319,15 @@ async fn use_node_version(version: String) {
                 }
             }
             let path = env::var("PATH").unwrap();
+            //println!("{}", path);
             if !path.contains(&link_dir) {
                 //env_perm::append("PATH", &link_dir);
-                println!("nothing changed lol");
+                let command = format!("[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + '{}', 'User')", &link_dir);
+                let stdout = Command::new("Powershell")
+                    .args(&["-Command", &command])
+                    .output();
                 println!("PATH environment variable updated.\nYou will need to restart your terminal for changes to apply.");
             }
-            println!("{}", path);
         } else {
             println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version);
         }
@@ -304,7 +339,7 @@ async fn use_node_version(version: String) {
         if path.exists() {
             let link_dir = format!("{}/.local/bin", homedir.display());
             let link = format!("{}/{}", link_dir, "node.exe");
-            let symlink = std::os::unix::fs::symlink(node_path, link);
+            //let symlink = std::os::unix::fs::symlink(node_path, link);
         } else {
             println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version)
         }
