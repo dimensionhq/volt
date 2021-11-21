@@ -14,6 +14,7 @@
     limitations under the License.
 */
 
+use super::npm::parse_versions;
 use crate::{
     commands::add::PackageInfo,
     core::utils::{enable_ansi_support, errors::VoltError},
@@ -26,8 +27,6 @@ use sha1::Digest;
 use sha2::Sha512;
 use ssri::{Algorithm, Integrity};
 use std::{env, path::PathBuf};
-
-use super::npm::parse_versions;
 
 #[derive(Debug)]
 pub struct App {

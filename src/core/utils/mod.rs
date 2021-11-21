@@ -23,10 +23,14 @@ pub mod package;
 pub mod scripts;
 pub mod voltapi;
 
-use crate::commands::add::PackageInfo;
-use crate::core::utils::constants::MAX_RETRIES;
-use crate::core::utils::voltapi::JSONVoltResponse;
-use crate::core::utils::voltapi::{VoltPackage, VoltResponse};
+use crate::{
+    commands::add::PackageInfo,
+    core::{
+        utils::constants::MAX_RETRIES,
+        utils::voltapi::JSONVoltResponse,
+        utils::voltapi::{VoltPackage, VoltResponse},
+    },
+};
 
 use app::App;
 use colored::Colorize;
@@ -139,15 +143,20 @@ pub fn convert(version: String, deserialized: JSONVoltResponse) -> Result<VoltRe
 
 pub async fn get_volt_response_multi(
     versions: &[(PackageInfo, String, VoltPackage, bool)],
-    pb: &ProgressBar,
+    bar: &ProgressBar,
 ) -> Vec<Result<VoltResponse>> {
     versions
         .iter()
         .map(|(package_info, hash, package, no_deps)| {
+            bar.set_message(format!(
+                "{}{}{}",
+                "volt".bright_green().bold(),
+                "::".bright_black().bold(),
+                package_info.name
+            ));
             get_volt_response(package_info, hash, package.to_owned(), *no_deps)
         })
         .collect::<FuturesUnordered<_>>()
-        .inspect(|_| pb.inc(1))
         .collect::<Vec<Result<VoltResponse>>>()
         .await
 }
@@ -237,7 +246,6 @@ pub async fn get_volt_response(
         retries += 1;
     }
 }
-
 // #[cfg(windows)]
 // pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
 //     for entry in WalkDir::new(src) {
@@ -557,9 +565,9 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
             serde_json::from_str(&String::from_utf8(buf).unwrap()).unwrap();
 
         for item in cas_file_map.iter() {
-            let data =
-                String::from_utf8(cacache::read_hash_sync(&extract_directory, item.1).unwrap())
-                    .unwrap();
+            let contents = cacache::read_hash_sync(&extract_directory, item.1).unwrap();
+
+            let data = String::from_utf8(contents).unwrap();
 
             // generate node_modules path
             let path = app.node_modules_dir.join(format!(
@@ -568,10 +576,11 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
                 item.0.strip_prefix("package/").unwrap()
             ));
 
-            println!("{}", path.display());
-        }
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
 
-        std::process::exit(1);
+            let mut file = File::create(path).unwrap();
+            file.write_all(data.as_bytes()).unwrap();
+        }
     }
 
     Ok(())
@@ -781,48 +790,55 @@ pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State
 
 pub async fn fetch_dep_tree(
     data: &[(PackageInfo, String, VoltPackage, bool)],
-    progress_bar: &ProgressBar,
+    bar: &ProgressBar,
 ) -> Result<Vec<VoltResponse>> {
     if data.len() > 1 {
-        Ok(get_volt_response_multi(data, progress_bar)
+        Ok(get_volt_response_multi(data, bar)
             .await
             .into_iter()
             .collect::<Result<Vec<_>>>()?)
     } else {
+        bar.set_message(format!(
+            "{}{}{}",
+            "volt".bright_green().bold(),
+            "::".bright_black(),
+            data[0].0.name
+        ));
+
         Ok(vec![
             get_volt_response(&data[0].0, &data[0].1, data[0].2.clone(), data[0].3).await?,
         ])
     }
 }
 
-pub fn print_elapsed(length: usize, elapsed: f32) {
-    if length == 1 {
-        if elapsed < 0.001 {
-            println!(
-                "{}: resolved 1 dependency in {:.5}s.",
-                "success".bright_green(),
-                elapsed
-            );
-        } else {
-            println!(
-                "{}: resolved 1 dependency in {:.2}s.",
-                "success".bright_green(),
-                elapsed
-            );
-        }
-    } else if elapsed < 0.001 {
-        println!(
-            "{}: resolved {} dependencies in {:.4}s.",
-            "success".bright_green(),
-            length,
-            elapsed
-        );
-    } else {
-        println!(
-            "{}: resolved {} dependencies in {:.2}s.",
-            "success".bright_green(),
-            length,
-            elapsed
-        );
-    }
-}
+// pub fn print_elapsed(length: usize, elapsed: f32) {
+// if length == 1 {
+//     if elapsed < 0.001 {
+//         println!(
+//             "{}: resolved 1 dependency in {:.5}s.",
+//             "success".bright_green(),
+//             elapsed
+//         );
+//     } else {
+//         println!(
+//             "{}: resolved 1 dependency in {:.2}s.",
+//             "success".bright_green(),
+//             elapsed
+//         );
+//     }
+// } else if elapsed < 0.001 {
+//     println!(
+//         "{}: resolved {} dependencies in {:.4}s.",
+//         "success".bright_green(),
+//         length,
+//         elapsed
+//     );
+// } else {
+//     println!(
+//         "{}: resolved {} dependencies in {:.2}s.",
+//         "success".bright_green(),
+//         length,
+//         elapsed
+//     );
+// }
+// }
