@@ -14,22 +14,20 @@
     limitations under the License.
 */
 
-use crate::{
-    core::{utils::package::PackageJson, VERSION},
-    App, Command,
-};
+use crate::{core::VERSION, App, Command as AppCommand};
 
 use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
 
+use std::process::{Command, Stdio};
 use std::sync::Arc;
 
 /// Struct implementation for the `Run` command.
 pub struct Run;
 
 #[async_trait]
-impl Command for Run {
+impl AppCommand for Run {
     /// Display a help menu for the `volt run` command.
     fn help() -> String {
         format!(
@@ -66,7 +64,22 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(app: Arc<App>) -> Result<()> {
+        let script = app.args.value_of("script-name").unwrap().trim();
+
+        if cfg!(target_os = "windows") {
+            Command::new("cmd").args(&["/C", "babel"]).spawn().unwrap();
+        } else if cfg!(target_os = "linux") {
+            println!("{}", format!("$ {}", script).truecolor(156, 156, 156));
+
+            let mut child = Command::new(format!("node_modules/.bin/{}", script))
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .spawn()
+                .expect("failed to execute child");
+
+            child.wait().unwrap();
+        }
         Ok(())
     }
 }

@@ -216,6 +216,9 @@ impl Command for Add {
                 .progress_chars("=>-"),
         );
 
+        // let chunks = dependencies.chunks(14).collect::<Vec<_>>();
+
+        // for chunk in chunks.iter() {
         dependencies
             .into_iter()
             .map(|v| install_package(&app, v, State {}))
@@ -224,6 +227,9 @@ impl Command for Add {
             .try_collect::<()>()
             .await
             .unwrap();
+        // }
+
+        // dependencies
 
         bar.finish_and_clear();
 
