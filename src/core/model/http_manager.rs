@@ -16,8 +16,7 @@
 
 use crate::core::utils::package::NpmPackage;
 
-use isahc::http::StatusCode;
-use isahc::AsyncReadResponseExt;
+use isahc::{http::StatusCode, AsyncReadResponseExt};
 use thiserror::Error;
 
 use std::io;

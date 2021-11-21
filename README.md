@@ -126,8 +126,8 @@ cargo test
 
 ## Versioning
 
-We use [semver](https://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/github.com/voltpkg/volt/tags).
+We use [semver](https://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/voltpkg/volt/tags).
 
 ## License
 
-This project is licensed under Apache 2 - see the [LICENSE.md](LICENSE) file for details.
+This project is licensed under Apache-2.0 - see the [LICENSE.md](LICENSE) file for details.

@@ -14,10 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::commands::add::PackageInfo;
-use crate::core::utils::{constants::MAX_RETRIES, errors::VoltError, voltapi::VoltPackage};
+use crate::{
+    commands::add::PackageInfo,
+    core::utils::{constants::MAX_RETRIES, errors::VoltError, voltapi::VoltPackage},
+};
 
+use colored::Colorize;
 use futures::{stream::FuturesOrdered, TryStreamExt};
+use indicatif::ProgressBar;
 use isahc::{
     config::{Configurable, SslOption},
     http::StatusCode,
@@ -95,16 +99,13 @@ pub async fn get_version(
                 StatusCode::OK => {
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
-                    match serde_json::from_str::<Value>(&text).unwrap()["dist-tags"]["latest"]
-                        .as_str()
-                    {
+                    let json = serde_json::from_str::<Value>(&text).unwrap();
+
+                    match json["dist-tags"]["latest"].as_str() {
                         Some(latest) => {
                             let num_deps;
 
-                            match serde_json::from_str::<Value>(&text).unwrap()["versions"][latest]
-                                ["dependencies"]
-                                .as_object()
-                            {
+                            match json["versions"][latest]["dependencies"].as_object() {
                                 Some(value) => {
                                     num_deps = value.keys().count();
                                 }
@@ -115,10 +116,7 @@ pub async fn get_version(
 
                             let package: VoltPackage;
 
-                            match serde_json::from_str::<Value>(&text).unwrap()["versions"][latest]
-                                ["dist"]
-                                .as_object()
-                            {
+                            match json["versions"][latest]["dist"].as_object() {
                                 Some(value) => {
                                     let hash_string: String;
 
@@ -233,7 +231,6 @@ pub async fn get_version(
             .header("accept-encoding", "gzip, deflate, br")
             .header("connection", "keep-alive")
             .header("host", "registry.npmjs.org")
-            // .version_negotiation(VersionNegotiation::http11())
             .body("")
             .map_err(VoltError::RequestBuilderError)?;
 
@@ -246,7 +243,9 @@ pub async fn get_version(
                 StatusCode::OK => {
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
-                    match serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object() {
+                    let json = serde_json::from_str::<Value>(&text).unwrap();
+
+                    match json["versions"].as_object() {
                         Some(value) => {
                             let mut available_versions = value
                                 .keys()
@@ -265,8 +264,8 @@ pub async fn get_version(
 
                             let num_deps;
 
-                            match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                                [available_versions[0].to_string()]["dependencies"]
+                            match json["versions"][available_versions[0].to_string()]
+                                ["dependencies"]
                                 .as_object()
                             {
                                 Some(value) => {
@@ -279,8 +278,7 @@ pub async fn get_version(
 
                             let package: VoltPackage;
 
-                            match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                                [available_versions[0].to_string()]["dist"]
+                            match json["versions"][available_versions[0].to_string()]["dist"]
                                 .as_object()
                             {
                                 Some(value) => {
@@ -407,9 +405,9 @@ pub async fn get_version(
                 StatusCode::OK => {
                     let text = response.text().await.map_err(VoltError::IoTextRecError)?;
 
-                    if let Some(value) =
-                        serde_json::from_str::<Value>(&text).unwrap()["versions"].as_object()
-                    {
+                    let json = serde_json::from_str::<Value>(&text).unwrap();
+
+                    if let Some(value) = json["versions"].as_object() {
                         let mut available_versions = value
                             .keys()
                             .filter_map(|k| Version::new(k).parse().ok())
@@ -425,8 +423,7 @@ pub async fn get_version(
 
                         let num_deps;
 
-                        match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                            [available_versions[0].to_string()]["dependencies"]
+                        match json["versions"][available_versions[0].to_string()]["dependencies"]
                             .as_object()
                         {
                             Some(value) => {
@@ -439,8 +436,7 @@ pub async fn get_version(
 
                         let package: VoltPackage;
 
-                        match serde_json::from_str::<Value>(&text).unwrap()["versions"]
-                            [available_versions[0].to_string()]["dist"]
+                        match json["versions"][available_versions[0].to_string()]["dist"]
                             .as_object()
                         {
                             Some(value) => {
@@ -534,11 +530,15 @@ pub async fn get_version(
 
 pub async fn get_versions(
     packages: &[PackageInfo],
+    bar: &ProgressBar,
 ) -> Result<Vec<(PackageInfo, String, VoltPackage, bool)>> {
     packages
         .to_owned()
         .into_iter()
-        .map(get_version)
+        .map(|v| {
+            bar.set_message(format!("{}:{}", "npm".bright_magenta().bold(), v.name));
+            get_version(v)
+        })
         .collect::<FuturesOrdered<_>>()
         .try_collect::<Vec<(PackageInfo, String, VoltPackage, bool)>>()
         .await

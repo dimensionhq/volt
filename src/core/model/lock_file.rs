@@ -18,12 +18,13 @@ use miette::Result;
 use serde::{de, ser, Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
-use std::collections::hash_map::DefaultHasher;
-use std::collections::{BTreeMap, HashMap};
-use std::fs::File;
-use std::hash::{Hash, Hasher};
-use std::io::{self, BufWriter};
-use std::path::{Path, PathBuf};
+use std::{
+    collections::{hash_map::DefaultHasher, BTreeMap, HashMap},
+    fs::File,
+    hash::{Hash, Hasher},
+    io::{self, BufWriter},
+    path::{Path, PathBuf},
+};
 
 #[derive(Error, Debug)]
 pub enum LockFileError {

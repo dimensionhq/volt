@@ -18,22 +18,18 @@
 mod commands;
 mod core;
 
-use crate::commands::node::*;
-
-use crate::commands::add::*;
-use crate::commands::node::*;
 use crate::core::{command::Command, utils::app::App};
 
 use clap::{Arg, ArgMatches};
 use colored::Colorize;
-use commands::login::Login;
-use commands::search::Search;
-use commands::{clean::Clean, clone::Clone, discord::Discord, init::Init};
+use commands::{
+    add::Add, clean::Clean, clone::Clone, discord::Discord, info::Info, init::Init, login::Login,
+    node::Node, run::Run, search::Search,
+};
 use tracing::{self, Level};
 use tracing_subscriber::filter::EnvFilter;
 
-use std::str::FromStr;
-use std::{sync::Arc, time::Instant};
+use std::{str::FromStr, sync::Arc, time::Instant};
 
 pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
     match matches.subcommand() {
@@ -64,6 +60,14 @@ pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
         Some(("login", args)) => {
             let app = Arc::new(App::initialize(args)?);
             Login::exec(app).await
+        }
+        Some(("run", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Run::exec(app).await
+        }
+        Some(("info", args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            Info::exec(app).await
         }
         Some(("node", args)) => Node::download(args).await,
         _ => Ok(()),
@@ -144,13 +148,19 @@ Commands:
         "[flags]".bright_blue(),
     );
 
-    let discord_usage = format!("{} discord", "volt".bright_green().bold());
+    let run_usage = format!(
+        "{} run {}",
+        "volt".bright_green().bold(),
+        "[flags]".bright_blue()
+    );
 
-    let compress_usage = format!(
-        "{} compress {}",
+    let info_usage = format!(
+        "{} info {}",
         "volt".bright_green().bold(),
         "[flags]".bright_blue(),
     );
+
+    let discord_usage = format!("{} discord", "volt".bright_green().bold());
 
     let app = clap::App::new("volt")
         .version("1.0.0")
@@ -170,6 +180,12 @@ Commands:
                 ),
         )
         .subcommand(
+            clap::App::new("clean")
+                .about("Optimizes your node_modules by removing redundant files and folders.")
+                .override_usage(clean_usage.as_str())
+                .arg(Arg::new("remove-licenses").long("remove-licenses")),
+        )
+        .subcommand(
             clap::App::new("clone")
                 .about("Clone a project and install dependencies.")
                 .override_usage(clone_usage.as_str())
@@ -185,11 +201,6 @@ Commands:
                 .about("Interactively create and edit your package.json file.")
                 .override_usage(init_usage.as_str())
                 .arg(Arg::new("yes").short('y').about("Use default options")),
-        )
-        .subcommand(
-            clap::App::new("compress")
-                .about("Interactively create and edit your package.json file.")
-                .override_usage(compress_usage.as_str()),
         )
         .subcommand(
             clap::App::new("node")
@@ -261,9 +272,25 @@ Commands:
                 ),
         )
         .subcommand(
+            clap::App::new("run")
+                .about("Run a defined package script.")
+                .override_usage(run_usage.as_str())
+                .arg(
+                    Arg::new("script-name")
+                        .about("Name of the script to be run")
+                        .required(true),
+                ),
+        )
+        .subcommand(
+            clap::App::new("info")
+                .about("Display information about a package.")
+                .override_help("todo")
+                .override_usage(info_usage.as_str()),
+        )
+        .subcommand(
             clap::App::new("login")
                 .about("Login to the npm registry.")
-                .override_help("hi")
+                .override_help("todo")
                 .override_usage(login_usage.as_str()),
         );
 

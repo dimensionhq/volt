@@ -19,8 +19,8 @@ limitations under the License.
 use crate::{
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
     core::utils::voltapi::VoltPackage,
-    core::utils::{constants::PROGRESS_CHARS, install_package, npm, print_elapsed, State},
     core::utils::{fetch_dep_tree, package::PackageJson},
+    core::utils::{install_package, npm, State},
     core::{command::Command, VERSION},
     App,
 };
@@ -31,7 +31,7 @@ use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 #[derive(Clone, Debug)]
 pub struct PackageInfo {
@@ -106,36 +106,40 @@ impl Command for Add {
         let mut global_lock_file =
             LockFile::load(global_lockfile).unwrap_or_else(|_| LockFile::new(global_lockfile));
 
-        // Create progress bar for resolving dependencies.
+        let resolve_start = Instant::now();
 
-        let progress_bar = ProgressBar::new(packages.len() as u64);
+        let bar = ProgressBar::new_spinner()
+            .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"))
+            .with_message(packages[0].name.clone());
 
-        progress_bar.set_style(
-            ProgressStyle::default_bar()
-                .progress_chars(PROGRESS_CHARS)
-                .template(&format!(
-                    "{} [{{bar:40.green/magenta}}] {{msg:.blue}}",
-                    "Resolving Dependencies".bright_blue()
-                )),
-        );
-
-        let start = std::time::Instant::now();
+        bar.enable_steady_tick(10);
 
         // Fetch npm data including hash to fetch dependencies
-        let data = npm::get_versions(&packages).await?;
-        println!("{:?}", data);
+        let data = npm::get_versions(&packages, &bar).await?;
+
         // Fetch pre-flattened dependency trees from the registry
-        let responses = fetch_dep_tree(&data, &progress_bar).await?;
+        let responses = fetch_dep_tree(&data, &bar).await?;
 
         let mut dependencies: Vec<VoltPackage> = vec![];
 
+        let mut total = 0;
+
         for res in responses.iter() {
             for package in res.versions.values().into_iter() {
+                total += 1;
                 dependencies.push(package.to_owned());
             }
         }
 
-        progress_bar.finish_with_message("[OK]".bright_green().to_string());
+        bar.finish_and_clear();
+
+        println!(
+            "{} Resolved {} dependencies",
+            format!("[{:.2}{}]", resolve_start.elapsed().as_secs_f32(), "s")
+                .truecolor(156, 156, 156)
+                .bold(),
+            total.to_string().truecolor(196, 206, 255).bold()
+        );
 
         let mut dependencies: Vec<_> = dependencies
             .iter()
@@ -191,8 +195,6 @@ impl Command for Add {
             })
             .collect();
 
-        print_elapsed(dependencies.len(), start.elapsed().as_secs_f32());
-
         for dep in dependencies.iter() {
             for package in packages.iter_mut() {
                 if dep.name == package.name {
@@ -201,37 +203,52 @@ impl Command for Add {
             }
         }
 
-        // Create progress bar for package installation
-        let progress_bar = ProgressBar::new(dependencies.len() as u64);
-
-        progress_bar.set_style(
-            ProgressStyle::default_bar()
-                .progress_chars(PROGRESS_CHARS)
-                .template(&format!(
-                    "{} [{{bar:40.green/magenta}}] {{msg:.blue}}",
-                    "Installing Packages".bright_blue()
-                )),
-        );
-
         // Remove duplicate dependencies
         dependencies.dedup();
 
+        let install_start = Instant::now();
+
+        let bar = ProgressBar::new(dependencies.len() as u64);
+
+        bar.set_style(
+            ProgressStyle::default_bar()
+                .template("[{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+                .progress_chars("=>-"),
+        );
+
+        // let chunks = dependencies.chunks(14).collect::<Vec<_>>();
+
+        // for chunk in chunks.iter() {
         dependencies
             .into_iter()
             .map(|v| install_package(&app, v, State {}))
             .collect::<FuturesUnordered<_>>()
-            .inspect(|_| progress_bar.inc(1))
+            .inspect(|_| bar.inc(1))
             .try_collect::<()>()
             .await
             .unwrap();
+        // }
 
-        progress_bar.finish();
+        // dependencies
+
+        bar.finish_and_clear();
+
+        println!(
+            "{} Installed {} dependencies",
+            format!("[{:.2}{}]", install_start.elapsed().as_secs_f32(), "s")
+                .truecolor(156, 156, 156)
+                .bold(),
+            total.to_string().truecolor(196, 206, 255).bold()
+        );
 
         for package in packages {
             package_file.add_dependency(package);
         }
 
+        // Save package.json
         package_file.save()?;
+
+        // Save lockfiles
         global_lock_file.save()?;
         lock_file.save()?;
 
