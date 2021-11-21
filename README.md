@@ -130,4 +130,4 @@ We use [semver](https://semver.org/) for versioning. For the versions available,
 
 ## License
 
-This project is licensed under Apache 2 - see the [LICENSE.md](LICENSE) file for details.
+This project is licensed under Apache-2.0 - see the [LICENSE.md](LICENSE) file for details.
