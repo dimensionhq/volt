@@ -281,8 +281,6 @@ async fn remove_node_version(versions: Vec<&str>) {
                 );
             }
         }
-    } else if PLATFORM == Os::Linux {
-    } else if PLATFORM == Os::Macos {
     } else {
         println!("OS is not supported!");
     }
