@@ -16,16 +16,14 @@
 
 //! Manage local node versions
 
-use std::env;
 use std::path::Path;
-use std::str::{self, FromStr};
+use std::str;
 use std::{fmt::Display, fs::File, io::Write};
 
 use clap::ArgMatches;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
-use std::process::Command;
 use tempfile::tempdir;
 use tokio::fs;
 //use async_trait::async_trait;
@@ -290,47 +288,56 @@ async fn remove_node_version(versions: Vec<&str>) {
     }
 }
 
+#[cfg(target_os = "windows")]
+async fn use_windows(version: String) {
+    let homedir = dirs::home_dir().unwrap();
+    let node_path = format!(
+        "{}\\AppData\\Local\\Volt\\Node\\{}\\node.exe",
+        homedir.display(),
+        version
+    );
+    let path = Path::new(&node_path);
+
+    if path.exists() {
+        println!("Using version {}", version);
+        let link_dir = format!("{}\\AppData\\Local\\Volt\\bin", homedir.display());
+        fs::create_dir_all(&link_dir).await.unwrap();
+        let link_file = format!("{}\\AppData\\Local\\Volt\\bin\\node.exe", homedir.display());
+        let link_file = Path::new(&link_file);
+        if link_file.exists() {
+            fs::remove_file(link_file).await.unwrap();
+        }
+        let link = format!("{}\\{}", link_dir, "node.exe");
+        println!("{}\n{}", node_path, link);
+
+        let symlink = std::os::windows::symlink_file(node_path, link);
+
+        match symlink {
+            Ok(_) => {}
+            Err(_) => {
+                println!("Error: \"volt node use\" must be run as an administrator on Windows!")
+            }
+        }
+
+        let path = env::var("PATH").unwrap();
+        //println!("{}", path);
+        if !path.contains(&link_dir) {
+            //env_perm::append("PATH", &link_dir);
+            let command = format!("[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + '{}', 'User')", &link_dir);
+            let stdout = Command::new("Powershell")
+                .args(&["-Command", &command])
+                .output();
+            println!("PATH environment variable updated.\nYou will need to restart your terminal for changes to apply.");
+        }
+    } else {
+        println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version);
+    }
+}
+
 async fn use_node_version(version: String) {
     if PLATFORM == Os::Windows {
-        let homedir = dirs::home_dir().unwrap();
-        let node_path = format!(
-            "{}\\AppData\\Local\\Volt\\Node\\{}\\node.exe",
-            homedir.display(),
-            version
-        );
-        let path = Path::new(&node_path);
-
-        if path.exists() {
-            println!("Using version {}", version);
-            let link_dir = format!("{}\\AppData\\Local\\Volt\\bin", homedir.display());
-            fs::create_dir_all(&link_dir).await.unwrap();
-            let link_file = format!("{}\\AppData\\Local\\Volt\\bin\\node.exe", homedir.display());
-            let link_file = Path::new(&link_file);
-            if link_file.exists() {
-                fs::remove_file(link_file).await.unwrap();
-            }
-            let link = format!("{}\\{}", link_dir, "node.exe");
-            println!("{}\n{}", node_path, link);
-            let symlink = std::fs::symlink_file(node_path, link);
-            match symlink {
-                Ok(_) => {}
-                Err(_) => {
-                    println!("Error: \"volt node use\" must be run as an administrator on Windows!")
-                }
-            }
-            let path = env::var("PATH").unwrap();
-            //println!("{}", path);
-            if !path.contains(&link_dir) {
-                //env_perm::append("PATH", &link_dir);
-                let command = format!("[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + '{}', 'User')", &link_dir);
-                let stdout = Command::new("Powershell")
-                    .args(&["-Command", &command])
-                    .output();
-                println!("PATH environment variable updated.\nYou will need to restart your terminal for changes to apply.");
-            }
-        } else {
-            println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version);
-        }
+        #[cfg(target_os = "windows")]
+        use_windows(version).await;
     } else if PLATFORM == Os::Linux {
         let homedir = dirs::home_dir().unwrap();
         let node_path = format!("{}/.volt/Node/{}/node", homedir.display(), version);
