@@ -16,15 +16,18 @@
 
 //! Manage local node versions
 
+use std::env;
+use std::path::Path;
+use std::str::{self, FromStr};
+use std::{fmt::Display, fs::File, io::Write};
+
 use clap::ArgMatches;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
+use std::process::Command;
 use tempfile::tempdir;
 use tokio::fs;
-
-use std::{fmt::Display, fs::File, io::Write, path::Path, str};
-
 //use async_trait::async_trait;
 //use colored::Colorize;
 
@@ -122,7 +125,8 @@ impl Node {
     pub async fn download(args: &ArgMatches) -> Result<()> {
         match args.subcommand() {
             Some(("use", version)) => {
-                println!("Using version {}", version.value_of("version").unwrap());
+                let v: String = String::from(version.value_of("version").unwrap());
+                use_node_version(v).await;
             }
             Some(("install", versions)) => {
                 let v: Vec<&str> = versions.values_of("versions").unwrap().collect();
@@ -130,7 +134,7 @@ impl Node {
             }
             Some(("remove", versions)) => {
                 let v: Vec<&str> = versions.values_of("versions").unwrap().collect();
-                println!("Removing version {:?}", v);
+                remove_node_version(v).await;
             }
             _ => {}
         }
@@ -217,9 +221,6 @@ async fn download_node_version(versions: Vec<&str>) {
                 fs::create_dir_all(&node_path).await.unwrap();
 
                 format!("{}\\node.exe", &node_path)
-            } else {
-                println!("OS not supported.");
-                continue;
             }
             /*
             else if (PLATFORM == Os::Linux) {
@@ -227,6 +228,10 @@ async fn download_node_version(versions: Vec<&str>) {
             else if (PLATFORM == Os::Macos) {
             }
             */
+            else {
+                println!("OS not supported.");
+                continue;
+            }
         };
 
         if Path::new(&node_path).exists() {
@@ -246,7 +251,7 @@ async fn download_node_version(versions: Vec<&str>) {
                 .unwrap();
 
             println!("file to download: '{}'", fname);
-            let _fname = dir.path().join(fname.to_string());
+            let _fname = dir.path().join(format!("{}", fname));
             File::create(&node_path).unwrap()
         };
 
@@ -254,6 +259,90 @@ async fn download_node_version(versions: Vec<&str>) {
 
         dest.write_all(&content).unwrap();
         println!("\n---\n");
+    }
+}
+
+async fn remove_node_version(versions: Vec<&str>) {
+    if PLATFORM == Os::Windows {
+        for version in versions {
+            let homedir = dirs::home_dir().unwrap();
+            let node_path = format!(
+                "{}\\AppData\\Local\\Volt\\Node\\{}",
+                homedir.display(),
+                version
+            );
+            let path = Path::new(&node_path);
+            println!("{}", path.display());
+            if path.exists() {
+                fs::remove_dir_all(&path).await.unwrap();
+                println!("Removed version {}", version);
+            } else {
+                println!(
+                    "Failed to remove NodeJS version {}.\nThat version was not installed.",
+                    version
+                );
+            }
+        }
+    } else if PLATFORM == Os::Linux {
+    } else if PLATFORM == Os::Macos {
+    } else {
+        println!("OS is not supported!");
+    }
+}
+
+async fn use_node_version(version: String) {
+    if PLATFORM == Os::Windows {
+        let homedir = dirs::home_dir().unwrap();
+        let node_path = format!(
+            "{}\\AppData\\Local\\Volt\\Node\\{}\\node.exe",
+            homedir.display(),
+            version
+        );
+        let path = Path::new(&node_path);
+
+        if path.exists() {
+            println!("Using version {}", version);
+            let link_dir = format!("{}\\AppData\\Local\\Volt\\bin", homedir.display());
+            fs::create_dir_all(&link_dir).await.unwrap();
+            let link_file = format!("{}\\AppData\\Local\\Volt\\bin\\node.exe", homedir.display());
+            let link_file = Path::new(&link_file);
+            if link_file.exists() {
+                fs::remove_file(link_file).await.unwrap();
+            }
+            let link = format!("{}\\{}", link_dir, "node.exe");
+            println!("{}\n{}", node_path, link);
+            let symlink = std::os::windows::fs::symlink_file(node_path, link);
+            match symlink {
+                Ok(_) => {}
+                Err(_) => {
+                    println!("Error: \"volt node use\" must be run as an administrator on Windows!")
+                }
+            }
+            let path = env::var("PATH").unwrap();
+            //println!("{}", path);
+            if !path.contains(&link_dir) {
+                //env_perm::append("PATH", &link_dir);
+                let command = format!("[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + '{}', 'User')", &link_dir);
+                let stdout = Command::new("Powershell")
+                    .args(&["-Command", &command])
+                    .output();
+                println!("PATH environment variable updated.\nYou will need to restart your terminal for changes to apply.");
+            }
+        } else {
+            println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version);
+        }
+    } else if PLATFORM == Os::Linux {
+        let homedir = dirs::home_dir().unwrap();
+        let node_path = format!("{}/.volt/Node/{}/node", homedir.display(), version);
+        let path = Path::new(&node_path);
+
+        if path.exists() {
+            let link_dir = format!("{}/.local/bin", homedir.display());
+            let link = format!("{}/{}", link_dir, "node.exe");
+            //let symlink = std::os::unix::fs::symlink(node_path, link);
+        } else {
+            println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version)
+        }
     }
 }
 
