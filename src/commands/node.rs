@@ -311,7 +311,7 @@ async fn use_node_version(version: String) {
             }
             let link = format!("{}\\{}", link_dir, "node.exe");
             println!("{}\n{}", node_path, link);
-            let symlink = std::os::windows::fs::symlink_file(node_path, link);
+            let symlink = std::fs::symlink_file(node_path, link);
             match symlink {
                 Ok(_) => {}
                 Err(_) => {
