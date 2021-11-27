@@ -19,7 +19,7 @@ WARNING: Volt is still in the development stage and is not ready for use!
 
 **Reliable**: Volt is built to be reliable and dependable.
 
-**Robust**: Volt works under harsh conditions with low resource usage.
+**Robust**: Volt works with low resource usage.
 
 **Important**: Volt is still in the alpha stage of development, and is not ready for use in production or development environments.
 <br>
