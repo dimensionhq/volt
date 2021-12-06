@@ -16,18 +16,25 @@
 
 //! Manage local node versions
 
-use std::path::Path;
-use std::str;
-use std::{fmt::Display, fs::File, io::Write};
+use std::{
+    fmt::Display,
+    fs::File,
+    io::{BufReader, Write},
+    path::Path,
+    process::Command,
+    str,
+};
 
+use base64::decode;
 use clap::ArgMatches;
+use futures::io;
+use lzma_rs::xz_decompress;
+//use lz4_flex;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
 use tempfile::tempdir;
 use tokio::fs;
-//use async_trait::async_trait;
-//use colored::Colorize;
 
 const PLATFORM: Os = if cfg!(target_os = "windows") {
     Os::Windows
@@ -186,11 +193,11 @@ async fn download_node_version(versions: Vec<&str>) {
                 continue;
             }
 
-            if PLATFORM == Os::Windows {
-                download_url = format!("{}/win-{}/node.exe", download_url, ARCH);
+            download_url = if cfg!(target_os = "windows") {
+                format!("{}/win-{}/node.exe", download_url, ARCH)
             } else {
-                download_url = format!("{}/node-v{}-{}-{}.tar.gz", download_url, v, PLATFORM, ARCH);
-            }
+                format!("{}/node-v{}-{}-{}.tar.xz", download_url, v, PLATFORM, ARCH)
+            };
 
             tracing::debug!("Got final URL '{}'", download_url);
         } else if v.parse::<Range>().is_ok() {
@@ -212,50 +219,127 @@ async fn download_node_version(versions: Vec<&str>) {
         }
 
         let node_path = {
-            if PLATFORM == Os::Windows {
-                let homedir = dirs::home_dir().unwrap();
-                let node_path = format!("{}\\AppData\\Local\\Volt\\Node\\{}", homedir.display(), v);
-                println!("Will install under: {}", node_path);
-                fs::create_dir_all(&node_path).await.unwrap();
-
-                format!("{}\\node.exe", &node_path)
+            let datadir = dirs::data_dir().unwrap().join("volt").join("node");
+            if !datadir.exists() {
+                fs::create_dir_all(&datadir).await.unwrap();
             }
-            /*
-            else if (PLATFORM == Os::Linux) {
-            }
-            else if (PLATFORM == Os::Macos) {
-            }
-            */
-            else {
-                println!("OS not supported.");
-                continue;
-            }
+            datadir
+        };
+        // Get the name of the directory the tarball unpacks to
+        let unpack_loc = if cfg!(target_os = "windows") {
+            v // Windows locations are just saved in a folder named after the version number
+              // e.g. C:\Users\Alice\AppData\Roaming\volt\node\12.2.0
+        } else {
+            download_url
+                .split("/")
+                .last()
+                .unwrap()
+                .strip_suffix(".tar.xz")
+                .unwrap()
         };
 
-        if Path::new(&node_path).exists() {
-            println!("Node.js v{} is already installed!", v);
+        if node_path.join(unpack_loc).exists() {
+            println!("Node.js v{} is already installed, nothing to do!", v);
             continue;
         }
 
-        println!("Installing version {}", v);
+        // -------- Windows compat to here -------
+
+        tracing::debug!("Installing to: {:?}", node_path);
+
+        println!("Installing version {} from {} ", v, download_url);
         let response = reqwest::get(&download_url).await.unwrap();
 
-        let mut dest = {
-            let fname = response
-                .url()
-                .path_segments()
-                .and_then(|segments| segments.last())
-                .and_then(|name| if name.is_empty() { None } else { Some(name) })
-                .unwrap();
+        // TODO: move fname outside of this block to use it elsewhere
+        // I think I'm recreating it to use separately from this
 
-            println!("file to download: '{}'", fname);
-            let _fname = dir.path().join(format!("{}", fname));
-            File::create(&node_path).unwrap()
-        };
+        let fname = response
+            .url()
+            .path_segments()
+            .and_then(|segments| segments.last())
+            .and_then(|name| if name.is_empty() { None } else { Some(name) })
+            .unwrap()
+            .to_string();
+
+        println!("file to download: '{}'", fname);
+        let dir = Path::new("/home/user/tmp/rust/node/");
+
+        let mut dest = File::create(&dir.join(&fname)).unwrap();
+        let mut tarball = File::create(dir.join("foo.tar")).unwrap();
 
         let content = response.bytes().await.unwrap();
 
         dest.write_all(&content).unwrap();
+
+        xz_decompress(
+            &mut BufReader::new(File::open(dir.join(&fname)).unwrap()),
+            &mut tarball,
+        )
+        .unwrap();
+
+        /*
+         *
+         *    let f = File::open("/home/user/tmp/rust/node/node-v12.4.0-linux-x64.tar.xz").unwrap();
+         *    let mut c = File::create("/home/user/tmp/rust/node/node-v12.4.0-linux-x64.tar").unwrap();
+         *
+         *    let mut f = BufReader::new(f);
+         *    let mut decomp: Vec<u8> = Vec::new();
+         *    //lzma_rs::xz_decompress(&mut f, &mut decomp).unwrap();
+         *
+         *    lzma_rs::xz_decompress(&mut f, &mut c).unwrap();
+         *
+         */
+
+        /*
+         *        let mut f = std::io::BufReader::new(File::open(dir.join(&fname)).unwrap());
+         *
+         *        let mut decomp: Vec<u8> = Vec::new();
+         *        //lzma_rs::xz_decompress(&mut f, &mut decomp).unwrap();
+         *
+         *        let mut rdr = lz4_flex::frame::FrameDecoder::new(f);
+         *
+         *        std::io::copy(&mut rdr, &mut decomp);
+         *
+         *        println!("Len: {}", decomp.len());
+         *
+         *        tarball.write_all(&decomp).unwrap();
+         */
+        //let mut rdr = lz4_flex::frame::FrameDecoder::new(File::open(&dir.join(&fname)).unwrap());
+        //std::io::copy(&mut rdr, &mut File::create(dir.join("foo.tar")).unwrap());
+        //let dlpath = dir.path().join("node.tar");
+        /*
+         *        let dlpath = Path::new("/home/user/tmp/rust/node/node.tar");
+         *
+         *        let mut wtr = File::create("/home/user/tmp/rust/node/fuckyou.tar").unwrap();
+         *        let mut wtr = File::open("/home/user/tmp/rust/node/fuckyou.tar").unwrap();
+         *
+         *        println!("rdr: {:?}", rdr);
+         *        println!("wtr: {:?}", wtr);
+         *
+         *        std::io::copy(&mut rdr, &mut wtr).expect("fuk u");
+         */
+
+        /*
+         *        let tarball = File::open(&dlpath).unwrap();
+         *
+         *        let mut ar = tar::Archive::new(tarball);
+         *        ar.unpack(node_path).unwrap();
+         */
+
+        /*
+         *        let decomp = lzma::decompress(&content).unwrap();
+         *        let dlpath = dir.path().join("node.tar");
+         *        let mut tarball = File::create(&dlpath).unwrap();
+         *
+         *        tarball.write_all(&decomp).unwrap();
+         *
+         *        // Have to open it separately after writing or we get a bad file descriptor error I guess
+         *        let tarball = File::open(&dlpath).unwrap();
+         *
+         *        let mut ar = tar::Archive::new(tarball);
+         *        ar.unpack(node_path).unwrap();
+         */
+
         println!("\n---\n");
     }
 }
