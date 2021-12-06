@@ -114,11 +114,8 @@ impl Command for Add {
 
         bar.enable_steady_tick(10);
 
-        // Fetch npm data including hash to fetch dependencies
-        let data = npm::get_versions(&packages, &bar).await?;
-
         // Fetch pre-flattened dependency trees from the registry
-        let responses = fetch_dep_tree(&data, &bar).await?;
+        let responses = fetch_dep_tree(&bar);
 
         let mut dependencies: Vec<VoltPackage> = vec![];
 

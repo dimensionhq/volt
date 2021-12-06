@@ -142,12 +142,12 @@ pub fn convert(version: String, deserialized: JSONVoltResponse) -> Result<VoltRe
 }
 
 pub async fn get_volt_response_multi(
-    versions: &[(PackageInfo, String, VoltPackage, bool)],
+    versions: &[PackageInfo],
     bar: &ProgressBar,
 ) -> Vec<Result<VoltResponse>> {
     versions
         .iter()
-        .map(|(package_info, hash, package, no_deps)| {
+        .map(|package_info| {
             bar.set_message(format!(
                 "{}{}{}",
                 "volt".bright_green().bold(),
@@ -162,12 +162,7 @@ pub async fn get_volt_response_multi(
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(
-    package_info: &PackageInfo,
-    hash: &str,
-    package: VoltPackage,
-    zero_deps: bool,
-) -> Result<VoltResponse> {
+pub async fn get_volt_response(package_info: &PackageInfo) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
@@ -788,10 +783,7 @@ pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State
     Ok(())
 }
 
-pub async fn fetch_dep_tree(
-    data: &[(PackageInfo, String, VoltPackage, bool)],
-    bar: &ProgressBar,
-) -> Result<Vec<VoltResponse>> {
+pub async fn fetch_dep_tree(data: &[PackageInfo], bar: &ProgressBar) -> Result<Vec<VoltResponse>> {
     if data.len() > 1 {
         Ok(get_volt_response_multi(data, bar)
             .await
@@ -802,12 +794,10 @@ pub async fn fetch_dep_tree(
             "{}{}{}",
             "volt".bright_green().bold(),
             "::".bright_black(),
-            data[0].0.name
+            data[0].name
         ));
 
-        Ok(vec![
-            get_volt_response(&data[0].0, &data[0].1, data[0].2.clone(), data[0].3).await?,
-        ])
+        Ok(vec![get_volt_response(&data[0]).await?])
     }
 }
 
