@@ -16,18 +16,26 @@
 
 //! Manage local node versions
 
-use std::path::Path;
-use std::str;
-use std::{fmt::Display, fs::File, io::Write};
+use std::{
+    env,
+    fmt::Display,
+    fs::File,
+    io::{BufReader, Write},
+    path::Path,
+    process::Command,
+    str,
+};
 
+use base64::decode;
 use clap::ArgMatches;
+use futures::io;
+use lzma_rs::xz_decompress;
+//use lz4_flex;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
 use tempfile::tempdir;
 use tokio::fs;
-//use async_trait::async_trait;
-//use colored::Colorize;
 
 const PLATFORM: Os = if cfg!(target_os = "windows") {
     Os::Windows
@@ -186,11 +194,11 @@ async fn download_node_version(versions: Vec<&str>) {
                 continue;
             }
 
-            if PLATFORM == Os::Windows {
-                download_url = format!("{}/win-{}/node.exe", download_url, ARCH);
+            download_url = if cfg!(target_os = "windows") {
+                format!("{}/win-{}/node.exe", download_url, ARCH)
             } else {
-                download_url = format!("{}/node-v{}-{}-{}.tar.gz", download_url, v, PLATFORM, ARCH);
-            }
+                format!("{}/node-v{}-{}-{}.tar.xz", download_url, v, PLATFORM, ARCH)
+            };
 
             tracing::debug!("Got final URL '{}'", download_url);
         } else if v.parse::<Range>().is_ok() {
@@ -212,77 +220,104 @@ async fn download_node_version(versions: Vec<&str>) {
         }
 
         let node_path = {
-            if PLATFORM == Os::Windows {
-                let homedir = dirs::home_dir().unwrap();
-                let node_path = format!("{}\\AppData\\Local\\Volt\\Node\\{}", homedir.display(), v);
-                println!("Will install under: {}", node_path);
-                fs::create_dir_all(&node_path).await.unwrap();
-
-                format!("{}\\node.exe", &node_path)
+            let datadir = dirs::data_dir().unwrap().join("volt").join("node");
+            if !datadir.exists() {
+                fs::create_dir_all(&datadir).await.unwrap();
             }
-            /*
-            else if (PLATFORM == Os::Linux) {
-            }
-            else if (PLATFORM == Os::Macos) {
-            }
-            */
-            else {
-                println!("OS not supported.");
-                continue;
-            }
+            datadir
+        };
+        // Get the name of the directory the tarball unpacks to
+        let unpack_loc = if cfg!(target_os = "windows") {
+            v // Windows locations are just saved in a folder named after the version number
+              // e.g. C:\Users\Alice\AppData\Roaming\volt\node\12.2.0
+        } else {
+            // The unix folders are just created by the tarball,
+            // which is the basename of the file
+            download_url
+                .split("/")
+                .last()
+                .unwrap()
+                .strip_suffix(".tar.xz")
+                .unwrap()
         };
 
-        if Path::new(&node_path).exists() {
-            println!("Node.js v{} is already installed!", v);
+        let node_path = node_path.join(unpack_loc);
+        if node_path.exists() {
+            println!("Node.js v{} is already installed, nothing to do!", v);
             continue;
         }
 
-        println!("Installing version {}", v);
+        tracing::debug!("Installing to: {:?}", node_path);
+
+        // The name of the file we're downloading from the mirror
+        let fname = download_url.split("/").last().unwrap().to_string();
+
+        println!("Installing version {} from {} ", v, download_url);
+        println!("file to download: '{}'", fname);
+
         let response = reqwest::get(&download_url).await.unwrap();
-
-        let mut dest = {
-            let fname = response
-                .url()
-                .path_segments()
-                .and_then(|segments| segments.last())
-                .and_then(|name| if name.is_empty() { None } else { Some(name) })
-                .unwrap();
-
-            println!("file to download: '{}'", fname);
-            let _fname = dir.path().join(format!("{}", fname));
-            File::create(&node_path).unwrap()
-        };
 
         let content = response.bytes().await.unwrap();
 
-        dest.write_all(&content).unwrap();
+        if cfg!(target_os = "windows") {
+            fs::create_dir_all(&node_path).await.unwrap();
+            let mut dest = File::create(node_path.join(&fname)).unwrap();
+            dest.write_all(&content).unwrap();
+        } else {
+            // TODO: Need to use https://github.com/fpgaminer/rust-lzma on linux
+            // (if liblzma is widely available on distros) since it's way faster than
+            // lzma_rs, but depends on the native lzma library being installed.
+            // Need to check if `brew install xzip` will install it on osx, I think so.
+
+            // File to write the download to
+            let mut dest = File::create(dir.path().join(&fname)).unwrap();
+
+            // File to write the decompressed tarball to
+            let mut tarball =
+                File::create(dir.path().join(&fname.strip_suffix(".xz").unwrap())).unwrap();
+
+            dest.write_all(&content).unwrap();
+
+            xz_decompress(
+                &mut BufReader::new(File::open(dir.path().join(&fname)).unwrap()),
+                &mut tarball,
+            )
+            .unwrap();
+
+            // Make sure the first file handle is closed
+            drop(tarball);
+
+            // Have to reopen it for reading, File::create() opens for write only
+            let tarball = File::open(dir.path().join(&fname.strip_suffix(".xz").unwrap())).unwrap();
+
+            // Unpack the tarball to the right spot
+            let mut ar = tar::Archive::new(tarball);
+            ar.unpack(node_path).unwrap();
+        }
+
         println!("\n---\n");
     }
 }
 
 async fn remove_node_version(versions: Vec<&str>) {
-    if PLATFORM == Os::Windows {
-        for version in versions {
-            let homedir = dirs::home_dir().unwrap();
-            let node_path = format!(
-                "{}\\AppData\\Local\\Volt\\Node\\{}",
-                homedir.display(),
+    for version in versions {
+        let node_path = dirs::data_dir()
+            .unwrap()
+            .join("volt")
+            .join("node")
+            .join(version);
+
+        println!("{}", node_path.display());
+
+        if node_path.exists() {
+            fs::remove_dir_all(&node_path).await.unwrap();
+            println!("Removed version {}", version);
+        } else {
+            println!(
+                "Failed to remove NodeJS version {}.\nThat version was not installed.",
                 version
             );
-            let path = Path::new(&node_path);
-            println!("{}", path.display());
-            if path.exists() {
-                fs::remove_dir_all(&path).await.unwrap();
-                println!("Removed version {}", version);
-            } else {
-                println!(
-                    "Failed to remove NodeJS version {}.\nThat version was not installed.",
-                    version
-                );
-            }
         }
-    } else {
-        println!("OS is not supported!");
     }
 }
 
@@ -308,7 +343,7 @@ async fn use_windows(version: String) {
         let link = format!("{}\\{}", link_dir, "node.exe");
         println!("{}\n{}", node_path, link);
 
-        let symlink = std::os::windows::symlink_file(node_path, link);
+        let symlink = std::os::windows::fs::symlink_file(node_path, link);
 
         match symlink {
             Ok(_) => {}
