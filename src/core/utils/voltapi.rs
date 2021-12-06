@@ -35,6 +35,7 @@ pub struct VoltPackage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JSONVoltResponse {
+    pub version: String,
     #[serde(flatten)]
     pub versions: HashMap<String, JSONVoltPackage>,
 }

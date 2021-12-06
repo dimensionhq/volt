@@ -115,7 +115,7 @@ impl Command for Add {
         bar.enable_steady_tick(10);
 
         // Fetch pre-flattened dependency trees from the registry
-        let responses = fetch_dep_tree(&bar);
+        let responses = fetch_dep_tree(&packages, &bar).await?;
 
         let mut dependencies: Vec<VoltPackage> = vec![];
 
@@ -239,7 +239,7 @@ impl Command for Add {
         );
 
         for package in packages {
-            package_file.add_dependency(package);
+            package_file.add_dependency(package.to_owned());
         }
 
         // Save package.json

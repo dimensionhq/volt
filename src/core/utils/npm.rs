@@ -33,7 +33,7 @@ use serde_json::Value;
 use ssri::{Algorithm, Integrity};
 
 pub fn parse_versions(packages: &[String]) -> Result<Vec<PackageInfo>> {
-    let mut parsed: Vec<PackageInfo> = vec![];
+    let mut parsed: Vec<PackageInfo> = Vec::with_capacity(packages.len());
 
     for package in packages.iter() {
         let split = package.split('@').map(|s| s.trim()).collect::<Vec<&str>>();

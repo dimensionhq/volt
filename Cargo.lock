@@ -2284,12 +2284,13 @@ dependencies = [
 
 [[package]]
 name = "semver_rs"
-version = "0.1.3"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1379d42bd1762e75c0adcf754e7eedf5b90901cc1be65d7b4ff444bb194cf277"
+checksum = "9594e1aab972e5b5ecbb330754bef51c7ba0dc12644b6bae9e09a4e19d472586"
 dependencies = [
  "lazy_static",
  "regex",
+ "thiserror",
  "unicase",
 ]
 

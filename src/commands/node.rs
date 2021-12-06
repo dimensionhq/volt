@@ -234,7 +234,7 @@ async fn download_node_version(versions: Vec<&str>) {
             // The unix folders are just created by the tarball,
             // which is the basename of the file
             download_url
-                .split("/")
+                .split('/')
                 .last()
                 .unwrap()
                 .strip_suffix(".tar.xz")
@@ -250,7 +250,7 @@ async fn download_node_version(versions: Vec<&str>) {
         tracing::debug!("Installing to: {:?}", node_path);
 
         // The name of the file we're downloading from the mirror
-        let fname = download_url.split("/").last().unwrap().to_string();
+        let fname = download_url.split('/').last().unwrap().to_string();
 
         println!("Installing version {} from {} ", v, download_url);
         println!("file to download: '{}'", fname);

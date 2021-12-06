@@ -154,7 +154,8 @@ pub async fn get_volt_response_multi(
                 "::".bright_black().bold(),
                 package_info.name
             ));
-            get_volt_response(package_info, hash, package.to_owned(), *no_deps)
+
+            get_volt_response(package_info)
         })
         .collect::<FuturesUnordered<_>>()
         .collect::<Vec<Result<VoltResponse>>>()
@@ -166,38 +167,26 @@ pub async fn get_volt_response(package_info: &PackageInfo) -> Result<VoltRespons
     // number of retries
     let mut retries = 0;
 
-    // only 1 package, zero dependencies
-    if zero_deps {
-        let mut versions: HashMap<String, VoltPackage> = HashMap::new();
-
-        versions.insert(
-            format!("{}@{}", package.clone().version, package.clone().name),
-            package.clone(),
-        );
-
-        return Ok(VoltResponse {
-            version: package.version,
-            versions,
-        });
-    }
-
     // loop until MAX_RETRIES reached.
     loop {
         // get a response
-        let mut response = isahc::get_async(format!("http://registry.voltpkg.com/{}.json", hash))
-            .await
-            .map_err(VoltError::NetworkError)?;
+        let mut response = isahc::get_async(format!(
+            "http://registry.voltpkg.com/{}.json",
+            &package_info.name
+        ))
+        .await
+        .map_err(VoltError::NetworkError)?;
 
         // check the status of the response
         match response.status() {
             // 200 (OK)
             StatusCode::OK => {
-                let deserialized = response
+                let deserialized: JSONVoltResponse = response
                     .json()
                     .await
                     .map_err(|_| VoltError::DeserializeError)?;
 
-                let converted = convert(package.version, deserialized)?;
+                let converted = convert(deserialized.version.clone(), deserialized)?;
 
                 return Ok(converted);
             }
@@ -241,6 +230,7 @@ pub async fn get_volt_response(package_info: &PackageInfo) -> Result<VoltRespons
         retries += 1;
     }
 }
+
 // #[cfg(windows)]
 // pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
 //     for entry in WalkDir::new(src) {
