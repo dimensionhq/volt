@@ -17,6 +17,7 @@
 //! Manage local node versions
 
 use std::{
+    env,
     fmt::Display,
     fs::File,
     io::{BufReader, Write},
@@ -230,6 +231,8 @@ async fn download_node_version(versions: Vec<&str>) {
             v // Windows locations are just saved in a folder named after the version number
               // e.g. C:\Users\Alice\AppData\Roaming\volt\node\12.2.0
         } else {
+            // The unix folders are just created by the tarball,
+            // which is the basename of the file
             download_url
                 .split("/")
                 .last()
@@ -238,135 +241,83 @@ async fn download_node_version(versions: Vec<&str>) {
                 .unwrap()
         };
 
-        if node_path.join(unpack_loc).exists() {
+        let node_path = node_path.join(unpack_loc);
+        if node_path.exists() {
             println!("Node.js v{} is already installed, nothing to do!", v);
             continue;
         }
 
-        // -------- Windows compat to here -------
-
         tracing::debug!("Installing to: {:?}", node_path);
 
+        // The name of the file we're downloading from the mirror
+        let fname = download_url.split("/").last().unwrap().to_string();
+
         println!("Installing version {} from {} ", v, download_url);
-        let response = reqwest::get(&download_url).await.unwrap();
-
-        // TODO: move fname outside of this block to use it elsewhere
-        // I think I'm recreating it to use separately from this
-
-        let fname = response
-            .url()
-            .path_segments()
-            .and_then(|segments| segments.last())
-            .and_then(|name| if name.is_empty() { None } else { Some(name) })
-            .unwrap()
-            .to_string();
-
         println!("file to download: '{}'", fname);
-        let dir = Path::new("/home/user/tmp/rust/node/");
 
-        let mut dest = File::create(&dir.join(&fname)).unwrap();
-        let mut tarball = File::create(dir.join("foo.tar")).unwrap();
+        let response = reqwest::get(&download_url).await.unwrap();
 
         let content = response.bytes().await.unwrap();
 
-        dest.write_all(&content).unwrap();
+        if cfg!(target_os = "windows") {
+            fs::create_dir_all(&node_path).await.unwrap();
+            let mut dest = File::create(node_path.join(&fname)).unwrap();
+            dest.write_all(&content).unwrap();
+        } else {
+            // TODO: Need to use https://github.com/fpgaminer/rust-lzma on linux
+            // (if liblzma is widely available on distros) since it's way faster than
+            // lzma_rs, but depends on the native lzma library being installed.
+            // Need to check if `brew install xzip` will install it on osx, I think so.
 
-        xz_decompress(
-            &mut BufReader::new(File::open(dir.join(&fname)).unwrap()),
-            &mut tarball,
-        )
-        .unwrap();
+            // File to write the download to
+            let mut dest = File::create(dir.path().join(&fname)).unwrap();
 
-        /*
-         *
-         *    let f = File::open("/home/user/tmp/rust/node/node-v12.4.0-linux-x64.tar.xz").unwrap();
-         *    let mut c = File::create("/home/user/tmp/rust/node/node-v12.4.0-linux-x64.tar").unwrap();
-         *
-         *    let mut f = BufReader::new(f);
-         *    let mut decomp: Vec<u8> = Vec::new();
-         *    //lzma_rs::xz_decompress(&mut f, &mut decomp).unwrap();
-         *
-         *    lzma_rs::xz_decompress(&mut f, &mut c).unwrap();
-         *
-         */
+            // File to write the decompressed tarball to
+            let mut tarball =
+                File::create(dir.path().join(&fname.strip_suffix(".xz").unwrap())).unwrap();
 
-        /*
-         *        let mut f = std::io::BufReader::new(File::open(dir.join(&fname)).unwrap());
-         *
-         *        let mut decomp: Vec<u8> = Vec::new();
-         *        //lzma_rs::xz_decompress(&mut f, &mut decomp).unwrap();
-         *
-         *        let mut rdr = lz4_flex::frame::FrameDecoder::new(f);
-         *
-         *        std::io::copy(&mut rdr, &mut decomp);
-         *
-         *        println!("Len: {}", decomp.len());
-         *
-         *        tarball.write_all(&decomp).unwrap();
-         */
-        //let mut rdr = lz4_flex::frame::FrameDecoder::new(File::open(&dir.join(&fname)).unwrap());
-        //std::io::copy(&mut rdr, &mut File::create(dir.join("foo.tar")).unwrap());
-        //let dlpath = dir.path().join("node.tar");
-        /*
-         *        let dlpath = Path::new("/home/user/tmp/rust/node/node.tar");
-         *
-         *        let mut wtr = File::create("/home/user/tmp/rust/node/fuckyou.tar").unwrap();
-         *        let mut wtr = File::open("/home/user/tmp/rust/node/fuckyou.tar").unwrap();
-         *
-         *        println!("rdr: {:?}", rdr);
-         *        println!("wtr: {:?}", wtr);
-         *
-         *        std::io::copy(&mut rdr, &mut wtr).expect("fuk u");
-         */
+            dest.write_all(&content).unwrap();
 
-        /*
-         *        let tarball = File::open(&dlpath).unwrap();
-         *
-         *        let mut ar = tar::Archive::new(tarball);
-         *        ar.unpack(node_path).unwrap();
-         */
+            xz_decompress(
+                &mut BufReader::new(File::open(dir.path().join(&fname)).unwrap()),
+                &mut tarball,
+            )
+            .unwrap();
 
-        /*
-         *        let decomp = lzma::decompress(&content).unwrap();
-         *        let dlpath = dir.path().join("node.tar");
-         *        let mut tarball = File::create(&dlpath).unwrap();
-         *
-         *        tarball.write_all(&decomp).unwrap();
-         *
-         *        // Have to open it separately after writing or we get a bad file descriptor error I guess
-         *        let tarball = File::open(&dlpath).unwrap();
-         *
-         *        let mut ar = tar::Archive::new(tarball);
-         *        ar.unpack(node_path).unwrap();
-         */
+            // Make sure the first file handle is closed
+            drop(tarball);
+
+            // Have to reopen it for reading, File::create() opens for write only
+            let tarball = File::open(dir.path().join(&fname.strip_suffix(".xz").unwrap())).unwrap();
+
+            // Unpack the tarball to the right spot
+            let mut ar = tar::Archive::new(tarball);
+            ar.unpack(node_path).unwrap();
+        }
 
         println!("\n---\n");
     }
 }
 
 async fn remove_node_version(versions: Vec<&str>) {
-    if PLATFORM == Os::Windows {
-        for version in versions {
-            let homedir = dirs::home_dir().unwrap();
-            let node_path = format!(
-                "{}\\AppData\\Local\\Volt\\Node\\{}",
-                homedir.display(),
+    for version in versions {
+        let node_path = dirs::data_dir()
+            .unwrap()
+            .join("volt")
+            .join("node")
+            .join(version);
+
+        println!("{}", node_path.display());
+
+        if node_path.exists() {
+            fs::remove_dir_all(&node_path).await.unwrap();
+            println!("Removed version {}", version);
+        } else {
+            println!(
+                "Failed to remove NodeJS version {}.\nThat version was not installed.",
                 version
             );
-            let path = Path::new(&node_path);
-            println!("{}", path.display());
-            if path.exists() {
-                fs::remove_dir_all(&path).await.unwrap();
-                println!("Removed version {}", version);
-            } else {
-                println!(
-                    "Failed to remove NodeJS version {}.\nThat version was not installed.",
-                    version
-                );
-            }
         }
-    } else {
-        println!("OS is not supported!");
     }
 }
 
@@ -392,7 +343,7 @@ async fn use_windows(version: String) {
         let link = format!("{}\\{}", link_dir, "node.exe");
         println!("{}\n{}", node_path, link);
 
-        let symlink = std::os::windows::symlink_file(node_path, link);
+        let symlink = std::os::windows::fs::symlink_file(node_path, link);
 
         match symlink {
             Ok(_) => {}
