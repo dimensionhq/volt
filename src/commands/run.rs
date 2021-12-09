@@ -20,6 +20,7 @@ use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
 
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 
@@ -72,7 +73,7 @@ Options:
         } else if cfg!(target_os = "linux") {
             println!("{}", format!("$ {}", script).truecolor(156, 156, 156));
 
-            let mut child = Command::new(format!("node_modules/.bin/{}", script))
+            let mut child = Command::new(Path::new("node_modules/").join(".bin/").join(script))
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .spawn()
