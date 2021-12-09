@@ -40,7 +40,7 @@ use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
-use reqwest::StatusCode;
+use reqwest::{Client, StatusCode};
 use speedy::Readable;
 use ssri::{Algorithm, Integrity};
 use tar::Archive;
@@ -56,10 +56,11 @@ use std::{
     sync::Arc,
 };
 
-pub struct State {}
+pub struct State {
+    pub http_client: Client,
+}
 
 //pub struct State {
-//pub http_client: Client,
 //}
 
 /// convert a SpeedyVoltResponse -> VoltResponse
@@ -402,7 +403,7 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
 }
 
 /// downloads and extracts tarball file from package
-pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) -> Result<()> {
+pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> Result<()> {
     let package_instance = package.clone();
 
     let package_name = package.name.clone();
@@ -442,11 +443,6 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
         }
     }
 
-    let client = reqwest::ClientBuilder::new()
-        .use_rustls_tls()
-        .build()
-        .unwrap();
-
     let existing_check = cacache::read_sync(
         &extract_directory,
         format!(
@@ -458,7 +454,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
     // if package is not already installed
     if existing_check.is_err() {
         // Tarball bytes response
-        let bytes: bytes::Bytes = client
+        let bytes: bytes::Bytes = state
+            .http_client
             .get(package_instance.tarball)
             .send()
             .await

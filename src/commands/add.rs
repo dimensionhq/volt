@@ -30,6 +30,7 @@ use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
+use reqwest::Client;
 
 use std::{sync::Arc, time::Instant};
 
@@ -214,9 +215,19 @@ impl Command for Add {
                 .progress_chars("=>-"),
         );
 
+        let client = Client::builder().use_rustls_tls().build().unwrap();
+
         dependencies
             .into_iter()
-            .map(|v| install_package(&app, v, State {}))
+            .map(|v| {
+                install_package(
+                    &app,
+                    v,
+                    State {
+                        http_client: client.clone(),
+                    },
+                )
+            })
             .collect::<FuturesUnordered<_>>()
             .inspect(|_| bar.inc(1))
             .try_collect::<()>()
