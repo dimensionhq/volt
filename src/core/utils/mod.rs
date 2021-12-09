@@ -51,7 +51,7 @@ use std::{
     convert::TryFrom,
     ffi::OsStr,
     fs::{read_to_string, File},
-    io::{Read, Write},
+    io::{Cursor, Read, Write},
     path::{Component, Path, PathBuf},
     sync::Arc,
 };
@@ -378,6 +378,29 @@ pub async fn get_volt_response(package_info: &PackageInfo) -> Result<VoltRespons
 //     }
 // }
 
+pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
+    // gzip RFC1952: a valid gzip file has an ISIZE field in the
+    // footer, which is a little-endian u32 number representing the
+    // decompressed size. This is ideal for libdeflate, which needs
+    // preallocating the decompressed buffer.
+    let isize = {
+        let isize_start = gz_data.len() - 4;
+        let isize_bytes = &gz_data[isize_start..];
+        let mut ret: u32 = isize_bytes[0] as u32;
+        ret |= (isize_bytes[1] as u32) << 8;
+        ret |= (isize_bytes[2] as u32) << 16;
+        ret |= (isize_bytes[3] as u32) << 26;
+        ret as usize
+    };
+
+    let mut decompressor = libdeflater::Decompressor::new();
+    let mut outbuf = Vec::new();
+    outbuf.resize(isize, 0);
+    decompressor.gzip_decompress(&gz_data, &mut outbuf).unwrap();
+
+    outbuf
+}
+
 /// downloads and extracts tarball file from package
 pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) -> Result<()> {
     let package_instance = package.clone();
@@ -463,78 +486,32 @@ pub async fn download_tarball(app: &App, package: VoltPackage, _state: State) ->
             // let node_modules_dep_path = app.node_modules_dir.join(&package.name);
             let node_modules_dep_path = app.node_modules_dir.clone();
 
-            // Initialize tarfile decoder while directly passing in bytes
+            // decompress gzipped tarball
+            let decompressed_bytes = decompress_tarball(&bytes);
 
-            let bytes = Arc::new(bytes);
+            // Generate the tarball archive given the decompressed bytes
+            let mut node_archive = Archive::new(Cursor::new(decompressed_bytes));
 
-            let bytes_ref = bytes.clone();
+            let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
 
-            futures::try_join!(
-                tokio::task::spawn_blocking(move || {
-                    let node_gz_decoder = GzDecoder::new(&**bytes_ref);
+            for entry in node_archive.entries().unwrap() {
+                let mut entry = entry.unwrap();
+                let mut buffer = vec![];
 
-                    let mut node_archive = Archive::new(node_gz_decoder);
+                entry.read_to_end(&mut buffer).unwrap();
 
-                    for entry in node_archive.entries().unwrap() {
-                        let mut entry = entry.unwrap();
-                        let path = entry.path().unwrap();
-                        let mut new_path = PathBuf::new();
+                let sri = cacache::write_hash_sync(extract_directory.clone(), &buffer).unwrap();
 
-                        for component in path.components() {
-                            if component.as_os_str() == "package" {
-                                new_path.push(Component::Normal(OsStr::new(&package.name)));
-                            } else {
-                                new_path.push(component)
-                            }
-                        }
+                cas_file_map.insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
+            }
 
-                        std::fs::create_dir_all(
-                            node_modules_dep_path
-                                .to_path_buf()
-                                .join(&new_path)
-                                .parent()
-                                .unwrap(),
-                        )
-                        .unwrap();
-
-                        match entry.unpack(node_modules_dep_path.to_path_buf().join(&new_path)) {
-                            Ok(_v) => {}
-                            Err(err) => {
-                                println!("{:?}", err);
-                            }
-                        }
-                    }
-                }),
-                tokio::task::spawn_blocking(move || {
-                    let gz_decoder = GzDecoder::new(&**bytes);
-
-                    let mut archive = Archive::new(gz_decoder);
-
-                    let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
-
-                    for entry in archive.entries().unwrap() {
-                        let mut entry = entry.unwrap();
-                        let mut buffer = vec![];
-
-                        entry.read_to_end(&mut buffer).unwrap();
-
-                        let sri =
-                            cacache::write_hash_sync(extract_directory.clone(), &buffer).unwrap();
-
-                        cas_file_map
-                            .insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
-                    }
-
-                    cacache::write_sync(
-                        extract_directory.clone(),
-                        format!(
-                            "pkg::{}::{}::{}",
-                            &package_name, &package_version, package.integrity
-                        ),
-                        serde_json::to_string(&cas_file_map).unwrap(),
-                    )
-                    .unwrap();
-                })
+            cacache::write_sync(
+                extract_directory.clone(),
+                format!(
+                    "pkg::{}::{}::{}",
+                    &package_name, &package_version, package.integrity
+                ),
+                serde_json::to_string(&cas_file_map).unwrap(),
             )
             .unwrap();
         } else {
