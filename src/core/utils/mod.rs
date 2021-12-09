@@ -18,7 +18,6 @@ pub mod app;
 pub mod constants;
 pub mod errors;
 pub mod helper;
-pub mod npm;
 pub mod package;
 pub mod scripts;
 pub mod voltapi;
@@ -27,7 +26,7 @@ use crate::{
     commands::add::PackageInfo,
     core::{
         utils::constants::MAX_RETRIES,
-        utils::voltapi::JSONVoltResponse,
+        utils::voltapi::SpeedyVoltResponse,
         utils::voltapi::{VoltPackage, VoltResponse},
     },
 };
@@ -42,6 +41,7 @@ use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
 use reqwest::StatusCode;
+use speedy::Readable;
 use ssri::{Algorithm, Integrity};
 use tar::Archive;
 use tokio::fs::create_dir_all;
@@ -62,8 +62,8 @@ pub struct State {}
 //pub http_client: Client,
 //}
 
-/// convert a JSONVoltResponse -> VoltResponse
-pub fn convert(version: String, deserialized: JSONVoltResponse) -> Result<VoltResponse> {
+/// convert a SpeedyVoltResponse -> VoltResponse
+pub fn convert(version: String, deserialized: SpeedyVoltResponse) -> Result<VoltResponse> {
     // initialize a hashmap to store the converted versions
     let mut converted_versions: HashMap<String, VoltPackage> = HashMap::new();
 
@@ -171,7 +171,7 @@ pub async fn get_volt_response(package_info: &PackageInfo) -> Result<VoltRespons
     loop {
         // get a response
         let mut response = isahc::get_async(format!(
-            "http://registry.voltpkg.com/{}.json",
+            "http://registry.voltpkg.com/{}.sp",
             &package_info.name
         ))
         .await
@@ -181,10 +181,8 @@ pub async fn get_volt_response(package_info: &PackageInfo) -> Result<VoltRespons
         match response.status() {
             // 200 (OK)
             StatusCode::OK => {
-                let deserialized: JSONVoltResponse = response
-                    .json()
-                    .await
-                    .map_err(|_| VoltError::DeserializeError)?;
+                let deserialized: SpeedyVoltResponse =
+                    SpeedyVoltResponse::read_from_buffer(&response.bytes().await.unwrap()).unwrap();
 
                 let converted = convert(deserialized.version.clone(), deserialized)?;
 

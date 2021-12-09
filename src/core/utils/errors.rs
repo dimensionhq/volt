@@ -84,7 +84,7 @@ pub enum VoltError {
     #[diagnostic(code(volt::integrity::convert))]
     IntegrityConversionError,
 
-    #[error("failed to deserialize slice to `JSONVoltResponse`")]
+    #[error("failed to deserialize slice to `SpeedyVoltResponse`")]
     #[diagnostic(code(volt::integrity::convert))]
     DeserializeError,
 

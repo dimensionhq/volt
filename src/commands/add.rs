@@ -20,7 +20,7 @@ use crate::{
     core::model::lock_file::{DependencyID, DependencyLock, LockFile},
     core::utils::voltapi::VoltPackage,
     core::utils::{fetch_dep_tree, package::PackageJson},
-    core::utils::{install_package, npm, State},
+    core::utils::{install_package, State},
     core::{command::Command, VERSION},
     App,
 };

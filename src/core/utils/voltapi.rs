@@ -11,18 +11,16 @@
     limitations under the License.
 */
 
-use serde::{Deserialize, Serialize};
-
+use speedy::{Readable, Writable};
 use std::collections::HashMap;
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Writable, Readable)]
 pub struct VoltResponse {
     pub version: String,
-    #[serde(flatten)]
     pub versions: HashMap<String, VoltPackage>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Writable, Readable)]
 pub struct VoltPackage {
     pub name: String,
     pub version: String,
@@ -33,21 +31,17 @@ pub struct VoltPackage {
     pub dependencies: Option<Vec<String>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JSONVoltResponse {
+#[derive(Debug, Clone, Writable, Readable)]
+pub struct SpeedyVoltResponse {
     pub version: String,
-    #[serde(flatten)]
-    pub versions: HashMap<String, JSONVoltPackage>,
+    pub versions: HashMap<String, SpeedyVoltPackage>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JSONVoltPackage {
+#[derive(Debug, Clone, Writable, Readable)]
+pub struct SpeedyVoltPackage {
     pub integrity: String,
     pub tarball: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub bin: Option<HashMap<String, String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_dependencies: Option<Vec<String>>,
 }
