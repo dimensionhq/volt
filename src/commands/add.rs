@@ -100,6 +100,7 @@ impl Command for Add {
         let global_lockfile = &app.home_dir.join(".global.lock");
 
         // Load local and global lockfiles.
+        let start = Instant::now();
         let mut lock_file =
             LockFile::load(lockfile_path).unwrap_or_else(|_| LockFile::new(lockfile_path));
 
@@ -213,9 +214,6 @@ impl Command for Add {
                 .progress_chars("=>-"),
         );
 
-        // let chunks = dependencies.chunks(14).collect::<Vec<_>>();
-
-        // for chunk in chunks.iter() {
         dependencies
             .into_iter()
             .map(|v| install_package(&app, v, State {}))
@@ -224,9 +222,6 @@ impl Command for Add {
             .try_collect::<()>()
             .await
             .unwrap();
-        // }
-
-        // dependencies
 
         bar.finish_and_clear();
 
