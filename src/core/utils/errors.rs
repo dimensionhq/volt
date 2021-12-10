@@ -26,6 +26,10 @@ pub enum VoltError {
     #[diagnostic(code(volt::environment::get))]
     EnvironmentError { source: std::io::Error, env: String },
 
+    #[error("failed to parse package specification: `{spec}`")]
+    #[diagnostic(code(volt::package_spec::parse))]
+    PackageSpecificationError { spec: String },
+
     #[error("failed to detect your home directory")]
     #[diagnostic(code(volt::environment::home_dir))]
     GetHomeDirError,

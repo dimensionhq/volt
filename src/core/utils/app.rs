@@ -22,6 +22,7 @@ use crate::{
 use clap::ArgMatches;
 use dirs::home_dir;
 use miette::Result;
+use package_spec::{parse_package_spec, PackageSpec};
 use sha1::Digest;
 use sha2::Sha512;
 use ssri::{Algorithm, Integrity};
@@ -73,7 +74,7 @@ impl App {
     }
 
     /// Retrieve packages passed in
-    pub fn get_packages(&self) -> Result<Vec<PackageInfo>> {
+    pub fn get_packages(&self) -> Result<Vec<PackageSpec>> {
         let mut args = self
             .args
             .values_of("package-names")
@@ -137,34 +138,15 @@ impl App {
     }
 }
 
-pub fn parse_versions(packages: &[String]) -> Result<Vec<PackageInfo>> {
-    let mut parsed: Vec<PackageInfo> = Vec::with_capacity(packages.len());
+pub fn parse_versions(packages: &[String]) -> Result<Vec<PackageSpec>> {
+    let mut parsed: Vec<PackageSpec> = Vec::with_capacity(packages.len());
 
     for package in packages.iter() {
-        let split = package.split('@').map(|s| s.trim()).collect::<Vec<&str>>();
-        let length = split.len();
-
-        if length == 1 {
-            parsed.push(PackageInfo {
-                name: split[0].to_string(),
-                version: None,
-            });
-        } else if length == 2 && !package.contains('/') {
-            parsed.push(PackageInfo {
-                name: split[0].to_string(),
-                version: Some(split[1].to_string()),
-            });
-        } else if length == 2 && package.contains('/') {
-            parsed.push(PackageInfo {
-                name: format!("@{}", split[1]),
-                version: None,
-            });
-        } else if length == 3 && package.contains('/') {
-            parsed.push(PackageInfo {
-                name: format!("@{}", split[1]),
-                version: Some(split[2].to_string()),
-            });
-        }
+        parsed.push(parse_package_spec(package).map_err(|_| {
+            VoltError::PackageSpecificationError {
+                spec: package.to_string(),
+            }
+        })?);
     }
 
     Ok(parsed)
