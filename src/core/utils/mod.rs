@@ -187,24 +187,22 @@ pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltRespons
                 // 429 (TOO_MANY_REQUESTS)
                 StatusCode::TOO_MANY_REQUESTS => {
                     return Err(VoltError::TooManyRequests {
-                        url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                        package_name: package_info.name.clone(),
+                        url: format!("http://registry.voltpkg.com/{}.sp", &package_spec),
                     }
                     .into());
                 }
                 // 400 (BAD_REQUEST)
                 StatusCode::BAD_REQUEST => {
                     return Err(VoltError::BadRequest {
-                        url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                        package_name: package_info.name.clone(),
+                        url: format!("http://registry.voltpkg.com/{}", &package_spec),
                     }
                     .into());
                 }
                 // 404 (NOT_FOUND)
                 StatusCode::NOT_FOUND if retries == MAX_RETRIES => {
                     return Err(VoltError::PackageNotFound {
-                        url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                        package_name: package_info.name.clone(),
+                        url: format!("http://registry.voltpkg.com/{}", &package_spec),
+                        package_name: package_spec.to_string(),
                     }
                     .into());
                 }
@@ -212,8 +210,8 @@ pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltRespons
                 _ => {
                     if retries == MAX_RETRIES {
                         return Err(VoltError::NetworkUnknownError {
-                            url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                            package_name: package_info.name.clone(),
+                            url: format!("http://registry.voltpkg.com/{}", name),
+                            package_name: package_spec.to_string(),
                             code: response.status().as_str().to_string(),
                         }
                         .into());
@@ -223,6 +221,8 @@ pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltRespons
 
             retries += 1;
         }
+    } else {
+        panic!("Volt does not support non-npm package specifications yet.");
     }
 }
 

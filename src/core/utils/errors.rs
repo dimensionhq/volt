@@ -58,11 +58,11 @@ pub enum VoltError {
 
     #[error("GET {url} - 429 - Too many requests has been sent to {url} on the volt registry. Please try again later.")]
     #[diagnostic(code(volt::registry::volt::too_many_requests))]
-    TooManyRequests { url: String, package_name: String },
+    TooManyRequests { url: String },
 
     #[error("GET {url} - 400 - Bad request. Please try again later.")]
     #[diagnostic(code(volt::registry::volt::bad_request))]
-    BadRequest { url: String, package_name: String },
+    BadRequest { url: String },
 
     #[error("GET {url} - {} - An unknown error occured. Please try again later.")]
     #[diagnostic(code(volt::registry::volt::unknown_error))]

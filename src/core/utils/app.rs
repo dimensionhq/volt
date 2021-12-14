@@ -145,12 +145,7 @@ pub fn parse_versions(packages: &[String]) -> Result<Vec<PackageSpec>> {
             })?;
 
         // for now, volt only supports npm packages
-        match package_spec {
-            Npm => {
-                parsed_specifications.push(package_spec);
-            }
-            _ => {}
-        }
+        parsed_specifications.push(package_spec);
     }
 
     Ok(parsed_specifications)
