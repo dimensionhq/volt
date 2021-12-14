@@ -22,13 +22,10 @@ pub mod package;
 pub mod scripts;
 pub mod voltapi;
 
-use crate::{
-    commands::add::PackageInfo,
-    core::{
-        utils::constants::MAX_RETRIES,
-        utils::voltapi::SpeedyVoltResponse,
-        utils::voltapi::{VoltPackage, VoltResponse},
-    },
+use crate::core::{
+    utils::constants::MAX_RETRIES,
+    utils::voltapi::SpeedyVoltResponse,
+    utils::voltapi::{VoltPackage, VoltResponse},
 };
 
 use app::App;
@@ -40,6 +37,7 @@ use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::Result;
+use package_spec::PackageSpec;
 use reqwest::{Client, StatusCode};
 use speedy::Readable;
 use ssri::{Algorithm, Integrity};
@@ -142,21 +140,14 @@ pub fn convert(version: String, deserialized: SpeedyVoltResponse) -> Result<Volt
     })
 }
 
-pub async fn get_volt_response_multi(
-    versions: &[PackageInfo],
-    bar: &ProgressBar,
-) -> Vec<Result<VoltResponse>> {
-    versions
+pub async fn get_volt_response_multi(packages: &[PackageSpec]) -> Vec<Result<VoltResponse>> {
+    packages
         .iter()
-        .map(|package_info| {
-            bar.set_message(format!(
-                "{}{}{}",
-                "volt".bright_green().bold(),
-                "::".bright_black().bold(),
-                package_info.name
-            ));
-
-            get_volt_response(package_info)
+        .map(|v| {
+            get_volt_response(v)
+            // if v.is_npm() {
+            //     get_volt_response(v);
+            // }
         })
         .collect::<FuturesUnordered<_>>()
         .collect::<Vec<Result<VoltResponse>>>()
@@ -164,19 +155,17 @@ pub async fn get_volt_response_multi(
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(package_info: &PackageInfo) -> Result<VoltResponse> {
+pub async fn get_volt_response(package_info: &PackageSpec) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
     // loop until MAX_RETRIES reached.
     loop {
         // get a response
-        let mut response = isahc::get_async(format!(
-            "http://registry.voltpkg.com/{}.sp",
-            &package_info.name
-        ))
-        .await
-        .map_err(VoltError::NetworkError)?;
+        let mut response =
+            isahc::get_async(format!("http://registry.voltpkg.com/{}.sp", &package_info))
+                .await
+                .map_err(VoltError::NetworkError)?;
 
         // check the status of the response
         match response.status() {
@@ -745,20 +734,13 @@ pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State
     Ok(())
 }
 
-pub async fn fetch_dep_tree(data: &[PackageInfo], bar: &ProgressBar) -> Result<Vec<VoltResponse>> {
+pub async fn fetch_dep_tree(data: &[PackageSpec]) -> Result<Vec<VoltResponse>> {
     if data.len() > 1 {
-        Ok(get_volt_response_multi(data, bar)
+        Ok(get_volt_response_multi(data)
             .await
             .into_iter()
             .collect::<Result<Vec<_>>>()?)
     } else {
-        bar.set_message(format!(
-            "{}{}{}",
-            "volt".bright_green().bold(),
-            "::".bright_black(),
-            data[0].name
-        ));
-
         Ok(vec![get_volt_response(&data[0]).await?])
     }
 }

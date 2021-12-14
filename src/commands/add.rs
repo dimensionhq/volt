@@ -35,12 +35,6 @@ use reqwest::Client;
 
 use std::{sync::Arc, time::Instant};
 
-#[derive(Clone, Debug)]
-pub struct PackageInfo {
-    pub name: String,
-    pub version: Option<String>,
-}
-
 /// Struct implementation for the `Add` command.
 #[derive(Clone)]
 pub struct Add {}
@@ -111,13 +105,12 @@ impl Command for Add {
         // let resolve_start = Instant::now();
 
         // let bar = ProgressBar::new_spinner()
-        //     .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"))
-        //     .with_message(packages[0]);
+        //     .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"));
 
         // bar.enable_steady_tick(10);
 
-        // // Fetch pre-flattened dependency trees from the registry
-        // let responses = fetch_dep_tree(&packages, &bar).await?;
+        // Fetch pre-flattened dependency trees from the registry
+        let responses = fetch_dep_tree(&packages).await?;
 
         // let mut dependencies: Vec<VoltPackage> = vec![];
 
