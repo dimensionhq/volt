@@ -194,14 +194,14 @@ pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltRespons
                 // 400 (BAD_REQUEST)
                 StatusCode::BAD_REQUEST => {
                     return Err(VoltError::BadRequest {
-                        url: format!("http://registry.voltpkg.com/{}", &package_spec),
+                        url: format!("http://registry.voltpkg.com/{}.sp", &package_spec),
                     }
                     .into());
                 }
                 // 404 (NOT_FOUND)
                 StatusCode::NOT_FOUND if retries == MAX_RETRIES => {
                     return Err(VoltError::PackageNotFound {
-                        url: format!("http://registry.voltpkg.com/{}", &package_spec),
+                        url: format!("http://registry.voltpkg.com/{}.sp", &package_spec),
                         package_name: package_spec.to_string(),
                     }
                     .into());
@@ -210,7 +210,7 @@ pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltRespons
                 _ => {
                     if retries == MAX_RETRIES {
                         return Err(VoltError::NetworkUnknownError {
-                            url: format!("http://registry.voltpkg.com/{}", name),
+                            url: format!("http://registry.voltpkg.com/{}.sp", name),
                             package_name: package_spec.to_string(),
                             code: response.status().as_str().to_string(),
                         }
@@ -393,7 +393,7 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
     let mut decompressor = libdeflater::Decompressor::new();
     let mut outbuf = Vec::new();
     outbuf.resize(isize, 0);
-    decompressor.gzip_decompress(&gz_data, &mut outbuf).unwrap();
+    decompressor.gzip_decompress(gz_data, &mut outbuf).unwrap();
 
     outbuf
 }
