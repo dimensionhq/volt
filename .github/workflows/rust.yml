@@ -5,6 +5,9 @@ jobs:
     name: Linux build pipeline
     runs-on: ubuntu-latest
     steps:
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+    
       - uses: actions/checkout@v2
       - name: Toolchain Install
         uses: actions-rs/toolchain@v1.0.6
@@ -28,6 +31,9 @@ jobs:
     name: Windows build pipeline
     runs-on: windows-latest
     steps:
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+      
       - uses: actions/checkout@v2
       - name: Toolchain Install
         uses: actions-rs/toolchain@v1.0.6
