@@ -15,9 +15,9 @@
 */
 
 use super::errors::VoltError;
-use crate::commands::add::PackageInfo;
 
 use miette::{IntoDiagnostic, Result};
+use package_spec::PackageSpec;
 use serde::{Deserialize, Serialize};
 
 use std::{
@@ -233,9 +233,9 @@ impl PackageJson {
         Ok(())
     }
 
-    pub fn add_dependency(&mut self, package: PackageInfo) {
-        self.dependencies
-            .insert(package.name, package.version.unwrap_or_default());
+    pub fn add_dependency(&mut self, package: PackageSpec) {
+        // self.dependencies
+        //     .insert(package.name, package.version.unwrap_or_default());
     }
 
     // pub fn add_dev_dependency(&mut self, package: Package) {

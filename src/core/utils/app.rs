@@ -14,10 +14,7 @@
     limitations under the License.
 */
 
-use crate::{
-    commands::add::PackageInfo,
-    core::utils::{enable_ansi_support, errors::VoltError},
-};
+use crate::core::utils::{enable_ansi_support, errors::VoltError};
 
 use clap::ArgMatches;
 use dirs::home_dir;
@@ -139,15 +136,22 @@ impl App {
 }
 
 pub fn parse_versions(packages: &[String]) -> Result<Vec<PackageSpec>> {
-    let mut parsed: Vec<PackageSpec> = Vec::with_capacity(packages.len());
+    let mut parsed_specifications: Vec<PackageSpec> = Vec::with_capacity(packages.len());
 
     for package in packages.iter() {
-        parsed.push(parse_package_spec(package).map_err(|_| {
-            VoltError::PackageSpecificationError {
+        let package_spec =
+            parse_package_spec(package).map_err(|_| VoltError::PackageSpecificationError {
                 spec: package.to_string(),
+            })?;
+
+        // for now, volt only supports npm packages
+        match package_spec {
+            Npm => {
+                parsed_specifications.push(package_spec);
             }
-        })?);
+            _ => {}
+        }
     }
 
-    Ok(parsed)
+    Ok(parsed_specifications)
 }

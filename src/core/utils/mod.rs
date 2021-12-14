@@ -155,67 +155,74 @@ pub async fn get_volt_response_multi(packages: &[PackageSpec]) -> Vec<Result<Vol
 }
 
 // Get response from volt CDN
-pub async fn get_volt_response(package_info: &PackageSpec) -> Result<VoltResponse> {
+pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltResponse> {
     // number of retries
     let mut retries = 0;
 
-    // loop until MAX_RETRIES reached.
-    loop {
-        // get a response
-        let mut response =
-            isahc::get_async(format!("http://registry.voltpkg.com/{}.sp", &package_info))
-                .await
-                .map_err(VoltError::NetworkError)?;
+    // we know that PackageSpec is of type npm (we filtered the non-npm ones out)
 
-        // check the status of the response
-        match response.status() {
-            // 200 (OK)
-            StatusCode::OK => {
-                let deserialized: SpeedyVoltResponse =
-                    SpeedyVoltResponse::read_from_buffer(&response.bytes().await.unwrap()).unwrap();
+    if let PackageSpec::Npm {
+        name,
+        requested,
+        scope,
+    } = package_spec
+    {
+        // loop until MAX_RETRIES reached.
+        loop {
+            // get a response
+            let mut response =
+                isahc::get_async(format!("http://registry.voltpkg.com/{}.sp", &package_spec))
+                    .await
+                    .map_err(VoltError::NetworkError)?;
 
-                let converted = convert(deserialized.version.clone(), deserialized)?;
+            // check the status of the response
+            match response.status() {
+                // 200 (OK)
+                StatusCode::OK => {
+                    let response: VoltResponse =
+                        VoltResponse::read_from_buffer(&response.bytes().await.unwrap()).unwrap();
 
-                return Ok(converted);
-            }
-            // 429 (TOO_MANY_REQUESTS)
-            StatusCode::TOO_MANY_REQUESTS => {
-                return Err(VoltError::TooManyRequests {
-                    url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                    package_name: package_info.name.clone(),
+                    return Ok(response);
                 }
-                .into());
-            }
-            // 400 (BAD_REQUEST)
-            StatusCode::BAD_REQUEST => {
-                return Err(VoltError::BadRequest {
-                    url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                    package_name: package_info.name.clone(),
-                }
-                .into());
-            }
-            // 404 (NOT_FOUND)
-            StatusCode::NOT_FOUND if retries == MAX_RETRIES => {
-                return Err(VoltError::PackageNotFound {
-                    url: format!("http://registry.voltpkg.com/{}", package_info.name),
-                    package_name: package_info.name.clone(),
-                }
-                .into());
-            }
-            // Other Errors
-            _ => {
-                if retries == MAX_RETRIES {
-                    return Err(VoltError::NetworkUnknownError {
+                // 429 (TOO_MANY_REQUESTS)
+                StatusCode::TOO_MANY_REQUESTS => {
+                    return Err(VoltError::TooManyRequests {
                         url: format!("http://registry.voltpkg.com/{}", package_info.name),
                         package_name: package_info.name.clone(),
-                        code: response.status().as_str().to_string(),
                     }
                     .into());
                 }
+                // 400 (BAD_REQUEST)
+                StatusCode::BAD_REQUEST => {
+                    return Err(VoltError::BadRequest {
+                        url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                        package_name: package_info.name.clone(),
+                    }
+                    .into());
+                }
+                // 404 (NOT_FOUND)
+                StatusCode::NOT_FOUND if retries == MAX_RETRIES => {
+                    return Err(VoltError::PackageNotFound {
+                        url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                        package_name: package_info.name.clone(),
+                    }
+                    .into());
+                }
+                // Other Errors
+                _ => {
+                    if retries == MAX_RETRIES {
+                        return Err(VoltError::NetworkUnknownError {
+                            url: format!("http://registry.voltpkg.com/{}", package_info.name),
+                            package_name: package_info.name.clone(),
+                            code: response.status().as_str().to_string(),
+                        }
+                        .into());
+                    }
+                }
             }
-        }
 
-        retries += 1;
+            retries += 1;
+        }
     }
 }
 
