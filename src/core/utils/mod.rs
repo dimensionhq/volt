@@ -24,7 +24,6 @@ pub mod voltapi;
 
 use crate::core::{
     utils::constants::MAX_RETRIES,
-    utils::voltapi::SpeedyVoltResponse,
     utils::voltapi::{VoltPackage, VoltResponse},
 };
 
@@ -60,86 +59,6 @@ pub struct State {
 
 //pub struct State {
 //}
-
-/// convert a SpeedyVoltResponse -> VoltResponse
-pub fn convert(version: String, deserialized: SpeedyVoltResponse) -> Result<VoltResponse> {
-    // initialize a hashmap to store the converted versions
-    let mut converted_versions: HashMap<String, VoltPackage> = HashMap::new();
-
-    // iterate through all listed dependencies of the latest version of the response
-    for version in deserialized.versions {
-        // access data in the hashmap, not name@version
-        let data = version.1;
-
-        // @codemirror/state -> state
-        let split = version
-            .0
-            .split('@')
-            .filter(|s| !s.is_empty())
-            .collect::<Vec<&str>>();
-
-        let mut package_name = String::new();
-
-        if split.len() == 2 {
-            package_name = split[0].to_string();
-            if package_name.contains('/') {
-                package_name = format!("@{}", package_name);
-            }
-        }
-
-        // @codemirror/state@1.2.3 -> 1.2.3
-        let package_version = version.0.split('@').last().unwrap();
-
-        let integrity: Integrity =
-            data.integrity
-                .clone()
-                .parse()
-                .map_err(|_| VoltError::HashParseError {
-                    hash: data.integrity.clone(),
-                })?;
-
-        let algo = integrity.pick_algorithm();
-
-        let mut hash = integrity
-            .hashes
-            .into_iter()
-            .find(|h| h.algorithm == algo)
-            .map(|h| Integrity { hashes: vec![h] })
-            .map(|i| i.to_hex().1)
-            .ok_or(VoltError::IntegrityConversionError)?;
-
-        match algo {
-            Algorithm::Sha1 => {
-                hash = format!("sha1-{}", hash);
-            }
-            Algorithm::Sha512 => {
-                hash = format!("sha512-{}", hash);
-            }
-            _ => {}
-        }
-
-        converted_versions.insert(
-            version.0.to_string(), // name@version
-            VoltPackage {
-                name: package_name.to_string(),
-                version: package_version.to_string(),
-                tarball: data.tarball.clone(),
-                bin: data.bin.clone(),
-                integrity: hash,
-                peer_dependencies: data.peer_dependencies.clone(),
-                dependencies: data.dependencies.clone(),
-            },
-        );
-    }
-
-    // create a final hashmap
-
-    Ok(VoltResponse {
-        version,
-        versions: converted_versions,
-    })
-}
-
 pub async fn get_volt_response_multi(packages: &[PackageSpec]) -> Vec<Result<VoltResponse>> {
     packages
         .iter()
@@ -682,34 +601,34 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
 #[cfg(unix)]
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
     // Create node_modules/scripts if it doesn't exist
-    if !Path::new("node_modules/scripts").exists() {
-        std::fs::create_dir_all("node_modules/scripts").unwrap();
-    }
+    // if !Path::new("node_modules/scripts").exists() {
+    //     std::fs::create_dir_all("node_modules/scripts").unwrap();
+    // }
 
-    // If the package has binary scripts, create them
-    if package.bin.is_some() {
-        let bin = package.bin.as_ref().unwrap();
+    // // If the package has binary scripts, create them
+    // if package.bin.is_some() {
+    //     let bin = package.bin.as_ref().unwrap();
 
-        let k = bin.keys().next().unwrap();
-        let v = bin.values().next().unwrap();
+    //     let k = bin.keys().next().unwrap();
+    //     let v = bin.values().next().unwrap();
 
-        let command = format!(
-            r#"
-            node  "{}/.volt/{}/{}" %*
-            "#,
-            app.volt_dir.to_string_lossy(),
-            k,
-            v,
-        );
-        // .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
-        let p = format!(r"node_modules/scripts/{}.sh", k);
-        let mut f = File::create(p.clone()).unwrap();
-        std::process::Command::new("chmod")
-            .args(&["+x", &p])
-            .spawn()
-            .unwrap();
-        f.write_all(command.as_bytes()).unwrap();
-    }
+    //     let command = format!(
+    //         r#"
+    //         node  "{}/.volt/{}/{}" %*
+    //         "#,
+    //         app.volt_dir.to_string_lossy(),
+    //         k,
+    //         v,
+    //     );
+    //     // .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
+    //     let p = format!(r"node_modules/scripts/{}.sh", k);
+    //     let mut f = File::create(p.clone()).unwrap();
+    //     std::process::Command::new("chmod")
+    //         .args(&["+x", &p])
+    //         .spawn()
+    //         .unwrap();
+    //     f.write_all(command.as_bytes()).unwrap();
+    // }
 }
 
 // Unix functions
