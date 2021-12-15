@@ -33,7 +33,7 @@ use miette::Result;
 use package_spec::PackageSpec;
 use reqwest::Client;
 
-use std::{sync::Arc, time::Instant};
+use std::{collections::HashMap, sync::Arc, time::Instant};
 
 /// Struct implementation for the `Add` command.
 #[derive(Clone)]
@@ -111,10 +111,14 @@ impl Command for Add {
 
         // Fetch pre-flattened dependency trees from the registry
         let responses = fetch_dep_tree(&packages).await?;
-        println!("{:?}", responses);
-        // let mut dependencies: Vec<VoltPackage> = vec![];
 
-        // let mut total = 0;
+        let mut final_tree: HashMap<String, VoltPackage> = HashMap::new();
+
+        for response in responses {
+            final_tree.extend(response.tree);
+        }
+
+        let total = final_tree.len();
 
         // for res in responses.iter() {
         //     for package in res.versions.values().into_iter() {

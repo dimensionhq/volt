@@ -17,9 +17,9 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Writable, Readable)]
 pub struct VoltResponse {
-    version: String,                    // the latest version of the package
-    versions: Vec<String>,              // list of versions of the package
-    tree: HashMap<String, VoltPackage>, // the flattened dependency tree for the latest version of the package <name@version, data>
+    pub version: String,                    // the latest version of the package
+    pub versions: Vec<String>,              // list of versions of the package
+    pub tree: HashMap<String, VoltPackage>, // the flattened dependency tree for the latest version of the package <name@version, data>
 }
 
 #[derive(Debug, Clone, Writable, Readable)]
