@@ -111,7 +111,7 @@ impl Command for Add {
 
         // Fetch pre-flattened dependency trees from the registry
         let responses = fetch_dep_tree(&packages).await?;
-
+        println!("{:?}", responses);
         // let mut dependencies: Vec<VoltPackage> = vec![];
 
         // let mut total = 0;

@@ -567,35 +567,35 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 #[cfg(windows)]
 /// Generates the binary and other required scripts for the package
 pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
-    // Create node_modules/scripts if it doesn't exist
-    if !Path::new("node_modules/.bin").exists() {
-        // Create the binary directory
-        std::fs::create_dir_all("node_modules/.bin").unwrap();
-    }
+    // // Create node_modules/scripts if it doesn't exist
+    // if !Path::new("node_modules/.bin").exists() {
+    //     // Create the binary directory
+    //     std::fs::create_dir_all("node_modules/.bin").unwrap();
+    // }
 
-    // Create binary scripts for the package if they exist.
-    if package.bin.is_some() {
-        let bin = package.bin.as_ref().unwrap();
+    // // Create binary scripts for the package if they exist.
+    // if package.bin.is_some() {
+    //     let bin = package.bin.as_ref().unwrap();
 
-        let k = bin.keys().next().unwrap();
-        let v = bin.values().next().unwrap();
+    //     let k = bin.keys().next().unwrap();
+    //     let v = bin.values().next().unwrap();
 
-        let command = format!(
-            r#"
-            @IF EXIST "%~dp0\node.exe" (
-                "%~dp0\node.exe"  "%~dp0\..\{}\{}" %*
-                ) ELSE (
-                    @SETLOCAL
-                    @SET PATHEXT=%PATHEXT:;.JS;=;%
-                    node  "%~dp0\..\{}\{}" %*
-                    )"#,
-            k, v, k, v
-        )
-        .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
+    //     let command = format!(
+    //         r#"
+    //         @IF EXIST "%~dp0\node.exe" (
+    //             "%~dp0\node.exe"  "%~dp0\..\{}\{}" %*
+    //             ) ELSE (
+    //                 @SETLOCAL
+    //                 @SET PATHEXT=%PATHEXT:;.JS;=;%
+    //                 node  "%~dp0\..\{}\{}" %*
+    //                 )"#,
+    //         k, v, k, v
+    //     )
+    //     .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
 
-        let mut f = File::create(format!(r"node_modules/.bin/{}.cmd", k)).unwrap();
-        f.write_all(command.as_bytes()).unwrap();
-    }
+    //     let mut f = File::create(format!(r"node_modules/.bin/{}.cmd", k)).unwrap();
+    //     f.write_all(command.as_bytes()).unwrap();
+    // }
 }
 
 #[cfg(unix)]
