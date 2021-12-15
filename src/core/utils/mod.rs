@@ -59,14 +59,29 @@ pub struct State {
 
 //pub struct State {
 //}
-pub async fn get_volt_response_multi(packages: &[PackageSpec]) -> Vec<Result<VoltResponse>> {
+pub async fn get_volt_response_multi(
+    packages: &[PackageSpec],
+    progress_bar: &ProgressBar,
+) -> Vec<Result<VoltResponse>> {
     packages
         .iter()
-        .map(|v| {
-            get_volt_response(v)
-            // if v.is_npm() {
-            //     get_volt_response(v);
-            // }
+        .map(|spec| {
+            if let PackageSpec::Npm {
+                name,
+                requested,
+                scope,
+            } = spec
+            {
+                let mut version: String = "latest".to_string();
+
+                if requested.is_some() {
+                    version = requested.as_ref().unwrap().to_string();
+                };
+
+                progress_bar.set_message(format!("{}@{}", name, version.truecolor(125, 125, 125)));
+            }
+
+            get_volt_response(spec)
         })
         .collect::<FuturesUnordered<_>>()
         .collect::<Vec<Result<VoltResponse>>>()
@@ -660,13 +675,31 @@ pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State
     Ok(())
 }
 
-pub async fn fetch_dep_tree(data: &[PackageSpec]) -> Result<Vec<VoltResponse>> {
+pub async fn fetch_dep_tree(
+    data: &[PackageSpec],
+    progress_bar: &ProgressBar,
+) -> Result<Vec<VoltResponse>> {
     if data.len() > 1 {
-        Ok(get_volt_response_multi(data)
+        Ok(get_volt_response_multi(data, progress_bar)
             .await
             .into_iter()
             .collect::<Result<Vec<_>>>()?)
     } else {
+        if let PackageSpec::Npm {
+            name,
+            requested,
+            scope,
+        } = &data[0]
+        {
+            let mut version: String = "latest".to_string();
+
+            if requested.is_some() {
+                version = requested.as_ref().unwrap().to_string();
+            };
+
+            progress_bar.set_message(format!("{}@{}", name, version.truecolor(125, 125, 125)));
+        }
+
         Ok(vec![get_volt_response(&data[0]).await?])
     }
 }

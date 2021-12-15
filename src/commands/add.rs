@@ -104,13 +104,13 @@ impl Command for Add {
 
         // let resolve_start = Instant::now();
 
-        // let bar = ProgressBar::new_spinner()
-        //     .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"));
+        let bar = ProgressBar::new_spinner()
+            .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"));
 
-        // bar.enable_steady_tick(10);
+        bar.enable_steady_tick(10);
 
         // Fetch pre-flattened dependency trees from the registry
-        let responses = fetch_dep_tree(&packages).await?;
+        let responses = fetch_dep_tree(&packages, &bar).await?;
 
         let mut final_tree: HashMap<String, VoltPackage> = HashMap::new();
 
@@ -120,14 +120,7 @@ impl Command for Add {
 
         let total = final_tree.len();
 
-        // for res in responses.iter() {
-        //     for package in res.versions.values().into_iter() {
-        //         total += 1;
-        //         dependencies.push(package.to_owned());
-        //     }
-        // }
-
-        // bar.finish_and_clear();
+        bar.finish_and_clear();
 
         // println!(
         //     "{} Resolved {} dependencies",
@@ -136,60 +129,6 @@ impl Command for Add {
         //         .bold(),
         //     total.to_string().truecolor(196, 206, 255).bold()
         // );
-
-        // let mut dependencies: Vec<_> = dependencies
-        //     .iter()
-        //     .map(|object| {
-        //         let mut lock_dependencies: Vec<String> = vec![];
-
-        //         if let Some(peer_deps) = &object.peer_dependencies {
-        //             for dep in peer_deps {
-        //                 if !crate::core::utils::check_peer_dependency(dep) {
-        //                     println!(
-        //                         "{}: {} has unmet peer dependency {}",
-        //                         "warn".bright_yellow(),
-        //                         object.name.bright_cyan(),
-        //                         &dep.bright_yellow()
-        //                     );
-        //                 }
-        //             }
-        //         }
-
-        //         if let Some(dependencies) = &object.dependencies {
-        //             for dep in dependencies {
-        //                 lock_dependencies.push(dep.to_string());
-        //             }
-        //         }
-
-        //         let object_instance = object.clone();
-
-        //         lock_file.dependencies.insert(
-        //             DependencyID(object_instance.name, object_instance.version),
-        //             DependencyLock {
-        //                 name: object.name.clone(),
-        //                 version: object.version.clone(),
-        //                 tarball: object.tarball.clone(),
-        //                 integrity: object.integrity.clone(),
-        //                 dependencies: lock_dependencies.clone(),
-        //             },
-        //         );
-
-        //         let second_instance = object.clone();
-
-        //         global_lock_file.dependencies.insert(
-        //             DependencyID(second_instance.name, second_instance.version),
-        //             DependencyLock {
-        //                 name: object.name.clone(),
-        //                 version: object.version.clone(),
-        //                 tarball: object.tarball.clone(),
-        //                 integrity: object.integrity.clone(),
-        //                 dependencies: lock_dependencies,
-        //             },
-        //         );
-
-        //         object
-        //     })
-        //     .collect();
 
         // for dep in dependencies.iter() {
         //     for package in packages.iter_mut() {
