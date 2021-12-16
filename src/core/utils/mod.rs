@@ -405,6 +405,12 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
             algorithm = Algorithm::Sha512;
         }
 
+        println!(
+            "{} vs {}",
+            package.integrity,
+            App::calc_hash(&bytes, algorithm).unwrap()
+        );
+
         // Verify If Bytes == (Sha512 | Sha1) of Tarball
         if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
             // Create node_modules
@@ -430,6 +436,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                 let sri = cacache::write_hash_sync(extract_directory.clone(), &buffer).unwrap();
 
                 cas_file_map.insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
+
+                println!("{}", entry.path().unwrap().display());
             }
 
             cacache::write_sync(
@@ -656,7 +664,7 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
 }
 
-/// package all steps for installation into 1 convenient function.
+/// Install process for any package.
 pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State) -> Result<()> {
     if download_tarball(app, package.clone(), state).await.is_err() {}
 

@@ -109,76 +109,66 @@ impl Command for Add {
 
         bar.enable_steady_tick(10);
 
+        let resolve_start = Instant::now();
+
         // Fetch pre-flattened dependency trees from the registry
         let responses = fetch_dep_tree(&packages, &bar).await?;
 
-        let mut final_tree: HashMap<String, VoltPackage> = HashMap::new();
+        let mut tree: HashMap<String, VoltPackage> = HashMap::new();
 
         for response in responses {
-            final_tree.extend(response.tree);
+            tree.extend(response.tree);
         }
 
-        let total = final_tree.len();
+        let total = tree.len();
 
         bar.finish_and_clear();
 
-        // println!(
-        //     "{} Resolved {} dependencies",
-        //     format!("[{:.2}{}]", resolve_start.elapsed().as_secs_f32(), "s")
-        //         .truecolor(156, 156, 156)
-        //         .bold(),
-        //     total.to_string().truecolor(196, 206, 255).bold()
-        // );
+        println!(
+            "{} Resolved {} dependencies",
+            format!("[{:.2}{}]", resolve_start.elapsed().as_secs_f32(), "s")
+                .truecolor(156, 156, 156)
+                .bold(),
+            total.to_string().truecolor(196, 206, 255).bold()
+        );
 
-        // for dep in dependencies.iter() {
-        //     for package in packages.iter_mut() {
-        //         if dep.name == package.name {
-        //             package.version = Some(dep.version.clone());
-        //         }
-        //     }
-        // }
+        let install_start = Instant::now();
 
-        // // Remove duplicate dependencies
-        // dependencies.dedup();
+        let bar = ProgressBar::new(total as u64);
 
-        // let install_start = Instant::now();
+        bar.set_style(
+            ProgressStyle::default_bar()
+                .template("[{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+                .progress_chars("=>-"),
+        );
 
-        // let bar = ProgressBar::new(dependencies.len() as u64);
+        let client = Client::builder().use_rustls_tls().build().unwrap();
 
-        // bar.set_style(
-        //     ProgressStyle::default_bar()
-        //         .template("[{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
-        //         .progress_chars("=>-"),
-        // );
+        tree.iter()
+            .map(|(spec, data)| {
+                install_package(
+                    &app,
+                    data,
+                    State {
+                        http_client: client.clone(),
+                    },
+                )
+            })
+            .collect::<FuturesUnordered<_>>()
+            .inspect(|_| bar.inc(1))
+            .try_collect::<()>()
+            .await
+            .unwrap();
 
-        // let client = Client::builder().use_rustls_tls().build().unwrap();
+        bar.finish_and_clear();
 
-        // dependencies
-        //     .into_iter()
-        //     .map(|v| {
-        //         install_package(
-        //             &app,
-        //             v,
-        //             State {
-        //                 http_client: client.clone(),
-        //             },
-        //         )
-        //     })
-        //     .collect::<FuturesUnordered<_>>()
-        //     .inspect(|_| bar.inc(1))
-        //     .try_collect::<()>()
-        //     .await
-        //     .unwrap();
-
-        // bar.finish_and_clear();
-
-        // println!(
-        //     "{} Installed {} dependencies",
-        //     format!("[{:.2}{}]", install_start.elapsed().as_secs_f32(), "s")
-        //         .truecolor(156, 156, 156)
-        //         .bold(),
-        //     total.to_string().truecolor(196, 206, 255).bold()
-        // );
+        println!(
+            "{} Installed {} dependencies",
+            format!("[{:.2}{}]", install_start.elapsed().as_secs_f32(), "s")
+                .truecolor(156, 156, 156)
+                .bold(),
+            total.to_string().truecolor(196, 206, 255).bold()
+        );
 
         // for package in packages {
         //     package_file.add_dependency(package.to_owned());
