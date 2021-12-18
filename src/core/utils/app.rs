@@ -98,40 +98,13 @@ impl App {
     /// ## Returns
     /// * Result<String>
     pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> Result<String> {
-        match algorithm {
-            Algorithm::Sha1 => {
-                let mut hasher = sha1::Sha1::new();
-                std::io::copy(&mut &**data, &mut hasher).map_err(VoltError::HasherCopyError)?;
+        let integrity = ssri::IntegrityOpts::new()
+            .algorithm(Algorithm::Sha1)
+            .algorithm(Algorithm::Sha512)
+            .chain(&data)
+            .result();
 
-                let integrity: Integrity = format!(
-                    "sha1-{}",
-                    base64::encode(format!("{:x}", hasher.clone().finalize()))
-                )
-                .parse()
-                .map_err(|_| VoltError::HashParseError {
-                    hash: format!(
-                        "sha1-{}",
-                        base64::encode(format!("{:x}", hasher.clone().finalize()))
-                    ),
-                })?;
-
-                let hash = integrity
-                    .hashes
-                    .into_iter()
-                    .find(|h| h.algorithm == algorithm)
-                    .map(|h| Integrity { hashes: vec![h] })
-                    .map(|i| i.to_hex().1)
-                    .unwrap();
-
-                return Ok(format!("sha1-{}", hash));
-            }
-            Algorithm::Sha512 => {
-                let mut hasher = Sha512::new();
-                std::io::copy(&mut &**data, &mut hasher).map_err(VoltError::HasherCopyError)?;
-                return Ok(format!("sha512-{:x}", hasher.finalize()));
-            }
-            _ => Ok(String::new()),
-        }
+        Ok(integrity.to_string())
     }
 }
 

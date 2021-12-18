@@ -3196,6 +3196,7 @@ dependencies = [
  "futures",
  "futures-util",
  "git-config",
+ "hex 0.4.3",
  "indicatif",
  "isahc",
  "jwalk",
