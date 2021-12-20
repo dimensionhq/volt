@@ -407,18 +407,6 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
         // Verify If Bytes == (Sha512 | Sha1) of Tarball
         if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
-            println!(
-                "success - {} vs {}",
-                package.integrity,
-                App::calc_hash(&bytes, algorithm).unwrap()
-            );
-
-            // Create node_modules
-            create_dir_all(&app.node_modules_dir).await.unwrap();
-
-            // let node_modules_dep_path = app.node_modules_dir.join(&package.name);
-            let node_modules_dep_path = app.node_modules_dir.clone();
-
             // decompress gzipped tarball
             let decompressed_bytes = decompress_tarball(&bytes);
 
@@ -454,30 +442,6 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                 App::calc_hash(&bytes, algorithm).unwrap()
             );
             return Err(VoltError::ChecksumVerificationError.into());
-        }
-    } else {
-        // package is already downloaded and extracted to the ~/.volt folder.
-        let buf = existing_check.unwrap();
-
-        let cas_file_map: HashMap<String, Integrity> =
-            serde_json::from_str(&String::from_utf8(buf).unwrap()).unwrap();
-
-        for item in cas_file_map.iter() {
-            let contents = cacache::read_hash_sync(&extract_directory, item.1).unwrap();
-
-            let data = String::from_utf8(contents).unwrap();
-
-            // generate node_modules path
-            let path = app.node_modules_dir.join(format!(
-                "{}/{}",
-                package.name,
-                item.0.strip_prefix("package/").unwrap()
-            ));
-
-            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-
-            let mut file = File::create(path).unwrap();
-            file.write_all(data.as_bytes()).unwrap();
         }
     }
 
