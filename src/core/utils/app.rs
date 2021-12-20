@@ -98,13 +98,24 @@ impl App {
     /// ## Returns
     /// * Result<String>
     pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> Result<String> {
-        let integrity = ssri::IntegrityOpts::new()
-            .algorithm(Algorithm::Sha1)
-            .algorithm(Algorithm::Sha512)
-            .chain(&data)
-            .result();
+        let integrity;
 
-        Ok(integrity.to_string())
+        if algorithm == Algorithm::Sha1 {
+            let hash = ssri::IntegrityOpts::new()
+                .algorithm(Algorithm::Sha1)
+                .chain(&data)
+                .result();
+
+            integrity = format!("sha1-{}", hash.to_hex().1.to_string());
+        } else {
+            integrity = ssri::IntegrityOpts::new()
+                .algorithm(Algorithm::Sha512)
+                .chain(&data)
+                .result()
+                .to_string();
+        }
+
+        Ok(integrity)
     }
 }
 

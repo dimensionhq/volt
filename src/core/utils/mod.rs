@@ -407,6 +407,12 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
         // Verify If Bytes == (Sha512 | Sha1) of Tarball
         if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
+            println!(
+                "success - {} vs {}",
+                package.integrity,
+                App::calc_hash(&bytes, algorithm).unwrap()
+            );
+
             // Create node_modules
             create_dir_all(&app.node_modules_dir).await.unwrap();
 
@@ -442,6 +448,11 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
             )
             .unwrap();
         } else {
+            println!(
+                "{} vs {}",
+                package.integrity,
+                App::calc_hash(&bytes, algorithm).unwrap()
+            );
             return Err(VoltError::ChecksumVerificationError.into());
         }
     } else {
