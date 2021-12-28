@@ -85,6 +85,7 @@ impl Command for Add {
     /// ## Returns
     /// * `Result<()>`
     async fn exec(app: Arc<App>) -> Result<()> {
+        let idk = Instant::now();
         // Get input packages
         let mut packages: Vec<PackageSpec> = app.get_packages()?;
 
@@ -181,7 +182,8 @@ impl Command for Add {
         // Save lockfiles
         // global_lock_file.save()?;
         // lock_file.save()?;
-
+        println!("{}", idk.elapsed().as_secs_f32());
+        std::process::exit(0);
         Ok(())
     }
 }
