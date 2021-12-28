@@ -32,6 +32,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 use package_spec::PackageSpec;
 use reqwest::Client;
+use tokio::task::JoinHandle;
 
 use std::{collections::HashMap, sync::Arc, time::Instant};
 
@@ -147,8 +148,8 @@ impl Command for Add {
         tree.iter()
             .map(|(spec, data)| {
                 install_package(
-                    &app,
-                    data,
+                    app.clone(),
+                    &data,
                     State {
                         http_client: client.clone(),
                     },
@@ -156,7 +157,7 @@ impl Command for Add {
             })
             .collect::<FuturesUnordered<_>>()
             .inspect(|_| bar.inc(1))
-            .try_collect::<()>()
+            .try_collect::<Vec<_>>()
             .await
             .unwrap();
 

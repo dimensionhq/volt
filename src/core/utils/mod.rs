@@ -30,7 +30,7 @@ use crate::core::{
 use app::App;
 use colored::Colorize;
 use errors::VoltError;
-use flate2::read::GzDecoder;
+// use flate2::read::GzDecoder;
 use futures_util::{stream::FuturesUnordered, StreamExt};
 use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
@@ -339,39 +339,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
     let package_name = package.name.clone();
     let package_version = package.version.clone();
 
-    // @types/eslint
-    if package_name.starts_with('@') && package_name.contains('/') {
-        let package_directory_location = app
-            .volt_dir
-            .join(&package.name.split('/').collect::<Vec<&str>>()[0]);
-
-        if !Path::new(&package_directory_location).exists() {
-            create_dir_all(&package_directory_location)
-                .await
-                .map_err(VoltError::CreateDirError)?;
-        }
-    }
-
-    // Directory to extract tarball to
-    let mut extract_directory = PathBuf::from(&app.volt_dir);
-
-    // @types/eslint
-    if package.clone().name.starts_with('@') && package.clone().name.contains('/') {
-        if cfg!(target_os = "windows") {
-            let name = package.clone().name.replace('/', r"\");
-
-            let split = name.split('\\').collect::<Vec<&str>>();
-
-            // C:\Users\xtrem\.volt\@types
-            extract_directory = extract_directory.join(split[0]);
-        } else {
-            let name = package.clone().name;
-            let split = name.split('/').collect::<Vec<&str>>();
-
-            // ~/.volt/@types
-            extract_directory = extract_directory.join(split[0]);
-        }
-    }
+    let extract_directory = PathBuf::from(&app.volt_dir);
 
     let existing_check = cacache::read_sync(
         &extract_directory,
@@ -413,6 +381,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
             // Generate the tarball archive given the decompressed bytes
             let mut node_archive = Archive::new(Cursor::new(decompressed_bytes));
 
+            // extract to both the global store + node_modules (in the case of them using the pnpm linking algorithm)
             let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
 
             for entry in node_archive.entries().unwrap() {
@@ -632,11 +601,14 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 }
 
 /// Install process for any package.
-pub async fn install_package(app: &Arc<App>, package: &VoltPackage, state: State) -> Result<()> {
-    if download_tarball(app, package.clone(), state).await.is_err() {}
+pub async fn install_package(app: Arc<App>, package: &VoltPackage, state: State) -> Result<()> {
+    if download_tarball(&app, package.clone(), state)
+        .await
+        .is_err()
+    {}
 
     // generate the package's script
-    generate_script(app, package);
+    // generate_script(app, package);
 
     // let directory = &app
     //     .volt_dir

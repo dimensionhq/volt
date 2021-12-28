@@ -39,6 +39,7 @@ pub struct VoltPackage {
     pub os: Option<Vec<String>>,  // operating systems compatible with the package
     pub cpu: Option<Vec<String>>, // cpu architectures compatible with the package
 }
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Readable, Writable)]
 #[serde(untagged)]
 pub enum Engine {
