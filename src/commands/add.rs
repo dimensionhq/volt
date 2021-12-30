@@ -160,18 +160,12 @@ impl Command for Add {
             // We get a list of platforms, and if our current OS isn't on this list - it means that we can skip this package
 
             // TODO: do a CPU arch check
-            if value.os.is_some()
-                && !value.os.as_ref().unwrap().contains(&app.os)
-                && !value.os.as_ref().unwrap().contains(&format!("!{}", app.os))
-            {
-                println!("{} with {:?}", key, value.os.clone().unwrap());
-                continue;
+            if let Some(os) = &value.os {
+                if !os.contains(&app.os) && !os.contains(&format!("!{}", app.os)) {
+                    continue;
+                }
             }
 
-            let mut split = key.split('/').collect::<Vec<&str>>();
-            split.remove(0);
-
-            let cleaned_path = split.join("/");
             let mut name = value.name.clone();
 
             if value.name.starts_with("@") {
