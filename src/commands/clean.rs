@@ -24,38 +24,40 @@ use futures::{stream::FuturesUnordered, StreamExt};
 use indicatif::{HumanBytes, ProgressBar, ProgressStyle};
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
-use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+use tokio::{
+    io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt},
+    sync::Semaphore,
+    task::spawn_blocking,
+};
 
 use std::{
     fs,
-    io::SeekFrom,
+    io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     sync::Arc,
+    time::Instant,
 };
 
 pub struct Clean {}
 
 // minify a JSON file
-pub async fn minify(path: &Path) -> Result<()> {
+pub fn minify(path: &Path) -> Result<()> {
     let mut contents = String::new();
 
-    let mut file = tokio::fs::OpenOptions::new()
+    let mut file = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
         .open(path)
-        .await
         .into_diagnostic()?;
 
-    file.read_to_string(&mut contents).await.into_diagnostic()?;
+    file.read_to_string(&mut contents).into_diagnostic()?;
 
     let minified = minifier::json::minify(&contents);
 
-    file.set_len(0).await.into_diagnostic()?;
-    file.seek(SeekFrom::Start(0)).await.into_diagnostic()?;
+    file.set_len(0).into_diagnostic()?;
+    file.seek(SeekFrom::Start(0)).into_diagnostic()?;
 
-    file.write_all(minified.as_bytes())
-        .await
-        .into_diagnostic()?;
+    file.write_all(minified.as_bytes()).into_diagnostic()?;
 
     Ok(())
 }
@@ -271,13 +273,14 @@ Options:
         let mut workers = FuturesUnordered::new();
 
         for chunk in minify_files.chunks(20) {
-            workers.push(async move {
-                for file in chunk {
-                    minify(file).await.unwrap_or_else(|v| {
+            let chunk_instance = chunk.to_vec();
+            workers.push(spawn_blocking(move || {
+                for file in chunk_instance {
+                    minify(&file).unwrap_or_else(|v| {
                         println!("{}", v);
                     });
                 }
-            });
+            }));
         }
 
         while workers.next().await.is_some() {
@@ -368,3 +371,9 @@ Options:
         Ok(())
     }
 }
+
+//
+// Benchmarks:
+
+// > 0.021818367  (old code, using async and tokio workers)
+// > 0.00535743

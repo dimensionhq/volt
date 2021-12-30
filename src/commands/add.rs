@@ -150,21 +150,68 @@ impl Command for Add {
 
         let client = Client::builder().use_rustls_tls().build().unwrap();
 
-        tree.iter()
-            .map(|(spec, data)| {
-                install_package(
-                    app.clone(),
-                    &data,
-                    State {
-                        http_client: client.clone(),
-                    },
-                )
-            })
-            .collect::<FuturesUnordered<_>>()
-            .inspect(|_| bar.inc(1))
-            .try_collect::<Vec<_>>()
-            .await
-            .unwrap();
+        let start = Instant::now();
+
+        let node_modules_directory = app.node_modules_dir.join(".volt/");
+
+        // pnpm linking algorithm
+        for (key, value) in tree.iter() {
+            // None means it's not platform-specific
+            // We get a list of platforms, and if our current OS isn't on this list - it means that we can skip this package
+
+            // TODO: do a CPU arch check
+            if value.os.is_some()
+                && !value.os.as_ref().unwrap().contains(&app.os)
+                && !value.os.as_ref().unwrap().contains(&format!("!{}", app.os))
+            {
+                println!("{} with {:?}", key, value.os.clone().unwrap());
+                continue;
+            }
+
+            let mut split = key.split('/').collect::<Vec<&str>>();
+            split.remove(0);
+
+            let cleaned_path = split.join("/");
+            let mut name = value.name.clone();
+
+            if value.name.starts_with("@") {
+                // replace @ with +
+                name = name.replace("/", "+");
+            }
+
+            std::fs::create_dir(node_modules_directory.join(format!("{}@{}", name, value.version)));
+
+            std::fs::create_dir(
+                node_modules_directory
+                    .join(format!("{}@{}", name, value.version))
+                    .join("node_modules/"),
+            );
+
+            std::fs::create_dir(
+                node_modules_directory
+                    .join(format!("{}@{}", name, value.version))
+                    .join("node_modules/")
+                    .join(&name),
+            );
+        }
+
+        println!("{}", start.elapsed().as_secs_f32());
+
+        // tree.iter()
+        //     .map(|(spec, data)| {
+        //         install_package(
+        //             app.clone(),
+        //             &data,
+        //             State {
+        //                 http_client: client.clone(),
+        //             },
+        //         )
+        //     })
+        //     .collect::<FuturesUnordered<_>>()
+        //     .inspect(|_| bar.inc(1))
+        //     .try_collect::<Vec<_>>()
+        //     .await
+        //     .unwrap();
 
         bar.finish_and_clear();
 

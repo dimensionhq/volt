@@ -33,6 +33,7 @@ pub struct App {
     pub volt_dir: PathBuf,
     pub lock_file_path: PathBuf,
     pub args: ArgMatches,
+    pub os: String,
 }
 
 impl App {
@@ -67,6 +68,7 @@ impl App {
             volt_dir,
             lock_file_path,
             args: args.to_owned(),
+            os: std::env::consts::OS.to_string(),
         })
     }
 

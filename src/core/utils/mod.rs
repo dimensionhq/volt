@@ -394,26 +394,6 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                 cas_file_map.insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
             }
 
-            let node_modules_directory = app.node_modules_dir.join(".volt/");
-
-            // pnpm linking algorithm
-            for (key, value) in cas_file_map.iter() {
-                let mut split = key.split('/').collect::<Vec<&str>>();
-                split.remove(0);
-
-                let cleaned_path = split.join("/");
-
-                std::fs::create_dir(
-                    node_modules_directory.join(format!("{}@{}", &package_name, &package_version)),
-                );
-
-                std::fs::create_dir(
-                    node_modules_directory
-                        .join(format!("{}@{}", &package_name, &package_version))
-                        .join("node_modules/"),
-                );
-            }
-
             cacache::write_sync(
                 global_cas_directory.clone(),
                 format!(
