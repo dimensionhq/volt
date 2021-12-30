@@ -144,6 +144,10 @@ impl Command for Add {
                 .progress_chars("=>-"),
         );
 
+        if !app.node_modules_dir.exists() {
+            std::fs::create_dir_all(&app.node_modules_dir.join(".volt/")).unwrap();
+        }
+
         let client = Client::builder().use_rustls_tls().build().unwrap();
 
         tree.iter()
@@ -171,6 +175,8 @@ impl Command for Add {
                 .bold(),
             total.to_string().truecolor(196, 206, 255).bold()
         );
+
+        // TODO: add this to the global lockfiles
 
         // for package in packages {
         //     package_file.add_dependency(package.to_owned());

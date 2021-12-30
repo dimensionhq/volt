@@ -300,6 +300,7 @@ Commands:
     map_subcommand(matches).await?;
 
     println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
+    std::process::exit(0);
 
     Ok(())
 }

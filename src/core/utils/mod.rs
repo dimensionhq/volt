@@ -41,7 +41,6 @@ use reqwest::{Client, StatusCode};
 use speedy::Readable;
 use ssri::{Algorithm, Integrity};
 use tar::Archive;
-use tokio::fs::create_dir_all;
 
 use std::{
     collections::HashMap,
@@ -339,10 +338,10 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
     let package_name = package.name.clone();
     let package_version = package.version.clone();
 
-    let extract_directory = PathBuf::from(&app.volt_dir);
+    let global_cas_directory = PathBuf::from(&app.volt_dir);
 
     let existing_check = cacache::read_sync(
-        &extract_directory,
+        &global_cas_directory,
         format!(
             "pkg::{}::{}::{}",
             &package_name, &package_version, package.integrity
@@ -390,13 +389,33 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
                 entry.read_to_end(&mut buffer).unwrap();
 
-                let sri = cacache::write_hash_sync(extract_directory.clone(), &buffer).unwrap();
+                let sri = cacache::write_hash_sync(global_cas_directory.clone(), &buffer).unwrap();
 
                 cas_file_map.insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
             }
 
+            let node_modules_directory = app.node_modules_dir.join(".volt/");
+
+            // pnpm linking algorithm
+            for (key, value) in cas_file_map.iter() {
+                let mut split = key.split('/').collect::<Vec<&str>>();
+                split.remove(0);
+
+                let cleaned_path = split.join("/");
+
+                std::fs::create_dir(
+                    node_modules_directory.join(format!("{}@{}", &package_name, &package_version)),
+                );
+
+                std::fs::create_dir(
+                    node_modules_directory
+                        .join(format!("{}@{}", &package_name, &package_version))
+                        .join("node_modules/"),
+                );
+            }
+
             cacache::write_sync(
-                extract_directory.clone(),
+                global_cas_directory.clone(),
                 format!(
                     "pkg::{}::{}::{}",
                     &package_name, &package_version, package.integrity
