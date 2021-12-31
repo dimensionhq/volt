@@ -407,8 +407,19 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                     ))
                     .join(cleaned_path);
 
-                std::fs::create_dir_all(&write_path.parent().unwrap()).unwrap();
-                println!("{}", write_path.parent().unwrap().display());
+                let parent = write_path.parent().unwrap();
+
+                if parent
+                    != app
+                        .node_modules_dir
+                        .join("node_modules/.volt")
+                        .join(format!(
+                            "{}@{}",
+                            package_instance.name, package_instance.version
+                        ))
+                {
+                    std::fs::create_dir_all(&write_path.parent().unwrap()).unwrap();
+                }
 
                 let sri = cacache::write_hash_sync(global_cas_directory.clone(), &buffer).unwrap();
 
