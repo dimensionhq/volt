@@ -158,11 +158,15 @@ impl Command for Add {
         for (key, value) in tree.iter() {
             // None means it's not platform-specific
             // We get a list of platforms, and if our current OS isn't on this list - it means that we can skip this package
+            // this is only if the package is optional
 
-            // TODO: do a CPU arch check
-            if let Some(os) = &value.os {
-                if !os.contains(&app.os) && !os.contains(&format!("!{}", app.os)) {
-                    continue;
+            if value.optional {
+                // TODO: check if engines.nodeis compatible
+                // TODO: do a CPU arch check
+                if let Some(os) = &value.os {
+                    if !os.contains(&app.os) && !os.contains(&format!("!{}", app.os)) {
+                        continue;
+                    }
                 }
             }
 
@@ -191,21 +195,21 @@ impl Command for Add {
 
         println!("{}", start.elapsed().as_secs_f32());
 
-        // tree.iter()
-        //     .map(|(spec, data)| {
-        //         install_package(
-        //             app.clone(),
-        //             &data,
-        //             State {
-        //                 http_client: client.clone(),
-        //             },
-        //         )
-        //     })
-        //     .collect::<FuturesUnordered<_>>()
-        //     .inspect(|_| bar.inc(1))
-        //     .try_collect::<Vec<_>>()
-        //     .await
-        //     .unwrap();
+        tree.iter()
+            .map(|(spec, data)| {
+                install_package(
+                    app.clone(),
+                    &data,
+                    State {
+                        http_client: client.clone(),
+                    },
+                )
+            })
+            .collect::<FuturesUnordered<_>>()
+            .inspect(|_| bar.inc(1))
+            .try_collect::<Vec<_>>()
+            .await
+            .unwrap();
 
         bar.finish_and_clear();
 

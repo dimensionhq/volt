@@ -389,6 +389,15 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
                 entry.read_to_end(&mut buffer).unwrap();
 
+                let path = entry.path().unwrap().to_str().unwrap().to_string();
+
+                let cleaned_path = if let Some(i) = path.char_indices().position(|(_, c)| c == '/')
+                {
+                    &path[i + 1..]
+                } else {
+                    &path[..]
+                };
+
                 let sri = cacache::write_hash_sync(global_cas_directory.clone(), &buffer).unwrap();
 
                 cas_file_map.insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
