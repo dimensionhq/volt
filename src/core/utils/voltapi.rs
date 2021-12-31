@@ -26,6 +26,7 @@ pub struct VoltResponse {
 pub struct VoltPackage {
     pub name: String,                                       // the name of the package
     pub version: String,                                    // the version of the package
+    pub optional: bool,    // whether the package is optional or not
     pub integrity: String, // sha-1 base64 encoded hash or the "integrity" field if it exists
     pub tarball: String,   // url to the tarball to fetch
     pub bin: Option<Bin>,  // binary scripts required by / for the package
