@@ -28,6 +28,116 @@ use urlencoding::encode;
 
 use std::sync::Arc;
 
+pub struct Login {}
+
+#[async_trait]
+impl Command for Login {
+    fn help() -> String {
+        todo!()
+    }
+
+    /// Execute the `volt login` command
+    ///
+    /// Login to the npm registry
+    /// ## Arguments
+    /// * `error` - Instance of the command (`Arc<App>`)
+    /// ## Examples
+    /// ```
+    /// // Login to the npm registry
+    /// // .exec() is an async call so you need to await it
+    /// Login.exec(app).await;
+    /// ```
+    /// ## Returns
+    /// * `Result<()>`
+    async fn exec(_app: Arc<App>) -> Result<()> {
+        loop {
+            let username_input = Input {
+                message: String::from("Username"),
+                default: None,
+                allow_empty: false,
+            };
+
+            let password_input = Secret {
+                message: String::from("Password"),
+                allow_empty: false,
+                confirm: None,
+                error: None,
+            };
+
+            // Get Username and Password
+            let username = username_input.run().unwrap_or_else(|err| {
+                eprintln!("{}", err);
+                std::process::exit(1);
+            });
+
+            let password = password_input.run().unwrap_or_else(|err| {
+                eprintln!("{}", err);
+                std::process::exit(1);
+            });
+
+            // Log Error
+            if let Err(e) = validate_username(&username) {
+                println!("{}", e);
+                continue;
+            }
+
+            if let Err(e) = validate_password(&username, &password) {
+                println!("{}", e);
+                continue;
+            }
+
+            break;
+        }
+
+        Ok(())
+    }
+}
+
+fn validate_username(username: &str) -> Result<(), String> {
+    if username.to_lowercase() == username {
+        Ok(())
+    } else {
+        Err(format!(
+            "\n{}: your username must be lowercase.\n",
+            error_header(),
+        ))
+    }
+}
+
+fn validate_password(username: &str, password: &str) -> Result<(), String> {
+    if password.len() < 10 {
+        Err(format!(
+            "\n{}: your password must be 10 characters or more.\n",
+            error_header(),
+        ))
+    } else if password.contains(&username) || password.contains(&username.to_lowercase()) {
+        Err(format!(
+            "\n{}: your password should not match or significantly contain your username, e.g. do \
+             not use 'username123'\n",
+            error_header(),
+        ))
+    } else if encode(username) != username {
+        Err(format!(
+            "\n{}: your username must be url-safe",
+            error_header()
+        ))
+    } else if UNACCEPTABLE_PASSWORDS.contains(&password) {
+        Err(format!(
+            "\n{}: your password matches one of npm's unacceptable passwords \
+             (https://www.npmjs.com/signup/common-passwords).\nFor more details, check out \
+             https://docs.npmjs.com/creating-a-strong-password\n",
+            error_header(),
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+#[inline]
+fn error_header() -> colored::ColoredString {
+    " ERROR ".black().on_bright_red()
+}
+
 static UNACCEPTABLE_PASSWORDS: [&str; 6163] = [
     "123456",
     "12345",
@@ -6193,104 +6303,3 @@ static UNACCEPTABLE_PASSWORDS: [&str; 6163] = [
     "plastic",
     "montoya",
 ];
-
-pub struct Login {}
-
-#[async_trait]
-impl Command for Login {
-    fn help() -> String {
-        todo!()
-    }
-
-    /// Execute the `volt login` command
-    ///
-    /// Login to the npm registry
-    /// ## Arguments
-    /// * `error` - Instance of the command (`Arc<App>`)
-    /// ## Examples
-    /// ```
-    /// // Login to the npm registry
-    /// // .exec() is an async call so you need to await it
-    /// Login.exec(app).await;
-    /// ```
-    /// ## Returns
-    /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
-        loop {
-            let username_input = Input {
-                message: String::from("Username"),
-                default: None,
-                allow_empty: false,
-            };
-
-            let password_input = Secret {
-                message: String::from("Password"),
-                allow_empty: false,
-                confirm: None,
-                error: None,
-            };
-
-            // Get Username and Password
-            let username: String;
-
-            username = username_input.run().unwrap_or_else(|err| {
-                eprintln!("{}", err);
-                std::process::exit(1);
-            });
-
-            let password: String;
-
-            password = password_input.run().unwrap_or_else(|err| {
-                eprintln!("{}", err);
-                std::process::exit(1);
-            });
-
-            if password.len() >= 10
-                && !password.contains(&username)
-                && !password.contains(&username.to_lowercase())
-                && !UNACCEPTABLE_PASSWORDS.contains(&password.as_str())
-                && username.to_lowercase() == username
-                && encode(username.as_str()) == username
-            {
-                // Continue Login
-
-                break;
-            } else {
-                // Log Error
-                if username.to_lowercase() != username {
-                    println!(
-                        "\n{}: your username must be lowercase.\n",
-                        " ERROR ".black().on_bright_red(),
-                    );
-                    continue;
-                }
-                if password.len() < 10 {
-                    println!(
-                        "\n{}: your password must be 10 characters or more.\n",
-                        " ERROR ".black().on_bright_red(),
-                    );
-                    continue;
-                } else if password.contains(&username)
-                    || password.contains(&username.to_lowercase())
-                {
-                    println!("\n{}: your password should not match or significantly contain your username, e.g. do not use 'username123'\n",
-                        " ERROR ".black().on_bright_red(),
-                    );
-                    continue;
-                } else if encode(username.as_str()) != username {
-                    println!(
-                        "\n{}: your username must be url-safe",
-                        " ERROR ".black().on_bright_red()
-                    );
-                } else {
-                    println!("\n{}: your password matches one of npm's unacceptable passwords (https://www.npmjs.com/signup/common-passwords).\nFor more details, check out https://docs.npmjs.com/creating-a-strong-password\n",
-                        " ERROR ".black().on_bright_red(),
-                    );
-                }
-                continue;
-            }
-        }
-
-        Ok(())
-    }
-}

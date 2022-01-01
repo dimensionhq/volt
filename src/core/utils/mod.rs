@@ -315,16 +315,14 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
     // preallocating the decompressed buffer.
     let isize = {
         let isize_start = gz_data.len() - 4;
-        let isize_bytes = &gz_data[isize_start..];
-        let mut ret: u32 = isize_bytes[0] as u32;
-        ret |= (isize_bytes[1] as u32) << 8;
-        ret |= (isize_bytes[2] as u32) << 16;
-        ret |= (isize_bytes[3] as u32) << 26;
-        ret as usize
+        let isize_bytes: [u8; 4] = gz_data[isize_start..]
+            .try_into()
+            .expect("we know the end has 4 bytes");
+        u32::from_le_bytes(isize_bytes) as usize
     };
 
     let mut decompressor = libdeflater::Decompressor::new();
-    let mut outbuf = Vec::new();
+    let mut outbuf = Vec::with_capacity(isize);
     outbuf.resize(isize, 0);
     decompressor.gzip_decompress(gz_data, &mut outbuf).unwrap();
 
