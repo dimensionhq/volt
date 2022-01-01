@@ -34,43 +34,22 @@ use std::{str::FromStr, sync::Arc, time::Instant};
 
 pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
     match matches.subcommand() {
-        Some(("add", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Add::exec(app).await
-        }
-        Some(("clone", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Clone::exec(app).await
-        }
-        Some(("init", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Init::exec(app).await
-        }
-        Some(("clean", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Clean::exec(app).await
-        }
-        Some(("discord", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Discord::exec(app).await
-        }
-        Some(("search", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Search::exec(app).await
-        }
-        Some(("login", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Login::exec(app).await
-        }
-        Some(("run", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Run::exec(app).await
-        }
-        Some(("info", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Info::exec(app).await
-        }
         Some(("node", args)) => Node::download(args).await,
+        Some((subcommand, args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            match subcommand {
+                "add" => Add::exec(app).await,
+                "clone" => Clone::exec(app).await,
+                "init" => Init::exec(app).await,
+                "clean" => Clean::exec(app).await,
+                "discord" => Discord::exec(app).await,
+                "search" => Search::exec(app).await,
+                "login" => Login::exec(app).await,
+                "run" => Run::exec(app).await,
+                "info" => Info::exec(app).await,
+                _ => Ok(()),
+            }
+        }
         _ => Ok(()),
     }
 }
