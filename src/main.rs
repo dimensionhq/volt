@@ -32,49 +32,6 @@ use tracing_subscriber::filter::EnvFilter;
 
 use std::{str::FromStr, sync::Arc, time::Instant};
 
-pub async fn map_subcommand(matches: ArgMatches) -> miette::Result<()> {
-    match matches.subcommand() {
-        Some(("add", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Add::exec(app).await
-        }
-        Some(("clone", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Clone::exec(app).await
-        }
-        Some(("init", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Init::exec(app).await
-        }
-        Some(("clean", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Clean::exec(app).await
-        }
-        Some(("discord", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Discord::exec(app).await
-        }
-        Some(("search", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Search::exec(app).await
-        }
-        Some(("login", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Login::exec(app).await
-        }
-        Some(("run", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Run::exec(app).await
-        }
-        Some(("info", args)) => {
-            let app = Arc::new(App::initialize(args)?);
-            Info::exec(app).await
-        }
-        Some(("node", args)) => Node::download(args).await,
-        _ => Ok(()),
-    }
-}
-
 #[tokio::main]
 async fn main() -> miette::Result<()> {
     tracing_subscriber::fmt()
@@ -87,10 +44,24 @@ async fn main() -> miette::Result<()> {
         .init();
 
     let start = Instant::now();
-    let volt_help = format!(
-        r#"{} {}
 
-Usage: {} [{}] [{}]
+    let help_texts = help_texts();
+    let app = setup_app(&help_texts);
+    let matches = app.get_matches();
+    run_subcommand(matches).await?;
+
+    println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
+    std::process::exit(0);
+
+    Ok(())
+}
+
+fn help_texts() -> HelpTexts {
+    HelpTexts {
+        volt_help: format!(
+            r#"{} {}
+    
+    Usage: {} [{}] [{}]
 
 Displays help information.
 
@@ -100,79 +71,86 @@ Commands:
   {} cache
   {} check
   {} clean"#,
-        "volt".bright_green().bold(),
-        "1.0.0",
-        "volt".bright_green().bold(),
-        "command".bright_cyan(),
-        "flags".bright_blue(),
-        "-".bright_magenta(),
-        "-".bright_magenta(),
-        "-".bright_magenta(),
-        "-".bright_magenta(),
-        "-".bright_magenta()
-    );
+            "volt".bright_green().bold(),
+            "1.0.0",
+            "volt".bright_green().bold(),
+            "command".bright_cyan(),
+            "flags".bright_blue(),
+            "-".bright_magenta(),
+            "-".bright_magenta(),
+            "-".bright_magenta(),
+            "-".bright_magenta(),
+            "-".bright_magenta()
+        ),
+        add_usage: format!(
+            "{} add {}",
+            "volt".bright_green().bold(),
+            "<package-name>".bright_blue()
+        ),
+        init_usage: format!(
+            "{} init {}",
+            "volt".bright_green().bold(),
+            "[flags]".bright_blue(),
+        ),
+        clean_usage: format!(
+            "{} clean {}",
+            "volt".bright_green().bold(),
+            "[flags]".bright_blue(),
+        ),
+        clone_usage: format!(
+            "{} clone {}",
+            "volt".bright_green().bold(),
+            "[flags]".bright_blue(),
+        ),
+        search_usage: format!(
+            "{} search {} {}",
+            "volt".bright_green().bold(),
+            "<query>".bright_cyan().bold(),
+            "[flags]".bright_blue(),
+        ),
+        login_usage: format!(
+            "{} login {}",
+            "volt".bright_green().bold(),
+            "[flags]".bright_blue(),
+        ),
+        run_usage: format!(
+            "{} run {}",
+            "volt".bright_green().bold(),
+            "[flags]".bright_blue()
+        ),
+        info_usage: format!(
+            "{} info {}",
+            "volt".bright_green().bold(),
+            "[flags]".bright_blue(),
+        ),
+        discord_usage: format!("{} discord", "volt".bright_green().bold()),
+    }
+}
 
-    let add_usage = format!(
-        "{} add {}",
-        "volt".bright_green().bold(),
-        "<package-name>".bright_blue()
-    );
+struct HelpTexts {
+    volt_help: String,
+    add_usage: String,
+    init_usage: String,
+    clean_usage: String,
+    clone_usage: String,
+    search_usage: String,
+    login_usage: String,
+    run_usage: String,
+    info_usage: String,
+    discord_usage: String,
+}
 
-    let init_usage = format!(
-        "{} init {}",
-        "volt".bright_green().bold(),
-        "[flags]".bright_blue(),
-    );
-
-    let clean_usage = format!(
-        "{} clean {}",
-        "volt".bright_green().bold(),
-        "[flags]".bright_blue(),
-    );
-
-    let clone_usage = format!(
-        "{} clone {}",
-        "volt".bright_green().bold(),
-        "[flags]".bright_blue(),
-    );
-
-    let search_usage = format!(
-        "{} search {} {}",
-        "volt".bright_green().bold(),
-        "<query>".bright_cyan().bold(),
-        "[flags]".bright_blue(),
-    );
-
-    let login_usage = format!(
-        "{} login {}",
-        "volt".bright_green().bold(),
-        "[flags]".bright_blue(),
-    );
-
-    let run_usage = format!(
-        "{} run {}",
-        "volt".bright_green().bold(),
-        "[flags]".bright_blue()
-    );
-
-    let info_usage = format!(
-        "{} info {}",
-        "volt".bright_green().bold(),
-        "[flags]".bright_blue(),
-    );
-
-    let discord_usage = format!("{} discord", "volt".bright_green().bold());
-
+fn setup_app(help_texts: &HelpTexts) -> clap::App<'_> {
     let app = clap::App::new("volt")
         .version("1.0.0")
         .author("XtremeDevX <xtremedevx@gmail.com>")
         .about("Manage your NPM packages")
-        .override_help(volt_help.as_str())
+        .override_help(help_texts.volt_help.as_str())
         .arg(Arg::new("version").short('v').long("version"))
         .subcommand(
             clap::App::new("add")
                 .about("Add a package to the dependencies for your project.")
-                .override_usage(add_usage.as_str())
+                .override_usage(help_texts.add_usage.as_str())
                 .arg(
                     Arg::new("package-names")
                         .about("Packages to add to the dependencies for your project.")
@@ -183,13 +161,13 @@ Commands:
         .subcommand(
             clap::App::new("clean")
                 .about("Optimizes your node_modules by removing redundant files and folders.")
-                .override_usage(clean_usage.as_str())
+                .override_usage(help_texts.clean_usage.as_str())
                 .arg(Arg::new("remove-licenses").long("remove-licenses")),
         )
         .subcommand(
             clap::App::new("clone")
                 .about("Clone a project and install dependencies.")
-                .override_usage(clone_usage.as_str())
+                .override_usage(help_texts.clone_usage.as_str())
                 .arg(
                     Arg::new("repository")
                         .about("Url of the repository to clone.")
@@ -200,7 +178,7 @@ Commands:
         .subcommand(
             clap::App::new("init")
                 .about("Interactively create and edit your package.json file.")
-                .override_usage(init_usage.as_str())
+                .override_usage(help_texts.init_usage.as_str())
                 .arg(Arg::new("yes").short('y').about("Use default options")),
         )
         .subcommand(
@@ -260,12 +238,12 @@ Commands:
         .subcommand(
             clap::App::new("discord")
                 .about("Join the official volt discord server.")
-                .override_usage(discord_usage.as_str()),
+                .override_usage(help_texts.discord_usage.as_str()),
         )
         .subcommand(
             clap::App::new("search")
                 .about("Search for a package.")
-                .override_usage(search_usage.as_str())
+                .override_usage(help_texts.search_usage.as_str())
                 .arg(
                     Arg::new("query")
                         .about("The search query string")
@@ -275,7 +253,7 @@ Commands:
         .subcommand(
             clap::App::new("run")
                 .about("Run a defined package script.")
-                .override_usage(run_usage.as_str())
+                .override_usage(help_texts.run_usage.as_str())
                 .arg(
                     Arg::new("script-name")
                         .about("Name of the script to be run")
@@ -286,21 +264,36 @@ Commands:
             clap::App::new("info")
                 .about("Display information about a package.")
                 .override_help("todo")
-                .override_usage(info_usage.as_str()),
+                .override_usage(help_texts.info_usage.as_str()),
         )
         .subcommand(
             clap::App::new("login")
                 .about("Login to the npm registry.")
                 .override_help("todo")
-                .override_usage(login_usage.as_str()),
+                .override_usage(help_texts.login_usage.as_str()),
         );
 
-    let matches = app.get_matches();
+    app
+}
 
-    map_subcommand(matches).await?;
-
-    println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
-    std::process::exit(0);
-
-    Ok(())
+async fn run_subcommand(matches: ArgMatches) -> miette::Result<()> {
+    match matches.subcommand() {
+        Some(("node", args)) => Node::download(args).await,
+        Some((subcommand, args)) => {
+            let app = Arc::new(App::initialize(args)?);
+            match subcommand {
+                "add" => Add::exec(app).await,
+                "clone" => Clone::exec(app).await,
+                "init" => Init::exec(app).await,
+                "clean" => Clean::exec(app).await,
+                "discord" => Discord::exec(app).await,
+                "search" => Search::exec(app).await,
+                "login" => Login::exec(app).await,
+                "run" => Run::exec(app).await,
+                "info" => Info::exec(app).await,
+                _ => Ok(()),
+            }
+        }
+        _ => Ok(()),
+    }
 }
