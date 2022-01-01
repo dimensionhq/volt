@@ -407,17 +407,17 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                     ))
                     .join(cleaned_path);
 
+                let mut created_directories: Vec<PathBuf> = vec![];
+
+                created_directories.push(app.node_modules_dir.join("node_modules/.volt").join(
+                    format!("{}@{}", package_instance.name, package_instance.version),
+                ));
+
                 let parent = write_path.parent().unwrap();
 
-                if parent
-                    != app
-                        .node_modules_dir
-                        .join("node_modules/.volt")
-                        .join(format!(
-                            "{}@{}",
-                            package_instance.name, package_instance.version
-                        ))
-                {
+                if !created_directories.contains(&parent.to_path_buf()) {
+                    println!("creating: {}", parent.display());
+                    created_directories.push(parent.to_path_buf());
                     std::fs::create_dir_all(&write_path.parent().unwrap()).unwrap();
                 }
 
