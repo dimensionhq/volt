@@ -41,6 +41,16 @@ pub struct VoltPackage {
     pub cpu: Option<Vec<String>>, // cpu architectures compatible with the package
 }
 
+impl VoltPackage {
+    pub fn directory_name(&self) -> String {
+        format!("{}@{}", self.name, self.version)
+    }
+
+    pub fn cacache_key(&self) -> String {
+        format!("pkg::{}::{}::{}", self.name, self.version, self.integrity)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Readable, Writable)]
 #[serde(untagged)]
 pub enum Engine {

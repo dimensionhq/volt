@@ -330,19 +330,22 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
 
 /// downloads and extracts tarball file from package
 pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> Result<()> {
-    let cacache_key = format!(
-        "pkg::{}::{}::{}",
-        &package.name, &package.version, package.integrity
-    );
+    let cacache_key = package.cacache_key();
 
-    let existing_check = cacache::read_sync(&app.volt_dir, &cacache_key);
+    // TODO: This should probably be extracted into a utility function
+    let package_is_cacached = cacache::metadata_sync(&app.volt_dir, &cacache_key)
+        .map(|m| {
+            m.map(|m| cacache::exists_sync(&app.volt_dir, &m.integrity))
+                .unwrap_or_default()
+        })
+        .unwrap_or_default();
 
     // if package is not already installed
-    if existing_check.is_err() {
+    if !package_is_cacached {
         // Tarball bytes response
         let bytes: bytes::Bytes = state
             .http_client
-            .get(package.tarball)
+            .get(&package.tarball)
             .send()
             .await
             .into_diagnostic()?
@@ -362,7 +365,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
         }
 
         // Verify If Bytes == (Sha512 | Sha1) of Tarball
-        if package.integrity == App::calc_hash(&bytes, algorithm)? {
+        let tarball_bytes_hash = App::calc_hash(&bytes, algorithm)?;
+        if package.integrity == tarball_bytes_hash {
             // decompress gzipped tarball
             let decompressed_bytes = decompress_tarball(&bytes);
 
@@ -378,59 +382,58 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
                 entry.read_to_end(&mut buffer).into_diagnostic()?;
 
-                let path = entry
+                let entry_path_string = entry
                     .path()
                     .into_diagnostic()?
                     .to_str()
                     .expect("valid utf-8")
                     .to_string();
 
-                let cleaned_path = if let Some(i) = path.char_indices().position(|(_, c)| c == '/')
-                {
-                    &path[i + 1..]
-                } else {
-                    &path[..]
-                };
+                let cleaned_entry_path_string =
+                    if let Some(i) = entry_path_string.char_indices().position(|(_, c)| c == '/') {
+                        &entry_path_string[i + 1..]
+                    } else {
+                        &entry_path_string[..]
+                    };
 
-                let write_path = app
-                    .node_modules_dir
-                    .join("node_modules/.volt")
-                    .join(format!("{}@{}", package.name, package.version))
-                    .join(cleaned_path);
+                // Create the path to the local .volt directory (TODO: Verify that we really want ./node_modules/node_modules/.volt)
+                let mut package_directory = app.node_modules_dir.join("node_modules/.volt");
 
+                // Add package's directory to it
+                package_directory.push(package.directory_name());
+
+                // Add package's directory to list of created directories
                 let mut created_directories: Vec<PathBuf> = vec![];
+                created_directories.push(package_directory.clone());
 
-                created_directories.push(
-                    app.node_modules_dir
-                        .join("node_modules/.volt")
-                        .join(format!("{}@{}", package.name, package.version)),
-                );
+                // Add the cleaned path to the package's directory
+                let mut entry_path = package_directory;
+                entry_path.push(cleaned_entry_path_string);
 
-                let parent = write_path.parent().unwrap();
+                // Get the entry's parent
+                let entry_path_parent = entry_path.parent().unwrap();
 
-                if !created_directories.contains(&parent.to_path_buf()) {
-                    println!("creating: {}", parent.display());
-                    created_directories.push(parent.to_path_buf());
-                    std::fs::create_dir_all(&write_path.parent().unwrap()).unwrap();
+                // If we haven't created this directory yet, create it
+                if !created_directories.iter().any(|p| p == entry_path_parent) {
+                    println!("creating: {}", entry_path_parent.display());
+                    created_directories.push(entry_path_parent.to_path_buf());
+                    std::fs::create_dir_all(entry_path_parent).into_diagnostic()?;
                 }
 
-                let sri = cacache::write_hash_sync(&app.volt_dir, &buffer).unwrap();
+                let sri = cacache::write_hash_sync(&app.volt_dir, &buffer).into_diagnostic()?;
 
-                cas_file_map.insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
+                cas_file_map.insert(entry_path_string, sri);
             }
 
             cacache::write_sync(
                 &app.volt_dir,
                 &cacache_key,
-                serde_json::to_string(&cas_file_map).unwrap(),
+                serde_json::to_string(&cas_file_map).into_diagnostic()?,
             )
-            .unwrap();
+            .into_diagnostic()?;
         } else {
-            println!(
-                "{} vs {}",
-                package.integrity,
-                App::calc_hash(&bytes, algorithm).unwrap()
-            );
+            // TODO: Maybe also print which package we're talking about?
+            println!("{} vs {}", package.integrity, tarball_bytes_hash);
             return Err(VoltError::ChecksumVerificationError.into());
         }
     }
