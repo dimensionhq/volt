@@ -35,7 +35,7 @@ use futures_util::{stream::FuturesUnordered, StreamExt};
 use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 use package_spec::PackageSpec;
 use reqwest::{Client, StatusCode};
 use speedy::Readable;
@@ -330,33 +330,25 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
 
 /// downloads and extracts tarball file from package
 pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> Result<()> {
-    let package_instance = package.clone();
-
-    let package_name = package.name.clone();
-    let package_version = package.version.clone();
-
-    let global_cas_directory = PathBuf::from(&app.volt_dir);
-
-    let existing_check = cacache::read_sync(
-        &global_cas_directory,
-        format!(
-            "pkg::{}::{}::{}",
-            &package_name, &package_version, package.integrity
-        ),
+    let cacache_key = format!(
+        "pkg::{}::{}::{}",
+        &package.name, &package.version, package.integrity
     );
+
+    let existing_check = cacache::read_sync(&app.volt_dir, &cacache_key);
 
     // if package is not already installed
     if existing_check.is_err() {
         // Tarball bytes response
         let bytes: bytes::Bytes = state
             .http_client
-            .get(package_instance.tarball)
+            .get(package.tarball)
             .send()
             .await
-            .unwrap()
+            .into_diagnostic()?
             .bytes()
             .await
-            .unwrap();
+            .into_diagnostic()?;
 
         let algorithm;
 
@@ -370,7 +362,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
         }
 
         // Verify If Bytes == (Sha512 | Sha1) of Tarball
-        if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
+        if package.integrity == App::calc_hash(&bytes, algorithm)? {
             // decompress gzipped tarball
             let decompressed_bytes = decompress_tarball(&bytes);
 
@@ -380,13 +372,18 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
             // extract to both the global store + node_modules (in the case of them using the pnpm linking algorithm)
             let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
 
-            for entry in node_archive.entries().unwrap() {
-                let mut entry = entry.unwrap();
-                let mut buffer = vec![];
+            for entry in node_archive.entries().into_diagnostic()? {
+                let mut entry = entry.into_diagnostic()?;
+                let mut buffer = vec![0; entry.size() as usize];
 
-                entry.read_to_end(&mut buffer).unwrap();
+                entry.read_to_end(&mut buffer).into_diagnostic()?;
 
-                let path = entry.path().unwrap().to_str().unwrap().to_string();
+                let path = entry
+                    .path()
+                    .into_diagnostic()?
+                    .to_str()
+                    .expect("valid utf-8")
+                    .to_string();
 
                 let cleaned_path = if let Some(i) = path.char_indices().position(|(_, c)| c == '/')
                 {
@@ -398,17 +395,16 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                 let write_path = app
                     .node_modules_dir
                     .join("node_modules/.volt")
-                    .join(format!(
-                        "{}@{}",
-                        package_instance.name, package_instance.version
-                    ))
+                    .join(format!("{}@{}", package.name, package.version))
                     .join(cleaned_path);
 
                 let mut created_directories: Vec<PathBuf> = vec![];
 
-                created_directories.push(app.node_modules_dir.join("node_modules/.volt").join(
-                    format!("{}@{}", package_instance.name, package_instance.version),
-                ));
+                created_directories.push(
+                    app.node_modules_dir
+                        .join("node_modules/.volt")
+                        .join(format!("{}@{}", package.name, package.version)),
+                );
 
                 let parent = write_path.parent().unwrap();
 
@@ -418,17 +414,14 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                     std::fs::create_dir_all(&write_path.parent().unwrap()).unwrap();
                 }
 
-                let sri = cacache::write_hash_sync(global_cas_directory.clone(), &buffer).unwrap();
+                let sri = cacache::write_hash_sync(&app.volt_dir, &buffer).unwrap();
 
                 cas_file_map.insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
             }
 
             cacache::write_sync(
-                global_cas_directory,
-                format!(
-                    "pkg::{}::{}::{}",
-                    &package_name, &package_version, package.integrity
-                ),
+                &app.volt_dir,
+                &cacache_key,
                 serde_json::to_string(&cas_file_map).unwrap(),
             )
             .unwrap();
