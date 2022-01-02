@@ -16,8 +16,9 @@
  */
 #![allow(unused)]
 
-mod commands;
+#[macro_use]
 mod core;
+mod commands;
 
 use crate::core::{command::Command, utils::app::App};
 

@@ -20,7 +20,7 @@ use crate::{
         prompt::prompts::{Confirm, Input, Select},
         utils, VERSION,
     },
-    error, App, Command,
+    App, Command,
 };
 
 use async_trait::async_trait;

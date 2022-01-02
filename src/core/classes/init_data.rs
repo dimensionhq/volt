@@ -34,7 +34,7 @@ pub enum License {
 }
 
 impl fmt::Display for License {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Mit => write!(f, "MIT License"),
             Self::Apache2 => write!(f, "Apache License 2.0"),

@@ -28,7 +28,7 @@ pub enum Template {
 }
 
 impl fmt::Display for Template {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ReactApp => write!(f, "react-app"),
             Self::ReactAppTS => write!(f, "react-app-ts"),

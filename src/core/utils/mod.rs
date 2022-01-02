@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#[macro_use]
+pub mod helper;
 pub mod app;
 pub mod constants;
 pub mod errors;
-pub mod helper;
 pub mod package;
 pub mod scripts;
 pub mod voltapi;
@@ -32,8 +33,8 @@ use colored::Colorize;
 use errors::VoltError;
 // use flate2::read::GzDecoder;
 use futures_util::{stream::FuturesUnordered, StreamExt};
+use git_config::file::GitConfig;
 use git_config::parser::parse_from_str;
-use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::{IntoDiagnostic, Result};
@@ -45,11 +46,10 @@ use tar::Archive;
 
 use std::{
     collections::HashMap,
-    convert::TryFrom,
     ffi::OsStr,
-    fs::{read_to_string, File},
-    io::{Cursor, Read, Write},
-    path::{Component, Path, PathBuf},
+    fs::read_to_string,
+    io::{Cursor, Read},
+    path::PathBuf,
     sync::Arc,
 };
 
@@ -69,7 +69,7 @@ pub async fn get_volt_response_multi(
             if let PackageSpec::Npm {
                 name,
                 requested,
-                scope,
+                ..,
             } = spec
             {
                 let mut version: String = "latest".to_string();
@@ -95,12 +95,7 @@ pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltRespons
 
     // we know that PackageSpec is of type npm (we filtered the non-npm ones out)
 
-    if let PackageSpec::Npm {
-        name,
-        requested,
-        scope,
-    } = package_spec
-    {
+    if let PackageSpec::Npm { name, .. } = package_spec {
         // loop until MAX_RETRIES reached.
         loop {
             // get a response
@@ -404,8 +399,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                 package_directory.push(package.directory_name());
 
                 // Add package's directory to list of created directories
-                let mut created_directories: Vec<PathBuf> = vec![];
-                created_directories.push(package_directory.clone());
+                let mut created_directories: Vec<PathBuf> = vec![package_directory.clone()];
 
                 // Add the cleaned path to the package's directory
                 let mut entry_path = package_directory;
@@ -644,7 +638,7 @@ pub async fn fetch_dep_tree(
         if let PackageSpec::Npm {
             name,
             requested,
-            scope,
+            ..,
         } = &data[0]
         {
             let mut version: String = "latest".to_string();

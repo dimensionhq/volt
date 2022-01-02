@@ -17,9 +17,8 @@ limitations under the License.
 //! Add a package to the dependencies for your project.
 
 use crate::{
-    core::model::lock_file::{DependencyID, DependencyLock, LockFile},
+    core::utils::fetch_dep_tree,
     core::utils::voltapi::VoltPackage,
-    core::utils::{fetch_dep_tree, package::PackageJson},
     core::utils::{install_package, State},
     core::{command::Command, VERSION},
     App,
@@ -29,10 +28,9 @@ use async_trait::async_trait;
 use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 use package_spec::PackageSpec;
 use reqwest::Client;
-use tokio::task::JoinHandle;
 
 use std::{collections::HashMap, sync::Arc, time::Instant};
 
@@ -87,7 +85,7 @@ impl Command for Add {
     async fn exec(app: Arc<App>) -> Result<()> {
         let idk = Instant::now();
         // Get input packages
-        let mut packages: Vec<PackageSpec> = app.get_packages()?;
+        let packages: Vec<PackageSpec> = app.get_packages()?;
 
         // Load the existing package.json file
         // let (mut package_file, _package_file_path) = PackageJson::open("package.json")?;
@@ -155,7 +153,7 @@ impl Command for Add {
         let node_modules_directory = app.node_modules_dir.join(".volt/");
 
         // pnpm linking algorithm
-        for (key, value) in tree.iter() {
+        for value in tree.values() {
             // None means it's not platform-specific
             // We get a list of platforms, and if our current OS isn't on this list - it means that we can skip this package
             // this is only if the package is optional
@@ -172,34 +170,37 @@ impl Command for Add {
 
             let mut name = value.name.clone();
 
-            if value.name.starts_with("@") {
+            if value.name.starts_with('@') {
                 // replace @ with +
                 name = name.replace("/", "+");
             }
 
-            std::fs::create_dir(node_modules_directory.join(format!("{}@{}", name, value.version)));
+            std::fs::create_dir(node_modules_directory.join(format!("{}@{}", name, value.version)))
+                .into_diagnostic()?;
 
             std::fs::create_dir(
                 node_modules_directory
                     .join(format!("{}@{}", name, value.version))
                     .join("node_modules/"),
-            );
+            )
+            .into_diagnostic()?;
 
             std::fs::create_dir(
                 node_modules_directory
                     .join(format!("{}@{}", name, value.version))
                     .join("node_modules/")
                     .join(&name),
-            );
+            )
+            .into_diagnostic()?;
         }
 
         println!("{}", start.elapsed().as_secs_f32());
 
-        tree.iter()
-            .map(|(spec, data)| {
+        tree.values()
+            .map(|data| {
                 install_package(
                     app.clone(),
-                    &data,
+                    data,
                     State {
                         http_client: client.clone(),
                     },
@@ -234,7 +235,7 @@ impl Command for Add {
         // global_lock_file.save()?;
         // lock_file.save()?;
         println!("{}", idk.elapsed().as_secs_f32());
-        std::process::exit(0);
+
         Ok(())
     }
 }
