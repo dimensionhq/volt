@@ -32,6 +32,7 @@ use colored::Colorize;
 use errors::VoltError;
 // use flate2::read::GzDecoder;
 use futures_util::{stream::FuturesUnordered, StreamExt};
+use git_config::parser::parse_from_str;
 use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
@@ -443,51 +444,35 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
 /// Gets a config key from git using the git cli.
 /// Uses `gitoxide` to read from your git configuration.
-pub fn get_git_config(app: &App, key: &str) -> Option<String> {
+pub fn get_git_config(app: &App, key: &str) -> Result<Option<String>> {
+    fn get_git_config_value_if_exists(
+        app: &App,
+        section: &str,
+        subsection: Option<&str>,
+        key: &str,
+    ) -> Result<Option<String>> {
+        let config_path = app.home_dir.join(".gitconfig");
+
+        if config_path.exists() {
+            let data = read_to_string(config_path).into_diagnostic()?;
+
+            let parser = parse_from_str(&data).map_err(|err| VoltError::GitConfigParseError {
+                error_text: err.to_string(),
+            })?;
+            let config = GitConfig::from(parser);
+            let value = config.get_raw_value(section, subsection, key).ok();
+
+            Ok(value.map(|v| String::from_utf8_lossy(&v).into_owned()))
+        } else {
+            Ok(None)
+        }
+    }
+
     match key {
-        "user.name" => {
-            let config_path = app.home_dir.join(".gitconfig");
-
-            if !config_path.exists() {
-                None
-            } else {
-                let data = read_to_string(config_path).ok()?;
-
-                let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
-                let value = config.get_raw_value("user", None, "name").ok()?;
-
-                Some(String::from_utf8_lossy(&value).to_owned().to_string())
-            }
-        }
-        "user.email" => {
-            let config_path = app.home_dir.join(".gitconfig");
-
-            if !config_path.exists() {
-                None
-            } else {
-                let data = read_to_string(config_path).ok()?;
-
-                let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
-                let value = config.get_raw_value("user", None, "email").ok()?;
-
-                Some(String::from_utf8_lossy(&value).to_owned().to_string())
-            }
-        }
-        "repository.url" => {
-            let remote_config_path = app.current_dir.join(".git").join("config");
-
-            if !remote_config_path.exists() {
-                let data = read_to_string(remote_config_path).ok()?;
-
-                let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
-                let value = config.get_raw_value("remote", Some("origin"), "url").ok()?;
-
-                Some(String::from_utf8_lossy(&value).to_owned().to_string())
-            } else {
-                None
-            }
-        }
-        _ => None,
+        "user.name" => get_git_config_value_if_exists(app, "user", None, "name"),
+        "user.email" => get_git_config_value_if_exists(app, "user", None, "email"),
+        "repository.url" => get_git_config_value_if_exists(app, "remote", Some("origin"), "url"),
+        _ => Ok(None),
     }
 }
 
