@@ -67,9 +67,7 @@ pub async fn get_volt_response_multi(
         .iter()
         .map(|spec| {
             if let PackageSpec::Npm {
-                name,
-                requested,
-                ..,
+                name, requested, ..
             } = spec
             {
                 let mut version: String = "latest".to_string();
@@ -636,9 +634,7 @@ pub async fn fetch_dep_tree(
             .collect::<Result<Vec<_>>>()?)
     } else {
         if let PackageSpec::Npm {
-            name,
-            requested,
-            ..,
+            name, requested, ..
         } = &data[0]
         {
             let mut version: String = "latest".to_string();
