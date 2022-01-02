@@ -96,10 +96,10 @@ Options:
 
             let author = {
                 let git_user_name =
-                    utils::get_git_config(&app, "user.name").unwrap_or_else(String::new);
+                    utils::get_git_config(&app, "user.name")?.unwrap_or_else(String::new);
 
                 let git_email =
-                    utils::get_git_config(&app, "user.email").unwrap_or_else(String::new);
+                    utils::get_git_config(&app, "user.email")?.unwrap_or_else(String::new);
 
                 if git_user_name.is_empty() && git_email.is_empty() {
                     None
@@ -108,7 +108,7 @@ Options:
                 }
             };
 
-            let repository = utils::get_git_config(&app, "remote.origin.url");
+            let repository = utils::get_git_config(&app, "remote.origin.url")?;
 
             let license = License::default();
 
@@ -210,11 +210,11 @@ Options:
 
             // Get "author"
             let git_user_name =
-                utils::get_git_config(&app, "user.name").unwrap_or_else(String::new);
+                utils::get_git_config(&app, "user.name")?.unwrap_or_else(String::new);
 
             let git_email = format!(
                 "<{}>",
-                utils::get_git_config(&app, "user.email").unwrap_or_else(String::new)
+                utils::get_git_config(&app, "user.email")?.unwrap_or_else(String::new)
             );
 
             let author;

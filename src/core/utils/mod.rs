@@ -32,10 +32,11 @@ use colored::Colorize;
 use errors::VoltError;
 // use flate2::read::GzDecoder;
 use futures_util::{stream::FuturesUnordered, StreamExt};
+use git_config::parser::parse_from_str;
 use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 use package_spec::PackageSpec;
 use reqwest::{Client, StatusCode};
 use speedy::Readable;
@@ -322,8 +323,7 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
     };
 
     let mut decompressor = libdeflater::Decompressor::new();
-    let mut outbuf = Vec::with_capacity(isize);
-    outbuf.resize(isize, 0);
+    let mut outbuf = vec![0; isize];
     decompressor.gzip_decompress(gz_data, &mut outbuf).unwrap();
 
     outbuf
@@ -331,33 +331,28 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
 
 /// downloads and extracts tarball file from package
 pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> Result<()> {
-    let package_instance = package.clone();
+    let cacache_key = package.cacache_key();
 
-    let package_name = package.name.clone();
-    let package_version = package.version.clone();
-
-    let global_cas_directory = PathBuf::from(&app.volt_dir);
-
-    let existing_check = cacache::read_sync(
-        &global_cas_directory,
-        format!(
-            "pkg::{}::{}::{}",
-            &package_name, &package_version, package.integrity
-        ),
-    );
+    // TODO: This should probably be extracted into a utility function
+    let package_is_cacached = cacache::metadata_sync(&app.volt_dir, &cacache_key)
+        .map(|m| {
+            m.map(|m| cacache::exists_sync(&app.volt_dir, &m.integrity))
+                .unwrap_or_default()
+        })
+        .unwrap_or_default();
 
     // if package is not already installed
-    if existing_check.is_err() {
+    if !package_is_cacached {
         // Tarball bytes response
         let bytes: bytes::Bytes = state
             .http_client
-            .get(package_instance.tarball)
+            .get(&package.tarball)
             .send()
             .await
-            .unwrap()
+            .into_diagnostic()?
             .bytes()
             .await
-            .unwrap();
+            .into_diagnostic()?;
 
         let algorithm;
 
@@ -371,7 +366,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
         }
 
         // Verify If Bytes == (Sha512 | Sha1) of Tarball
-        if package.integrity == App::calc_hash(&bytes, algorithm).unwrap() {
+        let tarball_bytes_hash = App::calc_hash(&bytes, algorithm)?;
+        if package.integrity == tarball_bytes_hash {
             // decompress gzipped tarball
             let decompressed_bytes = decompress_tarball(&bytes);
 
@@ -381,64 +377,64 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
             // extract to both the global store + node_modules (in the case of them using the pnpm linking algorithm)
             let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
 
-            for entry in node_archive.entries().unwrap() {
-                let mut entry = entry.unwrap();
-                let mut buffer = vec![];
+            for entry in node_archive.entries().into_diagnostic()? {
+                let mut entry = entry.into_diagnostic()?;
+                let mut buffer = vec![0; entry.size() as usize];
 
-                entry.read_to_end(&mut buffer).unwrap();
+                entry.read_to_end(&mut buffer).into_diagnostic()?;
 
-                let path = entry.path().unwrap().to_str().unwrap().to_string();
+                let entry_path_string = entry
+                    .path()
+                    .into_diagnostic()?
+                    .to_str()
+                    .expect("valid utf-8")
+                    .to_string();
 
-                let cleaned_path = if let Some(i) = path.char_indices().position(|(_, c)| c == '/')
-                {
-                    &path[i + 1..]
-                } else {
-                    &path[..]
-                };
+                let cleaned_entry_path_string =
+                    if let Some(i) = entry_path_string.char_indices().position(|(_, c)| c == '/') {
+                        &entry_path_string[i + 1..]
+                    } else {
+                        &entry_path_string[..]
+                    };
 
-                let write_path = app
-                    .node_modules_dir
-                    .join("node_modules/.volt")
-                    .join(format!(
-                        "{}@{}",
-                        package_instance.name, package_instance.version
-                    ))
-                    .join(cleaned_path);
+                // Create the path to the local .volt directory (TODO: Verify that we really want ./node_modules/node_modules/.volt)
+                let mut package_directory = app.node_modules_dir.join("node_modules/.volt");
 
+                // Add package's directory to it
+                package_directory.push(package.directory_name());
+
+                // Add package's directory to list of created directories
                 let mut created_directories: Vec<PathBuf> = vec![];
+                created_directories.push(package_directory.clone());
 
-                created_directories.push(app.node_modules_dir.join("node_modules/.volt").join(
-                    format!("{}@{}", package_instance.name, package_instance.version),
-                ));
+                // Add the cleaned path to the package's directory
+                let mut entry_path = package_directory;
+                entry_path.push(cleaned_entry_path_string);
 
-                let parent = write_path.parent().unwrap();
+                // Get the entry's parent
+                let entry_path_parent = entry_path.parent().unwrap();
 
-                if !created_directories.contains(&parent.to_path_buf()) {
-                    println!("creating: {}", parent.display());
-                    created_directories.push(parent.to_path_buf());
-                    std::fs::create_dir_all(&write_path.parent().unwrap()).unwrap();
+                // If we haven't created this directory yet, create it
+                if !created_directories.iter().any(|p| p == entry_path_parent) {
+                    println!("creating: {}", entry_path_parent.display());
+                    created_directories.push(entry_path_parent.to_path_buf());
+                    std::fs::create_dir_all(entry_path_parent).into_diagnostic()?;
                 }
 
-                let sri = cacache::write_hash_sync(global_cas_directory.clone(), &buffer).unwrap();
+                let sri = cacache::write_hash_sync(&app.volt_dir, &buffer).into_diagnostic()?;
 
-                cas_file_map.insert(entry.path().unwrap().to_str().unwrap().to_string(), sri);
+                cas_file_map.insert(entry_path_string, sri);
             }
 
             cacache::write_sync(
-                global_cas_directory,
-                format!(
-                    "pkg::{}::{}::{}",
-                    &package_name, &package_version, package.integrity
-                ),
-                serde_json::to_string(&cas_file_map).unwrap(),
+                &app.volt_dir,
+                &cacache_key,
+                serde_json::to_string(&cas_file_map).into_diagnostic()?,
             )
-            .unwrap();
+            .into_diagnostic()?;
         } else {
-            println!(
-                "{} vs {}",
-                package.integrity,
-                App::calc_hash(&bytes, algorithm).unwrap()
-            );
+            // TODO: Maybe also print which package we're talking about?
+            println!("{} vs {}", package.integrity, tarball_bytes_hash);
             return Err(VoltError::ChecksumVerificationError.into());
         }
     }
@@ -448,51 +444,35 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
 /// Gets a config key from git using the git cli.
 /// Uses `gitoxide` to read from your git configuration.
-pub fn get_git_config(app: &App, key: &str) -> Option<String> {
+pub fn get_git_config(app: &App, key: &str) -> Result<Option<String>> {
+    fn get_git_config_value_if_exists(
+        app: &App,
+        section: &str,
+        subsection: Option<&str>,
+        key: &str,
+    ) -> Result<Option<String>> {
+        let config_path = app.home_dir.join(".gitconfig");
+
+        if config_path.exists() {
+            let data = read_to_string(config_path).into_diagnostic()?;
+
+            let parser = parse_from_str(&data).map_err(|err| VoltError::GitConfigParseError {
+                error_text: err.to_string(),
+            })?;
+            let config = GitConfig::from(parser);
+            let value = config.get_raw_value(section, subsection, key).ok();
+
+            Ok(value.map(|v| String::from_utf8_lossy(&v).into_owned()))
+        } else {
+            Ok(None)
+        }
+    }
+
     match key {
-        "user.name" => {
-            let config_path = app.home_dir.join(".gitconfig");
-
-            if !config_path.exists() {
-                None
-            } else {
-                let data = read_to_string(config_path).ok()?;
-
-                let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
-                let value = config.get_raw_value("user", None, "name").ok()?;
-
-                Some(String::from_utf8_lossy(&value).to_owned().to_string())
-            }
-        }
-        "user.email" => {
-            let config_path = app.home_dir.join(".gitconfig");
-
-            if !config_path.exists() {
-                None
-            } else {
-                let data = read_to_string(config_path).ok()?;
-
-                let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
-                let value = config.get_raw_value("user", None, "email").ok()?;
-
-                Some(String::from_utf8_lossy(&value).to_owned().to_string())
-            }
-        }
-        "repository.url" => {
-            let remote_config_path = app.current_dir.join(".git").join("config");
-
-            if !remote_config_path.exists() {
-                let data = read_to_string(remote_config_path).ok()?;
-
-                let config = GitConfig::from(Parser::try_from(data.as_str()).ok()?);
-                let value = config.get_raw_value("remote", Some("origin"), "url").ok()?;
-
-                Some(String::from_utf8_lossy(&value).to_owned().to_string())
-            } else {
-                None
-            }
-        }
-        _ => None,
+        "user.name" => get_git_config_value_if_exists(app, "user", None, "name"),
+        "user.email" => get_git_config_value_if_exists(app, "user", None, "email"),
+        "repository.url" => get_git_config_value_if_exists(app, "remote", Some("origin"), "url"),
+        _ => Ok(None),
     }
 }
 

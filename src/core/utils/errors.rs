@@ -122,6 +122,12 @@ pub enum VoltError {
         name: String,
     },
 
+    // Convert error to `String` instead of having a `source` because `git_config::parser::Error`
+    // has a lifetime parameter
+    #[error("failed to parse git configuration file: `{error_text}`")]
+    #[diagnostic(code(volt::git::parse))]
+    GitConfigParseError { error_text: String },
+
     #[error("an unknown error occured.")]
     #[diagnostic(code(volt::unknown))]
     UnknownError,
