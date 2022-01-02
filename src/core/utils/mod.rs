@@ -322,8 +322,7 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
     };
 
     let mut decompressor = libdeflater::Decompressor::new();
-    let mut outbuf = Vec::with_capacity(isize);
-    outbuf.resize(isize, 0);
+    let mut outbuf = vec![0; isize];
     decompressor.gzip_decompress(gz_data, &mut outbuf).unwrap();
 
     outbuf
