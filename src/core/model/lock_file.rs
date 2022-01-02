@@ -105,7 +105,7 @@ impl<'de> de::Deserialize<'de> for DependencyID {
         let version = parts
             .next()
             .ok_or_else(|| de::Error::custom("missing dependency version"))?;
-        Ok(DependencyID(name.to_string(), version.to_string()))
+        Ok(Self(name.to_string(), version.to_string()))
     }
 }
 

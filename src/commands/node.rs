@@ -26,9 +26,7 @@ use std::{
     str,
 };
 
-use base64::decode;
 use clap::ArgMatches;
-use futures::io;
 use lzma_rs::xz_decompress;
 //use lz4_flex;
 use miette::Result;
@@ -62,11 +60,11 @@ enum Lts {
     Yes(String),
 }
 
-impl Into<Option<String>> for Lts {
-    fn into(self) -> Option<String> {
-        match self {
-            Self::No(_) => None,
-            Self::Yes(x) => Some(x),
+impl From<Lts> for Option<String> {
+    fn from(val: Lts) -> Self {
+        match val {
+            Lts::No(_) => None,
+            Lts::Yes(x) => Some(x),
         }
     }
 }
@@ -94,7 +92,7 @@ enum Os {
     Unknown,
 }
 impl Display for Os {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match &self {
             Os::Windows => "win",
             Os::Macos => "darwin",
@@ -113,7 +111,7 @@ enum Arch {
 }
 
 impl Display for Arch {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match *self {
             Arch::X86 => "x86",
             Arch::X64 => "x64",
@@ -161,7 +159,7 @@ async fn download_node_version(versions: Vec<&str>) {
 
     let mirror = "https://nodejs.org/dist";
 
-    let _node_versions: Vec<NodeVersion> = reqwest::get(format!("{}/index.json", mirror))
+    let node_versions: Vec<NodeVersion> = reqwest::get(format!("{}/index.json", mirror))
         .await
         .unwrap()
         .json()
@@ -181,7 +179,7 @@ async fn download_node_version(versions: Vec<&str>) {
             }
 
             let mut found = false;
-            for n in &_node_versions {
+            for n in &node_versions {
                 if v == n.version.to_string() {
                     download_url = format!("{}v{}", download_url, n.version);
                     found = true;
@@ -357,9 +355,10 @@ async fn use_windows(version: String) {
         if !path.contains(&link_dir) {
             //env_perm::append("PATH", &link_dir);
             let command = format!("[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + '{}', 'User')", &link_dir);
-            let stdout = Command::new("Powershell")
+            Command::new("Powershell")
                 .args(&["-Command", &command])
-                .output();
+                .output()
+                .unwrap();
             println!("PATH environment variable updated.\nYou will need to restart your terminal for changes to apply.");
         }
     } else {
@@ -377,8 +376,8 @@ async fn use_node_version(version: String) {
         let path = Path::new(&node_path);
 
         if path.exists() {
-            let link_dir = format!("{}/.local/bin", homedir.display());
-            let link = format!("{}/{}", link_dir, "node.exe");
+            //let link_dir = format!("{}/.local/bin", homedir.display());
+            //let link = format!("{}/{}", link_dir, "node.exe");
             //let symlink = std::os::unix::fs::symlink(node_path, link);
         } else {
             println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version)

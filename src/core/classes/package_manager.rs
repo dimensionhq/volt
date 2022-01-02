@@ -28,7 +28,7 @@ pub enum PackageManager {
 }
 
 impl fmt::Display for PackageManager {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Volt => write!(f, "Volt"),
             Self::Yarn => write!(f, "Yarn"),

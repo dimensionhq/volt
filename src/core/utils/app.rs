@@ -20,9 +20,7 @@ use clap::ArgMatches;
 use dirs::home_dir;
 use miette::Result;
 use package_spec::{parse_package_spec, PackageSpec};
-use sha1::Digest;
-use sha2::Sha512;
-use ssri::{Algorithm, Integrity};
+use ssri::Algorithm;
 use std::{env, path::PathBuf};
 
 #[derive(Debug)]
@@ -37,7 +35,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn initialize(args: &ArgMatches) -> Result<App> {
+    pub fn initialize(args: &ArgMatches) -> Result<Self> {
         enable_ansi_support().unwrap();
 
         // Current Directory
@@ -61,7 +59,7 @@ impl App {
         // ./volt.lock
         let lock_file_path = current_directory.join("volt.lock");
 
-        Ok(App {
+        Ok(Self {
             current_dir: current_directory,
             home_dir: home_directory,
             node_modules_dir: node_modules_directory,
@@ -78,7 +76,7 @@ impl App {
             .args
             .values_of("package-names")
             .unwrap()
-            .map(|v| v.to_string())
+            .map(ToString::to_string)
             .collect::<Vec<String>>();
 
         args.dedup();
@@ -108,7 +106,7 @@ impl App {
                 .chain(&data)
                 .result();
 
-            integrity = format!("sha1-{}", hash.to_hex().1.to_string());
+            integrity = format!("sha1-{}", hash.to_hex().1);
         } else {
             integrity = ssri::IntegrityOpts::new()
                 .algorithm(Algorithm::Sha512)

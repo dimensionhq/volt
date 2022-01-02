@@ -24,18 +24,13 @@ use futures::{stream::FuturesUnordered, StreamExt};
 use indicatif::{HumanBytes, ProgressBar, ProgressStyle};
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
-use tokio::{
-    io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt},
-    sync::Semaphore,
-    task::spawn_blocking,
-};
+use tokio::task::spawn_blocking;
 
 use std::{
     fs,
     io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     sync::Arc,
-    time::Instant,
 };
 
 pub struct Clean {}

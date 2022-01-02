@@ -61,7 +61,7 @@ pub enum Engine {
 
 impl Default for Engine {
     fn default() -> Self {
-        Engine::String(String::new())
+        Self::String(String::new())
     }
 }
 
@@ -74,6 +74,6 @@ pub enum Bin {
 
 impl Default for Bin {
     fn default() -> Self {
-        Bin::String(String::new())
+        Self::String(String::new())
     }
 }

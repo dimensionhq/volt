@@ -129,7 +129,7 @@ Options:
                 .add_attribute(Attribute::Bold),
         ]);
 
-        for i in s.objects.iter() {
+        for i in &s.objects {
             let mut description: String = i.package.description.clone();
 
             if i.package.description.len() > 150 {

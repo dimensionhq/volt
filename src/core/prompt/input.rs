@@ -59,7 +59,7 @@ impl<'a> TermThemeRenderer<'a> {
     }
 
     fn write_formatted_str<
-        F: FnOnce(&mut TermThemeRenderer, &mut dyn fmt::Write) -> fmt::Result,
+        F: FnOnce(&mut TermThemeRenderer<'_>, &mut dyn fmt::Write) -> fmt::Result,
     >(
         &mut self,
         f: F,
@@ -71,7 +71,7 @@ impl<'a> TermThemeRenderer<'a> {
     }
 
     fn write_formatted_line<
-        F: FnOnce(&mut TermThemeRenderer, &mut dyn fmt::Write) -> fmt::Result,
+        F: FnOnce(&mut TermThemeRenderer<'_>, &mut dyn fmt::Write) -> fmt::Result,
     >(
         &mut self,
         f: F,
@@ -83,7 +83,7 @@ impl<'a> TermThemeRenderer<'a> {
     }
 
     fn write_formatted_prompt<
-        F: FnOnce(&mut TermThemeRenderer, &mut dyn fmt::Write) -> fmt::Result,
+        F: FnOnce(&mut TermThemeRenderer<'_>, &mut dyn fmt::Write) -> fmt::Result,
     >(
         &mut self,
         f: F,
@@ -368,7 +368,7 @@ where
         let mut render = TermThemeRenderer::new(term, self.theme);
 
         loop {
-            let default_string = self.default.as_ref().map(|x| x.to_string());
+            let default_string = self.default.as_ref().map(ToString::to_string);
 
             render.input_prompt(
                 &self.prompt,
@@ -488,7 +488,7 @@ where
         let mut render = TermThemeRenderer::new(term, self.theme);
 
         loop {
-            let default_string = self.default.as_ref().map(|x| x.to_string());
+            let default_string = self.default.as_ref().map(ToString::to_string);
 
             render.input_prompt(
                 &self.prompt,
