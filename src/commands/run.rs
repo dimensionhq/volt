@@ -14,42 +14,27 @@
     limitations under the License.
 */
 
+use crate::cli::{VoltCommand, VoltConfig};
 use crate::{core::VERSION, App, Command as AppCommand};
 
 use async_trait::async_trait;
+use clap::Parser;
 use colored::Colorize;
 use miette::Result;
-
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 
-/// Struct implementation for the `Run` command.
-pub struct Run;
+/// Run a pre-defined package script
+#[derive(Debug, Parser)]
+pub struct Run {
+    /// Name of the script to run
+    script: String,
+}
 
 #[async_trait]
-impl AppCommand for Run {
+impl VoltCommand for Run {
     /// Display a help menu for the `volt run` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-    
-Run a pre-defined package script
-
-Usage: {} {} {}
-    
-Options:
-    
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "run".bright_purple(),
-            "file-name".white(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
-
     /// Execute the `volt run` command
     ///
     /// Interactively create or update a package.json file for a project.
@@ -65,19 +50,18 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        let script = app.args.value_of("script-name").unwrap().trim();
-
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         if cfg!(target_os = "windows") {
             Command::new("cmd").args(&["/C", "babel"]).spawn().unwrap();
         } else if cfg!(target_os = "linux") {
-            println!("{}", format!("$ {}", script).truecolor(156, 156, 156));
+            println!("{}", format!("$ {}", self.script).truecolor(156, 156, 156));
 
-            let mut child = Command::new(Path::new("node_modules/").join(".bin/").join(script))
-                .stdout(Stdio::inherit())
-                .stderr(Stdio::inherit())
-                .spawn()
-                .expect("failed to execute child");
+            let mut child =
+                Command::new(Path::new("node_modules/").join(".bin/").join(self.script))
+                    .stdout(Stdio::inherit())
+                    .stderr(Stdio::inherit())
+                    .spawn()
+                    .expect("failed to execute child");
 
             child.wait().unwrap();
         }

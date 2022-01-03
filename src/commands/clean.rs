@@ -16,15 +16,19 @@
 
 //! Clean ./node_modules and reduce its size.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+    App, Command,
+};
 
 use async_trait::async_trait;
+use clap::Parser;
 use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt};
 use indicatif::{HumanBytes, ProgressBar, ProgressStyle};
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
-use tokio::task::spawn_blocking;
 
 use std::{
     fs,
@@ -32,56 +36,22 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+use tokio::{
+    io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt},
+    sync::Semaphore,
+    task::spawn_blocking,
+};
 
-pub struct Clean {}
-
-// minify a JSON file
-pub fn minify(path: &Path) -> Result<()> {
-    let mut contents = String::new();
-
-    let mut file = std::fs::OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(path)
-        .into_diagnostic()?;
-
-    file.read_to_string(&mut contents).into_diagnostic()?;
-
-    let minified = minifier::json::minify(&contents);
-
-    file.set_len(0).into_diagnostic()?;
-    file.seek(SeekFrom::Start(0)).into_diagnostic()?;
-
-    file.write_all(minified.as_bytes()).into_diagnostic()?;
-
-    Ok(())
+/// Optimizes your node_modules by removing redundant files and folders
+#[derive(Debug, Parser)]
+pub struct Clean {
+    /// Remove license file from the packages
+    #[clap(short, long)]
+    remove_licenses: bool,
 }
 
 #[async_trait]
-impl Command for Clean {
-    /// Display a help menu for the `volt clean` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-
-Clean ./node_modules and reduce its size.
-Usage: {} {} {} {}
-Options:
-
-  {} {} Output verbose messages on internal operations.
-  {} {} Disable progress bar."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "clone".bright_purple(),
-            "[repository]".white(),
-            "[flags]".white(),
-            "--verbose".blue(),
-            "(-v)".yellow(),
-            "--no-progress".blue(),
-            "(-np)".yellow()
-        )
-    }
-
+impl VoltCommand for Clean {
     /// Execute the `volt clean` command
     ///
     /// Clean node_modules and removes redundant files.
@@ -95,7 +65,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> miette::Result<()> {
         let mut regexes: Vec<Regex> = {
             vec![
                 r"^.*/readme(?:.md|.txt|.markdown)?$",
@@ -180,7 +150,7 @@ Options:
         };
 
         // Append the LICENSE regexes if the flag is specified
-        if app.has_flag("remove-licenses") {
+        if self.remove_licenses {
             // push a new regex into my REGEXES static var
             regexes.push(Regex::new(r"^.*/license(?:.md|.txt|.markdown)?$").unwrap())
         }
@@ -365,6 +335,28 @@ Options:
 
         Ok(())
     }
+}
+
+// minify a JSON file
+pub fn minify(path: &Path) -> Result<()> {
+    let mut contents = String::new();
+
+    let mut file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(path)
+        .into_diagnostic()?;
+
+    file.read_to_string(&mut contents).into_diagnostic()?;
+
+    let minified = minifier::json::minify(&contents);
+
+    file.set_len(0).into_diagnostic()?;
+    file.seek(SeekFrom::Start(0)).into_diagnostic()?;
+
+    file.write_all(minified.as_bytes()).into_diagnostic()?;
+
+    Ok(())
 }
 
 //
