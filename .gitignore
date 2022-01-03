@@ -12,3 +12,5 @@ prototype/compress/target
 server/target
 example/
 /example
+yarn.lock
+node_modules
