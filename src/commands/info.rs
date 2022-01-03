@@ -16,38 +16,24 @@
 
 //! Display info about a package.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+    App, Command,
+};
 
 use async_trait::async_trait;
+use clap::Parser;
 use colored::Colorize;
 use miette::Result;
-
 use std::sync::Arc;
 
+/// Display information about a package
+#[derive(Debug, Parser)]
 pub struct Info {}
 
 #[async_trait]
-impl Command for Info {
-    fn help() -> String {
-        format!(
-            r#"volt {}
-
-Shows the information of a package
-
-Usage: {} {} {}
-
-Options: 
-
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "deploy".bright_purple(),
-            "[commit]".white(),
-            "--verbose".bright_blue(),
-            "(-v)".yellow()
-        )
-    }
-
+impl VoltCommand for Info {
     /// Execute the `volt info` command
     ///
     /// Display info about a package
@@ -61,7 +47,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // #[allow(unused_assignments)]
         // let mut name = String::new();
 

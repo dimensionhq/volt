@@ -15,6 +15,7 @@
 */
 
 use crate::{
+    cli::{VoltCommand, VoltConfig},
     core::{
         classes::init_data::{InitData, License},
         prompt::prompts::{Confirm, Input, Select},
@@ -24,41 +25,23 @@ use crate::{
 };
 
 use async_trait::async_trait;
+use clap::Parser;
 use colored::Colorize;
 use miette::Result;
 use regex::Regex;
-
 use std::{fs::File, io::Write, sync::Arc, time::Instant};
+use tracing::error;
 
-/// Struct implementation for the `Init` command.
-pub struct Init;
+/// Interactively create or update a package.json file for a project
+#[derive(Debug, Parser)]
+pub struct Init {
+    /// Use default options
+    #[clap(short, long)]
+    yes: bool,
+}
 
 #[async_trait]
-impl Command for Init {
-    /// Display a help menu for the `volt init` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-    
-Interactively create or update a package.json file for a project
-
-Usage: {} {} {}
-    
-Options:
-    
-  {} {} Initialize a package.json file without any prompts.  
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "init".bright_purple(),
-            "[flags]".white(),
-            "--yes".blue(),
-            "(-y)".yellow(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
-
+impl VoltCommand for Init {
     /// Execute the `volt init` command
     ///
     /// Interactively create or update a package.json file for a project.
@@ -74,10 +57,10 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> miette::Result<()> {
         let start = Instant::now();
         // get cwd
-        let cwd = app
+        let cwd = config
             .current_dir
             .file_name()
             .unwrap()
@@ -85,7 +68,7 @@ Options:
             .unwrap()
             .to_string();
 
-        let data = if app.has_flag("yes") {
+        let data = if self.yes {
             // Set name to current directory name
             let name = cwd;
             let version = "0.1.0".to_string();
@@ -96,10 +79,10 @@ Options:
 
             let author = {
                 let git_user_name =
-                    utils::get_git_config(&app, "user.name")?.unwrap_or_else(String::new);
+                    utils::get_git_config(&config, "user.name")?.unwrap_or_else(String::new);
 
                 let git_email =
-                    utils::get_git_config(&app, "user.email")?.unwrap_or_else(String::new);
+                    utils::get_git_config(&config, "user.email")?.unwrap_or_else(String::new);
 
                 if git_user_name.is_empty() && git_email.is_empty() {
                     None
@@ -108,7 +91,7 @@ Options:
                 }
             };
 
-            let repository = utils::get_git_config(&app, "remote.origin.url")?;
+            let repository = utils::get_git_config(&config, "remote.origin.url")?;
 
             let license = License::default();
 
@@ -149,7 +132,8 @@ Options:
                     let input: Input = Input {
                         message: String::from("name"),
                         default: Some(
-                            app.current_dir
+                            config
+                                .current_dir
                                 .file_name()
                                 .unwrap()
                                 .to_str()
@@ -210,11 +194,11 @@ Options:
 
             // Get "author"
             let git_user_name =
-                utils::get_git_config(&app, "user.name")?.unwrap_or_else(String::new);
+                utils::get_git_config(&config, "user.name")?.unwrap_or_else(String::new);
 
             let git_email = format!(
                 "<{}>",
-                utils::get_git_config(&app, "user.email")?.unwrap_or_else(String::new)
+                utils::get_git_config(&config, "user.email")?.unwrap_or_else(String::new)
             );
 
             let author;
@@ -303,6 +287,7 @@ Options:
         }
         println!("{}", start.elapsed().as_secs_f32());
         println!("{}", "Successfully Initialized package.json".bright_green());
+
         Ok(())
     }
 }

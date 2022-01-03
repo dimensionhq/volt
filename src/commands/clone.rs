@@ -16,41 +16,27 @@
 
 //! Clone and setup a repository from Github.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+    App, Command,
+};
 
 use async_trait::async_trait;
+use clap::Parser;
 use colored::Colorize;
 use miette::Result;
-
 use std::{process, sync::Arc};
 
-pub struct Clone {}
+/// Clone a project and setup a project from a repository
+#[derive(Debug, Parser)]
+pub struct Clone {
+    /// URL of the repository
+    repository: String,
+}
 
 #[async_trait]
-impl Command for Clone {
-    /// Display a help menu for the `volt clone` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-
-Clone a project and setup a project from a repository.
-Usage: {} {} {} {}
-Options:
-
-  {} {} Output verbose messages on internal operations.
-  {} {} Disable progress bar."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "clone".bright_purple(),
-            "[repository]".white(),
-            "[flags]".white(),
-            "--verbose".blue(),
-            "(-v)".yellow(),
-            "--no-progress".blue(),
-            "(-np)".yellow()
-        )
-    }
-
+impl VoltCommand for Clone {
     /// Execute the `volt clone` command
     ///
     /// Clone and setup a repository from Github
@@ -64,15 +50,9 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(self, _: VoltConfig) -> miette::Result<()> {
         let exit_code = process::Command::new("cmd")
-            .arg(
-                format!(
-                    "/C git clone {} --depth=1",
-                    app.args.value_of("repository").unwrap()
-                )
-                .as_str(),
-            )
+            .arg(format!("/C git clone {} --depth=1", self.repository).as_str())
             .status()
             .unwrap();
 

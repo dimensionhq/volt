@@ -17,25 +17,24 @@
 //! Login for a package.
 
 use crate::{
+    cli::{VoltCommand, VoltConfig},
     core::prompt::prompts::{Input, Secret},
     App, Command,
 };
 
 use async_trait::async_trait;
+use clap::Parser;
 use colored::Colorize;
 use miette::Result;
+use std::sync::Arc;
 use urlencoding::encode;
 
-use std::sync::Arc;
-
+/// Login to the npm registry
+#[derive(Debug, Parser)]
 pub struct Login {}
 
 #[async_trait]
-impl Command for Login {
-    fn help() -> String {
-        todo!()
-    }
-
+impl VoltCommand for Login {
     /// Execute the `volt login` command
     ///
     /// Login to the npm registry
@@ -49,7 +48,7 @@ impl Command for Login {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         loop {
             let username_input = Input {
                 message: String::from("Username"),

@@ -14,31 +14,24 @@
     limitations under the License.
 */
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+    App, Command,
+};
 
 use async_trait::async_trait;
+use clap::Parser;
 use colored::Colorize;
 use miette::Result;
-
 use std::sync::Arc;
 
-pub struct Discord {}
+/// Join the official volt discord server
+#[derive(Debug, Parser)]
+pub struct Discord;
 
 #[async_trait]
-impl Command for Discord {
-    fn help() -> String {
-        format!(
-            r#"volt {}
-
-Join the official volt discord server.
-
-Usage: {} {}"#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "discord".bright_purple(),
-        )
-    }
-
+impl VoltCommand for Discord {
     /// Execute the `volt discord` command
     ///
     /// Join the official volt discord server.
@@ -52,7 +45,7 @@ Usage: {} {}"#,
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         match webbrowser::open("https://discord.gg/fY7BMcrcYr") {
             Ok(_) => {
                 println!("Successfully opened an invite to the official {} server on your default browser.", "discord".truecolor(88, 101, 242).bold());
