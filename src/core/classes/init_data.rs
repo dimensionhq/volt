@@ -21,8 +21,8 @@ use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum License {
-    Mit = 0,
-    Apache2 = 1,
+    Mit,
+    Apache2,
     BSD3,
     BSD2,
     Gpl,
@@ -33,20 +33,26 @@ pub enum License {
     Other,
 }
 
+impl License {
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Mit => "MIT License",
+            Self::Apache2 => "Apache License 2.0",
+            Self::BSD3 => "BSD 3-Clause \"New\" or \"Revised\" License",
+            Self::BSD2 => "BSD 2-Clause \"Simplified\" or \"FreeBSD\" License",
+            Self::Gpl => "GNU General Public License (GPL)",
+            Self::Lgpl => "GNU Library or \"Lesser\" General Public License (LGPL)",
+            Self::Mpl => "Mozilla Public License 2.0",
+            Self::Cddl => "Common Development and Distribution License",
+            Self::Unlicense => "The Unlicense",
+            Self::Other => "Other",
+        }
+    }
+}
+
 impl fmt::Display for License {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Mit => write!(f, "MIT License"),
-            Self::Apache2 => write!(f, "Apache License 2.0"),
-            Self::BSD3 => write!(f, "BSD 3-Clause \"New\" or \"Revised\" License"),
-            Self::BSD2 => write!(f, "BSD 2-Clause \"Simplified\" or \"FreeBSD\" License"),
-            Self::Gpl => write!(f, "GNU General Public License (GPL)"),
-            Self::Lgpl => write!(f, "GNU Library or \"Lesser\" General Public License (LGPL)"),
-            Self::Mpl => write!(f, "Mozilla Public License 2.0"),
-            Self::Cddl => write!(f, "Common Development and Distribution License"),
-            Self::Unlicense => write!(f, "The Unlicense"),
-            Self::Other => write!(f, "Other"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -57,21 +63,18 @@ impl Default for License {
 }
 
 impl License {
-    #[allow(dead_code)]
-    pub fn options() -> Vec<String> {
-        vec![
-            Self::Mit.to_string(),
-            Self::Apache2.to_string(),
-            Self::BSD3.to_string(),
-            Self::BSD2.to_string(),
-            Self::Gpl.to_string(),
-            Self::Lgpl.to_string(),
-            Self::Mpl.to_string(),
-            Self::Cddl.to_string(),
-            Self::Unlicense.to_string(),
-            Self::BSD3.to_string(),
-        ]
-    }
+    pub const OPTIONS: [&'static str; 10] = [
+        Self::Mit.as_str(),
+        Self::Apache2.as_str(),
+        Self::BSD3.as_str(),
+        Self::BSD2.as_str(),
+        Self::Gpl.as_str(),
+        Self::Lgpl.as_str(),
+        Self::Mpl.as_str(),
+        Self::Cddl.as_str(),
+        Self::Unlicense.as_str(),
+        Self::Other.as_str(),
+    ];
 
     #[allow(dead_code)]
     pub fn from_index(index: usize) -> Option<Self> {
@@ -112,8 +115,7 @@ impl InitData {
 
     // }
 
-    #[allow(dead_code)]
-    pub fn dump(&self) -> String {
-        to_string_pretty(&self).unwrap()
+    pub fn into_string(self) -> String {
+        to_string_pretty(&self).expect("Valid serialization state")
     }
 }

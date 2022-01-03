@@ -17,19 +17,15 @@
 use crate::core::prompt::input;
 
 use dialoguer::{console, theme::ColorfulTheme};
-use structopt::StructOpt;
-
-use std::io::Result;
+use std::{borrow::Cow, io::Result};
 
 /// Prompt that returns `true` or `false` (as strings)
-#[derive(Debug, StructOpt)]
-pub struct Confirm {
+#[derive(Debug)]
+pub struct Confirm<'i> {
     /// Message for the prompt
-    #[structopt(short, long)]
-    pub message: String,
+    pub message: Cow<'i, str>,
 
     /// Default value for the prompt is `true`
-    #[structopt(short, long)]
     pub default: bool,
     // TODO: Validation
     // #[structopt(short, long)]
@@ -37,7 +33,7 @@ pub struct Confirm {
     // validate: Option<String>,
 }
 
-impl Confirm {
+impl<'i> Confirm<'i> {
     pub fn run(&self) -> Result<bool> {
         let theme = ColorfulTheme {
             defaults_style: console::Style::new(),
@@ -62,7 +58,7 @@ impl Confirm {
         };
 
         let value = dialoguer::Confirm::with_theme(&theme)
-            .with_prompt(&self.message)
+            .with_prompt(self.message.clone().into_owned())
             .default(self.default)
             .interact()?;
 
@@ -71,22 +67,19 @@ impl Confirm {
 }
 
 /// Prompt that takes user input and returns a string.
-#[derive(Debug, StructOpt)]
-pub struct Input {
+#[derive(Debug)]
+pub struct Input<'i> {
     /// Message for the prompt
-    #[structopt(short, long)]
-    pub message: String,
+    pub message: Cow<'i, str>,
 
     /// Default value for the prompt
-    #[structopt(short, long)]
-    pub default: Option<String>,
+    pub default: Option<Cow<'i, str>>,
 
     /// Allow empty input. Conflicts with `default`
-    #[structopt(short, long, conflicts_with = "default")]
     pub allow_empty: bool,
 }
 
-impl Input {
+impl Input<'_> {
     pub fn run(&self) -> Result<String> {
         let theme = ColorfulTheme {
             defaults_style: console::Style::new(),
@@ -113,7 +106,7 @@ impl Input {
         let mut input = input::Input::<String>::with_theme(&theme);
 
         input
-            .with_prompt(&self.message)
+            .with_prompt(self.message.clone())
             .allow_empty(self.allow_empty);
 
         if self.default.is_some() {
@@ -126,37 +119,33 @@ impl Input {
     }
 }
 /// Prompt that takes user input, hides it from the terminal, and returns a string
-#[derive(Debug, StructOpt)]
-pub struct Secret {
+#[derive(Debug)]
+pub struct Secret<'i> {
     /// Message for the prompt
-    #[structopt(short, long)]
-    pub message: String,
+    pub message: Cow<'i, str>,
 
     /// Enable confirmation prompt with this message
-    #[structopt(short, long, requires = "error")]
-    pub confirm: Option<String>,
+    pub confirm: Option<Cow<'i, str>>,
 
     /// Error message when secrets doesn't match during confirmation
-    #[structopt(short, long, requires = "confirm")]
-    pub error: Option<String>,
+    pub error: Option<Cow<'i, str>>,
 
     /// Allow empty secret
-    #[structopt(short, long)]
     pub allow_empty: bool,
 }
 
-impl Secret {
+impl<'i> Secret<'i> {
     #[allow(dead_code)]
     pub fn run(&self) -> Result<String> {
         let theme = ColorfulTheme::default();
         let mut input = dialoguer::Password::with_theme(&theme);
 
         input
-            .with_prompt(&self.message)
+            .with_prompt(self.message.clone())
             .allow_empty_password(self.allow_empty);
 
-        if self.confirm.is_some() {
-            input.with_confirmation(self.confirm.as_ref().unwrap(), self.error.as_ref().unwrap());
+        if let (Some(confirm), Some(error)) = (&self.confirm, &self.error) {
+            input.with_confirmation(confirm.clone().into_owned(), error.clone().into_owned());
         }
 
         let value = input.interact()?;
@@ -166,25 +155,22 @@ impl Secret {
 }
 
 /// Prompt that allows the user to select from a list of options
-#[derive(Debug, StructOpt)]
-pub struct Select {
+#[derive(Debug)]
+pub struct Select<'i> {
     /// Message for the prompt
-    #[structopt(short, long)]
-    pub message: String,
+    pub message: Cow<'i, str>,
 
     /// Enables paging. Uses your terminal size
-    #[structopt(short, long)]
     pub paged: bool,
 
     /// Specify number of the item that will be selected by default
-    #[structopt(short, long)]
     pub selected: Option<usize>,
 
     /// Items that can be selected
-    pub items: Vec<String>,
+    pub items: Vec<Cow<'i, str>>,
 }
 
-impl Select {
+impl<'i> Select<'i> {
     pub fn run(&self) -> Result<usize> {
         let item_len = self.items.len();
 
@@ -217,7 +203,7 @@ impl Select {
         let mut input = dialoguer::Select::with_theme(&theme);
 
         input
-            .with_prompt(&self.message)
+            .with_prompt(self.message.clone())
             //.paged(self.paged)
             .items(&self.items);
         if self.selected.is_some() {

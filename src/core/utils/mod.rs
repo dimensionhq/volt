@@ -18,6 +18,7 @@ limitations under the License.
 pub mod helper;
 pub mod constants;
 pub mod errors;
+pub mod extensions;
 pub mod package;
 pub mod scripts;
 pub mod voltapi;

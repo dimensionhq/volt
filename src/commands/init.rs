@@ -1,5 +1,5 @@
 /*
-    Copyright 2021 Volt Contributors
+    Copyright 2021, 2022 Volt Contributors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,17 +19,20 @@ use crate::{
     core::{
         classes::init_data::{InitData, License},
         prompt::prompts::{Confirm, Input, Select},
-        utils, VERSION,
+        utils,
+        utils::errors::VoltError,
+        utils::extensions::PathExtensions,
     },
 };
 
 use async_trait::async_trait;
 use clap::Parser;
 use colored::Colorize;
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 use regex::Regex;
-use std::{fs::File, io::Write, sync::Arc, time::Instant};
-use tracing::error;
+use std::{fs::File, io::Write, time::Instant};
+
+const PACKAGE_JSON: &str = "package.json";
 
 /// Interactively create or update a package.json file for a project
 #[derive(Debug, Parser)]
@@ -56,237 +59,172 @@ impl VoltCommand for Init {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> miette::Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         let start = Instant::now();
-        // get cwd
-        let cwd = config
+
+        // get name of cwd
+        let cwd_name = config
             .cwd()?
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
+            .file_name_as_string()
+            .ok_or(VoltError::GetCurrentDirNameError)?;
 
         let data = if self.yes {
             // Set name to current directory name
-            let name = cwd;
-            let version = "0.1.0".to_string();
-
-            let description = None;
-
-            let main = "index.js".to_string();
-
-            let author = {
-                let git_user_name =
-                    utils::get_git_config(&config, "user.name")?.unwrap_or_else(String::new);
-
-                let git_email =
-                    utils::get_git_config(&config, "user.email")?.unwrap_or_else(String::new);
-
-                if git_user_name.is_empty() && git_email.is_empty() {
-                    None
-                } else {
-                    Some([git_user_name, format!("<{}>", git_email)].join(" "))
-                }
-            };
-
-            let repository = utils::get_git_config(&config, "remote.origin.url")?;
-
-            let license = License::default();
-
-            InitData {
-                name,
-                version,
-                description,
-                main,
-                repository,
-                author,
-                license,
-                private: None,
-            }
+            automatic_initialization(cwd_name, &config)?
         } else {
-            // Get "name"
-            let input = Input {
-                message: String::from("name"),
-                default: Some(cwd),
-                allow_empty: false,
-            };
-
-            let mut name;
-            name = input.run().unwrap_or_else(|err| {
-                eprintln!("{}", err);
-                std::process::exit(1);
-            });
-
-            let re_name =
-                Regex::new("^(?:@[a-z0-9-*~][a-z0-9-*._~]*/)?[a-z0-9-~][a-z0-9-._~]*$").unwrap();
-
-            if re_name.is_match(&name) { // returns bool
-                 // Do nothing
-                 // It passes and everyone is happy
-                 // it continues with the other code
-            } else {
-                println!("{}", "Name cannot contain special characters".red());
-                loop {
-                    let input: Input = Input {
-                        message: String::from("name"),
-                        default: Some(
-                            config
-                                .cwd()?
-                                .file_name()
-                                .unwrap()
-                                .to_str()
-                                .unwrap()
-                                .to_string(),
-                        ),
-                        allow_empty: false,
-                    };
-
-                    name = input.run().unwrap_or_else(|err| {
-                        eprintln!("{}", err);
-                        std::process::exit(1);
-                    });
-
-                    if re_name.is_match(&name) {
-                        break;
-                    } else {
-                        println!("{}", "Name cannot contain special characters".red());
-                    }
-                }
-            }
-
-            // Get "version"
-            let input: Input = Input {
-                message: String::from("version"),
-                default: Some(String::from("1.0.0")),
-                allow_empty: false,
-            };
-
-            let version = input.run().unwrap_or_else(|err| {
-                error!("{}", err.to_string());
-                std::process::exit(1);
-            });
-
-            // Get "description"
-            let input: Input = Input {
-                message: String::from("description"),
-                default: None,
-                allow_empty: true,
-            };
-
-            let description = input.run().unwrap_or_else(|err| {
-                error!("{}", err.to_string());
-                std::process::exit(1);
-            });
-
-            // Get "main"
-            let input: Input = Input {
-                message: String::from("main"),
-                default: Some(String::from("index.js")),
-                allow_empty: false,
-            };
-
-            let main = input.run().unwrap_or_else(|err| {
-                error!("{}", err.to_string());
-                std::process::exit(1);
-            });
-
-            // Get "author"
-            let git_user_name =
-                utils::get_git_config(&config, "user.name")?.unwrap_or_else(String::new);
-
-            let git_email = format!(
-                "<{}>",
-                utils::get_git_config(&config, "user.email")?.unwrap_or_else(String::new)
-            );
-
-            let author;
-
-            if git_user_name != String::new() && git_email != String::new() {
-                let input: Input = Input {
-                    message: String::from("author"),
-                    default: Some(format!("{} {}", git_user_name, git_email)),
-                    allow_empty: true,
-                };
-
-                author = input.run().unwrap_or_else(|err| {
-                    error!("{}", err.to_string());
-                    std::process::exit(1);
-                });
-            } else {
-                let input: Input = Input {
-                    message: String::from("author"),
-                    default: None,
-                    allow_empty: true,
-                };
-                author = input.run().unwrap_or_else(|err| {
-                    error!("{}", err.to_string());
-                    std::process::exit(1);
-                });
-            }
-
-            // Get "repository"
-            let input: Input = Input {
-                message: String::from("repository"),
-                default: None,
-                allow_empty: true,
-            };
-
-            let repository = input.run().unwrap_or_else(|err| {
-                error!("{}", err.to_string());
-                std::process::exit(1);
-            });
-
-            let licenses: Vec<String> = License::options();
-
-            let select = Select {
-                message: String::from("License"),
-                paged: true,
-                selected: Some(1),
-                items: licenses,
-            };
-
-            select.run().unwrap_or_else(|err| {
-                error!("{}", err.to_string());
-                std::process::exit(1);
-            });
-
-            let license = License::from_index(select.selected.unwrap()).unwrap();
-
-            let input = Confirm {
-                message: String::from("private"),
-                default: false,
-            };
-
-            let private = input.run().unwrap_or_else(|err| {
-                error!("{}", err.to_string());
-                std::process::exit(1);
-            });
-
-            InitData {
-                name,
-                version,
-                description: Some(description),
-                main,
-                repository: Some(repository),
-                author: Some(author),
-                license,
-                private: Some(private),
-            }
+            manual_initialization(cwd_name, &config)?
         };
 
-        let mut file = File::create(r"package.json").unwrap();
-        if let Err(error) = file.write(data.dump().as_bytes()) {
-            error!(
-                "{} {}",
-                "Failed to create package.json -",
-                error.to_string().bright_yellow().bold()
-            );
-            std::process::exit(1);
-        }
+        let mut file = File::create(PACKAGE_JSON).map_err(|e| VoltError::WriteFileError {
+            source: e,
+            name: String::from(PACKAGE_JSON),
+        })?;
+        file.write(data.into_string().as_bytes())
+            .map_err(|e| VoltError::WriteFileError {
+                source: e,
+                name: String::from(PACKAGE_JSON),
+            })?;
+
         println!("{}", start.elapsed().as_secs_f32());
         println!("{}", "Successfully Initialized package.json".bright_green());
 
         Ok(())
     }
+}
+
+fn automatic_initialization(name: String, config: &VoltConfig) -> Result<InitData> {
+    let version = "0.1.0".to_string();
+
+    let description = None;
+
+    let main = "index.js".to_string();
+
+    let author = {
+        let git_user_name = utils::get_git_config(config, "user.name")?;
+        let git_email = utils::get_git_config(config, "user.email")?;
+
+        if let (Some(git_user_name), Some(git_email)) = (git_user_name, git_email) {
+            Some(format!("{} <{}>", git_user_name, git_email))
+        } else {
+            None
+        }
+    };
+
+    let repository = utils::get_git_config(config, "remote.origin.url")?;
+
+    let license = License::default();
+
+    Ok(InitData {
+        name,
+        version,
+        description,
+        main,
+        repository,
+        author,
+        license,
+        private: None,
+    })
+}
+
+fn manual_initialization(default_name: String, config: &VoltConfig) -> Result<InitData> {
+    // Get "name"
+    let input = Input {
+        message: "name".into(),
+        default: Some(default_name.into()),
+        allow_empty: false,
+    };
+
+    let re_name = Regex::new("^(?:@[a-z0-9-*~][a-z0-9-*._~]*/)?[a-z0-9-~][a-z0-9-._~]*$")
+        .expect("Valid regex");
+    let mut name;
+    loop {
+        name = input.run().into_diagnostic()?;
+
+        if re_name.is_match(&name) {
+            break;
+        }
+
+        println!("{}", "Name cannot contain special characters".red());
+    }
+
+    // Get "version"
+    let input = Input {
+        message: "version".into(),
+        default: Some("1.0.0".into()),
+        allow_empty: false,
+    };
+
+    let version = input.run().into_diagnostic()?;
+
+    // Get "description"
+    let input = Input {
+        message: "description".into(),
+        default: None,
+        allow_empty: true,
+    };
+
+    let description = input.run().into_diagnostic()?;
+
+    // Get "main"
+    let input = Input {
+        message: "main".into(),
+        default: Some("index.js".into()),
+        allow_empty: false,
+    };
+
+    let main = input.run().into_diagnostic()?;
+
+    // Get "author"
+    let git_user_name = utils::get_git_config(config, "user.name")?;
+
+    let git_email = utils::get_git_config(config, "user.email")?;
+
+    let input = Input {
+        message: "author".into(),
+        default: git_user_name
+            .zip(git_email)
+            .map(|(git_user_name, git_email)| format!("{} <{}>", git_user_name, git_email).into()),
+        allow_empty: true,
+    };
+
+    let author = input.run().into_diagnostic()?;
+
+    // Get "repository"
+    let input = Input {
+        message: "repository".into(),
+        default: None,
+        allow_empty: true,
+    };
+
+    let repository = input.run().into_diagnostic()?;
+
+    // Get "license"
+    let select = Select {
+        message: "License".into(),
+        paged: true,
+        selected: Some(1),
+        items: License::OPTIONS.iter().map(|&l| l.into()).collect(),
+    };
+
+    select.run().into_diagnostic()?;
+
+    let license = License::from_index(select.selected.unwrap()).unwrap();
+
+    let input = Confirm {
+        message: "private".into(),
+        default: false,
+    };
+
+    let private = input.run().into_diagnostic()?;
+
+    Ok(InitData {
+        name,
+        version,
+        description: Some(description),
+        main,
+        repository: Some(repository),
+        author: Some(author),
+        license,
+        private: Some(private),
+    })
 }
