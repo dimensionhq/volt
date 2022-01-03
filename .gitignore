@@ -1,16 +1,23 @@
+# macos-specific metadata
+.DS_Store
+
+# test directories
+tests/
+test/
+yarn_test/
+volt_test/
+pnpm_test/
+
+# accidental installation directories
+node_modules
+package.json
+
+# lockfiles
+yarn.lock
+pnpm-lock.yaml
+package-lock.json
+
+# others
+example/
 /dev
 /target
-**/node_modules
-package.json
-.DS_Store
-test/*
-yarn_test/*
-volt_test/*
-pnpm_test/*
-prototype/compress/target
-/tests
-server/target
-example/
-/example
-yarn.lock
-node_modules

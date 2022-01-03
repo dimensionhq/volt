@@ -159,7 +159,7 @@ impl Command for Add {
             // this is only if the package is optional
 
             if value.optional {
-                // TODO: check if engines.nodeis compatible
+                // TODO: check if `engines.node` is compatible
                 // TODO: do a CPU arch check
                 if let Some(os) = &value.os {
                     if !os.contains(&app.os) && !os.contains(&format!("!{}", app.os)) {

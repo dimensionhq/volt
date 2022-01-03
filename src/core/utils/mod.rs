@@ -48,7 +48,7 @@ use std::{
     collections::HashMap,
     ffi::OsStr,
     fs::read_to_string,
-    io::{Cursor, Read},
+    io::{Cursor, Read, Write},
     path::PathBuf,
     sync::Arc,
 };
@@ -405,7 +405,11 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                 created_directories.push(package_directory.clone());
 
                 // Add the cleaned path to the package's directory
-                let mut entry_path = package_directory;
+                let mut entry_path = package_directory.clone();
+
+                entry_path.push("node_modules");
+
+                entry_path.push(&package.name);
 
                 entry_path.push(cleaned_entry_path_string);
 
@@ -414,14 +418,20 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
                 // If we haven't created this directory yet, create it
                 if !created_directories.iter().any(|p| p == entry_path_parent) {
-                    // it's more performant to have 3-4 create_dir calls instead of 1 create_dir_all call
-                    // we can already guarantee that a specific portion of the path exists, we don't need to
-                    // recursively check that bit (which is what create_dir_all does)
-
-                    println!("creating: {}", entry_path_parent.display());
                     created_directories.push(entry_path_parent.to_path_buf());
                     std::fs::create_dir_all(entry_path_parent).into_diagnostic()?;
                 }
+
+                let mut file_path = package_directory.join("node_modules");
+
+                file_path.push(package.name.clone());
+
+                file_path.push(cleaned_entry_path_string);
+
+                // Write the contents to node_modules
+                let mut file = std::fs::File::create(&file_path).unwrap();
+
+                file.write_all(&buffer);
 
                 // Write the contents of the entry into the content-addressable store located at `app.volt_dir`
                 // We get a hash of the file
@@ -431,6 +441,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                 cas_file_map.insert(entry_path_string, sri);
             }
 
+            // Write the file, shasum map to the content-addressable store
             cacache::write_sync(
                 &app.volt_dir,
                 &cacache_key,
@@ -438,7 +449,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
             )
             .into_diagnostic()?;
         } else {
-            // TODO: Maybe also print which package we're talking about?
+            // TODO: improve this message!
             println!("{} vs {}", package.integrity, tarball_bytes_hash);
             return Err(VoltError::ChecksumVerificationError.into());
         }
