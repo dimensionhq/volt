@@ -370,6 +370,9 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
             // extract to both the global store + node_modules (in the case of them using the pnpm linking algorithm)
             let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
 
+            // Add package's directory to list of created directories
+            let mut created_directories: Vec<PathBuf> = vec![];
+
             for entry in node_archive.entries().into_diagnostic()? {
                 let mut entry = entry.into_diagnostic()?;
 
@@ -398,11 +401,12 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                 // Add package's directory to it
                 package_directory.push(package.directory_name());
 
-                // Add package's directory to list of created directories
-                let mut created_directories: Vec<PathBuf> = vec![package_directory.clone()];
+                // push node_modules/.volt/send@0.17.2 to the list (because we created it in the previous step)
+                created_directories.push(package_directory.clone());
 
                 // Add the cleaned path to the package's directory
                 let mut entry_path = package_directory;
+
                 entry_path.push(cleaned_entry_path_string);
 
                 // Get the entry's parent
@@ -410,6 +414,10 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
                 // If we haven't created this directory yet, create it
                 if !created_directories.iter().any(|p| p == entry_path_parent) {
+                    // it's more performant to have 3-4 create_dir calls instead of 1 create_dir_all call
+                    // we can already guarantee that a specific portion of the path exists, we don't need to
+                    // recursively check that bit (which is what create_dir_all does)
+
                     println!("creating: {}", entry_path_parent.display());
                     created_directories.push(entry_path_parent.to_path_buf());
                     std::fs::create_dir_all(entry_path_parent).into_diagnostic()?;
