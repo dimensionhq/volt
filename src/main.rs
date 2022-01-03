@@ -20,7 +20,7 @@ mod cli;
 mod commands;
 mod core;
 
-use std::str::FromStr;
+use std::{str::FromStr, time::Instant};
 
 use tracing::Level;
 use tracing_subscriber::EnvFilter;
@@ -31,7 +31,7 @@ use crate::{
 };
 
 #[tokio::main]
-async fn main() {
+async fn main() -> miette::Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(Level::TRACE)
         .with_env_filter(
@@ -41,15 +41,13 @@ async fn main() {
         .without_time()
         .init();
 
+    let start = Instant::now();
+
     let app = VoltCli::new();
 
-    let code = match app.cmd.exec(app.config).await {
-        Err(err) => {
-            eprintln!("{}", err.to_string());
-            1
-        }
-        _ => 0,
-    };
+    let code = app.cmd.exec(app.config).await?;
 
-    std::process::exit(code);
+    println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
+
+    Ok(())
 }
