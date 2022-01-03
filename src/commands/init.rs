@@ -21,7 +21,6 @@ use crate::{
         prompt::prompts::{Confirm, Input, Select},
         utils, VERSION,
     },
-    App, Command,
 };
 
 use async_trait::async_trait;
@@ -61,7 +60,7 @@ impl VoltCommand for Init {
         let start = Instant::now();
         // get cwd
         let cwd = config
-            .current_dir
+            .cwd()?
             .file_name()
             .unwrap()
             .to_str()
@@ -133,7 +132,7 @@ impl VoltCommand for Init {
                         message: String::from("name"),
                         default: Some(
                             config
-                                .current_dir
+                                .cwd()?
                                 .file_name()
                                 .unwrap()
                                 .to_str()

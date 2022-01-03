@@ -24,7 +24,7 @@ use crate::{
     core::utils::fetch_dep_tree,
     core::utils::voltapi::VoltPackage,
     core::utils::{install_package, State},
-    core::{command::Command, VERSION},
+    core::VERSION,
 };
 
 use async_trait::async_trait;
@@ -103,15 +103,16 @@ impl VoltCommand for Add {
                 .progress_chars("=>-"),
         );
 
-        if !config.node_modules_dir.exists() {
-            std::fs::create_dir_all(&config.node_modules_dir.join(".volt/")).unwrap();
+        let nm_dir = config.node_modules()?;
+        let nm_volt_home = nm_dir.join(VoltConfig::VOLT_HOME);
+
+        if !nm_dir.exists() {
+            std::fs::create_dir_all(&nm_volt_home).unwrap();
         }
 
         let client = Client::builder().use_rustls_tls().build().unwrap();
 
         let start = Instant::now();
-
-        let node_modules_directory = config.node_modules_dir.join(".volt/");
 
         // pnpm linking algorithm
         for value in tree.values() {
@@ -123,7 +124,9 @@ impl VoltCommand for Add {
                 // TODO: check if `engines.node` is compatible
                 // TODO: do a CPU arch check
                 if let Some(os) = &value.os {
-                    if !os.contains(&config.os) && !os.contains(&format!("!{}", config.os)) {
+                    if !os.contains(&VoltConfig::OS.to_string())
+                        && !os.contains(&format!("!{}", VoltConfig::OS))
+                    {
                         continue;
                     }
                 }
@@ -136,18 +139,18 @@ impl VoltCommand for Add {
                 name = name.replace("/", "+");
             }
 
-            std::fs::create_dir(node_modules_directory.join(format!("{}@{}", name, value.version)))
+            std::fs::create_dir(nm_volt_home.join(format!("{}@{}", name, value.version)))
                 .into_diagnostic()?;
 
             std::fs::create_dir(
-                node_modules_directory
+                nm_volt_home
                     .join(format!("{}@{}", name, value.version))
                     .join("node_modules/"),
             )
             .into_diagnostic()?;
 
             std::fs::create_dir(
-                node_modules_directory
+                nm_volt_home
                     .join(format!("{}@{}", name, value.version))
                     .join("node_modules/")
                     .join(&name),

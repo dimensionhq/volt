@@ -16,13 +16,13 @@
 
 //! Handle an unknown command (can be listed in scripts).
 
-use crate::{App, Command};
-
 use async_trait::async_trait;
 use miette::Result;
 use serde::{Deserialize, Serialize};
 
 use std::{collections::HashMap, sync::Arc};
+
+use crate::cli::{VoltCommand, VoltConfig};
 
 pub struct Audit {}
 
@@ -113,11 +113,7 @@ pub struct AuditMetadata {
 // }
 
 #[async_trait]
-impl Command for Audit {
-    fn help() -> String {
-        todo!()
-    }
-
+impl VoltCommand for Audit {
     /// Execute the `volt audit` command
     ///
     /// Execute a audit command
@@ -131,7 +127,7 @@ impl Command for Audit {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // let package_json = PackageJson::from("package.json");
 
         // let mut requires = package_json.dependencies;

@@ -16,21 +16,17 @@
 
 //! Check for outdated packages.
 
-use crate::{App, Command};
-
 use async_trait::async_trait;
 use miette::Result;
 
 use std::sync::Arc;
 
+use crate::cli::{VoltCommand, VoltConfig};
+
 pub struct Team {}
 
 #[async_trait]
-impl Command for Team {
-    fn help() -> String {
-        todo!()
-    }
-
+impl VoltCommand for Team {
     /// Execute the `volt outdated` command
     ///
     /// Check for outdated packages
@@ -44,7 +40,7 @@ impl Command for Team {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         Ok(())
     }
 }

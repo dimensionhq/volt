@@ -16,7 +16,10 @@
 
 //!  Migrates a package from your direct dependencies.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -28,32 +31,7 @@ use std::sync::Arc;
 pub struct Migrate;
 
 #[async_trait]
-impl Command for Migrate {
-    /// Display a help menu for the `volt migrate` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-    
-Migrates a project to either yarn, volt,npm or pnpm from your current proj.
-
-Usage: {} {} {} {}
-
-Options: 
-
-  {} {} Output the version number.
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "migrate".bright_purple(),
-            "[package_manager_name]".white(),
-            "[flags]".white(),
-            "--version".blue(),
-            "(-ver)".yellow(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
-
+impl VoltCommand for Migrate {
     /// Execute the `volt migrate` command
     ///
     /// Migrates a project from yarn or npm to volt including lockfiles.
@@ -69,7 +47,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // let packagemanagers: Vec<String> = PackageManager::options();
         // let mut packagemanager: String = String::new();
         // if app.args.len() == 1 {

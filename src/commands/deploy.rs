@@ -16,7 +16,10 @@
 
 //! Remove a package from your direct dependencies.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -28,28 +31,7 @@ use std::sync::Arc;
 pub struct Deploy;
 
 #[async_trait]
-impl Command for Deploy {
-    /// Display a help menu for the `volt deploy` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-    
-Deploys your commit to Github.
-
-Usage: {} {} {}
-
-Options: 
-
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "deploy".bright_purple(),
-            "[commit]".white(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
-
+impl VoltCommand for Deploy {
     /// Execute the `volt deploy` command
     ///
     /// Removes a package from your direct dependencies.
@@ -62,7 +44,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // let args: Vec<String> = app.args.clone();
         // if args.is_empty() {
         //     error!("expected commit name");

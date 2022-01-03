@@ -16,7 +16,10 @@
 
 //! Remove a package from your direct dependencies.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -28,32 +31,7 @@ use std::sync::Arc;
 pub struct Remove;
 
 #[async_trait]
-impl Command for Remove {
-    /// Display a help menu for the `volt remove` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-    
-Removes a package from your direct dependencies.
-
-Usage: {} {} {} {}
-
-Options: 
-
-  {} {} Output the version number.
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "remove".bright_purple(),
-            "[packages]".white(),
-            "[flags]".white(),
-            "--version".blue(),
-            "(-ver)".yellow(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
-
+impl VoltCommand for Remove {
     /// Execute the `volt remove` command
     ///
     /// Removes a package from your direct dependencies.
@@ -69,7 +47,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // if app.args.len() == 1 {
         //     println!("{}", Self::help());
         //     process::exit(1);

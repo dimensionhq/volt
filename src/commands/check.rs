@@ -16,7 +16,10 @@
 
 //! Check for errors
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -28,27 +31,7 @@ use std::sync::Arc;
 pub struct Check;
 
 #[async_trait]
-impl Command for Check {
-    /// Display a help menu for the `volt check` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-    
-Checks for errors.
-
-Usage: {} {}
-
-Options: 
-
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "check".bright_purple(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
-
+impl VoltCommand for Check {
     /// Execute the `volt Check` command
     ///
     /// Removes a package from your direct dependencies.
@@ -59,7 +42,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         Ok(())
     }
 }

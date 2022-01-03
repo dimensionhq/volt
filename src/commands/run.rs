@@ -15,7 +15,7 @@
 */
 
 use crate::cli::{VoltCommand, VoltConfig};
-use crate::{core::VERSION, App, Command as AppCommand};
+use crate::core::VERSION;
 
 use async_trait::async_trait;
 use clap::Parser;
