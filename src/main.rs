@@ -25,10 +25,7 @@ use std::str::FromStr;
 use tracing::Level;
 use tracing_subscriber::EnvFilter;
 
-use crate::{
-    cli::{VoltCli, VoltCommand},
-    core::{command::Command, utils::app::App},
-};
+use crate::cli::{VoltCli, VoltCommand};
 
 #[tokio::main]
 async fn main() {

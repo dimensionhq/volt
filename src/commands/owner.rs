@@ -16,21 +16,17 @@
 
 //! Check for outdated packages.
 
-use crate::{App, Command};
-
 use async_trait::async_trait;
 use miette::Result;
 
 use std::sync::Arc;
 
+use crate::cli::{VoltCommand, VoltConfig};
+
 pub struct Owner {}
 
 #[async_trait]
-impl Command for Owner {
-    fn help() -> String {
-        todo!()
-    }
-
+impl VoltCommand for Owner {
     /// Execute the `volt outdated` command
     ///
     /// Check for outdated packages
@@ -44,7 +40,7 @@ impl Command for Owner {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         Ok(())
     }
 }

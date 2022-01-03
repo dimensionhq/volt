@@ -14,7 +14,10 @@
     limitations under the License.
 */
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -26,27 +29,27 @@ use std::sync::Arc;
 pub struct Update;
 
 #[async_trait]
-impl Command for Update {
+impl VoltCommand for Update {
     /// Display a help menu for the `volt update` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-    
-Update project dependencies
-
-Usage: {} {} {}
-    
-Options:
-    
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "update".bright_purple(),
-            "file-name".white(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
+    //     fn help() -> String {
+    //         format!(
+    //             r#"volt {}
+    //
+    // Update project dependencies
+    //
+    // Usage: {} {} {}
+    //
+    // Options:
+    //
+    //   {} {} Output verbose messages on internal operations."#,
+    //             VERSION.bright_green().bold(),
+    //             "volt".bright_green().bold(),
+    //             "update".bright_purple(),
+    //             "file-name".white(),
+    //             "--verbose".blue(),
+    //             "(-v)".yellow()
+    //         )
+    //     }
 
     /// Execute the `volt update` command
     ///
@@ -63,7 +66,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         Ok(())
     }
 }

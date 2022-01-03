@@ -16,7 +16,10 @@
 
 //! Compress node_modules into node_modules.pack.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -27,27 +30,7 @@ use std::sync::Arc;
 pub struct List;
 
 #[async_trait]
-impl Command for List {
-    /// Display a help menu for the `volt list` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-    
-List dependency tree from node_modules.
-Usage: {} {} {} {}
-Options: 
-    
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "clone".bright_purple(),
-            "[repository]".white(),
-            "[flags]".white(),
-            "--verbose".blue(),
-            "(-v)".yellow(),
-        )
-    }
-
+impl VoltCommand for List {
     /// Execute the `volt list` command
     ///
     /// List node_modules into node_modules.pack.
@@ -61,7 +44,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // let flags = &app.flags;
 
         // let mut depth: u64 = 2;

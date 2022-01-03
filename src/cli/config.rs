@@ -19,7 +19,6 @@ use crate::core::utils::{enable_ansi_support, errors::VoltError};
 use clap::ArgMatches;
 use clap::Parser;
 use dirs::home_dir;
-use miette::Result;
 use package_spec::{parse_package_spec, PackageSpec};
 use sha1::Digest;
 use sha2::Sha512;
@@ -28,58 +27,43 @@ use std::{env, path::PathBuf};
 
 #[derive(Debug, Clone, Parser)]
 pub struct VoltConfig {
+    /// Path to current working directory
     #[clap(short, long)]
-    pub current_dir: PathBuf,
-
-    #[clap(short, long)]
-    pub home_dir: PathBuf,
-
-    #[clap(short, long)]
-    pub node_modules_dir: PathBuf,
-
-    #[clap(short, long)]
-    pub volt_dir: PathBuf,
-
-    #[clap(short, long)]
-    pub lock_file_path: PathBuf,
-
-    #[clap(short, long)]
-    pub os: String,
+    cwd: Option<PathBuf>,
 }
 
 impl VoltConfig {
-    pub fn initialize(args: &ArgMatches) -> Result<VoltConfig> {
-        enable_ansi_support().unwrap();
+    pub const OS: &'static str = env::consts::OS;
+    pub const VOLT_HOME: &'static str = ".volt";
+    pub const VOLT_LOCK: &'static str = "volt.lock";
 
-        // Current Directory
-        let current_directory = env::current_dir().map_err(|e| VoltError::EnvironmentError {
-            env: "CURRENT_DIRECTORY".to_string(),
-            source: e,
-        })?;
+    pub fn home(&self) -> miette::Result<PathBuf> {
+        Ok(dirs::home_dir().ok_or(VoltError::GetHomeDirError)?)
+    }
 
-        // Home Directory: /username or C:\Users\username
-        let home_directory = home_dir().ok_or(VoltError::GetHomeDirError)?;
+    /// Return the current directory (defaults to `.` if not provided)
+    pub fn cwd(&self) -> miette::Result<PathBuf> {
+        Ok(self.cwd.to_owned().unwrap_or({
+            env::current_dir().map_err(|e| VoltError::EnvironmentError {
+                env: "CURRENT_DIRECTORY".to_string(),
+                source: e,
+            })?
+        }))
+    }
 
-        // node_modules/
-        let node_modules_directory = current_directory.join("node_modules");
+    /// Path to the volt lockfile (defaults to `./volt.lock`)
+    pub fn lockfile(&self) -> miette::Result<PathBuf> {
+        Ok(self.cwd()?.join(Self::VOLT_LOCK))
+    }
 
-        // Volt Global Directory: /username/.volt or C:\Users\username\.volt
-        let volt_dir = home_directory.join(".volt");
+    /// Path to the `node_modules` directory (defaults to `./node_modules`)
+    pub fn node_modules(&self) -> miette::Result<PathBuf> {
+        Ok(self.cwd()?.join("node_modules"))
+    }
 
-        // Create volt directory if it doesn't exist
-        std::fs::create_dir_all(&volt_dir).map_err(VoltError::CreateDirError)?;
-
-        // ./volt.lock
-        let lock_file_path = current_directory.join("volt.lock");
-
-        Ok(VoltConfig {
-            current_dir: current_directory,
-            home_dir: home_directory,
-            node_modules_dir: node_modules_directory,
-            volt_dir,
-            lock_file_path,
-            os: std::env::consts::OS.to_string(),
-        })
+    /// Path to the config directory (defaults to `~/.volt`)
+    pub fn volt_home(&self) -> miette::Result<PathBuf> {
+        Ok(self.home()?.join(Self::VOLT_HOME))
     }
 
     /// Calculate the hash of a tarball
@@ -90,7 +74,7 @@ impl VoltConfig {
     /// ```
     /// ## Returns
     /// * Result<String>
-    pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> Result<String> {
+    pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> miette::Result<String> {
         let integrity;
 
         if algorithm == Algorithm::Sha1 {

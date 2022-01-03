@@ -17,7 +17,6 @@
 #[macro_use]
 pub mod utils;
 pub mod classes;
-pub mod command;
 pub mod io;
 pub mod model;
 pub mod prompt;

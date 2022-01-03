@@ -16,7 +16,7 @@
 
 //! Check for outdated packages.
 
-use crate::{App, Command};
+use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
 use miette::Result;
@@ -26,11 +26,7 @@ use std::sync::Arc;
 pub struct Tag {}
 
 #[async_trait]
-impl Command for Tag {
-    fn help() -> String {
-        todo!()
-    }
-
+impl VoltCommand for Tag {
     /// Execute the `volt outdated` command
     ///
     /// Check for outdated packages
@@ -44,7 +40,7 @@ impl Command for Tag {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         Ok(())
     }
 }
