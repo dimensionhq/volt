@@ -372,8 +372,9 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
             for entry in node_archive.entries().into_diagnostic()? {
                 let mut entry = entry.into_diagnostic()?;
-                let mut buffer = vec![0; entry.size() as usize];
 
+                // Read the contents of the entry
+                let mut buffer = vec![0; entry.size() as usize];
                 entry.read_to_end(&mut buffer).into_diagnostic()?;
 
                 let entry_path_string = entry
@@ -383,6 +384,7 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                     .expect("valid utf-8")
                     .to_string();
 
+                // Remove `package/` from `package/lib/index.js`
                 let cleaned_entry_path_string =
                     if let Some(i) = entry_path_string.char_indices().position(|(_, c)| c == '/') {
                         &entry_path_string[i + 1..]
@@ -390,8 +392,8 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                         &entry_path_string[..]
                     };
 
-                // Create the path to the local .volt directory (TODO: Verify that we really want ./node_modules/node_modules/.volt)
-                let mut package_directory = app.node_modules_dir.join("node_modules/.volt");
+                // Create the path to the local .volt directory
+                let mut package_directory = app.node_modules_dir.join(".volt");
 
                 // Add package's directory to it
                 package_directory.push(package.directory_name());
@@ -413,8 +415,11 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
                     std::fs::create_dir_all(entry_path_parent).into_diagnostic()?;
                 }
 
+                // Write the contents of the entry into the content-addressable store located at `app.volt_dir`
+                // We get a hash of the file
                 let sri = cacache::write_hash_sync(&app.volt_dir, &buffer).into_diagnostic()?;
 
+                // Insert the name of the file and map it to the hash of the file
                 cas_file_map.insert(entry_path_string, sri);
             }
 
