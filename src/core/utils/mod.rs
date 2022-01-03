@@ -23,9 +23,12 @@ pub mod package;
 pub mod scripts;
 pub mod voltapi;
 
-use crate::core::{
-    utils::constants::MAX_RETRIES,
-    utils::voltapi::{VoltPackage, VoltResponse},
+use crate::{
+    cli::VoltConfig,
+    core::{
+        utils::constants::MAX_RETRIES,
+        utils::voltapi::{VoltPackage, VoltResponse},
+    },
 };
 
 use app::App;
@@ -33,8 +36,8 @@ use colored::Colorize;
 use errors::VoltError;
 // use flate2::read::GzDecoder;
 use futures_util::{stream::FuturesUnordered, StreamExt};
-use git_config::file::GitConfig;
 use git_config::parser::parse_from_str;
+use git_config::{file::GitConfig, parser::Parser};
 use indicatif::ProgressBar;
 use isahc::AsyncReadResponseExt;
 use miette::{IntoDiagnostic, Result};
@@ -323,7 +326,7 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
 }
 
 /// downloads and extracts tarball file from package
-pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> Result<()> {
+pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: State) -> Result<()> {
     let cacache_key = package.cacache_key();
 
     // TODO: This should probably be extracted into a utility function
@@ -406,7 +409,6 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
                 // Add the cleaned path to the package's directory
                 let mut entry_path = package_directory;
-
                 entry_path.push(cleaned_entry_path_string);
 
                 // Get the entry's parent
@@ -449,14 +451,14 @@ pub async fn download_tarball(app: &App, package: VoltPackage, state: State) -> 
 
 /// Gets a config key from git using the git cli.
 /// Uses `gitoxide` to read from your git configuration.
-pub fn get_git_config(app: &App, key: &str) -> Result<Option<String>> {
+pub fn get_git_config(config: &VoltConfig, key: &str) -> Result<Option<String>> {
     fn get_git_config_value_if_exists(
-        app: &App,
+        config: &VoltConfig,
         section: &str,
         subsection: Option<&str>,
         key: &str,
     ) -> Result<Option<String>> {
-        let config_path = app.home_dir.join(".gitconfig");
+        let config_path = config.home_dir.join(".gitconfig");
 
         if config_path.exists() {
             let data = read_to_string(config_path).into_diagnostic()?;
@@ -474,9 +476,9 @@ pub fn get_git_config(app: &App, key: &str) -> Result<Option<String>> {
     }
 
     match key {
-        "user.name" => get_git_config_value_if_exists(app, "user", None, "name"),
-        "user.email" => get_git_config_value_if_exists(app, "user", None, "email"),
-        "repository.url" => get_git_config_value_if_exists(app, "remote", Some("origin"), "url"),
+        "user.name" => get_git_config_value_if_exists(config, "user", None, "name"),
+        "user.email" => get_git_config_value_if_exists(config, "user", None, "email"),
+        "repository.url" => get_git_config_value_if_exists(config, "remote", Some("origin"), "url"),
         _ => Ok(None),
     }
 }
@@ -615,8 +617,12 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 }
 
 /// Install process for any package.
-pub async fn install_package(app: Arc<App>, package: &VoltPackage, state: State) -> Result<()> {
-    if download_tarball(&app, package.clone(), state)
+pub async fn install_package(
+    config: &VoltConfig,
+    package: &VoltPackage,
+    state: State,
+) -> Result<()> {
+    if download_tarball(config, package.clone(), state)
         .await
         .is_err()
     {}

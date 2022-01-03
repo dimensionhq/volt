@@ -16,9 +16,14 @@
 
 //! Search for a package.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+    App, Command,
+};
 
 use async_trait::async_trait;
+use clap::Parser;
 use colored::Colorize;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement,
@@ -27,7 +32,6 @@ use comfy_table::{
 use isahc::AsyncReadResponseExt;
 use miette::Result;
 use serde::{Deserialize, Serialize};
-
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
@@ -47,7 +51,12 @@ pub struct SearchResult {
     description: String,
 }
 
-pub struct Search {}
+/// Searches for a package
+#[derive(Debug, Parser)]
+pub struct Search {
+    /// Search query
+    query: String,
+}
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct SearchData {
@@ -57,31 +66,7 @@ pub struct SearchData {
 }
 
 #[async_trait]
-impl Command for Search {
-    fn help() -> String {
-        format!(
-            r#"volt {}
-
-Searches for a package
-
-Usage: {} {} {} {}
-
-Options:
-
-  {} {} Output the version number.
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "remove".bright_purple(),
-            "[packages]".white(),
-            "[flags]".white(),
-            "--version".blue(),
-            "(-ver)".yellow(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
-
+impl VoltCommand for Search {
     /// Execute the `volt search` command
     ///
     /// Search for a package
@@ -95,12 +80,10 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
-        let query = app.args.value_of("query").unwrap();
-
+    async fn exec(self, app: VoltConfig) -> Result<()> {
         let response = isahc::get_async(format!(
             "https://registry.npmjs.org/-/v1/search?text={}&popularity=1.0",
-            query
+            self.query
         ))
         .await
         .unwrap()

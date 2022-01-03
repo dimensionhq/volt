@@ -16,15 +16,19 @@ limitations under the License.
 
 //! Add a package to the dependencies for your project.
 
+use std::{collections::HashMap, time::Instant};
+
 use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::model::lock_file::{DependencyID, DependencyLock, LockFile},
     core::utils::fetch_dep_tree,
     core::utils::voltapi::VoltPackage,
     core::utils::{install_package, State},
     core::{command::Command, VERSION},
-    App,
 };
 
 use async_trait::async_trait;
+use clap::Parser;
 use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -32,60 +36,17 @@ use miette::{IntoDiagnostic, Result};
 use package_spec::PackageSpec;
 use reqwest::Client;
 
-use std::{collections::HashMap, sync::Arc, time::Instant};
-
-/// Struct implementation for the `Add` command.
-#[derive(Clone)]
-pub struct Add {}
+/// Add a package to your project's dependencies
+#[derive(Debug, Parser)]
+pub struct Add {
+    /// Packages to add to the dependencies for your project.
+    packages: Vec<PackageSpec>,
+}
 
 #[async_trait]
-impl Command for Add {
-    /// Display a help menu for the `volt add` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-
-            Add a package to your project's dependencies.
-            Usage: {} {} {} {}
-            Options:
-
-            {} {} Output the version number.
-            {} {} Output verbose messages on internal operations.
-            {} {} Adds package as a dev dependency
-            {} {} Disable progress bar."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "add".bright_purple(),
-            "[packages]".white(),
-            "[flags]".white(),
-            "--version".blue(),
-            "(-ver)".yellow(),
-            "--verbose".blue(),
-            "(-v)".yellow(),
-            "--dev".blue(),
-            "(-D)".yellow(),
-            "--no-progress".blue(),
-            "(-np)".yellow()
-        )
-    }
-
-    /// Execute the `volt add` command
-    ///
-    /// Adds a package to dependencies for your project.
-    /// ## Arguments
-    /// * `app` - Instance of the command (`Arc<App>`)
-    /// ## Examples
-    /// ```rust
-    /// // Add react to your dependencies with logging level verbose
-    /// // .exec() is an async call so you need to await it
-    /// Add.exec(app).await;
-    /// ```
-    /// ## Returns
-    /// * `Result<()>`
-    async fn exec(app: Arc<App>) -> Result<()> {
+impl VoltCommand for Add {
+    async fn exec(self, config: VoltConfig) -> miette::Result<()> {
         let idk = Instant::now();
-        // Get input packages
-        let packages: Vec<PackageSpec> = app.get_packages()?;
 
         // Load the existing package.json file
         // let (mut package_file, _package_file_path) = PackageJson::open("package.json")?;
@@ -112,7 +73,7 @@ impl Command for Add {
         let resolve_start = Instant::now();
 
         // Fetch pre-flattened dependency trees from the registry
-        let responses = fetch_dep_tree(&packages, &bar).await?;
+        let responses = fetch_dep_tree(&self.packages, &bar).await?;
 
         let mut tree: HashMap<String, VoltPackage> = HashMap::new();
 
@@ -142,15 +103,15 @@ impl Command for Add {
                 .progress_chars("=>-"),
         );
 
-        if !app.node_modules_dir.exists() {
-            std::fs::create_dir_all(&app.node_modules_dir.join(".volt/")).unwrap();
+        if !config.node_modules_dir.exists() {
+            std::fs::create_dir_all(&config.node_modules_dir.join(".volt/")).unwrap();
         }
 
         let client = Client::builder().use_rustls_tls().build().unwrap();
 
         let start = Instant::now();
 
-        let node_modules_directory = app.node_modules_dir.join(".volt/");
+        let node_modules_directory = config.node_modules_dir.join(".volt/");
 
         // pnpm linking algorithm
         for value in tree.values() {
@@ -162,7 +123,7 @@ impl Command for Add {
                 // TODO: check if engines.nodeis compatible
                 // TODO: do a CPU arch check
                 if let Some(os) = &value.os {
-                    if !os.contains(&app.os) && !os.contains(&format!("!{}", app.os)) {
+                    if !os.contains(&config.os) && !os.contains(&format!("!{}", config.os)) {
                         continue;
                     }
                 }
@@ -199,7 +160,7 @@ impl Command for Add {
         tree.values()
             .map(|data| {
                 install_package(
-                    app.clone(),
+                    &config,
                     data,
                     State {
                         http_client: client.clone(),
