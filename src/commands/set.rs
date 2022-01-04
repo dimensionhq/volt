@@ -16,21 +16,17 @@
 
 //! Set a configuration option.
 
-use crate::{App, Command};
-
 use async_trait::async_trait;
 use miette::Result;
 
 use std::sync::Arc;
 
+use crate::cli::{VoltCommand, VoltConfig};
+
 pub struct Set {}
 
 #[async_trait]
-impl Command for Set {
-    fn help() -> String {
-        todo!()
-    }
-
+impl VoltCommand for Set {
     /// Execute the `volt set` command
     ///
     /// Set a configuration option.
@@ -44,7 +40,7 @@ impl Command for Set {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         Ok(())
     }
 }

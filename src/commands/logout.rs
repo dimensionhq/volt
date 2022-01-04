@@ -16,20 +16,17 @@
 
 //! Logout for a package.
 
-use crate::{App, Command};
-
 use async_trait::async_trait;
 use miette::Result;
 
 use std::sync::Arc;
 
-pub struct Logout {}
-#[async_trait]
-impl Command for Logout {
-    fn help() -> String {
-        todo!()
-    }
+use crate::cli::{VoltCommand, VoltConfig};
 
+pub struct Logout {}
+
+#[async_trait]
+impl VoltCommand for Logout {
     /// Execute the `volt search` command
     ///
     /// Logout for a package
@@ -43,7 +40,7 @@ impl Command for Logout {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         Ok(())
     }
 }

@@ -19,7 +19,6 @@
 use crate::{
     cli::{VoltCommand, VoltConfig},
     core::VERSION,
-    App, Command,
 };
 
 use async_trait::async_trait;

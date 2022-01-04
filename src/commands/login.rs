@@ -19,7 +19,6 @@
 use crate::{
     cli::{VoltCommand, VoltConfig},
     core::prompt::prompts::{Input, Secret},
-    App, Command,
 };
 
 use async_trait::async_trait;

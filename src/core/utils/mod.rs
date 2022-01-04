@@ -16,7 +16,6 @@ limitations under the License.
 
 #[macro_use]
 pub mod helper;
-pub mod app;
 pub mod constants;
 pub mod errors;
 pub mod package;
@@ -31,7 +30,6 @@ use crate::{
     },
 };
 
-use app::App;
 use colored::Colorize;
 use errors::VoltError;
 // use flate2::read::GzDecoder;
@@ -326,14 +324,18 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
 }
 
 /// downloads and extracts tarball file from package
-pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: State) -> Result<()> {
-    // begin
+pub async fn download_tarball(
+    config: &VoltConfig,
+    package: VoltPackage,
+    state: State,
+) -> Result<()> {
     let cacache_key = package.cacache_key();
+    let volt_home = config.volt_home()?;
 
     // TODO: This should probably be extracted into a utility function
-    let package_is_cacached = cacache::metadata_sync(&app.volt_dir, &cacache_key)
+    let package_is_cacached = cacache::metadata_sync(&volt_home, &cacache_key)
         .map(|m| {
-            m.map(|m| cacache::exists_sync(&app.volt_dir, &m.integrity))
+            m.map(|m| cacache::exists_sync(&volt_home, &m.integrity))
                 .unwrap_or_default()
         })
         .unwrap_or_default();
@@ -368,9 +370,7 @@ pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: Sta
         }
 
         // Verify If Bytes == (Sha512 | Sha1) of Tarball
-        let tarball_bytes_hash = App::calc_hash(&bytes, algorithm)?;
-        // end
-
+        let tarball_bytes_hash = VoltConfig::calc_hash(&bytes, algorithm)?;
         if package.integrity == tarball_bytes_hash {
             // begin
             // decompress gzipped tarball
@@ -409,7 +409,7 @@ pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: Sta
                     };
 
                 // Create the path to the local .volt directory
-                let mut package_directory = app.node_modules_dir.join(".volt");
+                let mut package_directory = config.node_modules()?.join(VoltConfig::VOLT_HOME);
 
                 // Add package's directory to it
                 package_directory.push(package.directory_name());
@@ -448,7 +448,8 @@ pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: Sta
 
                 // Write the contents of the entry into the content-addressable store located at `app.volt_dir`
                 // We get a hash of the file
-                let sri = cacache::write_hash_sync(&app.volt_dir, &buffer).into_diagnostic()?;
+                let sri =
+                    cacache::write_hash_sync(&config.volt_home()?, &buffer).into_diagnostic()?;
 
                 // Insert the name of the file and map it to the hash of the file
                 cas_file_map.insert(entry_path_string, sri);
@@ -456,7 +457,7 @@ pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: Sta
 
             // Write the file, shasum map to the content-addressable store
             cacache::write_sync(
-                &app.volt_dir,
+                &config.volt_home()?,
                 &cacache_key,
                 serde_json::to_string(&cas_file_map).into_diagnostic()?,
             )
@@ -480,7 +481,7 @@ pub fn get_git_config(config: &VoltConfig, key: &str) -> Result<Option<String>> 
         subsection: Option<&str>,
         key: &str,
     ) -> Result<Option<String>> {
-        let config_path = config.home_dir.join(".gitconfig");
+        let config_path = config.home()?.join(".gitconfig");
 
         if config_path.exists() {
             let data = read_to_string(config_path).into_diagnostic()?;
@@ -563,7 +564,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 
 #[cfg(windows)]
 /// Generates the binary and other required scripts for the package
-pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
+pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
     // // Create node_modules/scripts if it doesn't exist
     // if !Path::new("node_modules/.bin").exists() {
     //     // Create the binary directory
@@ -596,7 +597,7 @@ pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
 }
 
 #[cfg(unix)]
-pub fn generate_script(app: &Arc<App>, package: &VoltPackage) {
+pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
     // Create node_modules/scripts if it doesn't exist
     // if !Path::new("node_modules/scripts").exists() {
     //     std::fs::create_dir_all("node_modules/scripts").unwrap();

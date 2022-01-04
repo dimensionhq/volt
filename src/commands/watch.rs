@@ -21,13 +21,12 @@ use miette::Result;
 use std::sync::Arc;
 
 use async_trait::async_trait;
+
+use crate::cli::{VoltCommand, VoltConfig};
 // use colored::Colorize;
 // use indicatif::ProgressBar;
 // use indicatif::ProgressStyle;
 // use walkdir::WalkDir;
-
-use crate::core::command::Command;
-use crate::App;
 
 // use syntect::easy::HighlightLines;
 // use syntect::highlighting::{Style, ThemeSet};
@@ -70,11 +69,7 @@ pub struct Watch {}
 // }
 
 #[async_trait]
-impl Command for Watch {
-    fn help() -> String {
-        todo!()
-    }
-
+impl VoltCommand for Watch {
     /// Execute the `volt watch` command
     ///
     /// Execute a watch command
@@ -88,7 +83,7 @@ impl Command for Watch {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // // Set current dir
         // let mut current_dir = std::env::current_dir().unwrap();
 

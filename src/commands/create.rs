@@ -16,7 +16,10 @@
 
 //! Remove a package from your direct dependencies.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -28,32 +31,7 @@ use std::sync::Arc;
 pub struct Create;
 
 #[async_trait]
-impl Command for Create {
-    /// Display a help menu for the `volt create` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-
-            Creates a project from a template.
-
-            Usage: {} {} {} {}
-
-            Options:
-
-            {} {} Output the version number.
-            {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "create".bright_purple(),
-            "[template]".white(),
-            "[flags]".white(),
-            "--version".blue(),
-            "(-ver)".yellow(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
-
+impl VoltCommand for Create {
     /// Execute the `volt create` command
     ///
     /// Removes a package from your direct dependencies.
@@ -69,9 +47,7 @@ impl Command for Create {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-
-    #[allow(unused)]
-    async fn exec(app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // let args = app.args.clone();
         // let templates: Vec<String> = Template::options();
 

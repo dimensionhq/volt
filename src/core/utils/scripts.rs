@@ -15,23 +15,18 @@
 
 // use crate::core::utils::errors;
 // use crate::core::utils::package::PackageJson;
-use crate::App;
-use crate::Command;
-
 use async_trait::async_trait;
 // use colored::Colorize;
 use miette::Result;
 
 use std::sync::Arc;
 
+use crate::cli::{VoltCommand, VoltConfig};
+
 pub struct Script {}
 
 #[async_trait]
-impl Command for Script {
-    fn help() -> String {
-        todo!()
-    }
-
+impl VoltCommand for Script {
     /// Execute the `volt {script}` command
     ///
     /// Execute a script command (any script command specified in package.json)
@@ -45,7 +40,7 @@ impl Command for Script {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // let package_json = PackageJson::from("package.json");
 
         // let args = app.args.clone();

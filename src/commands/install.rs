@@ -16,7 +16,10 @@
 
 //! Installs dependencies for a project.
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -28,31 +31,7 @@ use std::sync::Arc;
 pub struct Install;
 
 #[async_trait]
-impl Command for Install {
-    /// Display a help menu for the `volt install` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-        
-Install dependencies for a project.
-
-Usage: {} {} {}
-    
-Options: 
-    
-  {} {} Accept all prompts while installing dependencies.  
-  {} {} Output verbose messages on internal operations."#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "install".bright_purple(),
-            "[flags]".white(),
-            "--yes".blue(),
-            "(-y)".yellow(),
-            "--verbose".blue(),
-            "(-v)".yellow()
-        )
-    }
-
+impl VoltCommand for Install {
     /// Execute the `volt install` command
     ///
     /// Install dependencies for a project.
@@ -68,7 +47,7 @@ Options:
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // let package_file
         Ok(())
     }

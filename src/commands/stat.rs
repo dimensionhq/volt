@@ -16,7 +16,10 @@
 
 //! Display stats on a specific package
 
-use crate::{core::VERSION, App, Command};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::VERSION,
+};
 
 use async_trait::async_trait;
 use colored::Colorize;
@@ -28,22 +31,8 @@ use std::sync::Arc;
 pub struct Stat;
 
 #[async_trait]
-impl Command for Stat {
+impl VoltCommand for Stat {
     /// Display a help menu for the `volt stat` command.
-    fn help() -> String {
-        format!(
-            r#"volt {}
-    
-Displays statistics on a specific package.
-
-Usage: {} {} {}"#,
-            VERSION.bright_green().bold(),
-            "volt".bright_green().bold(),
-            "stat".bright_purple(),
-            "[package]".white(),
-        )
-    }
-
     /// Execute the `volt stat` command
     ///
     /// Displays stats on a specific package
@@ -54,7 +43,7 @@ Usage: {} {} {}"#,
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(_app: Arc<App>) -> Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         // let args = &app.args;
 
         // if args.len() <= 1 {
