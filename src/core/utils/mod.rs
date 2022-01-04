@@ -327,6 +327,7 @@ pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
 
 /// downloads and extracts tarball file from package
 pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: State) -> Result<()> {
+    // begin
     let cacache_key = package.cacache_key();
 
     // TODO: This should probably be extracted into a utility function
@@ -337,8 +338,11 @@ pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: Sta
         })
         .unwrap_or_default();
 
+    // end
+
     // if package is not already installed
     if !package_is_cacached {
+        // begin
         // Tarball bytes response
         let bytes: bytes::Bytes = state
             .http_client
@@ -350,6 +354,8 @@ pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: Sta
             .await
             .into_diagnostic()?;
 
+        // end
+        // begin
         let algorithm;
 
         // there are only 2 supported algorithms
@@ -363,9 +369,13 @@ pub async fn download_tarball(app: &VoltConfig, package: VoltPackage, state: Sta
 
         // Verify If Bytes == (Sha512 | Sha1) of Tarball
         let tarball_bytes_hash = App::calc_hash(&bytes, algorithm)?;
+        // end
+
         if package.integrity == tarball_bytes_hash {
+            // begin
             // decompress gzipped tarball
             let decompressed_bytes = decompress_tarball(&bytes);
+            // end
 
             // Generate the tarball archive given the decompressed bytes
             let mut node_archive = Archive::new(Cursor::new(decompressed_bytes));
