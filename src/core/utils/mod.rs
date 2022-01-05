@@ -329,144 +329,127 @@ pub async fn download_tarball(
     package: VoltPackage,
     state: State,
 ) -> Result<()> {
-    let cacache_key = package.cacache_key();
-    let volt_home = config.volt_home()?;
-
-    // TODO: This should probably be extracted into a utility function
-    let package_is_cacached = cacache::metadata_sync(&volt_home, &cacache_key)
-        .map(|m| {
-            m.map(|m| cacache::exists_sync(&volt_home, &m.integrity))
-                .unwrap_or_default()
-        })
-        .unwrap_or_default();
+    // begin
+    // Tarball bytes response
+    let bytes: bytes::Bytes = state
+        .http_client
+        .get(&package.tarball)
+        .send()
+        .await
+        .into_diagnostic()?
+        .bytes()
+        .await
+        .into_diagnostic()?;
 
     // end
+    // begin
+    let algorithm;
 
-    // if package is not already installed
-    if !package_is_cacached {
+    // there are only 2 supported algorithms
+    // sha1 and sha512
+    // so we can be sure that if it doesn't start with sha1, it's going to have to be sha512
+    if package.integrity.starts_with("sha1") {
+        algorithm = Algorithm::Sha1;
+    } else {
+        algorithm = Algorithm::Sha512;
+    }
+
+    // Verify If Bytes == (Sha512 | Sha1) of Tarball
+    let tarball_bytes_hash = VoltConfig::calc_hash(&bytes, algorithm)?;
+    if package.integrity == tarball_bytes_hash {
         // begin
-        // Tarball bytes response
-        let bytes: bytes::Bytes = state
-            .http_client
-            .get(&package.tarball)
-            .send()
-            .await
-            .into_diagnostic()?
-            .bytes()
-            .await
-            .into_diagnostic()?;
-
+        // decompress gzipped tarball
+        let decompressed_bytes = decompress_tarball(&bytes);
         // end
-        // begin
-        let algorithm;
 
-        // there are only 2 supported algorithms
-        // sha1 and sha512
-        // so we can be sure that if it doesn't start with sha1, it's going to have to be sha512
-        if package.integrity.starts_with("sha1") {
-            algorithm = Algorithm::Sha1;
-        } else {
-            algorithm = Algorithm::Sha512;
-        }
+        // Generate the tarball archive given the decompressed bytes
+        let mut node_archive = Archive::new(Cursor::new(decompressed_bytes));
 
-        // Verify If Bytes == (Sha512 | Sha1) of Tarball
-        let tarball_bytes_hash = VoltConfig::calc_hash(&bytes, algorithm)?;
-        if package.integrity == tarball_bytes_hash {
-            // begin
-            // decompress gzipped tarball
-            let decompressed_bytes = decompress_tarball(&bytes);
-            // end
+        // extract to both the global store + node_modules (in the case of them using the pnpm linking algorithm)
+        let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
 
-            // Generate the tarball archive given the decompressed bytes
-            let mut node_archive = Archive::new(Cursor::new(decompressed_bytes));
+        // Add package's directory to list of created directories
+        let mut created_directories: Vec<PathBuf> = vec![];
 
-            // extract to both the global store + node_modules (in the case of them using the pnpm linking algorithm)
-            let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
+        for entry in node_archive.entries().into_diagnostic()? {
+            let mut entry = entry.into_diagnostic()?;
 
-            // Add package's directory to list of created directories
-            let mut created_directories: Vec<PathBuf> = vec![];
+            // Read the contents of the entry
+            let mut buffer = vec![0; entry.size() as usize];
+            entry.read_to_end(&mut buffer).into_diagnostic()?;
 
-            for entry in node_archive.entries().into_diagnostic()? {
-                let mut entry = entry.into_diagnostic()?;
+            let entry_path_string = entry
+                .path()
+                .into_diagnostic()?
+                .to_str()
+                .expect("valid utf-8")
+                .to_string();
 
-                // Read the contents of the entry
-                let mut buffer = vec![0; entry.size() as usize];
-                entry.read_to_end(&mut buffer).into_diagnostic()?;
+            // Remove `package/` from `package/lib/index.js`
+            let cleaned_entry_path_string =
+                if let Some(i) = entry_path_string.char_indices().position(|(_, c)| c == '/') {
+                    &entry_path_string[i + 1..]
+                } else {
+                    &entry_path_string[..]
+                };
 
-                let entry_path_string = entry
-                    .path()
-                    .into_diagnostic()?
-                    .to_str()
-                    .expect("valid utf-8")
-                    .to_string();
+            // Create the path to the local .volt directory
+            let mut package_directory = config.node_modules()?.join(VoltConfig::VOLT_HOME);
 
-                // Remove `package/` from `package/lib/index.js`
-                let cleaned_entry_path_string =
-                    if let Some(i) = entry_path_string.char_indices().position(|(_, c)| c == '/') {
-                        &entry_path_string[i + 1..]
-                    } else {
-                        &entry_path_string[..]
-                    };
+            // Add package's directory to it
+            package_directory.push(package.directory_name());
 
-                // Create the path to the local .volt directory
-                let mut package_directory = config.node_modules()?.join(VoltConfig::VOLT_HOME);
+            // push node_modules/.volt/send@0.17.2 to the list (because we created it in the previous step)
+            created_directories.push(package_directory.clone());
 
-                // Add package's directory to it
-                package_directory.push(package.directory_name());
+            // Add the cleaned path to the package's directory
+            let mut entry_path = package_directory.clone();
 
-                // push node_modules/.volt/send@0.17.2 to the list (because we created it in the previous step)
-                created_directories.push(package_directory.clone());
+            entry_path.push("node_modules");
 
-                // Add the cleaned path to the package's directory
-                let mut entry_path = package_directory.clone();
+            entry_path.push(&package.name);
 
-                entry_path.push("node_modules");
+            entry_path.push(cleaned_entry_path_string);
 
-                entry_path.push(&package.name);
+            // Get the entry's parent
+            let entry_path_parent = entry_path.parent().unwrap();
 
-                entry_path.push(cleaned_entry_path_string);
-
-                // Get the entry's parent
-                let entry_path_parent = entry_path.parent().unwrap();
-
-                // If we haven't created this directory yet, create it
-                if !created_directories.iter().any(|p| p == entry_path_parent) {
-                    created_directories.push(entry_path_parent.to_path_buf());
-                    std::fs::create_dir_all(entry_path_parent).into_diagnostic()?;
-                }
-
-                let mut file_path = package_directory.join("node_modules");
-
-                file_path.push(package.name.clone());
-
-                file_path.push(cleaned_entry_path_string);
-
-                // Write the contents to node_modules
-                let mut file = std::fs::File::create(&file_path).unwrap();
-
-                file.write_all(&buffer);
-
-                // Write the contents of the entry into the content-addressable store located at `app.volt_dir`
-                // We get a hash of the file
-                let sri =
-                    cacache::write_hash_sync(&config.volt_home()?, &buffer).into_diagnostic()?;
-
-                // Insert the name of the file and map it to the hash of the file
-                cas_file_map.insert(entry_path_string, sri);
+            // If we haven't created this directory yet, create it
+            if !created_directories.iter().any(|p| p == entry_path_parent) {
+                created_directories.push(entry_path_parent.to_path_buf());
+                std::fs::create_dir_all(entry_path_parent).into_diagnostic()?;
             }
 
-            // Write the file, shasum map to the content-addressable store
-            cacache::write_sync(
-                &config.volt_home()?,
-                &cacache_key,
-                serde_json::to_string(&cas_file_map).into_diagnostic()?,
-            )
-            .into_diagnostic()?;
-        } else {
-            // TODO: improve this message!
-            println!("{} vs {}", package.integrity, tarball_bytes_hash);
-            return Err(VoltError::ChecksumVerificationError.into());
+            let mut file_path = package_directory.join("node_modules");
+
+            file_path.push(package.name.clone());
+
+            file_path.push(cleaned_entry_path_string);
+
+            // Write the contents to node_modules
+            let mut file = std::fs::File::create(&file_path).unwrap();
+
+            file.write_all(&buffer);
+
+            // Write the contents of the entry into the content-addressable store located at `app.volt_dir`
+            // We get a hash of the file
+            let sri = cacache::write_hash_sync(&config.volt_home()?, &buffer).into_diagnostic()?;
+
+            // Insert the name of the file and map it to the hash of the file
+            cas_file_map.insert(entry_path_string, sri);
         }
+
+        // Write the file, shasum map to the content-addressable store
+        cacache::write_sync(
+            &config.volt_home()?,
+            &package.cacache_key(),
+            serde_json::to_string(&cas_file_map).into_diagnostic()?,
+        )
+        .into_diagnostic()?;
+    } else {
+        // TODO: improve this message!
+        println!("{} vs {}", package.integrity, tarball_bytes_hash);
+        return Err(VoltError::ChecksumVerificationError.into());
     }
 
     Ok(())
@@ -639,28 +622,29 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
 }
 
+pub fn verify_existing_installation(
+    package: &VoltPackage,
+    config: &VoltConfig,
+) -> miette::Result<bool> {
+    let cacache_key = package.cacache_key();
+    let volt_home = config.volt_home().unwrap();
+
+    Ok(cacache::exists_sync(
+        &volt_home,
+        &Integrity::from(&package.integrity),
+    ))
+}
+
 /// Install process for any package.
 pub async fn install_package(
     config: &VoltConfig,
     package: &VoltPackage,
     state: State,
 ) -> Result<()> {
-    if download_tarball(config, package.clone(), state)
-        .await
-        .is_err()
-    {}
-
-    // generate the package's script
-    // generate_script(app, package);
-
-    // let directory = &app
-    //     .volt_dir
-    //     .join(package.version.clone())
-    //     .join(package.name.clone());
-
-    // let path = Path::new(directory.as_os_str());
-
-    // hardlink_files(app.to_owned(), (&path).to_path_buf()).await;
+    // Check if the package is already installed
+    if !verify_existing_installation(package, config)? {
+        download_tarball(config, package.clone(), state);
+    }
 
     Ok(())
 }
@@ -691,35 +675,3 @@ pub async fn fetch_dep_tree(
         Ok(vec![get_volt_response(&data[0]).await?])
     }
 }
-
-// pub fn print_elapsed(length: usize, elapsed: f32) {
-// if length == 1 {
-//     if elapsed < 0.001 {
-//         println!(
-//             "{}: resolved 1 dependency in {:.5}s.",
-//             "success".bright_green(),
-//             elapsed
-//         );
-//     } else {
-//         println!(
-//             "{}: resolved 1 dependency in {:.2}s.",
-//             "success".bright_green(),
-//             elapsed
-//         );
-//     }
-// } else if elapsed < 0.001 {
-//     println!(
-//         "{}: resolved {} dependencies in {:.4}s.",
-//         "success".bright_green(),
-//         length,
-//         elapsed
-//     );
-// } else {
-//     println!(
-//         "{}: resolved {} dependencies in {:.2}s.",
-//         "success".bright_green(),
-//         length,
-//         elapsed
-//     );
-// }
-// }
