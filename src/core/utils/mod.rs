@@ -303,24 +303,25 @@ pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltRespons
 //     }
 // }
 
-pub fn decompress_tarball(gz_data: &[u8]) -> Vec<u8> {
+pub fn decompress_tarball(gz_data: &[u8]) -> miette::Result<Vec<u8>> {
     // gzip RFC1952: a valid gzip file has an ISIZE field in the
     // footer, which is a little-endian u32 number representing the
     // decompressed size. This is ideal for libdeflate, which needs
     // preallocating the decompressed buffer.
     let isize = {
         let isize_start = gz_data.len() - 4;
-        let isize_bytes: [u8; 4] = gz_data[isize_start..]
-            .try_into()
-            .expect("we know the end has 4 bytes");
+        let isize_bytes: [u8; 4] = gz_data[isize_start..].try_into().into_diagnostic()?;
         u32::from_le_bytes(isize_bytes) as usize
     };
 
     let mut decompressor = libdeflater::Decompressor::new();
-    let mut outbuf = vec![0; isize];
-    decompressor.gzip_decompress(gz_data, &mut outbuf).unwrap();
 
-    outbuf
+    let mut outbuf = vec![0; isize];
+    decompressor
+        .gzip_decompress(gz_data, &mut outbuf)
+        .into_diagnostic()?;
+
+    Ok(outbuf)
 }
 
 /// downloads and extracts tarball file from package
@@ -500,12 +501,6 @@ pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
     // }
 }
 
-// Unix functions
-#[cfg(unix)]
-pub fn enable_ansi_support() -> Result<(), u32> {
-    Ok(())
-}
-
 pub fn check_peer_dependency(_package_name: &str) -> bool {
     false
 }
@@ -565,10 +560,10 @@ pub async fn install_package(
 
         if verified {
             // decompress gzipped response
-            let decompressed_response = decompress_tarball(&response);
+            let decompressed_response = decompress_tarball(&response)?;
 
             // extract the tarball
-            extract_tarball(decompressed_response, &package, &config);
+            extract_tarball(decompressed_response, &package, &config)?;
         } else {
             // TODO: handle checksum failure
         }
