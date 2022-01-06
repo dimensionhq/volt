@@ -560,19 +560,29 @@ pub async fn install_package(
         // fetch the tarball from the registry
         let response = fetch_tarball(config, package, state).await?;
 
-        // verify the checksum
-        // (checksum is valid, calculated checksum)
-        let (verified, checksum) = verify_checksum(&response, package.integrity.clone())?;
+        tokio::task::spawn_blocking({
+            let config = config.clone();
+            let package = package.clone();
+            move || -> Result<()> {
+                // verify the checksum
+                // (checksum is valid, calculated checksum)
+                let (verified, checksum) = verify_checksum(&response, package.integrity.clone())?;
 
-        if verified {
-            // decompress gzipped response
-            let decompressed_response = decompress_tarball(&response)?;
+                if verified {
+                    // decompress gzipped response
+                    let decompressed_response = decompress_tarball(&response)?;
 
-            // extract the tarball
-            extract_tarball(decompressed_response, package, config)?;
-        } else {
-            // TODO: handle checksum failure
-        }
+                    // extract the tarball
+                    extract_tarball(decompressed_response, &package, &config)?;
+                } else {
+                    // TODO: handle checksum failure
+                }
+
+                Ok(())
+            }
+        })
+        .await
+        .into_diagnostic()??;
     }
 
     Ok(())
