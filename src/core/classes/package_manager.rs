@@ -27,14 +27,20 @@ pub enum PackageManager {
     Npm,
 }
 
+impl PackageManager {
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Volt => "Volt",
+            Self::Yarn => "Yarn",
+            Self::Pnpm => "pnpm",
+            Self::Npm => "npm",
+        }
+    }
+}
+
 impl fmt::Display for PackageManager {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Volt => write!(f, "Volt"),
-            Self::Yarn => write!(f, "Yarn"),
-            Self::Pnpm => write!(f, "pnpm"),
-            Self::Npm => write!(f, "npm"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -45,15 +51,12 @@ impl Default for PackageManager {
 }
 
 impl PackageManager {
-    #[allow(dead_code)]
-    pub fn options() -> Vec<String> {
-        vec![
-            Self::Volt.to_string(),
-            Self::Yarn.to_string(),
-            Self::Pnpm.to_string(),
-            Self::Npm.to_string(),
-        ]
-    }
+    pub const OPTIONS: [&'static str; 4] = [
+        Self::Volt.as_str(),
+        Self::Yarn.as_str(),
+        Self::Pnpm.as_str(),
+        Self::Npm.as_str(),
+    ];
 
     #[allow(dead_code)]
     pub fn from_index(index: usize) -> Option<Self> {
@@ -74,7 +77,7 @@ pub struct ChangePackageManger {
 
 impl ChangePackageManger {
     #[allow(dead_code)]
-    pub fn dump(&self) -> String {
+    pub fn into_string(self) -> String {
         to_string_pretty(&self).unwrap()
     }
 }

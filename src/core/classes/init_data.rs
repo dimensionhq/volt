@@ -111,10 +111,6 @@ pub struct InitData {
 }
 
 impl InitData {
-    // pub fn load(&self) -> InitData {
-
-    // }
-
     pub fn into_string(self) -> String {
         to_string_pretty(&self).expect("Valid serialization state")
     }

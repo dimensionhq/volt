@@ -19,7 +19,7 @@ use serde_json::to_string_pretty;
 
 use std::fmt;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Template {
     ReactApp,
     ReactAppTS,
@@ -27,14 +27,20 @@ pub enum Template {
     NextAppTS,
 }
 
+impl Template {
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::ReactApp => "react-app",
+            Self::ReactAppTS => "react-app-ts",
+            Self::NextApp => "next-app",
+            Self::NextAppTS => "next-app-ts",
+        }
+    }
+}
+
 impl fmt::Display for Template {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ReactApp => write!(f, "react-app"),
-            Self::ReactAppTS => write!(f, "react-app-ts"),
-            Self::NextApp => write!(f, "next-app"),
-            Self::NextAppTS => write!(f, "next-app-ts"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -45,15 +51,12 @@ impl Default for Template {
 }
 
 impl Template {
-    #[allow(dead_code)]
-    pub fn options() -> Vec<String> {
-        vec![
-            Self::ReactApp.to_string(),
-            Self::ReactAppTS.to_string(),
-            Self::NextApp.to_string(),
-            Self::NextAppTS.to_string(),
-        ]
-    }
+    pub const OPTIONS: [&'static str; 4] = [
+        Self::ReactApp.as_str(),
+        Self::ReactAppTS.as_str(),
+        Self::NextApp.as_str(),
+        Self::NextAppTS.as_str(),
+    ];
 
     #[allow(dead_code)]
     pub fn from_index(index: usize) -> Option<Self> {
@@ -73,8 +76,7 @@ pub struct CreateTemplate {
 }
 
 impl CreateTemplate {
-    #[allow(dead_code)]
-    pub fn dump(&self) -> String {
-        to_string_pretty(&self).unwrap()
+    pub fn into_string(self) -> String {
+        to_string_pretty(&self).expect("Valid serialization state")
     }
 }
