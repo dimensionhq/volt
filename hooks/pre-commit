@@ -1,4 +1,5 @@
 #!/bin/sh
+git pull origin dev
 cargo fmt --all
 git add .
 echo '✅ Formatted Files'
