@@ -33,6 +33,12 @@ We don't have an official release of Volt yet, however, if you would like to giv
 
 Prerequisites: **Git**, **Rust Toolchain**
 
+### Minimum Supported Rust Version (MSRV)
+
+Rust 1.57
+
+### Steps
+
 1. Clone the github repository using the Github CLI.
 
 ```powershell
@@ -45,14 +51,7 @@ git clone https://github.com/voltpkg/volt
 cd volt
 ```
 
-3. Installation Commands
-
-```
-rustup toolchain install nightly-2021-08-20
-rustup default nightly-2021-08-20
-```
-
-5. Run a compiled and optimized build
+3. Run a compiled and optimized build
 
 ```
 cargo run --release -- --help
