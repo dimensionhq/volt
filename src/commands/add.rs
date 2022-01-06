@@ -20,11 +20,9 @@ use std::{collections::HashMap, time::Instant};
 
 use crate::{
     cli::{VoltCommand, VoltConfig},
-    core::model::lock_file::{DependencyID, DependencyLock, LockFile},
-    core::utils::fetch_dep_tree,
+    core::net::fetch_dep_tree,
     core::utils::voltapi::VoltPackage,
     core::utils::{install_package, State},
-    core::VERSION,
 };
 
 use async_trait::async_trait;
@@ -45,7 +43,7 @@ pub struct Add {
 
 #[async_trait]
 impl VoltCommand for Add {
-    async fn exec(self, config: VoltConfig) -> miette::Result<()> {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
         let idk = Instant::now();
 
         // Load the existing package.json file

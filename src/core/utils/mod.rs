@@ -25,286 +25,23 @@ pub mod voltapi;
 
 use crate::{
     cli::VoltConfig,
-    core::{
-        utils::constants::MAX_RETRIES,
-        utils::voltapi::{VoltPackage, VoltResponse},
-    },
+    core::{io::extract_tarball, net::fetch_tarball, utils::voltapi::VoltPackage},
 };
 
-use colored::Colorize;
 use errors::VoltError;
-// use flate2::read::GzDecoder;
-use futures_util::{stream::FuturesUnordered, StreamExt};
+use git_config::file::GitConfig;
 use git_config::parser::parse_from_str;
-use git_config::{file::GitConfig, parser::Parser};
-use indicatif::ProgressBar;
-use isahc::AsyncReadResponseExt;
 use miette::{IntoDiagnostic, Result};
-use package_spec::PackageSpec;
-use reqwest::{Client, StatusCode};
-use speedy::Readable;
+use reqwest::Client;
 use ssri::{Algorithm, Integrity};
-use tar::Archive;
 
-use std::{
-    collections::HashMap,
-    ffi::OsStr,
-    fs::read_to_string,
-    io::{Cursor, Read, Write},
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{ffi::OsStr, fs::read_to_string};
 
 pub struct State {
     pub http_client: Client,
 }
 
-//pub struct State {
-//}
-pub async fn get_volt_response_multi(
-    packages: &[PackageSpec],
-    progress_bar: &ProgressBar,
-) -> Vec<Result<VoltResponse>> {
-    packages
-        .iter()
-        .map(|spec| {
-            if let PackageSpec::Npm {
-                name, requested, ..
-            } = spec
-            {
-                let mut version: String = "latest".to_string();
-
-                if requested.is_some() {
-                    version = requested.as_ref().unwrap().to_string();
-                };
-
-                progress_bar.set_message(format!("{}@{}", name, version.truecolor(125, 125, 125)));
-            }
-
-            get_volt_response(spec)
-        })
-        .collect::<FuturesUnordered<_>>()
-        .collect::<Vec<Result<VoltResponse>>>()
-        .await
-}
-
-// Get response from volt CDN
-pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltResponse> {
-    // number of retries
-    let mut retries = 0;
-
-    // we know that PackageSpec is of type npm (we filtered the non-npm ones out)
-
-    if let PackageSpec::Npm { name, .. } = package_spec {
-        // loop until MAX_RETRIES reached.
-        loop {
-            // get a response
-            let mut response =
-                isahc::get_async(format!("http://registry.voltpkg.com/{}.sp", &package_spec))
-                    .await
-                    .map_err(VoltError::NetworkError)?;
-
-            // check the status of the response
-            match response.status() {
-                // 200 (OK)
-                StatusCode::OK => {
-                    let response: VoltResponse =
-                        VoltResponse::read_from_buffer(&response.bytes().await.unwrap()).unwrap();
-
-                    return Ok(response);
-                }
-                // 429 (TOO_MANY_REQUESTS)
-                StatusCode::TOO_MANY_REQUESTS => {
-                    return Err(VoltError::TooManyRequests {
-                        url: format!("http://registry.voltpkg.com/{}.sp", &package_spec),
-                    }
-                    .into());
-                }
-                // 400 (BAD_REQUEST)
-                StatusCode::BAD_REQUEST => {
-                    return Err(VoltError::BadRequest {
-                        url: format!("http://registry.voltpkg.com/{}.sp", &package_spec),
-                    }
-                    .into());
-                }
-                // 404 (NOT_FOUND)
-                StatusCode::NOT_FOUND if retries == MAX_RETRIES => {
-                    return Err(VoltError::PackageNotFound {
-                        url: format!("http://registry.voltpkg.com/{}.sp", &package_spec),
-                        package_name: package_spec.to_string(),
-                    }
-                    .into());
-                }
-                // Other Errors
-                _ => {
-                    if retries == MAX_RETRIES {
-                        return Err(VoltError::NetworkUnknownError {
-                            url: format!("http://registry.voltpkg.com/{}.sp", name),
-                            package_name: package_spec.to_string(),
-                            code: response.status().as_str().to_string(),
-                        }
-                        .into());
-                    }
-                }
-            }
-
-            retries += 1;
-        }
-    } else {
-        panic!("Volt does not support non-npm package specifications yet.");
-    }
-}
-
-// #[cfg(windows)]
-// pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
-//     for entry in WalkDir::new(src) {
-//         let entry = entry.unwrap();
-
-//         if !entry.path().is_dir() {
-//             // index.js
-//             let entry = entry.path();
-
-//             let file_name = entry.file_name().unwrap().to_str().unwrap();
-
-//             // lib/index.js
-//             let path = format!("{}", &entry.display())
-//                 .replace(r"\", '/')
-//                 .replace(&app.volt_dir.display().to_string(), "");
-
-//             // node_modules/lib
-//             create_dir_all(format!(
-//                 "node_modules/{}",
-//                 &path
-//                     .replace(
-//                         format!("{}", &app.volt_dir.display())
-//                             .replace(r"\", '/')
-//                             .as_str(),
-//                         ""
-//                     )
-//                     .trim_end_matches(file_name)
-//             ))
-//             .await
-//             .unwrap();
-
-//             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
-//             if !Path::new(&format!(
-//                 "node_modules{}",
-//                 &path.replace(
-//                     format!("{}", &app.volt_dir.display())
-//                         .replace(r"\", '/')
-//                         .as_str(),
-//                     ""
-//                 )
-//             ))
-//             .exists()
-//             {
-//                 hard_link(
-//                     format!("{}", &path),
-//                     format!(
-//                         "node_modules{}",
-//                         &path.replace(
-//                             format!("{}", &app.volt_dir.display())
-//                                 .replace(r"\", '/')
-//                                 .as_str(),
-//                             ""
-//                         )
-//                     ),
-//                 )
-//                 .await
-//                 .unwrap_or_else(|_| {
-//                     0;
-//                 });
-//             }
-//         }
-//     }
-// }
-
-// #[cfg(unix)]
-// pub async fn hardlink_files(app: Arc<App>, src: PathBuf) {
-//     let mut src = src;
-//     let volt_directory = format!("{}", app.volt_dir.display());
-
-//     if !cfg!(target_os = "windows") {
-//         src = src.replace(r"\", '/');
-//     }
-
-//     for entry in WalkDir::new(src) {
-//         let entry = entry.unwrap();
-
-//         if !entry.path().is_dir() {
-//             // index.js
-//             let file_name = &entry.path().file_name().unwrap().to_str().unwrap();
-
-//             // lib/index.js
-//             let path = format!("{}", &entry.path().display())
-//                 .replace(r"\", '/')
-//                 .replace(&volt_directory, "");
-
-//             // node_modules/lib
-//             create_dir_all(format!(
-//                 "node_modules/{}",
-//                 &path
-//                     .replace(
-//                         format!("{}", &app.volt_dir.display())
-//                             .replace(r"\", '/')
-//                             .as_str(),
-//                         ""
-//                     )
-//                     .trim_end_matches(file_name)
-//             ))
-//             .await
-//             .unwrap();
-
-//             // ~/.volt/package/lib/index.js -> node_modules/package/lib/index.js
-//             if !Path::new(&format!(
-//                 "node_modules{}",
-//                 &path.replace(
-//                     format!("{}", &app.volt_dir.display())
-//                         .replace(r"\", '/')
-//                         .as_str(),
-//                     ""
-//                 )
-//             ))
-//             .exists()
-//             {
-//                 hard_link(
-//                     format!("{}/.volt/{}", std::env::var("HOME").unwrap(), path),
-//                     format!(
-//                         "{}/node_modules{}",
-//                         std::env::current_dir().unwrap().to_string_lossy(),
-//                         &path.replace(
-//                             format!("{}", &app.volt_dir.display())
-//                                 .replace(r"\", '/')
-//                                 .as_str(),
-//                             ""
-//                         )
-//                     ),
-//                 )
-//                 .await
-//                 .unwrap_or_else(|e| {
-//                     panic!(
-//                         "{:#?}",
-//                         (
-//                             format!("{}", &path),
-//                             format!(
-//                                 "node_modules{}",
-//                                 &path.replace(
-//                                     format!("{}", &app.volt_dir.display())
-//                                         .replace(r"\", '/')
-//                                         .as_str(),
-//                                     ""
-//                                 )
-//                             ),
-//                             e
-//                         )
-//                     )
-//                 });
-//             }
-//         }
-//     }
-// }
-
-pub fn decompress_tarball(gz_data: &[u8]) -> miette::Result<Vec<u8>> {
+pub fn decompress_gzip(gz_data: &[u8]) -> Result<Vec<u8>> {
     // gzip RFC1952: a valid gzip file has an ISIZE field in the
     // footer, which is a little-endian u32 number representing the
     // decompressed size. This is ideal for libdeflate, which needs
@@ -323,26 +60,6 @@ pub fn decompress_tarball(gz_data: &[u8]) -> miette::Result<Vec<u8>> {
         .into_diagnostic()?;
 
     Ok(outbuf)
-}
-
-/// downloads and extracts tarball file from package
-pub async fn fetch_tarball(
-    config: &VoltConfig,
-    package: &VoltPackage,
-    state: State,
-) -> Result<(bytes::Bytes)> {
-    // Recieve the tarball from the npm registry
-    let response = state
-        .http_client
-        .get(&package.tarball)
-        .send()
-        .await
-        .into_diagnostic()?
-        .bytes()
-        .await
-        .into_diagnostic()?;
-
-    Ok(response)
 }
 
 /// Gets a config key from git using the git cli.
@@ -515,8 +232,7 @@ pub fn verify_existing_installation(
     package: &VoltPackage,
     config: &VoltConfig,
 ) -> miette::Result<bool> {
-    let cacache_key = package.cacache_key();
-    let volt_home = config.volt_home().unwrap();
+    let volt_home = config.volt_home()?;
 
     Ok(cacache::exists_sync(
         &volt_home,
@@ -526,15 +242,15 @@ pub fn verify_existing_installation(
 
 pub fn verify_checksum(
     response: &bytes::Bytes,
-    target_integrity: String,
-) -> miette::Result<(bool, Option<String>)> {
+    expeced_checksum: &str,
+) -> Result<(bool, Option<String>)> {
     // begin
     let algorithm;
 
     // there are only 2 supported algorithms
     // sha1 and sha512
     // so we can be sure that if it doesn't start with sha1, it's going to have to be sha512
-    if target_integrity.starts_with("sha1") {
+    if expeced_checksum.starts_with("sha1") {
         algorithm = Algorithm::Sha1;
     } else {
         algorithm = Algorithm::Sha512;
@@ -542,7 +258,7 @@ pub fn verify_checksum(
 
     let calculated_checksum = VoltConfig::calc_hash(response, algorithm)?;
 
-    if calculated_checksum == target_integrity {
+    if calculated_checksum == expeced_checksum {
         Ok((true, None))
     } else {
         Ok((false, Some(calculated_checksum)))
@@ -558,7 +274,7 @@ pub async fn install_package(
     // Check if the package is already installed
     if !verify_existing_installation(package, config)? {
         // fetch the tarball from the registry
-        let response = fetch_tarball(config, package, state).await?;
+        let response = fetch_tarball(package, state).await?;
 
         tokio::task::spawn_blocking({
             let config = config.clone();
@@ -566,11 +282,11 @@ pub async fn install_package(
             move || -> Result<()> {
                 // verify the checksum
                 // (checksum is valid, calculated checksum)
-                let (verified, checksum) = verify_checksum(&response, package.integrity.clone())?;
+                let (verified, _checksum) = verify_checksum(&response, &package.integrity)?;
 
                 if verified {
                     // decompress gzipped response
-                    let decompressed_response = decompress_tarball(&response)?;
+                    let decompressed_response = decompress_gzip(&response)?;
 
                     // extract the tarball
                     extract_tarball(decompressed_response, &package, &config)?;
@@ -584,126 +300,6 @@ pub async fn install_package(
         .await
         .into_diagnostic()??;
     }
-
-    Ok(())
-}
-
-pub async fn fetch_dep_tree(
-    data: &[PackageSpec],
-    progress_bar: &ProgressBar,
-) -> Result<Vec<VoltResponse>> {
-    if data.len() > 1 {
-        Ok(get_volt_response_multi(data, progress_bar)
-            .await
-            .into_iter()
-            .collect::<Result<Vec<_>>>()?)
-    } else {
-        if let PackageSpec::Npm {
-            name, requested, ..
-        } = &data[0]
-        {
-            let mut version: String = "latest".to_string();
-
-            if requested.is_some() {
-                version = requested.as_ref().unwrap().to_string();
-            };
-
-            progress_bar.set_message(format!("{}@{}", name, version.truecolor(125, 125, 125)));
-        }
-
-        Ok(vec![get_volt_response(&data[0]).await?])
-    }
-}
-
-pub fn extract_tarball(
-    data: Vec<u8>,
-    package: &VoltPackage,
-    config: &VoltConfig,
-) -> miette::Result<()> {
-    // Generate the tarball archive given the decompressed bytes
-    let mut node_archive = Archive::new(Cursor::new(data));
-
-    // extract to both the global store + node_modules (in the case of them using the pnpm linking algorithm)
-    let mut cas_file_map: HashMap<String, Integrity> = HashMap::new();
-
-    // Add package's directory to list of created directories
-    let mut created_directories: Vec<PathBuf> = vec![];
-
-    for entry in node_archive.entries().into_diagnostic()? {
-        let mut entry = entry.into_diagnostic()?;
-
-        // Read the contents of the entry
-        let mut buffer = vec![0; entry.size() as usize];
-        entry.read_to_end(&mut buffer).into_diagnostic()?;
-
-        let entry_path_string = entry
-            .path()
-            .into_diagnostic()?
-            .to_str()
-            .expect("valid utf-8")
-            .to_string();
-
-        // Remove `package/` from `package/lib/index.js`
-        let cleaned_entry_path_string =
-            if let Some(i) = entry_path_string.char_indices().position(|(_, c)| c == '/') {
-                &entry_path_string[i + 1..]
-            } else {
-                &entry_path_string[..]
-            };
-
-        // Create the path to the local .volt directory
-        let mut package_directory = config.node_modules()?.join(VoltConfig::VOLT_HOME);
-
-        // Add package's directory to it
-        package_directory.push(package.directory_name());
-
-        // push node_modules/.volt/send@0.17.2 to the list (because we created it in the previous step)
-        created_directories.push(package_directory.clone());
-
-        // Add the cleaned path to the package's directory
-        let mut entry_path = package_directory.clone();
-
-        entry_path.push("node_modules");
-
-        entry_path.push(&package.name);
-
-        entry_path.push(cleaned_entry_path_string);
-
-        // Get the entry's parent
-        let entry_path_parent = entry_path.parent().unwrap();
-
-        // If we haven't created this directory yet, create it
-        if !created_directories.iter().any(|p| p == entry_path_parent) {
-            created_directories.push(entry_path_parent.to_path_buf());
-            std::fs::create_dir_all(entry_path_parent).into_diagnostic()?;
-        }
-
-        let mut file_path = package_directory.join("node_modules");
-
-        file_path.push(package.name.clone());
-
-        file_path.push(cleaned_entry_path_string);
-
-        // Write the contents to node_modules
-        let mut file = std::fs::File::create(&file_path).unwrap();
-
-        file.write_all(&buffer);
-
-        // Write the contents of the entry into the content-addressable store located at `app.volt_dir`
-        // We get a hash of the file
-        let sri = cacache::write_hash_sync(&config.volt_home()?, &buffer).into_diagnostic()?;
-
-        // Insert the name of the file and map it to the hash of the file
-        cas_file_map.insert(entry_path_string, sri);
-    }
-
-    // Write the file, shasum map to the content-addressable store
-    cacache::write_sync(
-        &config.volt_home()?,
-        &package.cacache_key(),
-        serde_json::to_string(&cas_file_map).into_diagnostic()?,
-    )
-    .into_diagnostic()?;
 
     Ok(())
 }

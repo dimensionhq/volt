@@ -19,7 +19,5 @@ pub mod utils;
 pub mod classes;
 pub mod io;
 pub mod model;
+pub mod net;
 pub mod prompt;
-
-// Constants
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");

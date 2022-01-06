@@ -16,10 +16,7 @@
 
 //! Clone and setup a repository from Github.
 
-use crate::{
-    cli::{VoltCommand, VoltConfig},
-    core::VERSION,
-};
+use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
 use clap::Parser;

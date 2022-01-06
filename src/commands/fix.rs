@@ -16,10 +16,7 @@
 
 //! Fix common errors in the package.json file
 
-use crate::{
-    cli::{VoltCommand, VoltConfig},
-    core::VERSION,
-};
+use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
 use colored::Colorize;
