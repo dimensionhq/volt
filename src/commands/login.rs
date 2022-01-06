@@ -50,13 +50,13 @@ impl VoltCommand for Login {
     async fn exec(self, config: VoltConfig) -> Result<()> {
         loop {
             let username_input = Input {
-                message: String::from("Username"),
+                message: "Username".into(),
                 default: None,
                 allow_empty: false,
             };
 
             let password_input = Secret {
-                message: String::from("Password"),
+                message: "Password".into(),
                 allow_empty: false,
                 confirm: None,
                 error: None,

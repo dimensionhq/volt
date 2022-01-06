@@ -46,7 +46,7 @@ async fn main() -> miette::Result<()> {
 
     let app = VoltCli::new();
 
-    let code = app.cmd.exec(app.config).await?;
+    app.cmd.exec(app.config).await?;
 
     println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
 

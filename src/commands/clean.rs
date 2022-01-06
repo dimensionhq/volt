@@ -1,5 +1,5 @@
 /*
-    Copyright 2021 Volt Contributors
+    Copyright 2021, 2022 Volt Contributors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,12 +14,9 @@
     limitations under the License.
 */
 
-//! Clean ./node_modules and reduce its size.
+//! Clean `./node_modules` and reduce its size.
 
-use crate::{
-    cli::{VoltCommand, VoltConfig},
-    core::VERSION,
-};
+use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
 use clap::Parser;
@@ -28,20 +25,15 @@ use futures::{stream::FuturesUnordered, StreamExt};
 use indicatif::{HumanBytes, ProgressBar, ProgressStyle};
 use miette::{IntoDiagnostic, Result};
 use regex::Regex;
-
 use std::{
     fs,
     io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     sync::Arc,
 };
-use tokio::{
-    io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt},
-    sync::Semaphore,
-    task::spawn_blocking,
-};
+use tokio::task::spawn_blocking;
 
-/// Optimizes your node_modules by removing redundant files and folders
+/// Optimizes your `./node_modules` by removing redundant files and folders
 #[derive(Debug, Parser)]
 pub struct Clean {
     /// Remove license file from the packages
@@ -64,95 +56,8 @@ impl VoltCommand for Clean {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> miette::Result<()> {
-        let mut regexes: Vec<Regex> = {
-            vec![
-                r"^.*/readme(?:.md|.txt|.markdown)?$",
-                r"^.*/.npmignore$",
-                r"^.*/yarn.lock$",
-                r"^.*/npm-lock.json$",
-                r"^.*/history(?:.md|.txt|.markdown)?$",
-                r"^.*/security(?:.md|.txt|.markdown)?$",
-                r"^.*/.gitattributes$",
-                r"^.*/.gitmodules$",
-                r"^.*/.prettierrc$",
-                r"^.*/.travis.yml$",
-                r"^.*/.binding.gyp$",
-                r"^.*/contributing(?:.md|.txt|.markdown)?$",
-                r"^.*/composer.json$",
-                r"^.*/makefile$",
-                r"^.*/gemfile$",
-                r"^.*/rakefile$",
-                r"^.*/.coveralls.yml$",
-                r"^.*/examples?/.*$",
-                r"^.*/changelog(?:.md|.txt|.markdown)?$",
-                r"^.*/changes(?:.md|.txt|.markdown)?$",
-                r"^.*/.jshintrc$",
-                r"^.*/bower.json$",
-                r"^.*/appveyor.yml$",
-                r"^.*/.*.log$",
-                r"^.*/.*.tlog$",
-                r"^.*/.*.patch$",
-                r"^.*/.*.sln$",
-                r"^.*/.*.pdb$",
-                r"^.*/.*.vcxproj$",
-                r"^.*/.*.gitignore$",
-                r"^.*/.*.vimrc$",
-                r"^.*/.*.idea$",
-                r"^.*/samples?/.*$",
-                r"^.*/tests?/.*$",
-                r"^.*/testing/.*$",
-                r"^.*/.eslintrc$",
-                r"^.*/.jamignore$",
-                r"^.*/.jscsrc$",
-                r"^.*/.*.todo$",
-                r"^.*/.*.js.map$",
-                r"^.*/contributors(?:.md|.txt|.markdown)?$",
-                r"^.*/.*.orig$",
-                r"^.*/.*.rej$",
-                r"^.*/.zuul.yml$",
-                r"^.*/.editorconfig$",
-                r"^.*/.npmrc$",
-                r"^.*/.jshintignore$",
-                r"^.*/.eslintignore$",
-                r"^.*/.*.lint$",
-                r"^.*/.*.lintignore$",
-                r"^.*/cakefile$",
-                r"^.*/.istanbul.yml$",
-                r"^.*/mocha.opts$",
-                r"^.*/.*.gradle$",
-                r"^.*/.*.tern-port$",
-                r"^.*/.gitkeep$",
-                r"^.*/.dntrc$",
-                r"^.*/.*.watchr$",
-                r"^.*/.jsbeautifyrc$",
-                r"^.*/cname$",
-                r"^.*/screenshots?/.*$",
-                r"^.*/.dir-locals.el$",
-                r"^.*/jsl.conf$",
-                r"^.*/jsstyle$",
-                r"^.*/benchmarks?/.*$",
-                r"^.*/dockerfile$",
-                r"^.*/.*.nuspec$",
-                r"^.*/.*.csproj$",
-                r"^.*/.*.md$",
-                r"^.*/thumbs.db$",
-                r"^.*/.ds_store$",
-                r"^.*/desktop.ini$",
-                r"^.*/npm-debug.log$",
-                r"^.*/.wercker.yml$",
-                r"^.*/.flowconfig$",
-            ]
-            .into_iter()
-            .map(|v| Regex::new(v).unwrap())
-            .collect()
-        };
-
-        // Append the LICENSE regexes if the flag is specified
-        if self.remove_licenses {
-            // push a new regex into my REGEXES static var
-            regexes.push(Regex::new(r"^.*/license(?:.md|.txt|.markdown)?$").unwrap())
-        }
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
+        let regexes = get_regexes(self.remove_licenses);
 
         let mut matches: Vec<PathBuf> = vec![];
         let mut minify_files: Vec<PathBuf> = vec![];
@@ -164,7 +69,7 @@ impl VoltCommand for Clean {
         let mut final_file_size: u64 = 0;
 
         for entry in jwalk::WalkDir::new("node_modules") {
-            let path = entry.unwrap().path();
+            let path = entry.into_diagnostic()?.path();
             node_modules_contents.push(path.clone());
         }
 
@@ -180,31 +85,21 @@ impl VoltCommand for Clean {
                 let mut minify_matches = vec![];
                 let mut initial_size: u64 = 0;
 
-                for path in chunk {
+                'path: for path in chunk {
                     initial_size += path.metadata().unwrap().len();
 
-                    let path_str = path
-                        .to_str()
-                        .unwrap()
-                        .to_string()
-                        .replace('\\', "/")
-                        .to_lowercase();
-
-                    let mut has_match = false;
+                    let path_str = path.to_str().unwrap().replace('\\', "/").to_lowercase();
 
                     for regex in regexes.iter() {
                         if regex.is_match(&path_str) {
-                            regex_matches.push(path.clone());
-                            has_match = true;
-                            break;
-                        };
+                            regex_matches.push(path);
+                            continue 'path;
+                        }
                     }
 
-                    if !has_match {
-                        if let Some(extension) = path.extension() {
-                            if extension.to_str().unwrap() == "json" {
-                                minify_matches.push(path.clone());
-                            }
+                    if let Some(extension) = path.extension() {
+                        if extension.to_str().unwrap() == "json" {
+                            minify_matches.push(path);
                         }
                     }
                 }
@@ -213,10 +108,12 @@ impl VoltCommand for Clean {
             }));
         }
 
-        while let Some(Ok(value)) = workers.next().await {
-            minify_files.extend(value.0);
-            matches.extend(value.1);
-            initial_file_size += value.2;
+        while let Some((minify_matches, regex_matches, initial_size)) =
+            workers.next().await.transpose().into_diagnostic()?
+        {
+            minify_files.extend(minify_matches);
+            matches.extend(regex_matches);
+            initial_file_size += initial_size;
         }
 
         let matches_bar = ProgressBar::new(matches.len() as u64);
@@ -238,16 +135,22 @@ impl VoltCommand for Clean {
 
         for chunk in minify_files.chunks(20) {
             let chunk_instance = chunk.to_vec();
-            workers.push(spawn_blocking(move || {
+            workers.push(spawn_blocking(move || -> Result<()> {
                 for file in chunk_instance {
-                    minify(&file).unwrap_or_else(|v| {
-                        println!("{}", v);
-                    });
+                    minify(&file)?;
                 }
+                Ok(())
             }));
         }
 
-        while workers.next().await.is_some() {
+        while workers
+            .next()
+            .await
+            .transpose()
+            .into_diagnostic()?
+            .transpose()?
+            .is_some()
+        {
             minify_bar.inc(20);
         }
 
@@ -259,18 +162,27 @@ impl VoltCommand for Clean {
             let chunk = chunk.to_vec();
             let matches_bar = matches_bar.clone();
 
-            workers.push(tokio::task::spawn_blocking(move || {
+            workers.push(tokio::task::spawn_blocking(move || -> Result<()> {
                 for entry in chunk {
-                    if entry.is_file() && fs::remove_file(&entry).is_ok()
-                        || entry.is_dir() && fs::remove_dir_all(&entry).is_ok()
-                    {
-                        matches_bar.inc(1)
+                    if entry.is_file() {
+                        fs::remove_file(&entry).into_diagnostic()?;
+                    } else if entry.is_dir() {
+                        fs::remove_dir_all(&entry).into_diagnostic()?;
                     }
+                    matches_bar.inc(1);
                 }
+                Ok(())
             }));
         }
 
-        while workers.next().await.is_some() {}
+        while workers
+            .next()
+            .await
+            .transpose()
+            .into_diagnostic()?
+            .transpose()?
+            .is_some()
+        {}
 
         matches_bar.finish();
 
@@ -279,17 +191,24 @@ impl VoltCommand for Clean {
         for chunk in node_modules_contents.chunks(200) {
             let chunk = chunk.to_vec();
 
-            workers.push(tokio::task::spawn_blocking(move || {
+            workers.push(tokio::task::spawn_blocking(move || -> Result<()> {
                 for entry in chunk {
-                    if entry.is_dir()
-                        && entry.read_dir().unwrap().next().is_none()
-                        && fs::remove_dir(entry).is_ok()
-                    {}
+                    if entry.is_dir() && entry.read_dir().into_diagnostic()?.next().is_none() {
+                        fs::remove_dir(entry).into_diagnostic()?;
+                    }
                 }
-            }))
+                Ok(())
+            }));
         }
 
-        while workers.next().await.is_some() {}
+        while workers
+            .next()
+            .await
+            .transpose()
+            .into_diagnostic()?
+            .transpose()?
+            .is_some()
+        {}
 
         node_modules_contents.clear();
 
@@ -303,22 +222,28 @@ impl VoltCommand for Clean {
         for chunks in node_modules_contents.chunks(150) {
             let chunk = chunks.to_vec();
 
-            workers.push(tokio::task::spawn_blocking(move || {
+            workers.push(tokio::task::spawn_blocking(move || -> Result<u64> {
                 let mut final_size: u64 = 0;
 
                 for entry in chunk {
                     if entry.is_dir() {
-                        final_size += entry.metadata().unwrap().len();
+                        final_size += entry.metadata().into_diagnostic()?.len();
                     } else {
-                        final_size += fs_extra::dir::get_size(entry).unwrap();
+                        final_size += fs_extra::dir::get_size(entry).into_diagnostic()?;
                     }
                 }
 
-                final_size
+                Ok(final_size)
             }));
         }
 
-        while let Some(Ok(value)) = workers.next().await {
+        while let Some(value) = workers
+            .next()
+            .await
+            .transpose()
+            .into_diagnostic()?
+            .transpose()?
+        {
             final_file_size += value;
         }
 
@@ -326,9 +251,9 @@ impl VoltCommand for Clean {
 
         println!(
             "{} {} {} ( {} Saved )",
-            HumanBytes(initial_file_size).to_string(),
+            HumanBytes(initial_file_size),
             "->".bright_magenta().bold(),
-            HumanBytes(final_file_size).to_string(),
+            HumanBytes(final_file_size),
             HumanBytes(removed_size).to_string().bright_green(),
         );
 
@@ -337,7 +262,7 @@ impl VoltCommand for Clean {
 }
 
 // minify a JSON file
-pub fn minify(path: &Path) -> Result<()> {
+fn minify(path: &Path) -> Result<()> {
     let mut contents = String::new();
 
     let mut file = std::fs::OpenOptions::new()
@@ -356,6 +281,98 @@ pub fn minify(path: &Path) -> Result<()> {
     file.write_all(minified.as_bytes()).into_diagnostic()?;
 
     Ok(())
+}
+
+fn get_regexes(remove_licenses: bool) -> Box<[Regex]> {
+    let mut regexes: Vec<Regex> = {
+        vec![
+            r"^.*/readme(?:.md|.txt|.markdown)?$",
+            r"^.*/.npmignore$",
+            r"^.*/yarn.lock$",
+            r"^.*/npm-lock.json$",
+            r"^.*/history(?:.md|.txt|.markdown)?$",
+            r"^.*/security(?:.md|.txt|.markdown)?$",
+            r"^.*/.gitattributes$",
+            r"^.*/.gitmodules$",
+            r"^.*/.prettierrc$",
+            r"^.*/.travis.yml$",
+            r"^.*/.binding.gyp$",
+            r"^.*/contributing(?:.md|.txt|.markdown)?$",
+            r"^.*/composer.json$",
+            r"^.*/makefile$",
+            r"^.*/gemfile$",
+            r"^.*/rakefile$",
+            r"^.*/.coveralls.yml$",
+            r"^.*/examples?/.*$",
+            r"^.*/changelog(?:.md|.txt|.markdown)?$",
+            r"^.*/changes(?:.md|.txt|.markdown)?$",
+            r"^.*/.jshintrc$",
+            r"^.*/bower.json$",
+            r"^.*/appveyor.yml$",
+            r"^.*/.*.log$",
+            r"^.*/.*.tlog$",
+            r"^.*/.*.patch$",
+            r"^.*/.*.sln$",
+            r"^.*/.*.pdb$",
+            r"^.*/.*.vcxproj$",
+            r"^.*/.*.gitignore$",
+            r"^.*/.*.vimrc$",
+            r"^.*/.*.idea$",
+            r"^.*/samples?/.*$",
+            r"^.*/tests?/.*$",
+            r"^.*/testing/.*$",
+            r"^.*/.eslintrc$",
+            r"^.*/.jamignore$",
+            r"^.*/.jscsrc$",
+            r"^.*/.*.todo$",
+            r"^.*/.*.js.map$",
+            r"^.*/contributors(?:.md|.txt|.markdown)?$",
+            r"^.*/.*.orig$",
+            r"^.*/.*.rej$",
+            r"^.*/.zuul.yml$",
+            r"^.*/.editorconfig$",
+            r"^.*/.npmrc$",
+            r"^.*/.jshintignore$",
+            r"^.*/.eslintignore$",
+            r"^.*/.*.lint$",
+            r"^.*/.*.lintignore$",
+            r"^.*/cakefile$",
+            r"^.*/.istanbul.yml$",
+            r"^.*/mocha.opts$",
+            r"^.*/.*.gradle$",
+            r"^.*/.*.tern-port$",
+            r"^.*/.gitkeep$",
+            r"^.*/.dntrc$",
+            r"^.*/.*.watchr$",
+            r"^.*/.jsbeautifyrc$",
+            r"^.*/cname$",
+            r"^.*/screenshots?/.*$",
+            r"^.*/.dir-locals.el$",
+            r"^.*/jsl.conf$",
+            r"^.*/jsstyle$",
+            r"^.*/benchmarks?/.*$",
+            r"^.*/dockerfile$",
+            r"^.*/.*.nuspec$",
+            r"^.*/.*.csproj$",
+            r"^.*/.*.md$",
+            r"^.*/thumbs.db$",
+            r"^.*/.ds_store$",
+            r"^.*/desktop.ini$",
+            r"^.*/npm-debug.log$",
+            r"^.*/.wercker.yml$",
+            r"^.*/.flowconfig$",
+        ]
+        .into_iter()
+        .map(|v| Regex::new(v).expect("Valid regex"))
+        .collect()
+    };
+
+    // Append the LICENSE regexes if the flag is specified
+    if remove_licenses {
+        regexes.push(Regex::new(r"^.*/license(?:.md|.txt|.markdown)?$").expect("Valid regex"));
+    }
+
+    regexes.into_boxed_slice()
 }
 
 //

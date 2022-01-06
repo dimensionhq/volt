@@ -22,6 +22,7 @@ use dialoguer::{
 };
 
 use std::{
+    borrow::Cow,
     fmt::{self, Debug, Display},
     io, iter,
     str::FromStr,
@@ -229,13 +230,13 @@ impl<T, F: FnMut(&T) -> Result<(), E>, E: Debug + Display> Validator<T> for F {
 }
 
 pub struct Input<'a, T> {
-    prompt: String,
+    prompt: Cow<'a, str>,
     default: Option<T>,
     show_default: bool,
-    initial_text: Option<String>,
+    initial_text: Option<Cow<'a, str>>,
     theme: &'a dyn Theme,
     permit_empty: bool,
-    validator: Option<Box<dyn FnMut(&T) -> Option<String> + 'a>>,
+    validator: Option<Box<dyn FnMut(&T) -> Option<Cow<'a, str>> + 'a>>,
 }
 
 impl<'a, T> Default for Input<'a, T>
@@ -272,13 +273,13 @@ where
     }
 
     /// Sets the input prompt.
-    pub fn with_prompt<S: Into<String>>(&mut self, prompt: S) -> &mut Input<'a, T> {
+    pub fn with_prompt<S: Into<Cow<'a, str>>>(&mut self, prompt: S) -> &mut Input<'a, T> {
         self.prompt = prompt.into();
         self
     }
 
     /// Sets initial text that user can accept or erase.
-    pub fn with_initial_text<S: Into<String>>(&mut self, val: S) -> &mut Input<'a, T> {
+    pub fn with_initial_text<S: Into<Cow<'a, str>>>(&mut self, val: S) -> &mut Input<'a, T> {
         self.initial_text = Some(val.into());
         self
     }
@@ -337,7 +338,7 @@ where
     {
         let mut old_validator_func = self.validator.take();
 
-        self.validator = Some(Box::new(move |value: &T| -> Option<String> {
+        self.validator = Some(Box::new(move |value: &T| -> Option<Cow<'a, str>> {
             if let Some(old) = old_validator_func.as_mut() {
                 if let Some(err) = old(value) {
                     return Some(err);
@@ -346,7 +347,7 @@ where
 
             match validator.validate(value) {
                 Ok(()) => None,
-                Err(err) => Some(err.to_string()),
+                Err(err) => Some(err.to_string().into()),
             }
         }));
 
