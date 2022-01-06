@@ -379,6 +379,11 @@ pub fn get_git_config(config: &VoltConfig, key: &str) -> Result<Option<String>> 
     }
 }
 
+#[cfg(unix)]
+pub fn enable_ansi_support() -> Result<(), u32> {
+    Ok(())
+}
+
 // Windows Function
 /// Enable ansi support and colors
 #[cfg(windows)]
@@ -535,12 +540,12 @@ pub fn verify_checksum(
         algorithm = Algorithm::Sha512;
     }
 
-    let calculated_checksum = VoltConfig::calc_hash(&response, algorithm)?;
+    let calculated_checksum = VoltConfig::calc_hash(response, algorithm)?;
 
     if calculated_checksum == target_integrity {
-        return Ok((true, None));
+        Ok((true, None))
     } else {
-        return Ok((false, Some(calculated_checksum)));
+        Ok((false, Some(calculated_checksum)))
     }
 }
 
@@ -564,7 +569,7 @@ pub async fn install_package(
             let decompressed_response = decompress_tarball(&response)?;
 
             // extract the tarball
-            extract_tarball(decompressed_response, &package, &config)?;
+            extract_tarball(decompressed_response, package, config)?;
         } else {
             // TODO: handle checksum failure
         }
