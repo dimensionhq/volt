@@ -38,6 +38,10 @@ async fn main() -> miette::Result<()> {
         .without_time()
         .init();
 
+    if cfg!(windows) {
+        core::utils::enable_ansi_support().unwrap();
+    }
+
     let start = Instant::now();
 
     let app = VoltCli::new();
