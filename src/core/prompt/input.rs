@@ -236,8 +236,10 @@ pub struct Input<'a, T> {
     initial_text: Option<Cow<'a, str>>,
     theme: &'a dyn Theme,
     permit_empty: bool,
-    validator: Option<Box<dyn FnMut(&T) -> Option<Cow<'a, str>> + 'a>>,
+    validator: Option<ValidatorFn<'a, T>>,
 }
+
+pub type ValidatorFn<'a, T> = Box<dyn FnMut(&T) -> Option<Cow<'a, str>> + 'a>;
 
 impl<'a, T> Default for Input<'a, T>
 where
