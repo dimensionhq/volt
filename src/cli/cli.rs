@@ -53,6 +53,7 @@ impl VoltCommand for VoltSubCmd {
     author = crate_authors!(),
     global_setting = AppSettings::DisableColoredHelp
 )]
+#[allow(clippy::module_name_repetitions)]
 pub struct VoltCli {
     #[clap(flatten)]
     pub config: VoltConfig,

@@ -34,6 +34,10 @@ pub enum VoltError {
     #[diagnostic(code(volt::environment::home_dir))]
     GetHomeDirError,
 
+    #[error("failed to get the name of the current directory")]
+    #[diagnostic(code(volt::environment::current_dir_name))]
+    GetCurrentDirNameError,
+
     // #[error("failed to initialize lz4 decoder")]
     // #[diagnostic(code(volt::decode::lz4::initialize))]
     // DecoderError(#[source] std::io::Error),

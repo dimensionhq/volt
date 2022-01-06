@@ -14,16 +14,12 @@
     limitations under the License.
 */
 
-use crate::{
-    cli::{VoltCommand, VoltConfig},
-    core::VERSION,
-};
+use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
 use clap::Parser;
 use colored::Colorize;
 use miette::Result;
-use std::sync::Arc;
 
 /// Join the official volt discord server
 #[derive(Debug, Parser)]
@@ -44,12 +40,12 @@ impl VoltCommand for Discord {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         match webbrowser::open("https://discord.gg/fY7BMcrcYr") {
             Ok(_) => {
                 println!("Successfully opened an invite to the official {} server on your default browser.", "discord".truecolor(88, 101, 242).bold());
             }
-            Err(_err) => {
+            Err(_) => {
                 println!("Failed to open an invite to the official {} server on your default browser.\nFeel free to join using this link instead: {}", "discord".truecolor(88, 101, 242).bold(), "https://discord.gg/fY7BMcrcYr".bright_purple().underline());
             }
         };
