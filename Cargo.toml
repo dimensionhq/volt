@@ -59,7 +59,7 @@ urlencoding = "2.1.0"
 lzma-rs = "0.2.0"
 speedy = "0.8.0"
 libdeflater = "0.7.3"
-package-spec = { path = "src/crates/package-spec" }
+package-spec = { path = "crates/package-spec" }
 hex = "0.4.3"
 
 [target.'cfg(windows)'.dependencies]
