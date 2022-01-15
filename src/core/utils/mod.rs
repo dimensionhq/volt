@@ -265,6 +265,16 @@ pub fn verify_checksum(
     }
 }
 
+pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::Result<()> {
+    if let Some(dependencies) = &package.dependencies {
+        for dependency in dependencies {
+            println!("{:#?}", dependency);
+        }
+    }
+
+    Ok(())
+}
+
 /// Install a JavaScript package.
 pub async fn install_package(
     config: &VoltConfig,
@@ -290,6 +300,9 @@ pub async fn install_package(
 
                     // extract the tarball
                     extract_tarball(decompressed_response, &package, &config)?;
+
+                    // generate symlinks
+                    link_dependencies(&package, &config)?;
                 } else {
                     // TODO: handle checksum failure
                 }
