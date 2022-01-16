@@ -266,9 +266,46 @@ pub fn verify_checksum(
 }
 
 pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::Result<()> {
+    // link the subdependencies for a package
     if let Some(dependencies) = &package.dependencies {
-        for dependency in dependencies {
-            println!("{:#?}", dependency);
+        for (name, version) in dependencies.iter() {
+            let name = name.replace(&format!("@{version}"), "");
+
+            let mut dependency_link_path = config.node_modules()?;
+
+            // node_modules/.volt
+            dependency_link_path.push(".volt");
+
+            // node_modules/.volt/accepts@1.2.3
+            dependency_link_path.push(format!("{}@{}", name, version));
+
+            // node_modules/.volt/accepts@1.2.3/node_modules
+            dependency_link_path.push("node_modules");
+
+            // node_modules/.volt/accepts@1.2.3/node_modules/accepts
+            dependency_link_path.push(&name);
+
+            let mut target_link_path = config.node_modules()?;
+
+            // node_modules/.volt
+            target_link_path.push(".volt");
+
+            // node_modules/.volt/accepts@1.2.3
+            target_link_path.push(format!("{}@{}", &package.name, &package.version));
+
+            // node_modules/.volt/accepts@1.2.3/node_modules
+            target_link_path.push("node_modules");
+
+            // node_modules/.volt/accepts@1.2.3/node_modules/ms
+            target_link_path.push(&name);
+
+            if cfg!(windows) {
+                junction::create(dependency_link_path, target_link_path).unwrap_or_else(|e| {
+                    eprintln!("{}", e);
+                    std::process::exit(1);
+                });
+            } else if cfg!(unix) {
+            }
         }
     }
 

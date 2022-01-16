@@ -30,7 +30,7 @@ use clap::Parser;
 use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt, TryStreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
-use miette::{IntoDiagnostic, Result};
+use miette::IntoDiagnostic;
 use package_spec::PackageSpec;
 use reqwest::Client;
 
@@ -43,9 +43,7 @@ pub struct Add {
 
 #[async_trait]
 impl VoltCommand for Add {
-    async fn exec(self, config: VoltConfig) -> Result<()> {
-        let idk = Instant::now();
-
+    async fn exec(self, config: VoltConfig) -> miette::Result<()> {
         // Load the existing package.json file
         // let (mut package_file, _package_file_path) = PackageJson::open("package.json")?;
 
@@ -196,8 +194,6 @@ impl VoltCommand for Add {
         // Save lockfiles
         // global_lock_file.save()?;
         // lock_file.save()?;
-        println!("{}", idk.elapsed().as_secs_f32());
-
         Ok(())
     }
 }

@@ -1179,6 +1179,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "junction"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be39922b087cecaba4e2d5592dedfc8bda5d4a5a1231f143337cca207950b61d"
+dependencies = [
+ "scopeguard",
+ "winapi",
+]
+
+[[package]]
 name = "jwalk"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2650,6 +2660,7 @@ dependencies = [
  "hex 0.4.3",
  "indicatif",
  "isahc",
+ "junction",
  "jwalk",
  "lazy_static",
  "libdeflater",
