@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use crate::{
     cli::VoltConfig,
     core::{
@@ -151,5 +153,55 @@ pub async fn fetch_dep_tree(
         }
 
         Ok(vec![get_volt_response(&data[0]).await?])
+    }
+}
+
+pub async fn ping() {
+    let ping = Instant::now();
+
+    println!("PING! http://registry.voltpkg.com/");
+
+    let mut response = isahc::get_async("http://registry.voltpkg.com/ping")
+        .await
+        .unwrap();
+
+    match response.status() {
+        StatusCode::OK => {
+            let text = response.text().await.unwrap();
+
+            let pong = Instant::now();
+
+            println!(
+                "PONG! http://registry.voltpkg.com/ {}",
+                pong.elapsed().as_secs_f32()
+            );
+        }
+        _ => {
+            println!("Ping failed");
+        }
+    }
+
+    let ping = Instant::now();
+
+    println!("PING! https://registry.npmjs.org/");
+
+    let mut response = isahc::get_async("https://registry.npmjs.org/")
+        .await
+        .unwrap();
+
+    match response.status() {
+        StatusCode::OK => {
+            let text = response.text().await.unwrap();
+
+            let pong = Instant::now();
+
+            println!(
+                "PONG! https://registry.npmjs.org/ {}",
+                pong.elapsed().as_secs_f32()
+            );
+        }
+        _ => {
+            println!("Ping failed");
+        }
     }
 }
