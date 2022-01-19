@@ -35,7 +35,7 @@ Prerequisites: **Git**, **Rust Toolchain**
 
 ### Minimum Supported Rust Version (MSRV)
 
-Rust 1.57
+Rust 1.58
 
 ### Steps
 
