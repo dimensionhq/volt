@@ -92,7 +92,6 @@ pub fn extract_tarball(
         // Read the contents of the entry
         let mut buffer = Vec::with_capacity(entry.size() as usize);
         entry.read_to_end(&mut buffer).into_diagnostic()?;
-        
 
         let entry_path_string = entry
             .path()
