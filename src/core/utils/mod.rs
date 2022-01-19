@@ -299,13 +299,19 @@ pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::
             // node_modules/.volt/accepts@1.2.3/node_modules/ms
             target_link_path.push(&name);
 
-            if cfg!(windows) {
-                junction::create(dependency_link_path, target_link_path).unwrap_or_else(|e| {
+            #[cfg(windows)]
+            junction::create(dependency_link_path, target_link_path).unwrap_or_else(|e| {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            });
+
+            #[cfg(unix)]
+            std::os::unix::fs::symlink(dependency_link_path, target_link_path).unwrap_or_else(
+                |e| {
                     eprintln!("{}", e);
                     std::process::exit(1);
-                });
-            } else if cfg!(unix) {
-            }
+                },
+            );
         }
     }
 
