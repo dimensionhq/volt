@@ -66,8 +66,10 @@ pub async fn get_volt_response(package_spec: &PackageSpec) -> Result<VoltRespons
             match response.status() {
                 // 200 (OK)
                 StatusCode::OK => {
-                    let response: VoltResponse =
+                    let mut response: VoltResponse =
                         VoltResponse::read_from_buffer(&response.bytes().await.unwrap()).unwrap();
+
+                    response.name = name.to_string();
 
                     return Ok(response);
                 }

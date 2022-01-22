@@ -44,23 +44,6 @@ pub struct Add {
 #[async_trait]
 impl VoltCommand for Add {
     async fn exec(self, config: VoltConfig) -> miette::Result<()> {
-        // Load the existing package.json file
-        // let (mut package_file, _package_file_path) = PackageJson::open("package.json")?;
-
-        // Construct a path to the local and global lockfile.
-        // let lockfile_path = &app.lock_file_path;
-
-        // let global_lockfile = &app.home_dir.join(".global.lock");
-
-        // // Load local and global lockfiles.
-        // let mut lock_file =
-        //     LockFile::load(lockfile_path).unwrap_or_else(|_| LockFile::new(lockfile_path));
-
-        // let mut global_lock_file =
-        //     LockFile::load(global_lockfile).unwrap_or_else(|_| LockFile::new(global_lockfile));
-
-        // let resolve_start = Instant::now();
-
         let bar = ProgressBar::new_spinner()
             .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"));
 
@@ -68,12 +51,42 @@ impl VoltCommand for Add {
 
         let resolve_start = Instant::now();
 
+        let mut requested_packages = vec![];
+
         // Fetch pre-flattened dependency trees from the registry
         let responses = fetch_dep_tree(&self.packages, &bar).await?;
 
         let mut tree: HashMap<String, VoltPackage> = HashMap::new();
 
         for response in responses {
+            let mut index = 0;
+
+            for package in &self.packages {
+                if let PackageSpec::Npm {
+                    name,
+                    scope,
+                    requested,
+                } = package
+                {
+                    // recieve the version of a package that has been requested from the response
+                    if name.to_string() == response.name {
+                        requested_packages.push(PackageSpec::Npm {
+                            scope: scope.to_owned(),
+                            name: name.to_owned(),
+                            requested: Some(package_spec::VersionSpec::Tag(
+                                response.version.clone(),
+                            )),
+                        });
+                    } else {
+                        requested_packages.push(PackageSpec::Npm {
+                            name: name.to_string(),
+                            scope: scope.to_owned(),
+                            requested: requested.to_owned(),
+                        });
+                    }
+                }
+            }
+
             tree.extend(response.tree);
         }
 
@@ -173,6 +186,41 @@ impl VoltCommand for Add {
             .unwrap();
 
         bar.finish_and_clear();
+
+        for package in requested_packages {
+            if let PackageSpec::Npm {
+                name,
+                scope,
+                requested,
+            } = package
+            {
+                let mut node_modules_directory = config.node_modules().unwrap();
+
+                // path to the package directory
+                let mut package_directory = node_modules_directory.join(".volt").join(format!(
+                    "{}@{}",
+                    &name,
+                    requested.as_ref().unwrap().to_string()
+                ));
+
+                // path to the symlink
+                let mut target_directory = node_modules_directory.join(name);
+
+                #[cfg(windows)]
+                junction::create(package_directory, target_directory).unwrap_or_else(|e| {
+                    eprintln!("{}", e);
+                    std::process::exit(1);
+                });
+
+                #[cfg(unix)]
+                std::os::unix::fs::symlink(package_directory, target_directory).unwrap_or_else(
+                    |e| {
+                        eprintln!("{}", e);
+                        std::process::exit(1);
+                    },
+                );
+            }
+        }
 
         println!(
             "{} Installed {} dependencies",
