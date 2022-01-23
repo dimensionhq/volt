@@ -19,7 +19,7 @@ use serde_json::to_string_pretty;
 
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, PartialEq)]
 pub enum License {
     Mit,
     Apache2,
@@ -94,6 +94,53 @@ impl License {
     }
 }
 
+impl TryFrom<&str> for License {
+    type Error = ();
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        License::OPTIONS
+            .iter()
+            .position(|e| &value == e)
+            .and_then(License::from_index)
+            .ok_or(())
+    }
+}
+
+impl Serialize for License {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for License {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct LicenseVisitor;
+        impl<'de> serde::de::Visitor<'de> for LicenseVisitor {
+            type Value = License;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a valid License value")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                License::try_from(v)
+                    .map_err(|_| E::custom(format!("{v} is not a valid License value")))
+            }
+        }
+
+        deserializer.deserialize_str(LicenseVisitor)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InitData {
     pub name: String,
@@ -113,5 +160,34 @@ pub struct InitData {
 impl InitData {
     pub fn into_string(self) -> String {
         to_string_pretty(&self).expect("Valid serialization state")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::core::classes::init_data::License;
+
+    #[test]
+    fn check_serialization_is_correct() {
+        for i in 0..=9 {
+            let l = License::from_index(i).unwrap();
+            let l_quoted_string = format!("\"{}\"", l.as_str().replace("\"", "\\\""));
+
+            let serialization = serde_json::to_string(&l).unwrap();
+
+            assert_eq!(serialization, l_quoted_string);
+        }
+    }
+
+    #[test]
+    fn check_deserialization_is_correct() {
+        for i in 0..=9 {
+            let l = License::from_index(i).unwrap();
+            let l_quoted_string = format!("\"{}\"", l.as_str().replace("\"", "\\\""));
+
+            let deserialization: License = serde_json::from_str(&l_quoted_string).unwrap();
+
+            assert_eq!(deserialization, l);
+        }
     }
 }
