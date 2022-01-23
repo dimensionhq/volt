@@ -79,13 +79,13 @@ impl VoltCommand for Init {
             source: e,
             name: String::from(PACKAGE_JSON),
         })?;
-        file.write(data.into_string().as_bytes())
+
+        file.write(serde_json::to_string_pretty(&data).unwrap().as_bytes())
             .map_err(|e| VoltError::WriteFileError {
                 source: e,
                 name: String::from(PACKAGE_JSON),
             })?;
 
-        println!("{}", start.elapsed().as_secs_f32());
         println!("{}", "Successfully Initialized package.json".bright_green());
 
         Ok(())
@@ -110,8 +110,6 @@ fn automatic_initialization(name: String, config: &VoltConfig) -> Result<InitDat
         }
     };
 
-    let repository = utils::get_git_config(config, "remote.origin.url")?;
-
     let license = License::default();
 
     Ok(InitData {
@@ -119,7 +117,6 @@ fn automatic_initialization(name: String, config: &VoltConfig) -> Result<InitDat
         version,
         description,
         main,
-        repository,
         author,
         license,
         private: None,
@@ -189,15 +186,6 @@ fn manual_initialization(default_name: String, config: &VoltConfig) -> Result<In
 
     let author = input.run().into_diagnostic()?;
 
-    // Get "repository"
-    let input = Input {
-        message: "repository".into(),
-        default: None,
-        allow_empty: true,
-    };
-
-    let repository = input.run().into_diagnostic()?;
-
     // Get "license"
     let select = Select {
         message: "License".into(),
@@ -222,7 +210,6 @@ fn manual_initialization(default_name: String, config: &VoltConfig) -> Result<In
         version,
         description: Some(description),
         main,
-        repository: Some(repository),
         author: Some(author),
         license,
         private: Some(private),

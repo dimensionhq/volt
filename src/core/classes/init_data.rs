@@ -102,8 +102,6 @@ pub struct InitData {
     pub description: Option<String>,
     pub main: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub repository: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
     pub license: License,
     #[serde(skip_serializing_if = "Option::is_none")]

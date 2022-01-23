@@ -21,8 +21,8 @@ use std::{collections::HashMap, time::Instant};
 use crate::{
     cli::{VoltCommand, VoltConfig},
     core::net::fetch_dep_tree,
-    core::utils::voltapi::VoltPackage,
     core::utils::{install_package, State},
+    core::utils::{package::PackageJson, voltapi::VoltPackage},
 };
 
 use async_trait::async_trait;
@@ -187,7 +187,7 @@ impl VoltCommand for Add {
 
         bar.finish_and_clear();
 
-        for package in requested_packages {
+        for package in requested_packages.iter() {
             if let PackageSpec::Npm {
                 name,
                 scope,
@@ -230,18 +230,19 @@ impl VoltCommand for Add {
             total.to_string().truecolor(196, 206, 255).bold()
         );
 
-        // TODO: add this to the global lockfiles
+        let (mut package_file, path) = PackageJson::get()?;
 
-        // for package in packages {
-        //     package_file.add_dependency(package.to_owned());
-        // }
+        for package in requested_packages.iter() {
+            package_file.add_dependency(package.to_owned());
+        }
 
         // Save package.json
-        // package_file.save()?;
+        package_file.save()?;
 
         // Save lockfiles
         // global_lock_file.save()?;
         // lock_file.save()?;
+
         Ok(())
     }
 }

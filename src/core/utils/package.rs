@@ -178,9 +178,13 @@ pub struct NpmOperationalInternal {
 pub struct PackageJson {
     pub name: String,
     pub version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub main: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub repository: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub license: Option<String>,
     #[serde(default)]
     pub dependencies: HashMap<String, String>,
@@ -190,8 +194,9 @@ pub struct PackageJson {
     #[serde(default)]
     pub scripts: HashMap<String, String>,
 }
+
 impl PackageJson {
-    pub fn open(_path: &str) -> Result<(Self, PathBuf)> {
+    pub fn get() -> Result<(Self, PathBuf)> {
         for parent in std::env::current_dir()
             .map_err(|e| VoltError::EnvironmentError {
                 env: String::from("CURRENT_DIR"),
@@ -234,8 +239,15 @@ impl PackageJson {
     }
 
     pub fn add_dependency(&mut self, package: PackageSpec) {
-        // self.dependencies
-        //     .insert(package.name, package.version.unwrap_or_default());
+        if let PackageSpec::Npm {
+            name,
+            scope,
+            requested,
+        } = package
+        {
+            self.dependencies
+                .insert(name, requested.as_ref().unwrap().to_string());
+        }
     }
 
     // pub fn add_dev_dependency(&mut self, package: Package) {

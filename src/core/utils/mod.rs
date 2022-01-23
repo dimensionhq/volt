@@ -62,32 +62,33 @@ pub fn decompress_gzip(gz_data: &[u8]) -> Result<Vec<u8>> {
     Ok(outbuf)
 }
 
+fn get_git_config_value_if_exists(
+    config: &VoltConfig,
+    section: &str,
+    subsection: Option<&str>,
+    key: &str,
+) -> Result<Option<String>> {
+    let config_path = config.home()?.join(".gitconfig");
+
+    if config_path.exists() {
+        let data = read_to_string(config_path).into_diagnostic()?;
+
+        let parser = parse_from_str(&data).map_err(|err| VoltError::GitConfigParseError {
+            error_text: err.to_string(),
+        })?;
+
+        let config = GitConfig::from(parser);
+        let value = config.get_raw_value(section, subsection, key).ok();
+
+        Ok(value.map(|v| String::from_utf8_lossy(&v).into_owned()))
+    } else {
+        Ok(None)
+    }
+}
+
 /// Gets a config key from git using the git cli.
 /// Uses `gitoxide` to read from your git configuration.
 pub fn get_git_config(config: &VoltConfig, key: &str) -> Result<Option<String>> {
-    fn get_git_config_value_if_exists(
-        config: &VoltConfig,
-        section: &str,
-        subsection: Option<&str>,
-        key: &str,
-    ) -> Result<Option<String>> {
-        let config_path = config.home()?.join(".gitconfig");
-
-        if config_path.exists() {
-            let data = read_to_string(config_path).into_diagnostic()?;
-
-            let parser = parse_from_str(&data).map_err(|err| VoltError::GitConfigParseError {
-                error_text: err.to_string(),
-            })?;
-            let config = GitConfig::from(parser);
-            let value = config.get_raw_value(section, subsection, key).ok();
-
-            Ok(value.map(|v| String::from_utf8_lossy(&v).into_owned()))
-        } else {
-            Ok(None)
-        }
-    }
-
     match key {
         "user.name" => get_git_config_value_if_exists(config, "user", None, "name"),
         "user.email" => get_git_config_value_if_exists(config, "user", None, "email"),
