@@ -80,7 +80,7 @@ impl VoltCommand for Init {
             name: String::from(PACKAGE_JSON),
         })?;
 
-        file.write(serde_json::to_string_pretty(&data).unwrap().as_bytes())
+        file.write(data.into_string().as_bytes())
             .map_err(|e| VoltError::WriteFileError {
                 source: e,
                 name: String::from(PACKAGE_JSON),
