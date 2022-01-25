@@ -197,14 +197,24 @@ impl VoltCommand for Add {
                 let mut node_modules_directory = config.node_modules().unwrap();
 
                 // path to the package directory
-                let mut package_directory = node_modules_directory.join(".volt").join(format!(
-                    "{}@{}",
-                    &name,
-                    requested.as_ref().unwrap().to_string()
-                ));
+                let mut package_directory = node_modules_directory
+                    .join(".volt")
+                    .join(format!(
+                        "{}@{}",
+                        &name,
+                        requested.as_ref().unwrap().to_string()
+                    ))
+                    .join("node_modules/")
+                    .join(&name);
 
                 // path to the symlink
                 let mut target_directory = node_modules_directory.join(name);
+
+                println!(
+                    "{} -> {}",
+                    package_directory.display(),
+                    target_directory.display()
+                );
 
                 #[cfg(windows)]
                 junction::create(package_directory, target_directory).unwrap_or_else(|e| {
