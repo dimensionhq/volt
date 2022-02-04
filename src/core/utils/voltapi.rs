@@ -24,7 +24,7 @@ pub struct VoltResponse {
     pub tree: HashMap<String, VoltPackage>, // the flattened dependency tree for the latest version of the package <name@version, data>
 }
 
-#[derive(Debug, Clone, Writable, Readable)]
+#[derive(Serialize, Deserialize, Debug, Clone, Writable, Readable)]
 pub struct VoltPackage {
     pub name: String,                                       // the name of the package
     pub version: String,                                    // the version of the package

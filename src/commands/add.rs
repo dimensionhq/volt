@@ -21,8 +21,11 @@ use std::{collections::HashMap, time::Instant};
 use crate::{
     cli::{VoltCommand, VoltConfig},
     core::net::fetch_dep_tree,
-    core::utils::{install_package, State},
     core::utils::{package::PackageJson, voltapi::VoltPackage},
+    core::{
+        model::lock_file::LockFile,
+        utils::{install_package, State},
+    },
 };
 
 use async_trait::async_trait;
@@ -44,6 +47,11 @@ pub struct Add {
 #[async_trait]
 impl VoltCommand for Add {
     async fn exec(self, config: VoltConfig) -> miette::Result<()> {
+        let mut global_lock_file =
+            LockFile::load(config.home()?.join(".global.lock"), true).unwrap();
+
+        // let local_lock_file =
+
         let bar = ProgressBar::new_spinner()
             .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"));
 
@@ -69,7 +77,7 @@ impl VoltCommand for Add {
                 } = package
                 {
                     // recieve the version of a package that has been requested from the response
-                    if name.to_string() == response.name {
+                    if *name == response.name {
                         requested_packages.push(PackageSpec::Npm {
                             scope: scope.to_owned(),
                             name: name.to_owned(),
@@ -171,6 +179,8 @@ impl VoltCommand for Add {
 
         tree.values()
             .map(|data| {
+                // global_lock_file.dependencies.
+
                 install_package(
                     &config,
                     data,
@@ -199,11 +209,7 @@ impl VoltCommand for Add {
                 // path to the package directory
                 let mut package_directory = node_modules_directory
                     .join(".volt")
-                    .join(format!(
-                        "{}@{}",
-                        &name,
-                        requested.as_ref().unwrap().to_string()
-                    ))
+                    .join(format!("{}@{}", &name, requested.as_ref().unwrap()))
                     .join("node_modules/")
                     .join(&name);
 

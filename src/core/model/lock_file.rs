@@ -16,15 +16,18 @@
 
 use miette::Result;
 use serde::{de, ser, Deserialize, Deserializer, Serialize, Serializer};
+use speedy::{Readable, Writable};
 use thiserror::Error;
 
 use std::{
     collections::{hash_map::DefaultHasher, BTreeMap, HashMap},
     fs::File,
     hash::{Hash, Hasher},
-    io::{self, BufWriter},
+    io::{self, BufReader, BufWriter, Write},
     path::{Path, PathBuf},
 };
+
+use crate::core::utils::voltapi::VoltPackage;
 
 #[derive(Error, Debug)]
 pub enum LockFileError {
@@ -61,115 +64,50 @@ pub enum LockFileError {
 /// // Save changes to disk
 /// lock_file.save().expect("Unable to save lock file");
 /// ```
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Writable, Readable, Serialize, Deserialize)]
 pub struct LockFile {
-    pub path: PathBuf,
-    #[serde(serialize_with = "sorted_dependencies")]
-    pub dependencies: HashMap<DependencyID, DependencyLock>,
-}
-
-// #[derive(Clone, Serialize, Deserialize, Debug, Default)]
-// pub struct DependenciesMap(
-// );
-
-#[derive(Clone, Debug, PartialOrd, Ord)]
-pub struct DependencyID(pub String, pub String);
-
-impl From<(String, String)> for DependencyID {
-    fn from(info: (String, String)) -> Self {
-        Self(info.0, info.1)
-    }
-}
-
-fn sorted_dependencies<S>(
-    value: &HashMap<DependencyID, DependencyLock>,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let ordered: BTreeMap<_, _> = value.iter().collect();
-    ordered.serialize(serializer)
-}
-
-impl<'de> de::Deserialize<'de> for DependencyID {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s: &str = Deserialize::deserialize(deserializer)?;
-        let mut parts = s.split('@');
-        let name = parts
-            .next()
-            .ok_or_else(|| de::Error::custom("missing dependency name"))?;
-        let version = parts
-            .next()
-            .ok_or_else(|| de::Error::custom("missing dependency version"))?;
-        Ok(Self(name.to_string(), version.to_string()))
-    }
-}
-
-impl ser::Serialize for DependencyID {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        Serialize::serialize(&format!("{}@{}", self.0, self.1), serializer)
-    }
-}
-
-impl Hash for DependencyID {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write(format!("{}@{}", self.0, self.1).as_bytes());
-    }
-}
-
-impl PartialEq for DependencyID {
-    fn eq(&self, other: &Self) -> bool {
-        let mut state = DefaultHasher::new();
-        self.hash(&mut state);
-        let mut state_2 = DefaultHasher::new();
-        other.hash(&mut state_2);
-        state.finish() == state_2.finish()
-    }
-}
-
-impl Eq for DependencyID {}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct DependencyLock {
-    pub name: String,
-    pub version: String,
-    pub tarball: String,
-    pub integrity: String,
-    pub dependencies: Vec<String>,
+    pub path: String,
+    #[speedy(skip)]
+    pub global: bool,
+    #[speedy(skip)]
+    pub dependencies: HashMap<String, VoltPackage>,
 }
 
 impl LockFile {
     /// Creates a new instance of a lock file with a path it should be saved at.
     /// It can be saved to the file by calling [`Self::save()`].
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+    pub fn new<P: AsRef<Path>>(path: P, global: bool) -> Self {
         Self {
-            path: path.as_ref().to_owned(),
+            path: path.as_ref().to_str().unwrap().to_string(),
+            global,
             dependencies: HashMap::with_capacity(1), // We will be installing at least 1 dependency
         }
     }
 
+    pub fn add(package: VoltPackage) {}
+
     /// Loads a lock file from the given path.
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, LockFileError> {
+    pub fn load<P: AsRef<Path>>(path: P, global: bool) -> Result<Self, LockFileError> {
         let path = path.as_ref();
 
         let dependencies = if path.exists() {
             let f = File::open(path).map_err(LockFileError::IO)?;
-            serde_json::from_reader(f).map_err(LockFileError::Decode)?
+            let reader = BufReader::new(f);
+
+            if global {
+                LockFile::read_from_buffer(reader.buffer()).unwrap()
+            } else {
+                serde_json::from_reader(reader).unwrap()
+            }
         } else {
-            HashMap::with_capacity(1)
+            LockFile {
+                path: path.to_str().unwrap().to_string(),
+                global,
+                dependencies: HashMap::new(),
+            }
         };
 
-        Ok(Self {
-            path: path.to_owned(),
-            dependencies,
-        })
+        Ok(dependencies)
     }
 
     // Saves a lock file dumping pretty, formatted json
@@ -181,9 +119,12 @@ impl LockFile {
 
     // Saves a lock file to the same path it was opened from.
     pub fn save(&self) -> Result<()> {
-        let lock_file = File::create(&self.path).unwrap();
-        let writer = BufWriter::new(lock_file);
-        serde_yaml::to_writer(writer, &self.dependencies).unwrap();
+        let mut lock_file = File::create(&self.path).unwrap();
+
+        lock_file
+            .write_all(&self.dependencies.write_to_vec().unwrap())
+            .unwrap();
+
         Ok(())
     }
 }
