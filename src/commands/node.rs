@@ -152,37 +152,6 @@ pub enum NodeCommand {
     Remove(NodeRemove),
 }
 
-/// Switch current node version
-#[derive(Debug, Parser)]
-pub struct NodeUse {
-    /// Version to use
-    version: String,
-}
-
-#[async_trait]
-impl VoltCommand for NodeUse {
-    async fn exec(self, config: VoltConfig) -> Result<()> {
-        if PLATFORM == Os::Windows {
-            #[cfg(target_os = "windows")]
-            use_windows(self.version).await;
-        } else if PLATFORM == Os::Linux {
-            let homedir = dirs::home_dir().unwrap();
-            let node_path = format!("{}/.volt/Node/{}/node", homedir.display(), self.version);
-            let path = Path::new(&node_path);
-
-            if path.exists() {
-                let link_dir = format!("{}/.local/bin", homedir.display());
-                let link = format!("{}/{}", link_dir, "node.exe");
-                //let symlink = std::os::unix::fs::symlink(node_path, link);
-            } else {
-                println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", self.version)
-            }
-        }
-
-        Ok(())
-    }
-}
-
 /// Install one or more versions of node
 #[derive(Debug, Parser)]
 pub struct NodeInstall {
@@ -381,41 +350,77 @@ impl VoltCommand for NodeRemove {
     }
 }
 
+/// Switch current node version
+#[derive(Debug, Parser)]
+pub struct NodeUse {
+    /// Version to use
+    version: String,
+}
+
+#[async_trait]
+impl VoltCommand for NodeUse {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
+        if PLATFORM == Os::Windows {
+            #[cfg(target_os = "windows")]
+            use_windows(self.version).await;
+        } else if PLATFORM == Os::Linux {
+            let homedir = dirs::home_dir().unwrap();
+            let node_path = format!("{}/.volt/Node/{}/node", homedir.display(), self.version);
+            let path = Path::new(&node_path);
+
+            if path.exists() {
+                let link_dir = format!("{}/.local/bin", homedir.display());
+                let link = format!("{}/{}", link_dir, "node.exe");
+                //let symlink = std::os::unix::fs::symlink(node_path, link);
+            } else {
+                println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", self.version)
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(target_os = "windows")]
 async fn use_windows(version: String) {
-    let homedir = dirs::home_dir().unwrap();
-    let node_path = format!(
-        "{}\\AppData\\Local\\Volt\\Node\\{}\\node.exe",
-        homedir.display(),
-        version
-    );
+    let node_path = dirs::data_dir().unwrap()
+        .join("volt")
+        .join("node")
+        .join(&version)
+        .join("node.exe");
     let path = Path::new(&node_path);
 
     if path.exists() {
         println!("Using version {}", version);
-        let link_dir = format!("{}\\AppData\\Local\\Volt\\bin", homedir.display());
-        fs::create_dir_all(&link_dir).await.unwrap();
-        let link_file = format!("{}\\AppData\\Local\\Volt\\bin\\node.exe", homedir.display());
+
+        let link_dir = dirs::data_dir().unwrap()
+            .join("volt")
+            .join("bin")
+            .into_os_string()
+            .into_string()
+            .unwrap();
+
+        let link_file = dirs::data_dir().unwrap()
+            .join("volt")
+            .join("bin")
+            .join("node.exe");
         let link_file = Path::new(&link_file);
+
         if link_file.exists() {
             fs::remove_file(link_file).await.unwrap();
         }
-        let link = format!("{}\\{}", link_dir, "node.exe");
-        println!("{}\n{}", node_path, link);
 
-        let symlink = std::os::windows::fs::symlink_file(node_path, link);
+        let symlink = std::fs::copy(node_path, link_file);
 
         match symlink {
             Ok(_) => {}
             Err(_) => {
-                println!("Error: \"volt node use\" must be run as an administrator on Windows!")
+                println!("Sorry, something went wrong.");
             }
         }
 
         let path = env::var("PATH").unwrap();
-        //println!("{}", path);
         if !path.contains(&link_dir) {
-            //env_perm::append("PATH", &link_dir);
             let command = format!("[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + '{}', 'User')", &link_dir);
             Command::new("Powershell")
                 .args(&["-Command", &command])
