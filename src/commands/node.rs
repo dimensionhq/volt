@@ -326,6 +326,13 @@ pub struct NodeRemove {
 #[async_trait]
 impl VoltCommand for NodeRemove {
     async fn exec(self, config: VoltConfig) -> Result<()> {
+        let usedversion = {
+            let vfpath = dirs::data_dir().unwrap().join("volt").join("current");
+            let vfpath = Path::new(&vfpath);
+            let version = std::fs::read_to_string(vfpath).unwrap();
+            version
+        };
+
         for version in self.versions {
             let node_path = dirs::data_dir()
                 .unwrap()
@@ -343,6 +350,19 @@ impl VoltCommand for NodeRemove {
                     "Failed to remove NodeJS version {}.\nThat version was not installed.",
                     version
                 );
+            }
+
+            if usedversion == version {
+                if PLATFORM == Os::Windows {
+                    let link_file = dirs::data_dir()
+                        .unwrap()
+                        .join("volt")
+                        .join("bin")
+                        .join("node.exe");
+                    let link_file = Path::new(&link_file);
+
+                    std::fs::remove_file(link_file);
+                }
             }
         }
 
@@ -383,7 +403,8 @@ impl VoltCommand for NodeUse {
 
 #[cfg(target_os = "windows")]
 async fn use_windows(version: String) {
-    let node_path = dirs::data_dir().unwrap()
+    let node_path = dirs::data_dir()
+        .unwrap()
         .join("volt")
         .join("node")
         .join(&version)
@@ -393,14 +414,16 @@ async fn use_windows(version: String) {
     if path.exists() {
         println!("Using version {}", version);
 
-        let link_dir = dirs::data_dir().unwrap()
+        let link_dir = dirs::data_dir()
+            .unwrap()
             .join("volt")
             .join("bin")
             .into_os_string()
             .into_string()
             .unwrap();
 
-        let link_file = dirs::data_dir().unwrap()
+        let link_file = dirs::data_dir()
+            .unwrap()
             .join("volt")
             .join("bin")
             .join("node.exe");
@@ -410,14 +433,19 @@ async fn use_windows(version: String) {
             fs::remove_file(link_file).await.unwrap();
         }
 
-        let symlink = std::fs::copy(node_path, link_file);
+        let newfile = std::fs::copy(node_path, link_file);
 
-        match symlink {
+        match newfile {
             Ok(_) => {}
             Err(_) => {
                 println!("Sorry, something went wrong.");
+                return;
             }
         }
+
+        let vfpath = dirs::data_dir().unwrap().join("volt").join("current");
+        let vfpath = Path::new(&vfpath);
+        let vfile = std::fs::write(vfpath, version);
 
         let path = env::var("PATH").unwrap();
         if !path.contains(&link_dir) {
