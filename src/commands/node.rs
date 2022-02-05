@@ -384,14 +384,23 @@ impl VoltCommand for NodeUse {
             #[cfg(target_os = "windows")]
             use_windows(self.version).await;
         } else if PLATFORM == Os::Linux {
-            let homedir = dirs::home_dir().unwrap();
-            let node_path = format!("{}/.volt/Node/{}/node", homedir.display(), self.version);
+            let node_path = dirs::data_dir()
+                .unwrap()
+                .join("volt")
+                .join("node")
+                .join(&version)
+                .join("node.exe");
             let path = Path::new(&node_path);
 
             if path.exists() {
-                let link_dir = format!("{}/.local/bin", homedir.display());
-                let link = format!("{}/{}", link_dir, "node.exe");
-                //let symlink = std::os::unix::fs::symlink(node_path, link);
+                let usepath = dirs::data_dir()
+                    .unwrap()
+                    .join(".local")
+                    .join("bin")
+                    .join("node.exe");
+                let usepath = Path::new(&usepath);
+
+                std::fs::copy(path, usepath);
             } else {
                 println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", self.version)
             }
