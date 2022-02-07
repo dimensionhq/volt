@@ -341,12 +341,16 @@ impl VoltCommand for NodeInstall {
 
             let content = response.bytes().await.unwrap();
 
-            if cfg!(target_os = "windows") {
+            #[cfg(target_os = "windows")]
+            {
                 println!("Installing node.exe");
                 std::fs::create_dir_all(&node_path).unwrap();
                 let mut dest = File::create(node_path.join(&fname)).unwrap();
                 dest.write_all(&content).unwrap();
-            } else {
+            }
+
+            #[cfg(target_os = "unix")]
+            {
                 // Path to write the decompressed tarball to
                 let tarpath = &dir.path().join(&fname.strip_suffix(".xz").unwrap());
 
