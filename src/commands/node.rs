@@ -160,10 +160,11 @@ pub struct NodeUse {
 #[async_trait]
 impl VoltCommand for NodeUse {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        if PLATFORM == Os::Windows {
-            #[cfg(target_os = "windows")]
-            use_windows(self.version).await;
-        } else if PLATFORM == Os::Linux {
+        #[cfg(target_os = "windows")]
+        use_windows(self.version).await;
+
+        #[cfg(target_os = "unix")]
+        {
             let node_path = get_node_path(&self.version);
 
             if node_path.exists() {
