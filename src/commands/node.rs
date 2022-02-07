@@ -21,18 +21,16 @@ use std::{
     fmt::Display,
     fs::File,
     io::{BufReader, Write},
-    path::Path,
+    path::{Path, PathBuf},
     process::Command,
     str,
 };
 
 use async_trait::async_trait;
 use base64::decode;
+use clap::Parser;
 use clap::{ArgMatches, Subcommand};
 use futures::io;
-use lzma_rs::xz_decompress;
-//use lz4_flex;
-use clap::Parser;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
@@ -152,6 +150,73 @@ pub enum NodeCommand {
     Remove(NodeRemove),
 }
 
+/// Switch current node version
+#[derive(Debug, Parser)]
+pub struct NodeUse {
+    /// Version to use
+    version: String,
+}
+
+#[async_trait]
+impl VoltCommand for NodeUse {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
+        if PLATFORM == Os::Windows {
+            #[cfg(target_os = "windows")]
+            use_windows(self.version).await;
+        } else if PLATFORM == Os::Linux {
+            let node_path = get_node_path(&self.version);
+
+            if node_path.exists() {
+                let link_dir = dirs::home_dir().unwrap().join(".local").join("bin");
+
+                let to_install = node_path.join("bin");
+                let current = node_path.parent().unwrap().join("current");
+
+                // TODO: Handle file deletion errors
+                if current.exists() {
+                    // Remove all the currently installed links
+                    for f in std::fs::read_dir(&current).unwrap() {
+                        let original = f.unwrap().file_name();
+                        let installed = link_dir.join(&original);
+                        if installed.exists() {
+                            std::fs::remove_file(installed).unwrap();
+                        }
+                    }
+
+                    // Remove the old link
+                    std::fs::remove_file(&current).unwrap();
+
+                    // Make a new one to the currently installed version
+                    std::os::unix::fs::symlink(&to_install, current).unwrap();
+                } else {
+                    println!("Installing first version");
+                    std::os::unix::fs::symlink(&to_install, current).unwrap();
+                }
+
+                for f in std::fs::read_dir(&to_install).unwrap() {
+                    let original = f.unwrap().path();
+                    let fname = original.file_name().unwrap();
+                    let link = link_dir.join(fname);
+
+                    println!("Linking to {:?} from {:?}", link, original);
+
+                    // TODO: Do something with this error
+                    let _ = std::fs::remove_file(&link);
+
+                    // INFO: DOC: Need to run `rehash` in zsh for the changes to take effect
+                    // maybe ship `vnm` as a shell function to run `volt node use ... && rehash` on
+                    // zsh?
+                    let _symlink = std::os::unix::fs::symlink(original, link).unwrap();
+                }
+            } else {
+                println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", self.version)
+            }
+        }
+
+        Ok(())
+    }
+}
+
 /// Install one or more versions of node
 #[derive(Debug, Parser)]
 pub struct NodeInstall {
@@ -174,7 +239,7 @@ impl VoltCommand for NodeInstall {
 
         let mirror = "https://nodejs.org/dist";
 
-        let _node_versions: Vec<NodeVersion> = reqwest::get(format!("{}/index.json", mirror))
+        let node_versions: Vec<NodeVersion> = reqwest::get(format!("{}/index.json", mirror))
             .await
             .unwrap()
             .json()
@@ -183,80 +248,83 @@ impl VoltCommand for NodeInstall {
 
         for v in self.versions {
             let mut download_url = format!("{}/", mirror);
-            if v.parse::<Version>().is_ok() {
-                if ARCH == Arch::X86 && (PLATFORM == Os::Macos || PLATFORM == Os::Linux) {
-                    let major = v.split('.').next().unwrap().parse::<u8>().unwrap();
 
-                    if major >= 10 {
-                        println!("32 bit versions are not available for macos and linux after version 10.0.0!");
-                        return Ok(());
-                    }
-                }
-
-                let mut found = false;
-                for n in &_node_versions {
-                    if v == n.version.to_string() {
-                        download_url = format!("{}v{}", download_url, n.version);
-                        found = true;
-                        tracing::debug!("found version '{}' with URL '{}'", v, download_url);
-                    }
-                }
-
-                if !found {
-                    println!("Unable to find version {}!", v);
+            let version: Option<Version> = if let Ok(ver) = v.parse() {
+                if cfg!(all(unix, target_arch = "X86")) && ver >= Version::parse("10.0.0").unwrap()
+                {
+                    println!("32 bit versions are not available for MacOS and Linux after version 10.0.0!");
                     continue;
                 }
 
-                download_url = if cfg!(target_os = "windows") {
-                    format!("{}/win-{}/node.exe", download_url, ARCH)
-                } else {
-                    format!("{}/node-v{}-{}-{}.tar.xz", download_url, v, PLATFORM, ARCH)
-                };
+                // TODO: Maybe suggest the closest available version if not found?
 
-                tracing::debug!("Got final URL '{}'", download_url);
-            } else if v.parse::<Range>().is_ok() {
-                //
-                // TODO: Handle ranges with special chars like ^10.3
-                //
-
-                if ARCH == Arch::X86 && (PLATFORM == Os::Macos || PLATFORM == Os::Linux) {
-                    let major = v.split('.').next().unwrap();
-                    if major.parse::<u8>().unwrap() >= 10 {
-                        println!("32 bit versions are not available for macos and linux after version 10.0.0!");
-                        return Ok(());
+                let mut found = false;
+                for n in &node_versions {
+                    if v == n.version.to_string() {
+                        tracing::debug!("found version '{}' with URL '{}'", v, download_url);
+                        found = true;
+                        break;
                     }
                 }
-                todo!("Need to handle ranges");
+
+                if found {
+                    Some(ver)
+                } else {
+                    None
+                }
+            } else if let Ok(ver) = v.parse::<Range>() {
+                //volt install ^12
+                let max_ver = node_versions
+                    .iter()
+                    .filter(|x| x.version.satisfies(&ver))
+                    .map(|v| v.version.clone())
+                    .max();
+
+                if cfg!(all(unix, target_arch = "X86"))
+                    && Range::parse(">=10").unwrap().allows_any(&ver)
+                {
+                    println!("32 bit versions are not available for macos and linux after version 10.0.0!");
+                    continue;
+                }
+
+                max_ver
             } else {
                 println!("Unable to download {} -- not a valid version!", v);
                 continue;
+            };
+
+            if version.is_none() {
+                println!("Unable to find version {}!", v);
+                continue;
             }
+
+            let version = version.unwrap();
+
+            download_url = format!("{}v{}/", download_url, version);
+
+            download_url = if cfg!(target_os = "windows") {
+                format!("{}/win-{}/node.exe", download_url, ARCH)
+            } else {
+                format!(
+                    "{}node-v{}-{}-{}.tar.xz",
+                    download_url, version, PLATFORM, ARCH
+                )
+            };
+
+            println!("\n------------\n{}\n------------\n", download_url);
+
+            println!("Got final URL '{}'", download_url);
 
             let node_path = {
                 let datadir = dirs::data_dir().unwrap().join("volt").join("node");
                 if !datadir.exists() {
-                    fs::create_dir_all(&datadir).await.unwrap();
+                    std::fs::create_dir_all(&datadir).unwrap();
                 }
                 datadir
             };
-            // Get the name of the directory the tarball unpacks to
-            let unpack_loc = if cfg!(target_os = "windows") {
-                &v // Windows locations are just saved in a folder named after the version number
-                   // e.g. C:\Users\Alice\AppData\Roaming\volt\node\12.2.0
-            } else {
-                // The unix folders are just created by the tarball,
-                // which is the basename of the file
-                download_url
-                    .split('/')
-                    .last()
-                    .unwrap()
-                    .strip_suffix(".tar.xz")
-                    .unwrap()
-            };
 
-            let node_path = node_path.join(unpack_loc);
-            if node_path.exists() {
-                println!("Node.js v{} is already installed, nothing to do!", v);
+            if node_path.join(version.to_string()).exists() {
+                println!("Node.js v{} is already installed, nothing to do!", version);
                 continue;
             }
 
@@ -265,7 +333,7 @@ impl VoltCommand for NodeInstall {
             // The name of the file we're downloading from the mirror
             let fname = download_url.split('/').last().unwrap().to_string();
 
-            println!("Installing version {} from {} ", v, download_url);
+            println!("Installing version {} from {} ", version, download_url);
             println!("file to download: '{}'", fname);
 
             let response = reqwest::get(&download_url).await.unwrap();
@@ -273,47 +341,67 @@ impl VoltCommand for NodeInstall {
             let content = response.bytes().await.unwrap();
 
             if cfg!(target_os = "windows") {
-                fs::create_dir_all(&node_path).await.unwrap();
+                println!("Installing node.exe");
+                std::fs::create_dir_all(&node_path).unwrap();
                 let mut dest = File::create(node_path.join(&fname)).unwrap();
                 dest.write_all(&content).unwrap();
             } else {
-                // TODO: Need to use https://github.com/fpgaminer/rust-lzma on linux
-                // (if liblzma is widely available on distros) since it's way faster than
-                // lzma_rs, but depends on the native lzma library being installed.
-                // Need to check if `brew install xzip` will install it on osx, I think so.
+                // Path to write the decompressed tarball to
+                let tarpath = &dir.path().join(&fname.strip_suffix(".xz").unwrap());
 
-                // File to write the download to
-                let mut dest = File::create(dir.path().join(&fname)).unwrap();
+                println!("Unzipping...");
 
-                // File to write the decompressed tarball to
-                let mut tarball =
-                    File::create(dir.path().join(&fname.strip_suffix(".xz").unwrap())).unwrap();
+                println!("Tar path: {:?}", tarpath);
 
-                dest.write_all(&content).unwrap();
-
-                xz_decompress(
-                    &mut BufReader::new(File::open(dir.path().join(&fname)).unwrap()),
-                    &mut tarball,
-                )
-                .unwrap();
+                // Decompress the tarball
+                let mut tarball = File::create(tarpath).unwrap();
+                tarball
+                    .write_all(&lzma::decompress(&content).unwrap())
+                    .unwrap();
 
                 // Make sure the first file handle is closed
                 drop(tarball);
 
                 // Have to reopen it for reading, File::create() opens for write only
-                let tarball =
-                    File::open(dir.path().join(&fname.strip_suffix(".xz").unwrap())).unwrap();
+                let tarball = File::open(&tarpath).unwrap();
 
-                // Unpack the tarball to the right spot
-                let mut ar = tar::Archive::new(tarball);
-                ar.unpack(node_path).unwrap();
+                println!("Unpacking...");
+
+                // Unpack the tarball
+                let mut w = tar::Archive::new(tarball);
+                w.unpack(&node_path).unwrap();
+
+                // TODO: Find a less disgusting way to do this?
+                // Grab the name of the folder the tarball will extract to
+                let p = tarpath
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .to_owned()
+                    .unwrap()
+                    .strip_suffix(".tar")
+                    .unwrap();
+
+                let from = node_path.join(&p);
+                let to = node_path.join(&version.to_string());
+
+                // Rename the folder from the default set by the tarball
+                // to just the version number
+                std::fs::rename(from, to);
             }
 
-            println!("\n---\n");
+            println!("Done!");
         }
-
         Ok(())
     }
+}
+
+fn get_node_path(version: &str) -> PathBuf {
+    dirs::data_dir()
+        .unwrap()
+        .join("volt")
+        .join("node")
+        .join(&version)
 }
 
 /// Uninstall a specified version of node
@@ -334,11 +422,7 @@ impl VoltCommand for NodeRemove {
         };
 
         for version in self.versions {
-            let node_path = dirs::data_dir()
-                .unwrap()
-                .join("volt")
-                .join("node")
-                .join(&version);
+            let node_path = get_node_path(&version);
 
             println!("{}", node_path.display());
 
@@ -363,46 +447,6 @@ impl VoltCommand for NodeRemove {
 
                     std::fs::remove_file(link_file);
                 }
-            }
-        }
-
-        Ok(())
-    }
-}
-
-/// Switch current node version
-#[derive(Debug, Parser)]
-pub struct NodeUse {
-    /// Version to use
-    version: String,
-}
-
-#[async_trait]
-impl VoltCommand for NodeUse {
-    async fn exec(self, config: VoltConfig) -> Result<()> {
-        if PLATFORM == Os::Windows {
-            #[cfg(target_os = "windows")]
-            use_windows(self.version).await;
-        } else if PLATFORM == Os::Linux {
-            let node_path = dirs::data_dir()
-                .unwrap()
-                .join("volt")
-                .join("node")
-                .join(&version)
-                .join("node.exe");
-            let path = Path::new(&node_path);
-
-            if path.exists() {
-                let usepath = dirs::data_dir()
-                    .unwrap()
-                    .join(".local")
-                    .join("bin")
-                    .join("node.exe");
-                let usepath = Path::new(&usepath);
-
-                std::fs::copy(path, usepath);
-            } else {
-                println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", self.version)
             }
         }
 
@@ -469,59 +513,3 @@ async fn use_windows(version: String) {
         println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", version);
     }
 }
-
-/*#[async_trait]
-  impl Command for Node {
-/// Display a help menu for the `volt add` command.
-fn help() -> String {
-format!(
-r#"volt {}
-
-Manage NodeJS versions
-Usage: {} {} {} {}
-Options:
-
-{} {} Output the version number.
-{} {} Output verbose messages on internal operations.
-{} {} Adds package as a dev dependency
-{} {} Disable progress bar."#,
-VERSION.bright_green().bold(),
-"volt".bright_green().bold(),
-"add".bright_purple(),
-"[packages]".white(),
-"[flags]".white(),
-"--version".blue(),
-"(-ver)".yellow(),
-"--verbose".blue(),
-"(-v)".yellow(),
-"--dev".blue(),
-"(-D)".yellow(),
-"--no-progress".blue(),
-"(-np)".yellow()
-)
-}
-
-/// Execute the `volt node` command
-///
-/// Adds a package to dependencies for your project.
-/// ## Arguments
-/// * `app` - Instance of the command (`Arc<App>`)
-/// ## Examples
-/// ```rust
-/// // Add react to your dependencies with logging level verbose
-/// // .exec() is an async call so you need to await it
-/// Add.exec(app).await;
-/// ```
-/// ## Returns
-/// * `Result<()>`
-async fn exec(app: Arc<App>) -> Result<()> {
-println!("In Node Exec!");
-let x = app.get_packages();
-let x = x.unwrap();
-for a in x {
-println!("{:?}", a);
-break;
-}
-Ok(())
-}
-}*/

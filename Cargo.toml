@@ -2,8 +2,8 @@
 name = "volt"
 version = "0.0.3"
 authors = [
-    "Tejas Ravishankar <xtremedevx@gmail.com>",
-    "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
+  "Tejas Ravishankar <xtremedevx@gmail.com>",
+  "Volt Contributors (https://github.com/voltpkg/volt/graphs/contributors)",
 ]
 license = "Apache-2.0"
 description = "A fast, memory-safe package manager for the web."
@@ -16,10 +16,10 @@ async-trait = "0.1.51"
 base64 = "0.13.0"
 bytes = "1.1.0"
 clap = { version = "3.0.0", features = [
-    "derive",
-    "cargo",
-    "std",
-    "color",
+  "derive",
+  "cargo",
+  "std",
+  "color",
 ], default-features = false }
 colored = "2.0.0"
 dialoguer = "0.9.0"
@@ -35,7 +35,7 @@ miette = { version = "3.2.0", features = ["fancy"] }
 rand = "0.8.4"
 regex = "1.5.4"
 reqwest = { version = "0.11.4", features = [
-    "json",
+  "json",
     "rustls-tls",
 ], default-features = false }
 node-semver = "2.0.0"
@@ -57,7 +57,7 @@ tracing = "0.1.29"
 tracing-subscriber = { version = "0.3.1", features = ["env-filter"] }
 comfy-table = "5.0.0"
 urlencoding = "2.1.0"
-lzma-rs = "0.2.0"
+rust-lzma = "0.5.1"
 speedy = "0.8.0"
 libdeflater = "0.7.3"
 package-spec = { path = "crates/package-spec" }
@@ -65,7 +65,7 @@ hex = "0.4.3"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = [
-    "errhandlingapi",
+  "errhandlingapi",
     "fileapi",
     "guiddef",
     "handleapi",
