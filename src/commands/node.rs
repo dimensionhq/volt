@@ -160,10 +160,10 @@ pub struct NodeUse {
 #[async_trait]
 impl VoltCommand for NodeUse {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        #[cfg(target_os = "windows")]
+        #[cfg(target_family = "windows")]
         use_windows(self.version).await;
 
-        #[cfg(target_os = "unix")]
+        #[cfg(target_family = "unix")]
         {
             let node_path = get_node_path(&self.version);
 
