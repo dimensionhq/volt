@@ -367,6 +367,7 @@ impl VoltCommand for NodeInstall {
 
             #[cfg(target_family = "windows")]
             {
+                let node_path = node_path.join(&version.to_string());
                 //println!("Installing node.exe");
                 std::fs::create_dir_all(&node_path).unwrap();
                 let mut dest = File::create(node_path.join(&fname)).unwrap();
