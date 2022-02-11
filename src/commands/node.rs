@@ -40,7 +40,10 @@ use serde::{Deserialize, Deserializer};
 use tempfile::tempdir;
 use tokio::fs;
 
-use crate::cli::{VoltCommand, VoltConfig};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::utils::extensions::PathExtensions,
+};
 
 const PLATFORM: Os = if cfg!(target_os = "windows") {
     Os::Windows
@@ -142,7 +145,48 @@ impl VoltCommand for Node {
             NodeCommand::Use(x) => x.exec(config).await,
             NodeCommand::Install(x) => x.exec(config).await,
             NodeCommand::Remove(x) => x.exec(config).await,
+            NodeCommand::List(x) => x.exec(config).await,
         }
+    }
+}
+
+#[derive(Debug, Parser)]
+pub struct NodeList {}
+
+fn sort_versions(a: &String, b: &String) -> std::cmp::Ordering {
+    let a: Vec<i32> = a.split(".").map(|term| term.parse().unwrap()).collect();
+    let b: Vec<i32> = b.split(".").map(|term| term.parse().unwrap()).collect();
+    for ab in a.iter().zip(b.iter()) {
+        let (ai, bi) = ab;
+        let c = bi.cmp(ai);
+        if c == std::cmp::Ordering::Equal {
+            continue;
+        } else {
+            return c;
+        }
+    }
+    return std::cmp::Ordering::Equal;
+}
+
+#[async_trait]
+impl VoltCommand for NodeList {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
+        let node_path = dirs::data_dir().unwrap().join("volt").join("node");
+        let mut versions: Vec<String> = std::fs::read_dir(node_path)
+            .unwrap()
+            .map(|dir| match dir {
+                Ok(_) => dir.unwrap().path().file_name_as_string().unwrap(),
+                Err(_) => "ERROR".to_string(),
+            })
+            .collect();
+
+        versions.sort_by(|a, b| sort_versions(a, b));
+        println!("Installed versions:");
+        for version in versions {
+            println!("\t{}", version.truecolor(250, 150, 100));
+        }
+
+        Ok(())
     }
 }
 
@@ -151,6 +195,7 @@ pub enum NodeCommand {
     Use(NodeUse),
     Install(NodeInstall),
     Remove(NodeRemove),
+    List(NodeList),
 }
 
 /// Switch current node version
@@ -447,12 +492,7 @@ pub struct NodeRemove {
 #[async_trait]
 impl VoltCommand for NodeRemove {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        let usedversion = {
-            let vfpath = dirs::data_dir().unwrap().join("volt").join("current");
-            let vfpath = Path::new(&vfpath);
-            let version = std::fs::read_to_string(vfpath).unwrap();
-            version
-        };
+        let used_version = ""; //get_current_version();
 
         for version in self.versions {
             let node_path = get_node_path(&version);
@@ -469,16 +509,14 @@ impl VoltCommand for NodeRemove {
                 );
             }
 
-            if usedversion == version {
+            if used_version == version {
                 if PLATFORM == Os::Windows {
-                    let link_file = dirs::data_dir()
+                    let used_file = dirs::data_dir()
                         .unwrap()
                         .join("volt")
                         .join("bin")
                         .join("node.exe");
-                    let link_file = Path::new(&link_file);
-
-                    std::fs::remove_file(link_file);
+                    std::fs::remove_file(used_file);
                 }
             }
         }
@@ -486,15 +524,32 @@ impl VoltCommand for NodeRemove {
         Ok(())
     }
 }
+/*
+async fn get_current_version() -> String {
+    let path = {
+        if PLATFORM == Os::Windows {
+            dirs::data_dir()
+                .unwrap()
+                .join("volt")
+                .join("bin")
+                .join("node.exe")
+        } else {
+            dirs::home_dir().unwrap().join(".local").join("bin")
+        }
+    };
 
+    if path.exists() {
+        let meta = std::os::windows::fs::metadata(path)
+            .unwrap()
+            .file_attributes();
+    } else {
+        return "";
+    }
+}
+*/
 #[cfg(target_os = "windows")]
 async fn use_windows(version: String) {
-    let node_path = dirs::data_dir()
-        .unwrap()
-        .join("volt")
-        .join("node")
-        .join(&version)
-        .join("node.exe");
+    let node_path = get_node_path(&version).join("node.exe");
     let path = Path::new(&node_path);
 
     if path.exists() {
@@ -528,10 +583,6 @@ async fn use_windows(version: String) {
                 return;
             }
         }
-
-        let vfpath = dirs::data_dir().unwrap().join("volt").join("current");
-        let vfpath = Path::new(&vfpath);
-        let vfile = std::fs::write(vfpath, version);
 
         let path = env::var("PATH").unwrap();
         if !path.contains(&link_dir) {
