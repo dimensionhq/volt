@@ -541,15 +541,23 @@ async fn get_current_version() -> String {
 
     let mut v = match output {
         Ok(_) => String::from_utf8(output.unwrap().stdout).unwrap(),
-        Err(_) => String::from("Hidden\r\n"),
+        Err(_) => String::from("vHidden (check file permissions)"),
     };
-
-    if v == "" {
-        v = String::from("vNone\r\n");
+    for ch in v.chars() {
+        println!("t:{}", ch as u32);
     }
-
-    //trim leading 'v' and ending '/r/n' to leave only version number as a String
-    return v[1..v.len() - 2].to_string();
+    if v == "" {
+        v = String::from("vNone");
+    }
+    //trim trailing \r?\n (\r is windows only so this is an if statement)
+    if v.ends_with('\n') {
+        v.pop();
+        if v.ends_with('\r') {
+            v.pop();
+        }
+    }
+    //trim leading 'v'
+    return v[1..v.len()].to_string();
 }
 
 #[cfg(target_os = "windows")]
