@@ -178,6 +178,7 @@ impl VoltCommand for NodeList {
                 Ok(_) => dir.unwrap().path().file_name_as_string().unwrap(),
                 Err(_) => "ERROR".to_string(),
             })
+            .filter(|x| x != "current")
             .collect();
 
         versions.sort_by(|a, b| sort_versions(a, b));
@@ -543,12 +544,11 @@ async fn get_current_version() -> String {
         Ok(_) => String::from_utf8(output.unwrap().stdout).unwrap(),
         Err(_) => String::from("vHidden (check file permissions)"),
     };
-    for ch in v.chars() {
-        println!("t:{}", ch as u32);
-    }
+
     if v == "" {
         v = String::from("vNone");
     }
+
     //trim trailing \r?\n (\r is windows only so this is an if statement)
     if v.ends_with('\n') {
         v.pop();
@@ -556,6 +556,7 @@ async fn get_current_version() -> String {
             v.pop();
         }
     }
+
     //trim leading 'v'
     return v[1..v.len()].to_string();
 }
