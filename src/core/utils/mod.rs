@@ -35,7 +35,13 @@ use miette::{IntoDiagnostic, Result};
 use reqwest::Client;
 use ssri::{Algorithm, Integrity};
 
-use std::{ffi::OsStr, fs::read_to_string};
+use std::{
+    collections::HashMap,
+    ffi::OsStr,
+    fs::read_to_string,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 pub struct State {
     pub http_client: Client,
@@ -232,13 +238,12 @@ pub fn check_peer_dependency(_package_name: &str) -> bool {
 pub fn verify_existing_installation(
     package: &VoltPackage,
     config: &VoltConfig,
-) -> miette::Result<bool> {
+) -> miette::Result<Vec<u8>> {
     let volt_home = config.volt_home()?;
 
-    Ok(cacache::exists_sync(
-        &volt_home,
-        &Integrity::from(&package.integrity),
-    ))
+    let result = cacache::read_sync(volt_home, package.cacache_key()).into_diagnostic()?;
+
+    Ok(result)
 }
 
 pub fn verify_checksum(
@@ -326,36 +331,76 @@ pub async fn install_package(
     state: State,
 ) -> Result<()> {
     // Check if the package is already installed
-    if !verify_existing_installation(package, config)? {
-        // fetch the tarball from the registry
-        let response = fetch_tarball(package, state).await?;
+    match verify_existing_installation(package, config) {
+        Ok(value) => {
+            let cas_file_map: HashMap<PathBuf, Integrity> = serde_json::from_slice(&value).unwrap();
 
-        tokio::task::spawn_blocking({
-            let config = config.clone();
-            let package = package.clone();
-            move || -> Result<()> {
-                // verify the checksum
-                // (checksum is valid, calculated checksum)
-                let (verified, _checksum) = verify_checksum(&response, &package.integrity)?;
+            // Add package's directory to list of created directories
+            let mut created_directories: Vec<PathBuf> = vec![];
 
-                if verified {
-                    // decompress gzipped response
-                    let decompressed_response = decompress_gzip(&response)?;
+            let mut package_path = config.node_modules()?;
 
-                    // extract the tarball
-                    extract_tarball(decompressed_response, &package, &config)?;
+            package_path.push(".volt/");
+            package_path.push(format!("{}@{}", package.name, package.version));
+            package_path.push("node_modules/");
+            package_path.push(package.name.to_string());
 
-                    // generate symlinks
-                    link_dependencies(&package, &config)?;
-                } else {
-                    // TODO: handle checksum failure
+            for (name, hash) in cas_file_map.iter() {
+                let contents = cacache::read_hash(config.volt_home()?, hash)
+                    .await
+                    .into_diagnostic()?;
+
+                let file_path = package_path.join(name);
+
+                // If we haven't created this directory yet, create it
+                if !created_directories.iter().any(|p| p == &file_path) {
+                    if let Some(value) = name.parent() {
+                        created_directories.push(file_path.to_path_buf());
+                        std::fs::create_dir_all(&package_path.join(value)).into_diagnostic()?;
+                    }
                 }
 
-                Ok(())
+                // Write the contents to node_modules
+                let mut file = std::fs::File::create(&file_path).unwrap();
+
+                file.write_all(&contents).into_diagnostic()?;
             }
-        })
-        .await
-        .into_diagnostic()??;
+
+            // package already installed
+            // generate symlinks
+            // link_dependencies(package, config)?;
+        }
+        Err(_) => {
+            // fetch the tarball from the registry
+            let response = fetch_tarball(package, state).await?;
+
+            tokio::task::spawn_blocking({
+                let config = config.clone();
+                let package = package.clone();
+                move || -> Result<()> {
+                    // verify the checksum
+                    // (checksum is valid, calculated checksum)
+                    let (verified, _checksum) = verify_checksum(&response, &package.integrity)?;
+
+                    if verified {
+                        // decompress gzipped response
+                        let decompressed_response = decompress_gzip(&response)?;
+
+                        // extract the tarball
+                        extract_tarball(decompressed_response, &package, &config)?;
+
+                        // generate symlinks
+                        link_dependencies(&package, &config)?;
+                    } else {
+                        // TODO: handle checksum failure
+                    }
+
+                    Ok(())
+                }
+            })
+            .await
+            .into_diagnostic()??;
+        }
     }
 
     Ok(())

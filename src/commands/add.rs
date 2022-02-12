@@ -129,8 +129,6 @@ impl VoltCommand for Add {
 
         let client = Client::builder().use_rustls_tls().build().unwrap();
 
-        let start = Instant::now();
-
         // pnpm linking algorithm
         for value in tree.values() {
             // None means it's not platform-specific
@@ -175,12 +173,8 @@ impl VoltCommand for Add {
             .into_diagnostic()?;
         }
 
-        println!("{}", start.elapsed().as_secs_f32());
-
         tree.values()
             .map(|data| {
-                // global_lock_file.dependencies.
-
                 install_package(
                     &config,
                     data,
@@ -215,12 +209,6 @@ impl VoltCommand for Add {
 
                 // path to the symlink
                 let mut target_directory = node_modules_directory.join(name);
-
-                println!(
-                    "{} -> {}",
-                    package_directory.display(),
-                    target_directory.display()
-                );
 
                 #[cfg(windows)]
                 junction::create(package_directory, target_directory).unwrap_or_else(|e| {

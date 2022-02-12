@@ -93,20 +93,10 @@ pub fn extract_tarball(
         let mut buffer = Vec::with_capacity(entry.size() as usize);
         entry.read_to_end(&mut buffer).into_diagnostic()?;
 
-        let entry_path_string = entry
-            .path()
-            .into_diagnostic()?
-            .to_str()
-            .expect("valid utf-8")
-            .to_string();
+        let entry_path = entry.path().unwrap();
 
         // Remove `package/` from `package/lib/index.js`
-        let cleaned_entry_path_string =
-            if let Some(i) = entry_path_string.char_indices().position(|(_, c)| c == '/') {
-                &entry_path_string[i + 1..]
-            } else {
-                &entry_path_string[..]
-            };
+        let cleaned_entry_path_string = entry_path.strip_prefix("package/").unwrap();
 
         // Create the path to the local .volt directory
         let mut package_directory = config.node_modules()?.join(VoltConfig::VOLT_HOME);
@@ -151,7 +141,7 @@ pub fn extract_tarball(
         let sri = cacache::write_hash_sync(&config.volt_home()?, &buffer).into_diagnostic()?;
 
         // Insert the name of the file and map it to the hash of the file
-        cas_file_map.insert(entry_path_string, sri);
+        cas_file_map.insert(cleaned_entry_path_string.to_str().unwrap().to_string(), sri);
     }
 
     // Write the file, shasum map to the content-addressable store
