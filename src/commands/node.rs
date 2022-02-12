@@ -181,6 +181,10 @@ impl VoltCommand for NodeList {
             .collect();
 
         versions.sort_by(|a, b| sort_versions(a, b));
+        println!(
+            "Used version:\n\t{}",
+            get_current_version().await.truecolor(250, 150, 100)
+        );
         println!("Installed versions:");
         for version in versions {
             println!("\t{}", version.truecolor(250, 150, 100));
@@ -492,7 +496,7 @@ pub struct NodeRemove {
 #[async_trait]
 impl VoltCommand for NodeRemove {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        let used_version = ""; //get_current_version();
+        let used_version = get_current_version().await;
 
         for version in self.versions {
             let node_path = get_node_path(&version);
@@ -509,44 +513,45 @@ impl VoltCommand for NodeRemove {
                 );
             }
 
-            if used_version == version {
-                if PLATFORM == Os::Windows {
-                    let used_file = dirs::data_dir()
-                        .unwrap()
-                        .join("volt")
-                        .join("bin")
-                        .join("node.exe");
-                    std::fs::remove_file(used_file);
-                }
+            if used_version == version && PLATFORM == Os::Windows {
+                let used_file = dirs::data_dir()
+                    .unwrap()
+                    .join("volt")
+                    .join("bin")
+                    .join("node.exe");
+                std::fs::remove_file(used_file);
             }
         }
 
         Ok(())
     }
 }
-/*
+
 async fn get_current_version() -> String {
-    let path = {
+    let command = format!("node -v");
+    let output = {
         if PLATFORM == Os::Windows {
-            dirs::data_dir()
-                .unwrap()
-                .join("volt")
-                .join("bin")
-                .join("node.exe")
+            Command::new("Powershell")
+                .args(&["-Command", &command])
+                .output()
         } else {
-            dirs::home_dir().unwrap().join(".local").join("bin")
+            Command::new("sh").args(&["-c", &command]).output()
         }
     };
 
-    if path.exists() {
-        let meta = std::os::windows::fs::metadata(path)
-            .unwrap()
-            .file_attributes();
-    } else {
-        return "";
+    let mut v = match output {
+        Ok(_) => String::from_utf8(output.unwrap().stdout).unwrap(),
+        Err(_) => String::from("Hidden\r\n"),
+    };
+
+    if v == "" {
+        v = String::from("vNone\r\n");
     }
+
+    //trim leading 'v' and ending '/r/n' to leave only version number as a String
+    return v[1..v.len() - 2].to_string();
 }
-*/
+
 #[cfg(target_os = "windows")]
 async fn use_windows(version: String) {
     let node_path = get_node_path(&version).join("node.exe");
