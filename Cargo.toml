@@ -36,7 +36,7 @@ rand = "0.8.4"
 regex = "1.5.4"
 reqwest = { version = "0.11.4", features = [
   "json",
-    "rustls-tls",
+  "rustls-tls",
 ], default-features = false }
 node-semver = "2.0.0"
 cacache = "9.0.0"
@@ -68,15 +68,15 @@ rust-lzma = "0.5.1"
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = [
   "errhandlingapi",
-    "fileapi",
-    "guiddef",
-    "handleapi",
-    "ioapiset",
-    "processthreadsapi",
-    "securitybaseapi",
-    "winbase",
-    "winioctl",
-    "winnt",
+  "fileapi",
+  "guiddef",
+  "handleapi",
+  "ioapiset",
+  "processthreadsapi",
+  "securitybaseapi",
+  "winbase",
+  "winioctl",
+  "winnt",
 ] }
 junction = "0.2.0"
 scopeguard = "1.1.0"
