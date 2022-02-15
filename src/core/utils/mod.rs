@@ -29,7 +29,7 @@ use crate::{
 };
 
 use errors::VoltError;
-use futures::StreamExt;
+use futures::{StreamExt, TryFutureExt};
 use git_config::file::GitConfig;
 use git_config::parser::parse_from_str;
 use miette::{IntoDiagnostic, Result};
@@ -350,7 +350,7 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
                 let package_path_instance = package_path.clone();
                 let mut created_directories_instance = created_directories.clone();
 
-                tokio::task::spawn_blocking(move || {
+                let handle = tokio::task::spawn_blocking(move || {
                     let contents = cacache::read_hash_sync(
                         config_instance.clone().volt_home()?,
                         &hash_instance,
@@ -380,6 +380,11 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
                     file.write_all(&contents).into_diagnostic()?;
 
                     Ok(()) as Result<()>
+                });
+
+                handle.unwrap_or_else(|e| {
+                    eprintln!("{}", e);
+                    std::process::exit(1);
                 });
             }
         }
