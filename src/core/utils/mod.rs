@@ -1,17 +1,17 @@
 /*
-Copyright 2021 Volt Contributors
+    Copyright 2021 Volt Contributors
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 #[macro_use]
@@ -29,11 +29,13 @@ use crate::{
 };
 
 use errors::VoltError;
+use futures::StreamExt;
 use git_config::file::GitConfig;
 use git_config::parser::parse_from_str;
 use miette::{IntoDiagnostic, Result};
 use reqwest::Client;
 use ssri::{Algorithm, Integrity};
+use tokio::io::AsyncWriteExt;
 
 use std::{
     collections::HashMap,
@@ -325,13 +327,9 @@ pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::
 }
 
 /// Install a JavaScript package.
-pub async fn install_package(
-    config: &VoltConfig,
-    package: &VoltPackage,
-    state: State,
-) -> Result<()> {
+pub async fn install_package(config: VoltConfig, package: VoltPackage, state: State) -> Result<()> {
     // Check if the package is already installed
-    match verify_existing_installation(package, config) {
+    match verify_existing_installation(&package, &config) {
         Ok(value) => {
             let cas_file_map: HashMap<PathBuf, Integrity> = serde_json::from_slice(&value).unwrap();
 
@@ -346,33 +344,48 @@ pub async fn install_package(
             package_path.push(package.name.to_string());
 
             for (name, hash) in cas_file_map.iter() {
-                let contents = cacache::read_hash(config.volt_home()?, hash)
-                    .await
+                let name_instance = name.clone();
+                let hash_instance = hash.clone();
+                let config_instance = config.clone();
+                let package_path_instance = package_path.clone();
+                let mut created_directories_instance = created_directories.clone();
+
+                tokio::task::spawn_blocking(move || {
+                    let contents = cacache::read_hash_sync(
+                        config_instance.clone().volt_home()?,
+                        &hash_instance,
+                    )
                     .into_diagnostic()?;
 
-                let file_path = package_path.join(name);
+                    let name = name_instance.clone();
 
-                // If we haven't created this directory yet, create it
-                if !created_directories.iter().any(|p| p == &file_path) {
-                    if let Some(value) = name.parent() {
-                        created_directories.push(file_path.to_path_buf());
-                        std::fs::create_dir_all(&package_path.join(value)).into_diagnostic()?;
+                    let file_path = package_path_instance.clone().join(&name);
+
+                    // If we haven't created this directory yet, create it
+                    if !created_directories_instance
+                        .clone()
+                        .iter()
+                        .any(|p| p == &file_path)
+                    {
+                        if let Some(value) = name.parent() {
+                            created_directories_instance.push(file_path.to_path_buf());
+                            std::fs::create_dir_all(&package_path_instance.join(value))
+                                .into_diagnostic()?;
+                        }
                     }
-                }
 
-                // Write the contents to node_modules
-                let mut file = std::fs::File::create(&file_path).unwrap();
+                    // Write the contents to node_modules
+                    let mut file = std::fs::File::create(&file_path).unwrap();
 
-                file.write_all(&contents).into_diagnostic()?;
+                    file.write_all(&contents).into_diagnostic()?;
+
+                    Ok(()) as Result<()>
+                });
             }
-
-            // package already installed
-            // generate symlinks
-            // link_dependencies(package, config)?;
         }
         Err(_) => {
             // fetch the tarball from the registry
-            let response = fetch_tarball(package, state).await?;
+            let response = fetch_tarball(&package, state).await?;
 
             tokio::task::spawn_blocking({
                 let config = config.clone();

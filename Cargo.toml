@@ -22,7 +22,7 @@ clap = { version = "3.0.0", features = [
   "color",
 ], default-features = false }
 colored = "2.0.0"
-dialoguer = "0.9.0"
+dialoguer = "0.10.0"
 dirs = "4.0.0"
 futures = "0.3.17"
 futures-util = "0.3.17"
@@ -48,7 +48,7 @@ ssri = "7.0.0"
 tar = "0.4.37"
 thiserror = "1.0.30"
 tokio = { version = "1.13.0", features = ["fs", "macros", "rt-multi-thread"] }
-minifier = "0.0.41"
+minifier = "0.0.42"
 fs_extra = "1.2.0"
 webbrowser = "0.5.5"
 serde_yaml = "0.8.21"
@@ -61,6 +61,7 @@ speedy = "0.8.0"
 libdeflater = "0.7.3"
 package-spec = { path = "crates/package-spec" }
 hex = "0.4.3"
+rayon = "1.5.1"
 
 [target.'cfg(unix)'.dependencies]
 rust-lzma = "0.5.1"
@@ -80,7 +81,6 @@ winapi = { version = "0.3.9", features = [
 ] }
 junction = "0.2.0"
 scopeguard = "1.1.0"
-cacache = "9.0.0"
 
 [profile.release-optimized]
 inherits = "release"

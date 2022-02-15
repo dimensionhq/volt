@@ -351,7 +351,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "sha-1 0.9.8",
- "sha2 0.9.8",
+ "sha2 0.9.9",
  "ssri",
  "tempfile",
  "thiserror",
@@ -562,9 +562,9 @@ dependencies = [
 
 [[package]]
 name = "crypto-common"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "567569e659735adb39ff2d4c20600f7cd78be5471f8c58ab162bce3c03fdbc5f"
+checksum = "a4600d695eb3f6ce1cd44e6e291adceb2cc3ab12f20a33777ecd0bf6eba34e06"
 dependencies = [
  "generic-array 0.14.4",
 ]
@@ -612,12 +612,11 @@ dependencies = [
 
 [[package]]
 name = "dialoguer"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61579ada4ec0c6031cfac3f86fdba0d195a7ebeb5e36693bd53cb5999a25beeb"
+checksum = "349d6b4fabcd9e97e1df1ae15395ac7e49fb144946a0d453959dc2696273b9da"
 dependencies = [
  "console",
- "lazy_static",
  "tempfile",
  "zeroize",
 ]
@@ -642,13 +641,12 @@ dependencies = [
 
 [[package]]
 name = "digest"
-version = "0.10.0"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8549e6bfdecd113b7e221fe60b433087f6957387a20f8118ebca9b12af19143d"
+checksum = "8cb780dce4f9a8f5c087362b3a4595936b2019e7c8b30f2c3e9a7e94e6ae9837"
 dependencies = [
  "block-buffer 0.10.0",
  "crypto-common",
- "generic-array 0.14.4",
 ]
 
 [[package]]
@@ -1366,9 +1364,9 @@ checksum = "2a60c7ce501c71e03a9c9c0d35b861413ae925bd979cc7a4e30d060069aaac8d"
 
 [[package]]
 name = "minifier"
-version = "0.0.41"
+version = "0.0.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5594542d20834f2b974f5e5fb8e0cf1c67a2119dcadc29ef5d93a081fb30cc08"
+checksum = "55a1388517eda8a68875243b650c26997e055a33d82571b5a0349129faef7d99"
 dependencies = [
  "macro-utils",
 ]
@@ -2057,7 +2055,7 @@ checksum = "028f48d513f9678cda28f6e4064755b3fbb2af6acd672f2c209b62323f7aea0f"
 dependencies = [
  "cfg-if",
  "cpufeatures",
- "digest 0.10.0",
+ "digest 0.10.2",
 ]
 
 [[package]]
@@ -2074,9 +2072,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.9.8"
+version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b69f9a4c9740d74c5baa3fd2e547f9525fa8088a8a958e0ca2409a514e33f5fa"
+checksum = "4d58a1e1bf39749807d89cf2d98ac2dfa0ff1cb3faa38fbb64dd88ac8013d800"
 dependencies = [
  "block-buffer 0.9.0",
  "cfg-if",
@@ -2087,13 +2085,13 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "900d964dd36bb15bcf2f2b35694c072feab74969a54f2bbeec7a2d725d2bdcb6"
+checksum = "99c3bd8169c58782adad9290a9af5939994036b76187f7b4f0e6de91dbbfc0ec"
 dependencies = [
  "cfg-if",
  "cpufeatures",
- "digest 0.10.0",
+ "digest 0.10.2",
 ]
 
 [[package]]
@@ -2653,6 +2651,7 @@ dependencies = [
  "node-semver",
  "package-spec",
  "rand",
+ "rayon",
  "regex",
  "reqwest",
  "rust-lzma",
@@ -2661,7 +2660,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "sha-1 0.10.0",
- "sha2 0.10.0",
+ "sha2 0.10.1",
  "speedy",
  "ssri",
  "tar",

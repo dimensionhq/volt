@@ -176,8 +176,8 @@ impl VoltCommand for Add {
         tree.values()
             .map(|data| {
                 install_package(
-                    &config,
-                    data,
+                    config.clone(),
+                    data.clone(),
                     State {
                         http_client: client.clone(),
                     },
