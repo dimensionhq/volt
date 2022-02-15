@@ -1234,15 +1234,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libmimalloc-sys"
-version = "0.1.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9636c194f9db483f4d0adf2f99a65011a99f904bd222bbd67fb4df4f37863c30"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "libnghttp2-sys"
 version = "0.1.7+1.45.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1363,15 +1354,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "mimalloc"
-version = "0.1.27"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf5f78c1d9892fb5677a8b2f543f967ab891ac0f71feecd961435b74f877283a"
-dependencies = [
- "libmimalloc-sys",
 ]
 
 [[package]]
@@ -2665,7 +2647,6 @@ dependencies = [
  "lazy_static",
  "libdeflater",
  "miette",
- "mimalloc",
  "minifier",
  "node-semver",
  "package-spec",

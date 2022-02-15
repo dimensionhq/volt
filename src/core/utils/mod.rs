@@ -336,6 +336,7 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
             package_path.push("node_modules/");
             package_path.push(package.name.to_string());
 
+            // TODO: use `.chunks()` instead and use 1 thread per chunk
             for (name, hash) in cas_file_map.iter() {
                 let name_instance = name.clone();
                 let hash_instance = hash.clone();

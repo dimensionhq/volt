@@ -62,6 +62,8 @@ libdeflater = "0.7.3"
 package-spec = { path = "crates/package-spec" }
 hex = "0.4.3"
 rayon = "1.5.1"
+mimalloc = { version = "0.1.27", default-features = false }
+
 
 [target.'cfg(unix)'.dependencies]
 rust-lzma = "0.5.1"
@@ -81,7 +83,6 @@ winapi = { version = "0.3.9", features = [
 ] }
 junction = "0.2.0"
 scopeguard = "1.1.0"
-mimalloc = { version = "0.1.27", default-features = false }
 
 
 [profile.release-optimized]
