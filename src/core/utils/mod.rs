@@ -33,6 +33,7 @@ use futures::TryFutureExt;
 use git_config::file::GitConfig;
 use git_config::parser::parse_from_str;
 use miette::{IntoDiagnostic, Result};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 use reqwest::Client;
 use ssri::{Algorithm, Integrity};
 
@@ -324,7 +325,12 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
     // Check if the package is already installed
     match verify_existing_installation(&package, &config) {
         Ok(value) => {
-            let cas_file_map: HashMap<PathBuf, Integrity> = serde_json::from_slice(&value).unwrap();
+            let cas_file_map: Vec<(PathBuf, Integrity)> =
+                serde_json::from_slice::<HashMap<PathBuf, Integrity>>(&value)
+                    .unwrap()
+                    .into_par_iter()
+                    .map(|(k, v)| (k, v))
+                    .collect();
 
             // Add package's directory to list of created directories
             let created_directories: Vec<PathBuf> = vec![];
@@ -338,42 +344,39 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
 
             let mut handles = vec![];
 
-            // TODO: use `.chunks()` instead and use 1 thread per chunk
-            for (name, hash) in cas_file_map.iter() {
-                let name_instance = name.clone();
-                let hash_instance = hash.clone();
+            for chunk in cas_file_map.chunks(6) {
                 let config_instance = config.clone();
                 let package_path_instance = package_path.clone();
                 let mut created_directories_instance = created_directories.clone();
 
+                let chunk_instance = chunk.to_vec();
+
                 handles.push(tokio::task::spawn_blocking(move || {
-                    let contents = cacache::read_hash_sync(
-                        config_instance.clone().volt_home()?,
-                        &hash_instance,
-                    )
-                    .into_diagnostic()?;
-
-                    let name = name_instance.clone();
-
-                    let file_path = package_path_instance.clone().join(&name);
-
-                    // If we haven't created this directory yet, create it
-                    if !created_directories_instance
-                        .clone()
-                        .iter()
-                        .any(|p| p == &file_path)
-                    {
-                        if let Some(value) = name.parent() {
-                            created_directories_instance.push(file_path.to_path_buf());
-                            std::fs::create_dir_all(&package_path_instance.join(value))
+                    for (name, hash) in chunk_instance.clone() {
+                        let contents =
+                            cacache::read_hash_sync(config_instance.clone().volt_home()?, &hash)
                                 .into_diagnostic()?;
+
+                        let file_path = package_path_instance.clone().join(&name);
+
+                        // If we haven't created this directory yet, create it
+                        if !created_directories_instance
+                            .clone()
+                            .iter()
+                            .any(|p| p == &file_path)
+                        {
+                            if let Some(value) = name.parent() {
+                                created_directories_instance.push(file_path.to_path_buf());
+                                std::fs::create_dir_all(&package_path_instance.join(value))
+                                    .into_diagnostic()?;
+                            }
                         }
+
+                        // Write the contents to node_modules
+                        let mut file = std::fs::File::create(&file_path).unwrap();
+
+                        file.write_all(&contents).into_diagnostic()?;
                     }
-
-                    // Write the contents to node_modules
-                    let mut file = std::fs::File::create(&file_path).unwrap();
-
-                    file.write_all(&contents).into_diagnostic()?;
 
                     Ok(()) as Result<()>
                 }));
