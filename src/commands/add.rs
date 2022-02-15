@@ -47,8 +47,7 @@ pub struct Add {
 #[async_trait]
 impl VoltCommand for Add {
     async fn exec(self, config: VoltConfig) -> miette::Result<()> {
-        let mut global_lock_file =
-            LockFile::load(config.home()?.join(".global.lock"), true).unwrap();
+        // let global_lock_file = LockFile::load(config.home()?.join(".global.lock"), true).unwrap();
 
         // let local_lock_file =
 

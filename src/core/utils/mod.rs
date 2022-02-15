@@ -29,21 +29,14 @@ use crate::{
 };
 
 use errors::VoltError;
-use futures::{StreamExt, TryFutureExt};
+use futures::TryFutureExt;
 use git_config::file::GitConfig;
 use git_config::parser::parse_from_str;
 use miette::{IntoDiagnostic, Result};
 use reqwest::Client;
 use ssri::{Algorithm, Integrity};
-use tokio::io::AsyncWriteExt;
 
-use std::{
-    collections::HashMap,
-    ffi::OsStr,
-    fs::read_to_string,
-    io::Write,
-    path::{Path, PathBuf},
-};
+use std::{collections::HashMap, ffi::OsStr, fs::read_to_string, io::Write, path::PathBuf};
 
 pub struct State {
     pub http_client: Client,
@@ -233,7 +226,7 @@ pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
     // }
 }
 
-pub fn check_peer_dependency(_package_name: &str) -> bool {
+pub fn _check_peer_dependency(_package_name: &str) -> bool {
     false
 }
 
@@ -334,7 +327,7 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
             let cas_file_map: HashMap<PathBuf, Integrity> = serde_json::from_slice(&value).unwrap();
 
             // Add package's directory to list of created directories
-            let mut created_directories: Vec<PathBuf> = vec![];
+            let created_directories: Vec<PathBuf> = vec![];
 
             let mut package_path = config.node_modules()?;
 
@@ -382,10 +375,13 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
                     Ok(()) as Result<()>
                 });
 
-                handle.unwrap_or_else(|e| {
-                    eprintln!("{}", e);
-                    std::process::exit(1);
-                });
+                handle
+                    .unwrap_or_else(|e| {
+                        eprintln!("{}", e);
+                        std::process::exit(1);
+                    })
+                    .await
+                    .unwrap();
             }
         }
         Err(_) => {

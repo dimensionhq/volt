@@ -14,15 +14,10 @@
     limitations under the License.
 */
 
-use crate::core::utils::{enable_ansi_support, errors::VoltError};
+use crate::core::utils::errors::VoltError;
 
-use clap::ArgMatches;
 use clap::Parser;
-use dirs::home_dir;
-use package_spec::{parse_package_spec, PackageSpec};
-use sha1::Digest;
-use sha2::Sha512;
-use ssri::{Algorithm, Integrity};
+use ssri::Algorithm;
 use std::{env, path::PathBuf};
 
 #[derive(Debug, Clone, Parser)]

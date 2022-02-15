@@ -1,13 +1,10 @@
 use std::time::Instant;
 
-use crate::{
-    cli::VoltConfig,
-    core::{
-        utils::constants::MAX_RETRIES,
-        utils::errors::VoltError,
-        utils::voltapi::{VoltPackage, VoltResponse},
-        utils::State,
-    },
+use crate::core::{
+    utils::constants::MAX_RETRIES,
+    utils::errors::VoltError,
+    utils::voltapi::{VoltPackage, VoltResponse},
+    utils::State,
 };
 
 use colored::Colorize;
@@ -169,8 +166,6 @@ pub async fn ping() {
 
     match response.status() {
         StatusCode::OK => {
-            let text = response.text().await.unwrap();
-
             let pong = Instant::now();
 
             println!(
@@ -193,8 +188,6 @@ pub async fn ping() {
 
     match response.status() {
         StatusCode::OK => {
-            let text = response.text().await.unwrap();
-
             let pong = Instant::now();
 
             println!(

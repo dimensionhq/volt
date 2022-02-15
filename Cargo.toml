@@ -81,6 +81,8 @@ winapi = { version = "0.3.9", features = [
 ] }
 junction = "0.2.0"
 scopeguard = "1.1.0"
+mimalloc = { version = "0.1.27", default-features = false }
+
 
 [profile.release-optimized]
 inherits = "release"

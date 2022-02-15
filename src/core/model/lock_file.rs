@@ -15,16 +15,15 @@
 */
 
 use miette::Result;
-use serde::{de, ser, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use speedy::{Readable, Writable};
 use thiserror::Error;
 
 use std::{
-    collections::{hash_map::DefaultHasher, BTreeMap, HashMap},
+    collections::HashMap,
     fs::File,
-    hash::{Hash, Hasher},
-    io::{self, BufReader, BufWriter, Write},
-    path::{Path, PathBuf},
+    io::{self, BufReader, Write},
+    path::Path,
 };
 
 use crate::core::utils::voltapi::VoltPackage;
