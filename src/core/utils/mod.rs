@@ -336,6 +336,8 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
             package_path.push("node_modules/");
             package_path.push(package.name.to_string());
 
+            let mut handles = vec![];
+
             // TODO: use `.chunks()` instead and use 1 thread per chunk
             for (name, hash) in cas_file_map.iter() {
                 let name_instance = name.clone();
@@ -344,7 +346,7 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
                 let package_path_instance = package_path.clone();
                 let mut created_directories_instance = created_directories.clone();
 
-                let handle = tokio::task::spawn_blocking(move || {
+                handles.push(tokio::task::spawn_blocking(move || {
                     let contents = cacache::read_hash_sync(
                         config_instance.clone().volt_home()?,
                         &hash_instance,
@@ -374,15 +376,20 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
                     file.write_all(&contents).into_diagnostic()?;
 
                     Ok(()) as Result<()>
-                });
+                }));
+            }
 
+            for handle in handles {
                 handle
                     .unwrap_or_else(|e| {
                         eprintln!("{}", e);
                         std::process::exit(1);
                     })
                     .await
-                    .unwrap();
+                    .unwrap_or_else(|e| {
+                        eprintln!("{}", e);
+                        std::process::exit(1);
+                    });
             }
         }
         Err(_) => {
