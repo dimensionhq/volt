@@ -104,6 +104,7 @@ cargo test
 | Mod      | ❌           |
 | Outdated | ❌           |
 | Owner    | ❌           |
+| Ping     | 🏗️           |
 | Publish  | ❌           |
 | Remove   | ❌           |
 | Run      | 🏗️           |
