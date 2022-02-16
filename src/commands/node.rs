@@ -18,7 +18,7 @@
 
 use std::{
     env,
-    fmt::Display,
+    fmt::{format, Display},
     fs::File,
     io::{BufReader, Write},
     path::{Path, PathBuf},
@@ -33,7 +33,7 @@ use clap::Parser;
 use clap::{ArgMatches, Subcommand};
 use colored::Colorize;
 use futures::io;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
@@ -250,18 +250,20 @@ impl VoltCommand for NodeInstall {
             .await
             .unwrap();
 
-        for v in self.versions {
-            let mut download_url = format!("{}/", mirror);
-            let bar = ProgressBar::new_spinner()
-                .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"));
-            bar.set_message(format!(
-                "{:10} {}",
-                String::from("Installing"),
-                v.truecolor(125, 125, 125)
-            ));
-            bar.enable_steady_tick(10);
+        let node_path = {
+            let datadir = dirs::data_dir().unwrap().join("volt").join("node");
+            if !datadir.exists() {
+                std::fs::create_dir_all(&datadir).unwrap();
+            }
+            datadir
+        };
 
-            let version: Option<Version> = if let Ok(ver) = v.parse() {
+        //let mut handles = vec![];
+        let mut validversions = vec![];
+        let mut download_url = format!("{}/", mirror);
+
+        for v in &self.versions {
+            let current_version: Option<Version> = if let Ok(ver) = v.parse() {
                 if cfg!(all(unix, target_arch = "X86")) && ver >= Version::parse("10.0.0").unwrap()
                 {
                     println!("32 bit versions are not available for MacOS and Linux after version 10.0.0!");
@@ -272,7 +274,7 @@ impl VoltCommand for NodeInstall {
 
                 let mut found = false;
                 for n in &node_versions {
-                    if v == n.version.to_string() {
+                    if *v == n.version.to_string() {
                         tracing::debug!("found version '{}' with URL '{}'", v, download_url);
                         found = true;
                         break;
@@ -301,129 +303,284 @@ impl VoltCommand for NodeInstall {
 
                 max_ver
             } else {
-                bar.finish_with_message(format!(
-                    "{:10} {} ✗",
-                    String::from("Invalid"),
-                    v.to_string().truecolor(255, 000, 000)
-                ));
+                // TODO: Not a valid version
                 continue;
             };
 
-            if version.is_none() {
-                bar.finish_with_message(format!(
-                    "{:10} {} ✗",
-                    String::from("Not found"),
-                    v.to_string().truecolor(255, 000, 000)
-                ));
-                continue;
-            }
-
-            let version = version.unwrap();
-
-            download_url = format!("{}v{}/", download_url, version);
-
-            download_url = if cfg!(target_os = "windows") {
-                format!("{}/win-{}/node.exe", download_url, ARCH)
-            } else {
-                format!(
-                    "{}node-v{}-{}-{}.tar.xz",
-                    download_url, version, PLATFORM, ARCH
-                )
-            };
-
-            //println!("\n------------\n{}\n------------\n", download_url);
-
-            //println!("Got final URL '{}'", download_url);
-
-            let node_path = {
-                let datadir = dirs::data_dir().unwrap().join("volt").join("node");
-                if !datadir.exists() {
-                    std::fs::create_dir_all(&datadir).unwrap();
-                }
-                datadir
-            };
-
-            if node_path.join(version.to_string()).exists() {
-                //println!("Node.js v{} is already installed, nothing to do!", version);
-                bar.finish_with_message(format!(
-                    "{:10} {} ✓",
-                    String::from("Present"),
-                    version.to_string().truecolor(000, 255, 000)
-                ));
-                continue;
-            }
-
-            tracing::debug!("Installing to: {:?}", node_path);
-
-            // The name of the file we're downloading from the mirror
-            let fname = download_url.split('/').last().unwrap().to_string();
-
-            //println!("Installing version {} from {} ", version, download_url);
-            //println!("file to download: '{}'", fname);
-
-            let response = reqwest::get(&download_url).await.unwrap();
-
-            let content = response.bytes().await.unwrap();
-
-            #[cfg(target_family = "windows")]
+            if current_version.is_some()
+                && !node_path
+                    .join(current_version.clone().unwrap().to_string())
+                    .exists()
             {
-                //println!("Installing node.exe");
-                std::fs::create_dir_all(&node_path).unwrap();
-                let mut dest = File::create(node_path.join(&fname)).unwrap();
-                dest.write_all(&content).unwrap();
+                validversions.push(current_version.unwrap())
             }
-
-            #[cfg(target_family = "unix")]
-            {
-                // Path to write the decompressed tarball to
-                let tarpath = &dir.path().join(&fname.strip_suffix(".xz").unwrap());
-
-                //println!("Unzipping...");
-                //println!("Tar path: {:?}", tarpath);
-                //println!("HELLO WORLD");
-
-                // Decompress the tarball
-                let mut tarball = File::create(tarpath).unwrap();
-                tarball
-                    .write_all(&lzma::decompress(&content).unwrap())
-                    .unwrap();
-
-                // Make sure the first file handle is closed
-                drop(tarball);
-
-                // Have to reopen it for reading, File::create() opens for write only
-                let tarball = File::open(&tarpath).unwrap();
-
-                //println!("Unpacking...");
-
-                // Unpack the tarball
-                let mut w = tar::Archive::new(tarball);
-                w.unpack(&node_path).unwrap();
-
-                // TODO: Find a less disgusting way to do this?
-                // Grab the name of the folder the tarball will extract to
-                let p = tarpath
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .to_owned()
-                    .unwrap()
-                    .strip_suffix(".tar")
-                    .unwrap();
-
-                let from = node_path.join(&p);
-                let to = node_path.join(&version.to_string());
-
-                // Rename the folder from the default set by the tarball
-                // to just the version number
-                std::fs::rename(from, to);
-            }
-            bar.finish_with_message(format!(
-                "{:10} {} ✓",
-                String::from("Installed"),
-                version.to_string().truecolor(000, 255, 000)
-            ));
         }
+
+        //     let response = reqwest::get(&download_url).await.unwrap();
+
+        //     let content = response.bytes().await.unwrap();
+        //         tarball
+        //             .write_all(&lzma::decompress(&content).unwrap())
+        //             .unwrap();
+        //
+
+        /*
+         *for ver in validversions.clone() {
+         *    let download_url = format!(
+         *        "{}v{ver}/node-v{}-{}-{}.tar.xz",
+         *        download_url, ver, PLATFORM, ARCH
+         *    );
+         *}
+         */
+
+        let mb = MultiProgress::new();
+
+        let handles: Vec<_> = validversions
+            .clone()
+            .into_iter()
+            .map(|i| {
+                let download_url = format!(
+                    "{}v{i}/node-v{}-{}-{}.tar.xz",
+                    download_url, i, PLATFORM, ARCH
+                );
+
+                let pb = mb.add(ProgressBar::new_spinner().with_style(
+                    ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"),
+                ));
+
+                let pb = pb.clone();
+
+                tokio::spawn(async move {
+                    pb.set_message(format!(
+                        "{:10} {}",
+                        String::from("Installing"),
+                        i.to_string().truecolor(125, 125, 125)
+                    ));
+                    pb.enable_steady_tick(10);
+                    for _ in 1..10 {
+                        std::thread::sleep(Duration::from_millis(100));
+                    }
+                    let response = reqwest::get(&download_url).await.unwrap().bytes().await;
+                    pb.set_message(format!(
+                        "{:10} {} ✓",
+                        "Installed".to_string(),
+                        i.to_string().truecolor(0, 255, 0)
+                    ));
+                    pb.finish();
+                    //let url = response.url();
+                })
+            })
+            .collect();
+
+        //std::thread::sleep(Duration::from_secs(5));
+
+        let result = futures::future::join_all(handles).await;
+
+        //mb.clear().unwrap();
+        //println!("HELLO");
+
+        //let result = futures::future::join_all(handles).await;
+
+        /*
+         *        let mut handles = vec![];
+         *        for version in validversions.clone() {
+         *            //let mut download_url = format!("{}v{}/", download_url, v);
+         *
+         *            let download_url = if cfg!(target_os = "windows") {
+         *                format!("{}/win-{}/node.exe", download_url, ARCH)
+         *            } else {
+         *                format!(
+         *                    "{}v{version}/node-v{}-{}-{}.tar.xz",
+         *                    download_url, version, PLATFORM, ARCH
+         *                )
+         *            };
+         *            //handles.push(tokio::spawn(async move || {}));
+         *            println!("{version:?} is valid!");
+         *            println!("Got download url {download_url}");
+         *
+         *            handles.push(tokio::spawn(async move {
+         *                let client = reqwest::Client::new();
+         *
+         *                let mut response = client.get(download_url).send();
+         *                response
+         *            }))
+         *        }
+         *        let result = futures::future::join_all(handles).await;
+         *        //let b = vec![];
+         *        for res in result {
+         *            let r = res.unwrap().await.unwrap().bytes().await.unwrap();
+         *            //b.append(&mut res.unwrap().await.clone());
+         *        }
+         */
+
+        /*
+         *        for v in self.versions {
+         *            let mut download_url = format!("{}/", mirror);
+         *            let bar = ProgressBar::new_spinner()
+         *                .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"));
+         *            bar.set_message(format!(
+         *                "{:10} {}",
+         *                String::from("Installing"),
+         *                v.truecolor(125, 125, 125)
+         *            ));
+         *            bar.enable_steady_tick(10);
+         *
+         *            let version: Option<Version> = if let Ok(ver) = v.parse() {
+         *                if cfg!(all(unix, target_arch = "X86")) && ver >= Version::parse("10.0.0").unwrap()
+         *                {
+         *                    println!("32 bit versions are not available for MacOS and Linux after version 10.0.0!");
+         *                    continue;
+         *                }
+         *
+         *                // TODO: Maybe suggest the closest available version if not found?
+         *
+         *                let mut found = false;
+         *                for n in &node_versions {
+         *                    if v == n.version.to_string() {
+         *                        tracing::debug!("found version '{}' with URL '{}'", v, download_url);
+         *                        found = true;
+         *                        break;
+         *                    }
+         *                }
+         *
+         *                if found {
+         *                    Some(ver)
+         *                } else {
+         *                    None
+         *                }
+         *            } else if let Ok(ver) = v.parse::<Range>() {
+         *                //volt install ^12
+         *                let max_ver = node_versions
+         *                    .iter()
+         *                    .filter(|x| x.version.satisfies(&ver))
+         *                    .map(|v| v.version.clone())
+         *                    .max();
+         *
+         *                if cfg!(all(unix, target_arch = "X86"))
+         *                    && Range::parse(">=10").unwrap().allows_any(&ver)
+         *                {
+         *                    println!("32 bit versions are not available for macos and linux after version 10.0.0!");
+         *                    continue;
+         *                }
+         *
+         *                max_ver
+         *            } else {
+         *                bar.finish_with_message(format!(
+         *                    "{:10} {} ✗",
+         *                    String::from("Invalid"),
+         *                    v.to_string().truecolor(255, 000, 000)
+         *                ));
+         *                continue;
+         *            };
+         *
+         *            if version.is_none() {
+         *                bar.finish_with_message(format!(
+         *                    "{:10} {} ✗",
+         *                    String::from("Not found"),
+         *                    v.to_string().truecolor(255, 000, 000)
+         *                ));
+         *                continue;
+         *            }
+         *
+         *            let version = version.unwrap();
+         *
+         *            download_url = format!("{}v{}/", download_url, version);
+         *
+         *            download_url = if cfg!(target_os = "windows") {
+         *                format!("{}/win-{}/node.exe", download_url, ARCH)
+         *            } else {
+         *                format!(
+         *                    "{}node-v{}-{}-{}.tar.xz",
+         *                    download_url, version, PLATFORM, ARCH
+         *                )
+         *            };
+         *
+         *            //println!("\n------------\n{}\n------------\n", download_url);
+         *
+         *            //println!("Got final URL '{}'", download_url);
+         *
+         *            if node_path.join(version.to_string()).exists() {
+         *                //println!("Node.js v{} is already installed, nothing to do!", version);
+         *                bar.finish_with_message(format!(
+         *                    "{:10} {} ✓",
+         *                    String::from("Present"),
+         *                    version.to_string().truecolor(000, 255, 000)
+         *                ));
+         *                continue;
+         *            }
+         *
+         *            tracing::debug!("Installing to: {:?}", node_path);
+         *
+         *            // The name of the file we're downloading from the mirror
+         *            let fname = download_url.split('/').last().unwrap().to_string();
+         *
+         *            //println!("Installing version {} from {} ", version, download_url);
+         *            //println!("file to download: '{}'", fname);
+         *
+         *            let response = reqwest::get(&download_url).await.unwrap();
+         *
+         *            let content = response.bytes().await.unwrap();
+         *
+         *            #[cfg(target_family = "windows")]
+         *            {
+         *                //println!("Installing node.exe");
+         *                std::fs::create_dir_all(&node_path).unwrap();
+         *                let mut dest = File::create(node_path.join(&fname)).unwrap();
+         *                dest.write_all(&content).unwrap();
+         *            }
+         *
+         *            #[cfg(target_family = "unix")]
+         *            {
+         *                // Path to write the decompressed tarball to
+         *                let tarpath = &dir.path().join(&fname.strip_suffix(".xz").unwrap());
+         *
+         *                //println!("Unzipping...");
+         *                //println!("Tar path: {:?}", tarpath);
+         *                //println!("HELLO WORLD");
+         *
+         *                // Decompress the tarball
+         *                let mut tarball = File::create(tarpath).unwrap();
+         *                tarball
+         *                    .write_all(&lzma::decompress(&content).unwrap())
+         *                    .unwrap();
+         *
+         *                // Make sure the first file handle is closed
+         *                drop(tarball);
+         *
+         *                // Have to reopen it for reading, File::create() opens for write only
+         *                let tarball = File::open(&tarpath).unwrap();
+         *
+         *                //println!("Unpacking...");
+         *
+         *                // Unpack the tarball
+         *                let mut w = tar::Archive::new(tarball);
+         *                w.unpack(&node_path).unwrap();
+         *
+         *                // TODO: Find a less disgusting way to do this?
+         *                // Grab the name of the folder the tarball will extract to
+         *                let p = tarpath
+         *                    .file_name()
+         *                    .unwrap()
+         *                    .to_str()
+         *                    .to_owned()
+         *                    .unwrap()
+         *                    .strip_suffix(".tar")
+         *                    .unwrap();
+         *
+         *                let from = node_path.join(&p);
+         *                let to = node_path.join(&version.to_string());
+         *
+         *                // Rename the folder from the default set by the tarball
+         *                // to just the version number
+         *                std::fs::rename(from, to);
+         *            }
+         *            bar.finish_with_message(format!(
+         *                "{:10} {} ✓",
+         *                String::from("Installed"),
+         *                version.to_string().truecolor(000, 255, 000)
+         *            ));
+         *        }
+         */
         Ok(())
     }
 }

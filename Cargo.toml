@@ -27,7 +27,7 @@ dirs = "4.0.0"
 futures = "0.3.17"
 futures-util = "0.3.17"
 git-config = "0.1.7"
-indicatif = "0.16.2"
+indicatif = "0.17.0-rc.4"
 isahc = { version = "1.5.1", features = ["json"] }
 jwalk = "0.6.0"
 lazy_static = "1.4.0"
