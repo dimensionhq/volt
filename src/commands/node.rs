@@ -24,20 +24,26 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
     str,
+    time::Duration,
 };
 
 use async_trait::async_trait;
 use base64::decode;
 use clap::Parser;
 use clap::{ArgMatches, Subcommand};
+use colored::Colorize;
 use futures::io;
+use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
 use tempfile::tempdir;
 use tokio::fs;
 
-use crate::cli::{VoltCommand, VoltConfig};
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::utils::extensions::PathExtensions,
+};
 
 const PLATFORM: Os = if cfg!(target_os = "windows") {
     Os::Windows
@@ -139,7 +145,53 @@ impl VoltCommand for Node {
             NodeCommand::Use(x) => x.exec(config).await,
             NodeCommand::Install(x) => x.exec(config).await,
             NodeCommand::Remove(x) => x.exec(config).await,
+            NodeCommand::List(x) => x.exec(config).await,
         }
+    }
+}
+
+#[derive(Debug, Parser)]
+pub struct NodeList {}
+
+fn sort_versions(a: &String, b: &String) -> std::cmp::Ordering {
+    let a: Vec<i32> = a.split(".").map(|term| term.parse().unwrap()).collect();
+    let b: Vec<i32> = b.split(".").map(|term| term.parse().unwrap()).collect();
+    for ab in a.iter().zip(b.iter()) {
+        let (ai, bi) = ab;
+        let c = bi.cmp(ai);
+        if c == std::cmp::Ordering::Equal {
+            continue;
+        } else {
+            return c;
+        }
+    }
+    return std::cmp::Ordering::Equal;
+}
+
+#[async_trait]
+impl VoltCommand for NodeList {
+    async fn exec(self, config: VoltConfig) -> Result<()> {
+        let node_path = dirs::data_dir().unwrap().join("volt").join("node");
+        let mut versions: Vec<String> = std::fs::read_dir(node_path)
+            .unwrap()
+            .map(|dir| match dir {
+                Ok(_) => dir.unwrap().path().file_name_as_string().unwrap(),
+                Err(_) => "ERROR".to_string(),
+            })
+            .filter(|x| x != "current")
+            .collect();
+
+        versions.sort_by(|a, b| sort_versions(a, b));
+        println!(
+            "Used version:\n\t{}",
+            get_current_version().await.truecolor(250, 150, 100)
+        );
+        println!("Installed versions:");
+        for version in versions {
+            println!("\t{}", version.truecolor(250, 150, 100));
+        }
+
+        Ok(())
     }
 }
 
@@ -148,6 +200,7 @@ pub enum NodeCommand {
     Use(NodeUse),
     Install(NodeInstall),
     Remove(NodeRemove),
+    List(NodeList),
 }
 
 /// Switch current node version
@@ -160,10 +213,10 @@ pub struct NodeUse {
 #[async_trait]
 impl VoltCommand for NodeUse {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        #[cfg(target_os = "windows")]
+        #[cfg(target_family = "windows")]
         use_windows(self.version).await;
 
-        #[cfg(target_os = "unix")]
+        #[cfg(target_family = "unix")]
         {
             let node_path = get_node_path(&self.version);
 
@@ -249,6 +302,14 @@ impl VoltCommand for NodeInstall {
 
         for v in self.versions {
             let mut download_url = format!("{}/", mirror);
+            let bar = ProgressBar::new_spinner()
+                .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"));
+            bar.set_message(format!(
+                "{:10} {}",
+                String::from("Installing"),
+                v.truecolor(125, 125, 125)
+            ));
+            bar.enable_steady_tick(10);
 
             let version: Option<Version> = if let Ok(ver) = v.parse() {
                 if cfg!(all(unix, target_arch = "X86")) && ver >= Version::parse("10.0.0").unwrap()
@@ -290,12 +351,20 @@ impl VoltCommand for NodeInstall {
 
                 max_ver
             } else {
-                println!("Unable to download {} -- not a valid version!", v);
+                bar.finish_with_message(format!(
+                    "{:10} {} ✗",
+                    String::from("Invalid"),
+                    v.to_string().truecolor(255, 000, 000)
+                ));
                 continue;
             };
 
             if version.is_none() {
-                println!("Unable to find version {}!", v);
+                bar.finish_with_message(format!(
+                    "{:10} {} ✗",
+                    String::from("Not found"),
+                    v.to_string().truecolor(255, 000, 000)
+                ));
                 continue;
             }
 
@@ -312,9 +381,9 @@ impl VoltCommand for NodeInstall {
                 )
             };
 
-            println!("\n------------\n{}\n------------\n", download_url);
+            //println!("\n------------\n{}\n------------\n", download_url);
 
-            println!("Got final URL '{}'", download_url);
+            //println!("Got final URL '{}'", download_url);
 
             let node_path = {
                 let datadir = dirs::data_dir().unwrap().join("volt").join("node");
@@ -325,7 +394,12 @@ impl VoltCommand for NodeInstall {
             };
 
             if node_path.join(version.to_string()).exists() {
-                println!("Node.js v{} is already installed, nothing to do!", version);
+                //println!("Node.js v{} is already installed, nothing to do!", version);
+                bar.finish_with_message(format!(
+                    "{:10} {} ✓",
+                    String::from("Present"),
+                    version.to_string().truecolor(000, 255, 000)
+                ));
                 continue;
             }
 
@@ -334,8 +408,8 @@ impl VoltCommand for NodeInstall {
             // The name of the file we're downloading from the mirror
             let fname = download_url.split('/').last().unwrap().to_string();
 
-            println!("Installing version {} from {} ", version, download_url);
-            println!("file to download: '{}'", fname);
+            //println!("Installing version {} from {} ", version, download_url);
+            //println!("file to download: '{}'", fname);
 
             let response = reqwest::get(&download_url).await.unwrap();
 
@@ -343,7 +417,8 @@ impl VoltCommand for NodeInstall {
 
             #[cfg(target_family = "windows")]
             {
-                println!("Installing node.exe");
+                let node_path = node_path.join(&version.to_string());
+                //println!("Installing node.exe");
                 std::fs::create_dir_all(&node_path).unwrap();
                 let mut dest = File::create(node_path.join(&fname)).unwrap();
                 dest.write_all(&content).unwrap();
@@ -354,9 +429,9 @@ impl VoltCommand for NodeInstall {
                 // Path to write the decompressed tarball to
                 let tarpath = &dir.path().join(&fname.strip_suffix(".xz").unwrap());
 
-                println!("Unzipping...");
-
-                println!("Tar path: {:?}", tarpath);
+                //println!("Unzipping...");
+                //println!("Tar path: {:?}", tarpath);
+                //println!("HELLO WORLD");
 
                 // Decompress the tarball
                 let mut tarball = File::create(tarpath).unwrap();
@@ -370,7 +445,7 @@ impl VoltCommand for NodeInstall {
                 // Have to reopen it for reading, File::create() opens for write only
                 let tarball = File::open(&tarpath).unwrap();
 
-                println!("Unpacking...");
+                //println!("Unpacking...");
 
                 // Unpack the tarball
                 let mut w = tar::Archive::new(tarball);
@@ -394,8 +469,11 @@ impl VoltCommand for NodeInstall {
                 // to just the version number
                 std::fs::rename(from, to);
             }
-
-            println!("Done!");
+            bar.finish_with_message(format!(
+                "{:10} {} ✓",
+                String::from("Installed"),
+                version.to_string().truecolor(000, 255, 000)
+            ));
         }
         Ok(())
     }
@@ -419,12 +497,7 @@ pub struct NodeRemove {
 #[async_trait]
 impl VoltCommand for NodeRemove {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        let usedversion = {
-            let vfpath = dirs::data_dir().unwrap().join("volt").join("current");
-            let vfpath = Path::new(&vfpath);
-            let version = std::fs::read_to_string(vfpath).unwrap();
-            version
-        };
+        let used_version = get_current_version().await;
 
         for version in self.versions {
             let node_path = get_node_path(&version);
@@ -441,17 +514,13 @@ impl VoltCommand for NodeRemove {
                 );
             }
 
-            if usedversion == version {
-                if PLATFORM == Os::Windows {
-                    let link_file = dirs::data_dir()
-                        .unwrap()
-                        .join("volt")
-                        .join("bin")
-                        .join("node.exe");
-                    let link_file = Path::new(&link_file);
-
-                    std::fs::remove_file(link_file);
-                }
+            if used_version == version && PLATFORM == Os::Windows {
+                let used_file = dirs::data_dir()
+                    .unwrap()
+                    .join("volt")
+                    .join("bin")
+                    .join("node.exe");
+                std::fs::remove_file(used_file);
             }
         }
 
@@ -459,14 +528,42 @@ impl VoltCommand for NodeRemove {
     }
 }
 
+async fn get_current_version() -> String {
+    let command = format!("node -v");
+    let output = {
+        if PLATFORM == Os::Windows {
+            Command::new("Powershell")
+                .args(&["-Command", &command])
+                .output()
+        } else {
+            Command::new("sh").args(&["-c", &command]).output()
+        }
+    };
+
+    let mut v = match output {
+        Ok(_) => String::from_utf8(output.unwrap().stdout).unwrap(),
+        Err(_) => String::from("vHidden (check file permissions)"),
+    };
+
+    if v == "" {
+        v = String::from("vNone");
+    }
+
+    //trim trailing \r?\n (\r is windows only so this is an if statement)
+    if v.ends_with('\n') {
+        v.pop();
+        if v.ends_with('\r') {
+            v.pop();
+        }
+    }
+
+    //trim leading 'v'
+    return v[1..v.len()].to_string();
+}
+
 #[cfg(target_os = "windows")]
 async fn use_windows(version: String) {
-    let node_path = dirs::data_dir()
-        .unwrap()
-        .join("volt")
-        .join("node")
-        .join(&version)
-        .join("node.exe");
+    let node_path = get_node_path(&version).join("node.exe");
     let path = Path::new(&node_path);
 
     if path.exists() {
@@ -500,10 +597,6 @@ async fn use_windows(version: String) {
                 return;
             }
         }
-
-        let vfpath = dirs::data_dir().unwrap().join("volt").join("current");
-        let vfpath = Path::new(&vfpath);
-        let vfile = std::fs::write(vfpath, version);
 
         let path = env::var("PATH").unwrap();
         if !path.contains(&link_dir) {
