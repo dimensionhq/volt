@@ -24,13 +24,16 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
     str,
+    time::Duration,
 };
 
 use async_trait::async_trait;
 use base64::decode;
 use clap::Parser;
 use clap::{ArgMatches, Subcommand};
+use colored::Colorize;
 use futures::io;
+use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
@@ -160,10 +163,10 @@ pub struct NodeUse {
 #[async_trait]
 impl VoltCommand for NodeUse {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        #[cfg(target_os = "windows")]
+        #[cfg(target_family = "windows")]
         use_windows(self.version).await;
 
-        #[cfg(target_os = "unix")]
+        #[cfg(target_family = "unix")]
         {
             let node_path = get_node_path(&self.version);
 
@@ -249,6 +252,14 @@ impl VoltCommand for NodeInstall {
 
         for v in self.versions {
             let mut download_url = format!("{}/", mirror);
+            let bar = ProgressBar::new_spinner()
+                .with_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}"));
+            bar.set_message(format!(
+                "{:10} {}",
+                String::from("Installing"),
+                v.truecolor(125, 125, 125)
+            ));
+            bar.enable_steady_tick(10);
 
             let version: Option<Version> = if let Ok(ver) = v.parse() {
                 if cfg!(all(unix, target_arch = "X86")) && ver >= Version::parse("10.0.0").unwrap()
@@ -290,12 +301,20 @@ impl VoltCommand for NodeInstall {
 
                 max_ver
             } else {
-                println!("Unable to download {} -- not a valid version!", v);
+                bar.finish_with_message(format!(
+                    "{:10} {} ✗",
+                    String::from("Invalid"),
+                    v.to_string().truecolor(255, 000, 000)
+                ));
                 continue;
             };
 
             if version.is_none() {
-                println!("Unable to find version {}!", v);
+                bar.finish_with_message(format!(
+                    "{:10} {} ✗",
+                    String::from("Not found"),
+                    v.to_string().truecolor(255, 000, 000)
+                ));
                 continue;
             }
 
@@ -312,9 +331,9 @@ impl VoltCommand for NodeInstall {
                 )
             };
 
-            println!("\n------------\n{}\n------------\n", download_url);
+            //println!("\n------------\n{}\n------------\n", download_url);
 
-            println!("Got final URL '{}'", download_url);
+            //println!("Got final URL '{}'", download_url);
 
             let node_path = {
                 let datadir = dirs::data_dir().unwrap().join("volt").join("node");
@@ -325,7 +344,12 @@ impl VoltCommand for NodeInstall {
             };
 
             if node_path.join(version.to_string()).exists() {
-                println!("Node.js v{} is already installed, nothing to do!", version);
+                //println!("Node.js v{} is already installed, nothing to do!", version);
+                bar.finish_with_message(format!(
+                    "{:10} {} ✓",
+                    String::from("Present"),
+                    version.to_string().truecolor(000, 255, 000)
+                ));
                 continue;
             }
 
@@ -334,8 +358,8 @@ impl VoltCommand for NodeInstall {
             // The name of the file we're downloading from the mirror
             let fname = download_url.split('/').last().unwrap().to_string();
 
-            println!("Installing version {} from {} ", version, download_url);
-            println!("file to download: '{}'", fname);
+            //println!("Installing version {} from {} ", version, download_url);
+            //println!("file to download: '{}'", fname);
 
             let response = reqwest::get(&download_url).await.unwrap();
 
@@ -343,7 +367,7 @@ impl VoltCommand for NodeInstall {
 
             #[cfg(target_family = "windows")]
             {
-                println!("Installing node.exe");
+                //println!("Installing node.exe");
                 std::fs::create_dir_all(&node_path).unwrap();
                 let mut dest = File::create(node_path.join(&fname)).unwrap();
                 dest.write_all(&content).unwrap();
@@ -354,9 +378,9 @@ impl VoltCommand for NodeInstall {
                 // Path to write the decompressed tarball to
                 let tarpath = &dir.path().join(&fname.strip_suffix(".xz").unwrap());
 
-                println!("Unzipping...");
-
-                println!("Tar path: {:?}", tarpath);
+                //println!("Unzipping...");
+                //println!("Tar path: {:?}", tarpath);
+                //println!("HELLO WORLD");
 
                 // Decompress the tarball
                 let mut tarball = File::create(tarpath).unwrap();
@@ -370,7 +394,7 @@ impl VoltCommand for NodeInstall {
                 // Have to reopen it for reading, File::create() opens for write only
                 let tarball = File::open(&tarpath).unwrap();
 
-                println!("Unpacking...");
+                //println!("Unpacking...");
 
                 // Unpack the tarball
                 let mut w = tar::Archive::new(tarball);
@@ -394,8 +418,11 @@ impl VoltCommand for NodeInstall {
                 // to just the version number
                 std::fs::rename(from, to);
             }
-
-            println!("Done!");
+            bar.finish_with_message(format!(
+                "{:10} {} ✓",
+                String::from("Installed"),
+                version.to_string().truecolor(000, 255, 000)
+            ));
         }
         Ok(())
     }
