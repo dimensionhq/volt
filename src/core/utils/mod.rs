@@ -279,7 +279,7 @@ pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::
             dependency_link_path.push(".volt");
 
             // node_modules/.volt/accepts@1.2.3
-            dependency_link_path.push(format!("{}@{}", name, version));
+            dependency_link_path.push(format!("{}@{}", name.replace("/", "+"), version));
 
             // node_modules/.volt/accepts@1.2.3/node_modules
             dependency_link_path.push("node_modules");
@@ -302,8 +302,13 @@ pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::
             target_link_path.push(&name);
 
             #[cfg(windows)]
-            junction::create(dependency_link_path, target_link_path).unwrap_or_else(|e| {
-                eprintln!("{}", e);
+            junction::create(&dependency_link_path, &target_link_path).unwrap_or_else(|e| {
+                eprintln!(
+                    "target: {} destination: {}, {}",
+                    target_link_path.display(),
+                    dependency_link_path.display(),
+                    e
+                );
                 std::process::exit(1);
             });
 

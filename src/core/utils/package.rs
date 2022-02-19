@@ -186,13 +186,16 @@ pub struct PackageJson {
     pub author: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub license: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub dependencies: HashMap<String, String>,
+    pub dependencies: Option<HashMap<String, String>>,
     #[serde(rename = "devDependencies")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub dev_dependencies: HashMap<String, String>,
+    pub dev_dependencies: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub scripts: HashMap<String, String>,
+    pub scripts: Option<HashMap<String, String>>,
 }
 
 impl PackageJson {
@@ -246,6 +249,8 @@ impl PackageJson {
         } = package
         {
             self.dependencies
+                .clone()
+                .unwrap_or_else(|| HashMap::new())
                 .insert(name, requested.as_ref().unwrap().to_string());
         }
     }

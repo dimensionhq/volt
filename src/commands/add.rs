@@ -210,8 +210,13 @@ impl VoltCommand for Add {
                 let mut target_directory = node_modules_directory.join(name);
 
                 #[cfg(windows)]
-                junction::create(package_directory, target_directory).unwrap_or_else(|e| {
-                    eprintln!("{}", e);
+                junction::create(&package_directory, &target_directory).unwrap_or_else(|e| {
+                    eprintln!(
+                        "target: {} destination: {}, {}",
+                        package_directory.display(),
+                        target_directory.display(),
+                        e
+                    );
                     std::process::exit(1);
                 });
 
