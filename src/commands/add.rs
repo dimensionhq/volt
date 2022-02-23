@@ -128,21 +128,25 @@ impl VoltCommand for Add {
 
         let client = Client::builder().use_rustls_tls().build().unwrap();
 
+        let mut incompatible_packages = vec![];
+
         // pnpm linking algorithm
         for value in tree.values() {
             // None means it's not platform-specific
             // We get a list of platforms, and if our current OS isn't on this list - it means that we can skip this package
             // this is only if the package is optional
 
-            if value.optional {
-                // TODO: check if `engines.node` is compatible
-                // TODO: do a CPU arch check
-                if let Some(os) = &value.os {
-                    if !os.contains(&VoltConfig::OS.to_string())
-                        && !os.contains(&format!("!{}", VoltConfig::OS))
-                    {
-                        continue;
-                    }
+            if let Some(os) = &value.os {
+                if !os.contains(&"win32".to_string()) && !os.contains(&format!("!{}", "win32")) {
+                    incompatible_packages.push(format!("{}@{}", value.name, value.version));
+                    continue;
+                }
+            }
+
+            if let Some(architecture) = &value.cpu {
+                if !architecture.contains(&"x64".to_string()) {
+                    incompatible_packages.push(format!("{}@{}", value.name, value.version));
+                    continue;
                 }
             }
 
@@ -170,6 +174,11 @@ impl VoltCommand for Add {
                     .join(&name),
             )
             .into_diagnostic()?;
+        }
+
+        for item in incompatible_packages {
+            println!("removing: {}", item);
+            tree.remove(&item);
         }
 
         tree.values()
