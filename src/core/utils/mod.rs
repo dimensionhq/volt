@@ -163,35 +163,48 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 #[cfg(windows)]
 /// Generates the binary and other required scripts for the package
 pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
+    let bin_path = config.node_modules().unwrap().join(".bin/");
+
     // // Create node_modules/scripts if it doesn't exist
-    // if !Path::new("node_modules/.bin").exists() {
-    //     // Create the binary directory
-    //     std::fs::create_dir_all("node_modules/.bin").unwrap();
-    // }
+    if !bin_path.exists() {
+        // Create the binary directory
+        std::fs::create_dir(&bin_path);
+    }
 
-    // // Create binary scripts for the package if they exist.
-    // if package.bin.is_some() {
-    //     let bin = package.bin.as_ref().unwrap();
+    // Create binary scripts for the package if they exist.
 
-    //     let k = bin.keys().next().unwrap();
-    //     let v = bin.values().next().unwrap();
+    use self::voltapi::Bin;
+    if package.bin.is_some() {
+        let bin = package.bin.as_ref().unwrap();
 
-    //     let command = format!(
-    //         r#"
-    //         @IF EXIST "%~dp0\node.exe" (
-    //             "%~dp0\node.exe"  "%~dp0\..\{}\{}" %*
-    //             ) ELSE (
-    //                 @SETLOCAL
-    //                 @SET PATHEXT=%PATHEXT:;.JS;=;%
-    //                 node  "%~dp0\..\{}\{}" %*
-    //                 )"#,
-    //         k, v, k, v
-    //     )
-    //     .replace(r"%~dp0\..", format!("{}", app.volt_dir.display()).as_str());
+        if let Bin::String(data) = bin {
+        } else if let Bin::Map(map) = bin {
+            let k = map.keys().next().unwrap();
+            let v = map.values().next().unwrap();
 
-    //     let mut f = File::create(format!(r"node_modules/.bin/{}.cmd", k)).unwrap();
-    //     f.write_all(command.as_bytes()).unwrap();
-    // }
+            let command = format!(
+                r#"
+                @IF EXIST "%~dp0\node.exe" (
+                    "%~dp0\node.exe"  "%~dp0\..\{}\{}" %*
+                    ) ELSE (
+                        @SETLOCAL
+                        @SET PATHEXT=%PATHEXT:;.JS;=;%
+                        node  "%~dp0\..\{}\{}" %*
+                        )"#,
+                k, v, k, v
+            )
+            .replace(r"%~dp0\..", &config.volt_home().unwrap().to_str().unwrap());
+
+            let mut f = std::fs::File::create(format!(
+                r"{}/{}.cmd",
+                &bin_path.as_os_str().to_str().unwrap(),
+                k
+            ))
+            .unwrap();
+
+            f.write_all(command.as_bytes()).unwrap();
+        }
+    }
 }
 
 #[cfg(unix)]
@@ -293,7 +306,11 @@ pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::
             target_link_path.push(".volt");
 
             // node_modules/.volt/accepts@1.2.3
-            target_link_path.push(format!("{}@{}", &package.name, &package.version));
+            target_link_path.push(format!(
+                "{}@{}",
+                &package.name.replace("/", "+"),
+                &package.version
+            ));
 
             // node_modules/.volt/accepts@1.2.3/node_modules
             target_link_path.push("node_modules");
@@ -301,16 +318,16 @@ pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::
             // node_modules/.volt/accepts@1.2.3/node_modules/ms
             target_link_path.push(&name);
 
-            #[cfg(windows)]
-            junction::create(&dependency_link_path, &target_link_path).unwrap_or_else(|e| {
-                eprintln!(
-                    "target: {} destination: {}, {}",
-                    target_link_path.display(),
-                    dependency_link_path.display(),
-                    e
-                );
-                std::process::exit(1);
-            });
+            // #[cfg(windows)]
+            // junction::create(&dependency_link_path, &target_link_path).unwrap_or_else(|e| {
+            //     eprintln!(
+            //         "target: {} destination: {}, {}",
+            //         target_link_path.display(),
+            //         dependency_link_path.display(),
+            //         e
+            //     );
+            //     std::process::exit(1);
+            // });
 
             #[cfg(unix)]
             std::os::unix::fs::symlink(dependency_link_path, target_link_path).unwrap_or_else(
@@ -345,7 +362,7 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
             package_path.push(".volt/");
             package_path.push(format!("{}@{}", package.name, package.version));
             package_path.push("node_modules/");
-            package_path.push(package.name.to_string());
+            package_path.push(package.name.to_string().replace(r"/", r"\"));
 
             let mut handles = vec![];
 
@@ -418,6 +435,9 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
 
                         // extract the tarball
                         extract_tarball(decompressed_response, &package, &config)?;
+
+                        // generate .bin files
+                        generate_script(&config, &package);
 
                         // generate symlinks
                         link_dependencies(&package, &config)?;

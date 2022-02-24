@@ -97,8 +97,6 @@ impl VoltCommand for Add {
             tree.extend(response.tree);
         }
 
-        let total = tree.len();
-
         bar.finish_and_clear();
 
         println!(
@@ -106,18 +104,10 @@ impl VoltCommand for Add {
             format!("[{:.2}{}]", resolve_start.elapsed().as_secs_f32(), "s")
                 .truecolor(156, 156, 156)
                 .bold(),
-            total.to_string().truecolor(196, 206, 255).bold()
+            tree.len().to_string().truecolor(196, 206, 255).bold()
         );
 
         let install_start = Instant::now();
-
-        let bar = ProgressBar::new(total as u64);
-
-        bar.set_style(
-            ProgressStyle::default_bar()
-                .template("[{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
-                .progress_chars("=>-"),
-        );
 
         let nm_dir = config.node_modules()?;
         let nm_volt_home = nm_dir.join(VoltConfig::VOLT_HOME);
@@ -151,10 +141,30 @@ impl VoltCommand for Add {
             }
 
             let mut name = value.name.clone();
+            let mut scope: Option<String> = None;
+            let mut last: Option<String> = None;
 
             if value.name.starts_with('@') {
                 // replace @ with +
                 name = name.replace("/", "+");
+
+                scope = Some(
+                    name.split("+")
+                        .map(|v| v.to_string())
+                        .collect::<Vec<String>>()
+                        .first()
+                        .unwrap()
+                        .to_string(),
+                );
+
+                last = Some(
+                    name.split("+")
+                        .map(|v| v.to_string())
+                        .collect::<Vec<String>>()
+                        .last()
+                        .unwrap()
+                        .to_string(),
+                );
             }
 
             std::fs::create_dir(nm_volt_home.join(format!("{}@{}", name, value.version)))
@@ -167,20 +177,49 @@ impl VoltCommand for Add {
             )
             .into_diagnostic()?;
 
-            std::fs::create_dir(
-                nm_volt_home
-                    .join(format!("{}@{}", name, value.version))
-                    .join("node_modules/")
-                    .join(&name),
-            )
-            .into_diagnostic()?;
+            if scope.is_none() {
+                std::fs::create_dir(
+                    nm_volt_home
+                        .join(format!("{}@{}", name, value.version))
+                        .join("node_modules/")
+                        .join(&name),
+                )
+                .into_diagnostic()?;
+            } else {
+                std::fs::create_dir(
+                    nm_volt_home
+                        .join(format!("{}@{}", name, value.version))
+                        .join("node_modules/")
+                        .join(scope.as_ref().unwrap()),
+                )
+                .into_diagnostic()?;
+
+                std::fs::create_dir(
+                    nm_volt_home
+                        .join(format!("{}@{}", name, value.version))
+                        .join("node_modules/")
+                        .join(scope.as_ref().unwrap())
+                        .join(&last.unwrap()),
+                )
+                .into_diagnostic()?;
+            }
         }
 
         for item in incompatible_packages {
-            println!("removing: {}", item);
             tree.remove(&item);
         }
 
+        let total = tree.len();
+
+        let bar = ProgressBar::new(total as u64);
+
+        bar.set_style(
+            ProgressStyle::default_bar()
+                .template("[{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+                .progress_chars("=>-"),
+        );
+
+        // todo: display progress bar for downloads that are taking time.
         tree.values()
             .map(|data| {
                 install_package(
@@ -239,26 +278,26 @@ impl VoltCommand for Add {
             }
         }
 
-        println!(
-            "{} Installed {} dependencies",
-            format!("[{:.2}{}]", install_start.elapsed().as_secs_f32(), "s")
-                .truecolor(156, 156, 156)
-                .bold(),
-            total.to_string().truecolor(196, 206, 255).bold()
-        );
+        // println!(
+        //     "{} Installed {} dependencies",
+        //     format!("[{:.2}{}]", install_start.elapsed().as_secs_f32(), "s")
+        //         .truecolor(156, 156, 156)
+        //         .bold(),
+        //     total.to_string().truecolor(196, 206, 255).bold()
+        // );
 
-        let (mut package_file, path) = PackageJson::get()?;
+        // let (mut package_file, path) = PackageJson::get()?;
 
-        for package in requested_packages.iter() {
-            package_file.add_dependency(package.to_owned());
-        }
+        // for package in requested_packages.iter() {
+        //     package_file.add_dependency(package.to_owned());
+        // }
 
-        // Save package.json
-        package_file.save()?;
+        // // Save package.json
+        // package_file.save()?;
 
-        // Save lockfiles
-        // global_lock_file.save()?;
-        // lock_file.save()?;
+        // // Save lockfiles
+        // // global_lock_file.save()?;
+        // // lock_file.save()?;
 
         Ok(())
     }
