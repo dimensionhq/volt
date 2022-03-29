@@ -37,6 +37,7 @@ use rayon::iter::{IntoParallelIterator, IntoParallelRefMutIterator, ParallelIter
 use reqwest::Client;
 use ssri::{Algorithm, Integrity};
 
+use self::voltapi::Bin;
 use std::{collections::HashMap, ffi::OsStr, fs::read_to_string, io::Write, path::PathBuf};
 
 pub struct State {
@@ -173,7 +174,6 @@ pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
 
     // Create binary scripts for the package if they exist.
 
-    use self::voltapi::Bin;
     if package.bin.is_some() {
         let bin = package.bin.as_ref().unwrap();
 
@@ -182,27 +182,108 @@ pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
             let k = map.keys().next().unwrap();
             let v = map.values().next().unwrap();
 
-            let command = format!(
-                r#"
-                @IF EXIST "%~dp0\node.exe" (
-                    "%~dp0\node.exe"  "%~dp0\..\{}\{}" %*
-                    ) ELSE (
-                        @SETLOCAL
-                        @SET PATHEXT=%PATHEXT:;.JS;=;%
-                        node  "%~dp0\..\{}\{}" %*
-                        )"#,
-                k, v, k, v
-            )
-            .replace(r"%~dp0\..", &config.volt_home().unwrap().to_str().unwrap());
+            //             let cmd_file = format!(
+            //                 r#"
+            // @SETLOCAL
+            // @IF NOT DEFINED NODE_PATH (
+            //   @SET "NODE_PATH=PATHHERE"
+            // ) ELSE (
+            //   @SET "NODE_PATH=%NODE_PATH%;PATHHERE"
+            // )
+            // @IF EXIST "%~dp0\node.exe" (
+            //   "%~dp0\node.exe"  "%~dp0\..\next\dist\bin\next" %*
+            // ) ELSE (
+            //   @SET PATHEXT=%PATHEXT:;.JS;=;%
+            //   node  "%~dp0\..\next\dist\bin\next" %*
+            // )"#,
+            //             );
 
-            let mut f = std::fs::File::create(format!(
-                r"{}/{}.cmd",
-                &bin_path.as_os_str().to_str().unwrap(),
-                k
-            ))
-            .unwrap();
+            //             let ps1_file = format!(
+            //                 r#"#!/usr/bin/env pwsh
+            // $basedir=Split-Path $MyInvocation.MyCommand.Definition -Parent
 
-            f.write_all(command.as_bytes()).unwrap();
+            // $exe=""
+            // $pathsep=":"
+            // $env_node_path=$env:NODE_PATH
+            // $new_node_path="PATHHERE"
+            // if ($PSVersionTable.PSVersion -lt "6.0" -or $IsWindows) {
+            //   $exe=".exe"
+            //   $pathsep=";"
+            // } else {
+            //   $new_node_path="PATHHERE"
+            // }
+            // if ([string]::IsNullOrEmpty($env_node_path)) {
+            //   $env:NODE_PATH=$new_node_path
+            // } else {
+            //   $env:NODE_PATH="$env_node_path$pathsep$new_node_path"
+            // }
+
+            // $ret=0
+            // if (Test-Path "$basedir/node$exe") {
+            //   if ($MyInvocation.ExpectingInput) {
+            //     $input | & "$basedir/node$exe"  "$basedir/../next/dist/bin/next" $args
+            //   } else {
+            //     & "$basedir/node$exe"  "$basedir/../next/dist/bin/next" $args
+            //   }
+            //   $ret=$LASTEXITCODE
+            // } else {
+            //   if ($MyInvocation.ExpectingInput) {
+            //     $input | & "node$exe"  "$basedir/../next/dist/bin/next" $args
+            //   } else {
+            //     & "node$exe"  "$basedir/../next/dist/bin/next" $args
+            //   }
+            //   $ret=$LASTEXITCODE
+            // }
+            // $env:NODE_PATH=$env_node_path
+            // exit $ret"#,
+            //             );
+
+            //             let executable_file = format!(
+            //                 r#"#!/bin/sh
+            // basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
+
+            // case `uname` in
+            //     *CYGWIN*) basedir=`cygpath -w "$basedir"`;;
+            // esac
+
+            // if [ -z "$NODE_PATH" ]; then
+            //   export NODE_PATH="PATHHERE"
+            // else
+            //   export NODE_PATH="$NODE_PATH:PATHHERE"
+            // fi
+            // if [ -x "$basedir/node" ]; then
+            //   exec "$basedir/node"  "$basedir/../next/dist/bin/next" "$@"
+            // else
+            //   exec node  "$basedir/../next/dist/bin/next" "$@"
+            // fi"#,
+            //             );
+
+            //             let mut f = std::fs::File::create(format!(
+            //                 r"{}/{}",
+            //                 &bin_path.as_os_str().to_str().unwrap(),
+            //                 k
+            //             ))
+            //             .unwrap();
+
+            //             f.write_all(executable_file.as_bytes()).unwrap();
+
+            //             let mut f = std::fs::File::create(format!(
+            //                 r"{}/{}.cmd",
+            //                 &bin_path.as_os_str().to_str().unwrap(),
+            //                 k
+            //             ))
+            //             .unwrap();
+
+            //             f.write_all(cmd_file.as_bytes()).unwrap();
+
+            //             let mut f = std::fs::File::create(format!(
+            //                 r"{}/{}.ps1",
+            //                 &bin_path.as_os_str().to_str().unwrap(),
+            //                 k
+            //             ))
+            //             .unwrap();
+
+            //             f.write_all(ps1_file.as_bytes()).unwrap();
         }
     }
 }
@@ -318,16 +399,16 @@ pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::
             // node_modules/.volt/accepts@1.2.3/node_modules/ms
             target_link_path.push(&name);
 
-            // #[cfg(windows)]
-            // junction::create(&dependency_link_path, &target_link_path).unwrap_or_else(|e| {
-            //     eprintln!(
-            //         "target: {} destination: {}, {}",
-            //         target_link_path.display(),
-            //         dependency_link_path.display(),
-            //         e
-            //     );
-            //     std::process::exit(1);
-            // });
+            #[cfg(windows)]
+            junction::create(&dependency_link_path, &target_link_path).unwrap_or_else(|e| {
+                eprintln!(
+                    "target: {} destination: {}, {}",
+                    target_link_path.display(),
+                    dependency_link_path.display(),
+                    e
+                );
+                std::process::exit(1);
+            });
 
             #[cfg(unix)]
             std::os::unix::fs::symlink(dependency_link_path, target_link_path).unwrap_or_else(
@@ -416,6 +497,8 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
                         std::process::exit(1);
                     });
             }
+
+            link_dependencies(&package, &config);
         }
         Err(_) => {
             // fetch the tarball from the registry

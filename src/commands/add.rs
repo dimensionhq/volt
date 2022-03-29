@@ -238,53 +238,53 @@ impl VoltCommand for Add {
 
         bar.finish_and_clear();
 
-        for package in requested_packages.iter() {
-            if let PackageSpec::Npm {
-                name,
-                scope,
-                requested,
-            } = package
-            {
-                let mut node_modules_directory = config.node_modules().unwrap();
+        // for package in requested_packages.iter() {
+        //     if let PackageSpec::Npm {
+        //         name,
+        //         scope,
+        //         requested,
+        //     } = package
+        //     {
+        //         let mut node_modules_directory = config.node_modules().unwrap();
 
-                // path to the package directory
-                let mut package_directory = node_modules_directory
-                    .join(".volt")
-                    .join(format!("{}@{}", &name, requested.as_ref().unwrap()))
-                    .join("node_modules/")
-                    .join(&name);
+        //         // path to the package directory
+        //         let mut package_directory = node_modules_directory
+        //             .join(".volt")
+        //             .join(format!("{}@{}", &name, requested.as_ref().unwrap()))
+        //             .join("node_modules/")
+        //             .join(&name);
 
-                // path to the symlink
-                let mut target_directory = node_modules_directory.join(name);
+        //         // path to the symlink
+        //         let mut target_directory = node_modules_directory.join(name);
 
-                #[cfg(windows)]
-                junction::create(&package_directory, &target_directory).unwrap_or_else(|e| {
-                    eprintln!(
-                        "target: {} destination: {}, {}",
-                        package_directory.display(),
-                        target_directory.display(),
-                        e
-                    );
-                    std::process::exit(1);
-                });
+        //         #[cfg(windows)]
+        //         junction::create(&package_directory, &target_directory).unwrap_or_else(|e| {
+        //             eprintln!(
+        //                 "target: {} destination: {}, {}",
+        //                 package_directory.display(),
+        //                 target_directory.display(),
+        //                 e
+        //             );
+        //             std::process::exit(1);
+        //         });
 
-                #[cfg(unix)]
-                std::os::unix::fs::symlink(package_directory, target_directory).unwrap_or_else(
-                    |e| {
-                        eprintln!("{}", e);
-                        std::process::exit(1);
-                    },
-                );
-            }
-        }
+        //         #[cfg(unix)]
+        //         std::os::unix::fs::symlink(package_directory, target_directory).unwrap_or_else(
+        //             |e| {
+        //                 eprintln!("{}", e);
+        //                 std::process::exit(1);
+        //             },
+        //         );
+        //     }
+        // }
 
-        // println!(
-        //     "{} Installed {} dependencies",
-        //     format!("[{:.2}{}]", install_start.elapsed().as_secs_f32(), "s")
-        //         .truecolor(156, 156, 156)
-        //         .bold(),
-        //     total.to_string().truecolor(196, 206, 255).bold()
-        // );
+        println!(
+            "{} Installed {} dependencies",
+            format!("[{:.2}{}]", install_start.elapsed().as_secs_f32(), "s")
+                .truecolor(156, 156, 156)
+                .bold(),
+            total.to_string().truecolor(196, 206, 255).bold()
+        );
 
         // let (mut package_file, path) = PackageJson::get()?;
 
