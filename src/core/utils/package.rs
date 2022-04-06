@@ -181,7 +181,7 @@ pub struct PackageJson {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub main: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub repository: Option<String>,
+    pub repository: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -222,6 +222,24 @@ impl PackageJson {
             }
         }
 
+        miette::bail!("No package.json found!");
+    }
+
+    pub fn get_from_dir(from: &PathBuf) -> Result<(Self, PathBuf)> {
+        for parent in from.ancestors() {
+            let pkg_path = from.join("package.json");
+
+            if pkg_path.exists() {
+                let data = read_to_string(&pkg_path).map_err(|e| VoltError::ReadFileError {
+                    source: e,
+                    name: pkg_path.to_str().unwrap().to_string(),
+                })?;
+                return Ok((
+                    serde_json::from_str(data.as_str()).into_diagnostic()?,
+                    pkg_path,
+                ));
+            }
+        }
         miette::bail!("No package.json found!");
     }
 
