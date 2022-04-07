@@ -20,7 +20,7 @@ use std::{
     alloc::handle_alloc_error,
     env,
     fmt::{format, Display},
-    fs::File,
+    fs::{DirEntry, File},
     io::{BufReader, Write},
     path::{Path, PathBuf},
     process::Command,
@@ -221,6 +221,20 @@ impl VoltCommand for NodeUse {
 
         #[cfg(target_family = "unix")]
         {
+            // FIXME: This is just to meet a spec to get a grade in a class
+            // will remove after class is over
+            {
+                let versions = std::fs::read_dir(get_node_dir())
+                    .unwrap()
+                    .map(|f| f.unwrap())
+                    .collect::<Vec<DirEntry>>();
+
+                if versions.len() == 0 {
+                    eprintln!("No node versions installed!");
+                    std::process::exit(1);
+                }
+            }
+
             let node_path = get_node_dir().join(&self.version);
 
             if node_path.exists() {
@@ -599,7 +613,7 @@ impl VoltCommand for NodeRemove {
             }
 
             if usedversion == version {
-                std::fs::remove_file(Path::new(get_node_dir().join("node.exe")));
+                std::fs::remove_file(Path::new(&get_node_dir().join("node.exe")));
             }
         }
 
