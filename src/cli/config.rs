@@ -16,8 +16,12 @@
 
 use crate::core::utils::errors::VoltError;
 
-use clap::Parser;
-use ssri::Algorithm;
+use clap::{ArgMatches, Parser};
+use dirs::home_dir;
+use package_spec::{parse_package_spec, PackageSpec};
+use sha1::Digest;
+use sha2::Sha512;
+use ssri::{Algorithm, Integrity};
 use std::{env, path::PathBuf};
 
 #[derive(Debug, Clone, Parser)]
