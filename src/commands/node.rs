@@ -518,13 +518,36 @@ impl VoltCommand for NodeRemove {
             None => None,
         };
 
+        // FIXME: This is just to meet a spec we made for class, remove after like May 9th
+        //
+        // This is just here to satisfy a requirement for a class, need to do this for a grade.
+        // Will remove after class is over - brokenbyte
+        for v in &self.versions {
+            let ver = v.parse::<Version>();
+            match ver {
+                Ok(_) => {}
+                Err(_) => {
+                    eprintln!("{v} is not a valid version");
+                    std::process::exit(1);
+                }
+            }
+
+            if !node_dir.join(&v).exists() {
+                eprintln!("Version {v} not installed");
+                std::process::exit(1);
+            }
+        }
+
         for v in self.versions {
             let version_dir = node_dir.join(&v);
 
-            if !version_dir.exists() {
-                eprintln!("Version {v} not installed");
-                continue;
-            }
+            /*
+             * FIXME: Uncomment this after removing the above for loop :)
+             *if !version_dir.exists() {
+             *    eprintln!("Version {v} not installed");
+             *    continue;
+             *}
+             */
 
             if matches!(current_version, Some(ver) if ver == v) {
                 let current_dir = current_dir.as_ref().unwrap();
