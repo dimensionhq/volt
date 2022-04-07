@@ -24,14 +24,15 @@ use std::{
     io::{BufReader, Write},
     path::{Path, PathBuf},
     process::Command,
-    str,
+    str, string,
     thread::current,
     time::Duration,
 };
 
 use async_trait::async_trait;
 use base64::decode;
-use clap::{ArgMatches, Parser, Subcommand};
+use clap::CommandFactory;
+use clap::{ArgMatches, ErrorKind, Parser, Subcommand};
 use colored::Colorize;
 use futures::{
     future::{lazy, Future},
@@ -111,7 +112,7 @@ impl Display for Os {
             Os::Linux => "linux",
             _ => unreachable!(),
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -214,11 +215,13 @@ pub struct NodeUse {
 impl VoltCommand for NodeUse {
     async fn exec(self, config: VoltConfig) -> Result<()> {
         #[cfg(target_family = "windows")]
-        use_windows(self.version).await;
+        {
+            use_windows(self.version).await;
+        }
 
         #[cfg(target_family = "unix")]
         {
-            let node_path = get_node_path(&self.version);
+            let node_path = get_node_dir().join(&self.version);
 
             if node_path.exists() {
                 let link_dir = dirs::home_dir().unwrap().join(".local").join("bin");
@@ -252,12 +255,12 @@ impl VoltCommand for NodeUse {
                     let fname = original.file_name().unwrap();
                     let link = link_dir.join(fname);
 
+                    // INFO: DOC: Need to run `rehash` in zsh for the changes to take effect
                     println!("Linking to {:?} from {:?}", link, original);
 
                     // TODO: Do something with this error
                     let _ = std::fs::remove_file(&link);
 
-                    // INFO: DOC: Need to run `rehash` in zsh for the changes to take effect
                     // maybe ship `vnm` as a shell function to run `volt node use ... && rehash` on
                     // zsh?
                     let _symlink = std::os::unix::fs::symlink(original, link).unwrap();
@@ -266,7 +269,6 @@ impl VoltCommand for NodeUse {
                 println!("That version of node is not installed!\nTry \"volt node install {}\" to install that version.", self.version)
             }
         }
-
         Ok(())
     }
 }
@@ -287,8 +289,17 @@ impl VoltCommand for NodeInstall {
     // TODO: Only make a tempdir if we have versions to download, i.e. verify all versions before
     //       creating the directory
     async fn exec(self, _: VoltConfig) -> Result<()> {
+        if self.versions.len() == 0 {
+            let mut cmd = NodeInstall::command();
+            cmd.error(
+                ErrorKind::ArgumentConflict,
+                "Must have at least one version",
+            )
+            .exit();
+        }
+
         tracing::debug!("On platform '{}' and arch '{}'", PLATFORM, ARCH);
-        let dir: tempfile::TempDir = tempdir().unwrap();
+        let dir = tempdir().unwrap();
         tracing::debug!("Temp dir is {:?}", dir);
 
         let mirror = "https://nodejs.org/dist";
@@ -380,6 +391,8 @@ impl VoltCommand for NodeInstall {
                 let handle = tokio::runtime::Handle::current();
 
                 let node_path = node_path.clone();
+
+                let dir = dir.path().to_owned();
                 handle.spawn_blocking(move || {
                     if node_path.join(&i.to_string()).exists() {
                         pb.set_message(format!(
@@ -408,8 +421,7 @@ impl VoltCommand for NodeInstall {
                         // Path to write the decompressed tarball to
                         let fname = download_url.split('/').last().unwrap().to_string();
                         //let tarpath = &dir.path().join(&fname.strip_suffix(".xz").unwrap());
-                        let tarpath = PathBuf::from("/home/user/tmp/volttest")
-                            .join(&fname.strip_suffix(".xz").unwrap());
+                        let tarpath = dir.join(&fname.strip_suffix(".xz").unwrap());
 
                         // Decompress the tarball
                         let mut tarball = File::create(&tarpath).unwrap();
@@ -464,12 +476,8 @@ impl VoltCommand for NodeInstall {
     }
 }
 
-fn get_node_path(version: &str) -> PathBuf {
-    dirs::data_dir()
-        .unwrap()
-        .join("volt")
-        .join("node")
-        .join(&version)
+fn get_node_dir() -> PathBuf {
+    dirs::data_dir().unwrap().join("volt").join("node")
 }
 
 /// Uninstall a specified version of node
@@ -483,76 +491,78 @@ pub struct NodeRemove {
 #[async_trait]
 impl VoltCommand for NodeRemove {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        println!("Removing node version!");
-
-        let node_dir = dirs::data_dir().unwrap().join("volt").join("node");
-
-        let current = node_dir.join("current");
-        println!("Current version is at {current:?}");
-
-        if current.exists() {
-            println!("Currently using a volt node version!");
-        } else {
-            println!("Using system node");
+        if self.versions.len() == 0 {
+            NodeRemove::command()
+                .error(
+                    ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand,
+                    "Must have at least one version",
+                )
+                .exit();
         }
 
-        /*
-         *for v in &self.versions {
-         *    println!("Got version {v}");
-         *}
-         */
+        let node_dir = get_node_dir();
 
-        /*
-         *        let usedversion = {
-         *            let vfpath = dirs::data_dir().unwrap().join("volt").join("current");
-         *            let vfpath = Path::new(&vfpath);
-         *
-         *            std::fs::read_to_string(vfpath).unwrap()
-         *        };
-         *
-         *        for version in self.versions {
-         *            let node_path = get_node_path(&version);
-         *
-         *            println!("{}", node_path.display());
-         *
-         *            if node_path.exists() {
-         *                fs::remove_dir_all(&node_path).await.unwrap();
-         *                println!("Removed version {version}");
-         *            } else {
-         *                println!(
-         *                    "Failed to remove NodeJS version {version}.\nThat version was not installed."
-         *                );
-         *            }
-         *
-         *            if usedversion == version && PLATFORM == Os::Windows {
-         *                let link_file = dirs::data_dir()
-         *                    .unwrap()
-         *                    .join("volt")
-         *                    .join("bin")
-         *                    .join("node.exe");
-         *                let link_file = Path::new(&link_file);
-         *
-         *                std::fs::remove_file(link_file);
-         *            }
-         *        }
-         */
+        let current_dir = if node_dir.join("current").exists() {
+            let curr = std::fs::canonicalize(node_dir.join("current"))
+                .unwrap()
+                .parent()
+                .unwrap()
+                .to_owned();
+            Some(curr)
+        } else {
+            None
+        };
 
+        let current_version = match &current_dir {
+            Some(dir) => Some(dir.file_name().unwrap().to_str().unwrap()),
+            None => None,
+        };
+
+        for v in self.versions {
+            let version_dir = node_dir.join(&v);
+
+            if !version_dir.exists() {
+                eprintln!("Version {v} not installed");
+                continue;
+            }
+
+            if matches!(current_version, Some(ver) if ver == v) {
+                let current_dir = current_dir.as_ref().unwrap();
+                let current_bin = std::fs::read_dir(current_dir.join("bin")).unwrap();
+
+                // Remove all the installed symlinks
+                for binary in current_bin {
+                    let b = binary.unwrap();
+                    std::fs::remove_file(dirs::executable_dir().unwrap().join(b.file_name()));
+                }
+
+                std::fs::remove_file(node_dir.join("current"));
+            }
+
+            // Always remove the version directory, regardless of current version status
+            std::fs::remove_dir_all(node_dir.join(v));
+        }
         Ok(())
     }
 }
+
 #[cfg(windows)]
 #[async_trait]
 impl VoltCommand for NodeRemove {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        let usedversion = {
-            let vfpath = dirs::data_dir().unwrap().join("volt").join("current");
-            let vfpath = Path::new(&vfpath);
+        if self.versions.len() == 0 {
+            NodeRemove::command()
+                .error(
+                    ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand,
+                    "Must have at least one version",
+                )
+                .exit();
+        }
 
-            std::fs::read_to_string(vfpath).unwrap()
-        };
+        let usedversion = std::fs::read_to_string(get_node_dir().join("current")).unwrap();
 
         for version in self.versions {
-            let node_path = get_node_path(&version);
+            let node_path = get_node_dir().join(&version);
 
             println!("{}", node_path.display());
 
@@ -565,15 +575,8 @@ impl VoltCommand for NodeRemove {
                 );
             }
 
-            if usedversion == version && PLATFORM == Os::Windows {
-                let link_file = dirs::data_dir()
-                    .unwrap()
-                    .join("volt")
-                    .join("bin")
-                    .join("node.exe");
-                let link_file = Path::new(&link_file);
-
-                std::fs::remove_file(link_file);
+            if usedversion == version {
+                std::fs::remove_file(Path::new(get_node_dir().join("node.exe")));
             }
         }
 
@@ -581,14 +584,9 @@ impl VoltCommand for NodeRemove {
     }
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 async fn use_windows(version: String) {
-    let node_path = dirs::data_dir()
-        .unwrap()
-        .join("volt")
-        .join("node")
-        .join(&version)
-        .join("node.exe");
+    let node_path = get_node_dir().join(&version).join("node.exe");
     let path = Path::new(&node_path);
 
     if path.exists() {

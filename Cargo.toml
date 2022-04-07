@@ -15,7 +15,7 @@ rust-version = "1.57"
 async-trait = "0.1.51"
 base64 = "0.13.0"
 bytes = "1.1.0"
-clap = { version = "3.0.0", features = [
+clap = { version = "3.1.8", features = [
   "derive",
   "cargo",
   "std",
