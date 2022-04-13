@@ -15,16 +15,52 @@
 */
 
 //! Compress node_modules into node_modules.pack.
-
-use crate::cli::{VoltCommand, VoltConfig};
-
-use async_trait::async_trait;
-use colored::Colorize;
-use miette::Result;
-
 use std::sync::Arc;
 
-pub struct List;
+use async_trait::async_trait;
+use clap::{ArgMatches, Parser, Subcommand};
+use colored::Colorize;
+use miette::Result;
+//use node_semver::Version;
+use serde::{Deserialize, Deserializer};
+use serde_json;
+
+use crate::{
+    cli::{VoltCommand, VoltConfig},
+    core::utils::extensions::PathExtensions,
+    core::utils::package::PackageJson,
+};
+
+#[derive(Debug, Parser)]
+pub struct List {
+    depth: Option<usize>,
+}
+
+// CREDIT:
+// Author: sfackler
+// Repo: cargo-tree (tree.rs)
+// ------------------------------------------------
+pub struct Symbols {
+    down: &'static str,
+    tee: &'static str,
+    ell: &'static str,
+    right: &'static str,
+}
+
+pub static UTF8_SYMBOLS: Symbols = Symbols {
+    down: "│",
+    tee: "├",
+    ell: "└",
+    right: "─",
+};
+
+pub static ASCII_SYMBOLS: Symbols = Symbols {
+    down: "|",
+    tee: "|",
+    ell: "`",
+    right: "-",
+};
+// ------------------------------------------------
 
 #[async_trait]
 impl VoltCommand for List {
@@ -42,6 +78,88 @@ impl VoltCommand for List {
     /// ## Returns
     /// * `Result<()>`
     async fn exec(self, config: VoltConfig) -> Result<()> {
+        let symbols = &UTF8_SYMBOLS;
+
+        // grab the project's package.json file to get primary dependencies
+        let (pkg_json, pkg_json_path) = match PackageJson::get() {
+            Ok(p) => (Some(p.0), Some(p.1)),
+            Err(_) => (None, None),
+        };
+
+        if let (Some(pkg_json), Some(pkg_json_path)) = (pkg_json, pkg_json_path) {
+            // package.json exists
+            let mut node_modules = pkg_json_path;
+
+            let project_info = format!(
+                "{}@{} {}",
+                &pkg_json.name,
+                &pkg_json.version,
+                &node_modules
+                    .parent()
+                    .unwrap()
+                    .canonicalize()
+                    .unwrap()
+                    .to_string_lossy()
+            );
+            println!("{}", project_info);
+
+            let last = pkg_json.dependencies.clone();
+
+            if let Some(packages) = pkg_json.dependencies {
+                node_modules.pop();
+                node_modules.push("node_modules");
+
+                // unsure if this is necessary?
+                if !packages.is_empty() {
+                    let last = last.unwrap().into_keys().last().unwrap();
+
+                    for package in packages {
+                        if node_modules.join(&package.0).exists() {
+                            let base_pkg =
+                                PackageJson::get_from_dir(&node_modules.join(&package.0))
+                                    .unwrap()
+                                    .0;
+                            // let current: Version = base_pkg.version.parse().unwrap();
+                            let current = base_pkg.version;
+
+                            let output = format!(
+                                "{}@{}",
+                                &base_pkg.name.truecolor(000, 255, 000),
+                                &current.to_string().truecolor(000, 155, 000),
+                            );
+
+                            if last.eq(&package.0) {
+                                println!("{}{} {}\n", symbols.ell, symbols.right, output);
+                            } else {
+                                println!("{}{} {}", symbols.tee, symbols.right, output);
+                            }
+                        } else {
+                            let output = format!(
+                                "{} {}@{}",
+                                "MISSING".to_string().truecolor(255, 000, 000),
+                                &package.0.truecolor(000, 255, 000),
+                                &package.1.truecolor(000, 155, 000)
+                            );
+
+                            if last.eq(&package.0) {
+                                println!("{}{} {}\n", symbols.ell, symbols.right, output);
+                            } else {
+                                println!("{}{} {}", symbols.tee, symbols.right, output);
+                            }
+                        }
+                    }
+                }
+            } else {
+                // package.json exists without any packages
+                let output = format!("(No dependencies)");
+                println!("{}{} {}\n", symbols.ell, symbols.right, output);
+            }
+        } else {
+            // package.json just doesn't exist
+            let output = format!("Missing 'package.json' file!");
+            println!("{}", output);
+        }
+
         // let flags = &app.flags;
 
         // let mut depth: u64 = 2;

@@ -341,16 +341,15 @@ pub fn verify_checksum(
     expeced_checksum: &str,
 ) -> Result<(bool, Option<String>)> {
     // begin
-    let algorithm;
-
     // there are only 2 supported algorithms
     // sha1 and sha512
     // so we can be sure that if it doesn't start with sha1, it's going to have to be sha512
-    if expeced_checksum.starts_with("sha1") {
-        algorithm = Algorithm::Sha1;
+
+    let algorithm = if expeced_checksum.starts_with("sha1") {
+        Algorithm::Sha1
     } else {
-        algorithm = Algorithm::Sha512;
-    }
+        Algorithm::Sha512
+    };
 
     let calculated_checksum = VoltConfig::calc_hash(response, algorithm)?;
 
@@ -373,7 +372,7 @@ pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::
             dependency_link_path.push(".volt");
 
             // node_modules/.volt/accepts@1.2.3
-            dependency_link_path.push(format!("{}@{}", name.replace("/", "+"), version));
+            dependency_link_path.push(format!("{}@{}", name.replace('/', "+"), version));
 
             // node_modules/.volt/accepts@1.2.3/node_modules
             dependency_link_path.push("node_modules");
@@ -389,7 +388,7 @@ pub fn link_dependencies(package: &VoltPackage, config: &VoltConfig) -> miette::
             // node_modules/.volt/accepts@1.2.3
             target_link_path.push(format!(
                 "{}@{}",
-                &package.name.replace("/", "+"),
+                &package.name.replace('/', "+"),
                 &package.version
             ));
 
@@ -443,7 +442,7 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
             package_path.push(".volt/");
             package_path.push(format!("{}@{}", package.name, package.version));
             package_path.push("node_modules/");
-            package_path.push(package.name.to_string().replace(r"/", r"\"));
+            package_path.push(package.name.to_string().replace('/', r"\"));
 
             let mut handles = vec![];
 

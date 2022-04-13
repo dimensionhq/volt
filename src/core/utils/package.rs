@@ -23,8 +23,8 @@ use serde::{Deserialize, Serialize};
 use std::{
     fs,
     io::Write,
-    path::PathBuf,
-    {collections::HashMap, fs::read_to_string},
+    path::{Path,PathBuf},
+    {collections::{HashMap,BTreeMap}, fs::read_to_string},
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -188,7 +188,8 @@ pub struct PackageJson {
     pub license: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub dependencies: Option<HashMap<String, String>>,
+    //pub dependencies: Option<HashMap<String, String>>,
+    pub dependencies: Option<BTreeMap<String,String>>,
     #[serde(rename = "devDependencies")]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
@@ -225,7 +226,7 @@ impl PackageJson {
         miette::bail!("No package.json found!");
     }
 
-    pub fn get_from_dir(from: &PathBuf) -> Result<(Self, PathBuf)> {
+    pub fn get_from_dir(from: &Path) -> Result<(Self, PathBuf)> {
         for parent in from.ancestors() {
             let pkg_path = from.join("package.json");
 
@@ -266,10 +267,14 @@ impl PackageJson {
             requested,
         } = package
         {
+            #[allow(clippy::redundant_closure)]
+            /*
             self.dependencies
                 .clone()
                 .unwrap_or_else(|| HashMap::new())
                 .insert(name, requested.as_ref().unwrap().to_string());
+            */
+            self.dependencies.clone().unwrap_or_else(|| BTreeMap::new()).insert(name, requested.as_ref().unwrap().to_string());
         }
     }
 

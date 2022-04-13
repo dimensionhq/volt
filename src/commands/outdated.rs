@@ -15,17 +15,16 @@
 */
 
 //! Check for outdated packages.
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use async_trait::async_trait;
-use clap::Parser;
-use clap::{ArgMatches, Subcommand};
+use clap::{ArgMatches, Parser, Subcommand};
 use colored::Colorize;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
 use serde_json;
-
-use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::{
     cli::{VoltCommand, VoltConfig},
@@ -117,11 +116,12 @@ impl VoltCommand for Outdated {
         //println!("Running from {pwd:?}");
 
         // in this case there are no packages installed in a project!
-        if !primary_deps.is_none() {
+        if let Some(deps) = &primary_deps {
+            //if !primary_deps.is_none() {
             // test to see if an argument was provided, if not run for all dependencies???
             if let Some(package_name) = self.package {
                 //&& !self.dependency.contains("!") {
-                if (!primary_deps.unwrap().contains_key(&package_name)) {
+                if (!deps.contains_key(&package_name)) {
                     let output = format!(
                         "{} is not an installed package!",
                         &package_name.truecolor(255, 000, 000)
@@ -205,7 +205,7 @@ impl VoltCommand for Outdated {
                                 "{} \t\t| {} \t\t| {}",
                                 package_info.name.unwrap().truecolor(255, 000, 000),
                                 "MISSING",
-                                latest.to_string().truecolor(55, 125, 235),
+                                latest.to_string().truecolor(055, 125, 235),
                             );
                             println!("{}", output);
                         } else {
@@ -217,7 +217,7 @@ impl VoltCommand for Outdated {
                                     "{} \t\t| {} \t\t| {}",
                                     package_info.name.unwrap().truecolor(255, 000, 000),
                                     current,
-                                    latest.to_string().truecolor(55, 125, 235),
+                                    latest.to_string().truecolor(055, 125, 235),
                                 );
                                 println!("{}", output);
                             } else {
@@ -225,7 +225,7 @@ impl VoltCommand for Outdated {
                                     "{} \t\t| {} \t\t| {}",
                                     package_info.name.unwrap().truecolor(000, 255, 000),
                                     current,
-                                    latest.to_string().truecolor(55, 125, 235),
+                                    latest.to_string().truecolor(055, 125, 235),
                                 );
                                 println!("{}", output);
                             }
