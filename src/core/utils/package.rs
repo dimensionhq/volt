@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     fs,
     io::Write,
-    path::PathBuf,
+    path::{Path, PathBuf},
     {collections::HashMap, fs::read_to_string},
 };
 
@@ -225,7 +225,7 @@ impl PackageJson {
         miette::bail!("No package.json found!");
     }
 
-    pub fn get_from_dir(from: &PathBuf) -> Result<(Self, PathBuf)> {
+    pub fn get_from_dir(from: &Path) -> Result<(Self, PathBuf)> {
         for parent in from.ancestors() {
             let pkg_path = from.join("package.json");
 
@@ -266,6 +266,7 @@ impl PackageJson {
             requested,
         } = package
         {
+            #[allow(clippy::redundant_closure)]
             self.dependencies
                 .clone()
                 .unwrap_or_else(|| HashMap::new())

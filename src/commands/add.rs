@@ -146,10 +146,10 @@ impl VoltCommand for Add {
 
             if value.name.starts_with('@') {
                 // replace @ with +
-                name = name.replace("/", "+");
+                name = name.replace('/', "+");
 
                 scope = Some(
-                    name.split("+")
+                    name.split('+')
                         .map(|v| v.to_string())
                         .collect::<Vec<String>>()
                         .first()
@@ -158,7 +158,7 @@ impl VoltCommand for Add {
                 );
 
                 last = Some(
-                    name.split("+")
+                    name.split('+')
                         .map(|v| v.to_string())
                         .collect::<Vec<String>>()
                         .last()

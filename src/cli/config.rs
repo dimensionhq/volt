@@ -1,17 +1,17 @@
 /*
-    Copyright 2021 Volt Contributors
+Copyright 2021 Volt Contributors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 use crate::core::utils::errors::VoltError;
@@ -74,22 +74,19 @@ impl VoltConfig {
     /// ## Returns
     /// * Result<String>
     pub fn calc_hash(data: &bytes::Bytes, algorithm: Algorithm) -> miette::Result<String> {
-        let integrity;
-
-        if algorithm == Algorithm::Sha1 {
+        let integrity = if algorithm == Algorithm::Sha1 {
             let hash = ssri::IntegrityOpts::new()
                 .algorithm(Algorithm::Sha1)
                 .chain(&data)
                 .result();
-
-            integrity = format!("sha1-{}", hash.to_hex().1);
+            format!("sha1-{}", hash.to_hex().1)
         } else {
-            integrity = ssri::IntegrityOpts::new()
+            ssri::IntegrityOpts::new()
                 .algorithm(Algorithm::Sha512)
                 .chain(&data)
                 .result()
-                .to_string();
-        }
+                .to_string()
+        };
 
         Ok(integrity)
     }

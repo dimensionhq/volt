@@ -117,11 +117,12 @@ impl VoltCommand for Outdated {
         //println!("Running from {pwd:?}");
 
         // in this case there are no packages installed in a project!
-        if !primary_deps.is_none() {
+        if let Some(deps) = &primary_deps {
+            //if !primary_deps.is_none() {
             // test to see if an argument was provided, if not run for all dependencies???
             if let Some(package_name) = self.package {
                 //&& !self.dependency.contains("!") {
-                if (!primary_deps.unwrap().contains_key(&package_name)) {
+                if (!deps.contains_key(&package_name)) {
                     let output = format!(
                         "{} is not an installed package!",
                         &package_name.truecolor(255, 000, 000)

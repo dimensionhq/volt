@@ -191,7 +191,7 @@ impl VoltCommand for NodeList {
             .filter(|f| f != "current")
             .collect::<Vec<String>>();
 
-        if files.len() == 0 {
+        if files.is_empty() {
             eprintln!("No NodeJS versions installed!");
             std::process::exit(1);
         }
@@ -224,12 +224,12 @@ impl VoltCommand for NodeUse {
             // FIXME: This is just to meet a spec to get a grade in a class
             // will remove after class is over
             {
-                let versions = std::fs::read_dir(get_node_dir())
+                if std::fs::read_dir(get_node_dir())
                     .unwrap()
                     .map(|f| f.unwrap())
-                    .collect::<Vec<DirEntry>>();
-
-                if versions.len() == 0 {
+                    .next()
+                    .is_none()
+                {
                     eprintln!("No node versions installed!");
                     std::process::exit(1);
                 }
@@ -303,7 +303,7 @@ impl VoltCommand for NodeInstall {
     // TODO: Only make a tempdir if we have versions to download, i.e. verify all versions before
     //       creating the directory
     async fn exec(self, _: VoltConfig) -> Result<()> {
-        if self.versions.len() == 0 {
+        if self.versions.is_empty() {
             let mut cmd = NodeInstall::command();
             cmd.error(
                 ErrorKind::ArgumentConflict,
@@ -382,8 +382,8 @@ impl VoltCommand for NodeInstall {
                 std::process::exit(1);
             };
 
-            if current_version.is_some() {
-                validversions.push(current_version.unwrap())
+            if let Some(version) = current_version {
+                validversions.push(version)
             } else {
                 println!("Invalid version: {}!", v.truecolor(255, 0, 0));
                 std::process::exit(1);
@@ -412,7 +412,7 @@ impl VoltCommand for NodeInstall {
                         pb.set_message(format!(
                             "{:8} {}",
                             i.to_string().truecolor(0, 255, 0),
-                            "Already Installed ✓".to_string()
+                            "Already Installed ✓"
                         ));
                         pb.finish();
                         return;
@@ -477,7 +477,7 @@ impl VoltCommand for NodeInstall {
                     pb.set_message(format!(
                         "{:8} {:10}",
                         i.to_string().truecolor(0, 255, 0),
-                        "Installed ✓".to_string()
+                        "Installed ✓"
                     ));
                     pb.finish();
                 })
@@ -505,7 +505,7 @@ pub struct NodeRemove {
 #[async_trait]
 impl VoltCommand for NodeRemove {
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        if self.versions.len() == 0 {
+        if self.versions.is_empty() {
             NodeRemove::command()
                 .error(
                     ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand,
@@ -527,10 +527,9 @@ impl VoltCommand for NodeRemove {
             None
         };
 
-        let current_version = match &current_dir {
-            Some(dir) => Some(dir.file_name().unwrap().to_str().unwrap()),
-            None => None,
-        };
+        let current_version = current_dir
+            .as_ref()
+            .map(|dir| dir.file_name().unwrap().to_str().unwrap());
 
         // FIXME: This is just to meet a spec we made for class, remove after like May 9th
         //

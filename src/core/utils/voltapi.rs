@@ -45,7 +45,7 @@ pub struct VoltPackage {
 
 impl VoltPackage {
     pub fn directory_name(&self) -> String {
-        format!("{}@{}", self.name.replace("/", "+"), self.version)
+        format!("{}@{}", self.name.replace('/', "+"), self.version)
     }
 
     pub fn cacache_key(&self) -> String {
