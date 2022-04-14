@@ -15,17 +15,16 @@
 */
 
 //! Check for outdated packages.
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use async_trait::async_trait;
-use clap::Parser;
-use clap::{ArgMatches, Subcommand};
+use clap::{ArgMatches, Parser, Subcommand};
 use colored::Colorize;
 use miette::Result;
 use node_semver::{Range, Version};
 use serde::{Deserialize, Deserializer};
 use serde_json;
-
-use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::{
     cli::{VoltCommand, VoltConfig},
@@ -206,7 +205,7 @@ impl VoltCommand for Outdated {
                                 "{} \t\t| {} \t\t| {}",
                                 package_info.name.unwrap().truecolor(255, 000, 000),
                                 "MISSING",
-                                latest.to_string().truecolor(55, 125, 235),
+                                latest.to_string().truecolor(055, 125, 235),
                             );
                             println!("{}", output);
                         } else {
@@ -218,7 +217,7 @@ impl VoltCommand for Outdated {
                                     "{} \t\t| {} \t\t| {}",
                                     package_info.name.unwrap().truecolor(255, 000, 000),
                                     current,
-                                    latest.to_string().truecolor(55, 125, 235),
+                                    latest.to_string().truecolor(055, 125, 235),
                                 );
                                 println!("{}", output);
                             } else {
@@ -226,7 +225,7 @@ impl VoltCommand for Outdated {
                                     "{} \t\t| {} \t\t| {}",
                                     package_info.name.unwrap().truecolor(000, 255, 000),
                                     current,
-                                    latest.to_string().truecolor(55, 125, 235),
+                                    latest.to_string().truecolor(055, 125, 235),
                                 );
                                 println!("{}", output);
                             }

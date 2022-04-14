@@ -1,4 +1,6 @@
-use crate::commands::{add, clean, clone, discord, info, init, login, node, outdated, run, search}; // remove outdated later
+use crate::commands::{
+    add, clean, clone, discord, info, init, list, login, node, outdated, run, search,
+}; // remove outdated later
 use async_trait::async_trait;
 use clap::{
     crate_authors, crate_description, crate_name, crate_version, AppSettings, Parser, Subcommand,
@@ -26,6 +28,7 @@ pub enum VoltSubCmd {
     Info(info::Info),
     Node(node::Node),
     Outdated(outdated::Outdated), // remove later???
+    List(list::List),             // remove later???
 }
 
 #[async_trait]
@@ -43,6 +46,7 @@ impl VoltCommand for VoltSubCmd {
             Self::Info(x) => x.exec(config).await,
             Self::Node(x) => x.exec(config).await,
             Self::Outdated(x) => x.exec(config).await, // remove later
+            Self::List(x) => x.exec(config).await,     // remove later
         }
     }
 }

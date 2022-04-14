@@ -24,7 +24,10 @@ use std::{
     fs,
     io::Write,
     path::{Path, PathBuf},
-    {collections::HashMap, fs::read_to_string},
+    {
+        collections::{BTreeMap, HashMap},
+        fs::read_to_string,
+    },
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -188,7 +191,8 @@ pub struct PackageJson {
     pub license: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub dependencies: Option<HashMap<String, String>>,
+    //pub dependencies: Option<HashMap<String, String>>,
+    pub dependencies: Option<BTreeMap<String, String>>,
     #[serde(rename = "devDependencies")]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
@@ -267,9 +271,15 @@ impl PackageJson {
         } = package
         {
             #[allow(clippy::redundant_closure)]
+            /*
             self.dependencies
                 .clone()
                 .unwrap_or_else(|| HashMap::new())
+                .insert(name, requested.as_ref().unwrap().to_string());
+            */
+            self.dependencies
+                .clone()
+                .unwrap_or_else(|| BTreeMap::new())
                 .insert(name, requested.as_ref().unwrap().to_string());
         }
     }
