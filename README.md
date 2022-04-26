@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/voltpkg/volt/blob/master/assets/volt-transparent-bg.png?raw=true" />
+  <img src="https://github.com/dimensionhq/volt/blob/master/assets/volt-transparent-bg.png?raw=true" />
 </p>
 
 <h1 align="center">Volt</h1>
@@ -7,7 +7,7 @@
 <br>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.1--alpha-c6b5ff"> <img src="https://img.shields.io/github/license/voltpkg/volt?color=75ff73"> <img src="https://img.shields.io/tokei/lines/github/voltpkg/volt?color=%23ffb5f5"> <img src="https://img.shields.io/github/languages/top/voltpkg/volt?color=b5f0ff"> <img src="https://img.shields.io/github/languages/code-size/voltpkg/volt?color=%235e6cff&label=size">
+  <img src="https://img.shields.io/badge/version-0.0.1--alpha-c6b5ff"> <img src="https://img.shields.io/github/license/dimensionhq/volt?color=75ff73"> <img src="https://img.shields.io/tokei/lines/github/dimensionhq/volt?color=%23ffb5f5"> <img src="https://img.shields.io/github/languages/top/dimensionhq/volt?color=b5f0ff"> <img src="https://img.shields.io/github/languages/code-size/dimensionhq/volt?color=%235e6cff&label=size">
 </p>
 <br>
 
@@ -42,7 +42,7 @@ Rust 1.58
 1. Clone the github repository using the Github CLI.
 
 ```powershell
-git clone https://github.com/voltpkg/volt
+git clone https://github.com/dimensionhq/volt
 ```
 
 2. Change to the `volt` directory.
@@ -62,7 +62,7 @@ cargo run --release -- --help
 
 ## :test_tube: Testing
 
-First, make sure you [**Build From Source**](https://github.com/voltpkg/volt/#build-from-source).
+First, make sure you [**Build From Source**](https://github.com/dimensionhq/volt/#build-from-source).
 
 Run this command to run the tests for volt.
 
@@ -74,9 +74,9 @@ cargo test
 
 ## :clap: Supporters
 
-[![Stargazers repo roster for @voltpkg/volt](https://reporoster.com/stars/voltpkg/volt)](https://github.com/voltpkg/volt/stargazers)
+[![Stargazers repo roster for @dimensionhq/volt](https://reporoster.com/stars/dimensionhq/volt)](https://github.com/dimensionhq/volt/stargazers)
 
-[![Forkers repo roster for @voltpkg/volt](https://reporoster.com/forks/voltpkg/volt)](https://github.com/voltpkg/volt/network/members)
+[![Forkers repo roster for @dimensionhq/volt](https://reporoster.com/forks/dimensionhq/volt)](https://github.com/dimensionhq/volt/network/members)
 
 <br>
 
@@ -122,11 +122,11 @@ cargo test
 
 [Rust](https://www.rust-lang.org/)
 
-[External Libraries](https://github.com/voltpkg/volt/blob/dev/CREDITS.md)
+[External Libraries](https://github.com/dimensionhq/volt/blob/dev/CREDITS.md)
 
 ## Versioning
 
-We use [semver](https://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/voltpkg/volt/tags).
+We use [semver](https://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/dimensionhq/volt/tags).
 
 ## License
 
