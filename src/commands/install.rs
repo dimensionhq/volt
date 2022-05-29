@@ -19,10 +19,7 @@
 use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
-use colored::Colorize;
 use miette::Result;
-
-use std::sync::Arc;
 
 /// Struct implementation for the `Install` command.
 pub struct Install;
@@ -44,7 +41,7 @@ impl VoltCommand for Install {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         // let package_file
         Ok(())
     }

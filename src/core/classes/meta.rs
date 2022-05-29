@@ -14,6 +14,8 @@
     limitations under the License.
 */
 
+// TODO: Actually use this somewhere
+#[allow(dead_code)]
 pub struct Meta {
     pub verbose: bool,
     pub debug: bool,

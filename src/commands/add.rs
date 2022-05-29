@@ -21,11 +21,8 @@ use std::{collections::HashMap, time::Instant};
 use crate::{
     cli::{VoltCommand, VoltConfig},
     core::net::fetch_dep_tree,
-    core::utils::{package::PackageJson, voltapi::VoltPackage},
-    core::{
-        model::lock_file::LockFile,
-        utils::{install_package, State},
-    },
+    core::utils::voltapi::VoltPackage,
+    core::utils::{install_package, State},
 };
 
 use async_trait::async_trait;
@@ -66,7 +63,7 @@ impl VoltCommand for Add {
         let mut tree: HashMap<String, VoltPackage> = HashMap::new();
 
         for response in responses {
-            let mut index = 0;
+            let _index = 0;
 
             for package in &self.packages {
                 if let PackageSpec::Npm {

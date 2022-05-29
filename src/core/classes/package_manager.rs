@@ -51,7 +51,7 @@ impl Default for PackageManager {
 }
 
 impl PackageManager {
-    pub const OPTIONS: [&'static str; 4] = [
+    pub const _OPTIONS: [&'static str; 4] = [
         Self::Volt.as_str(),
         Self::Yarn.as_str(),
         Self::Pnpm.as_str(),

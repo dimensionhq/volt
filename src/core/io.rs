@@ -30,7 +30,7 @@ use std::{
     path::PathBuf,
 };
 
-pub fn write(text: &str, metadata: &Meta) {
+pub fn _write(text: &str, metadata: &Meta) {
     if !metadata.silent {
         if metadata.no_color {
             println!("{}", text.bright_white());
@@ -40,7 +40,7 @@ pub fn write(text: &str, metadata: &Meta) {
     }
 }
 
-pub fn write_verbose(text: &str, metadata: &Meta) {
+pub fn _write_verbose(text: &str, metadata: &Meta) {
     if !metadata.silent && metadata.verbose {
         if metadata.no_color {
             println!(
@@ -58,7 +58,7 @@ pub fn write_verbose(text: &str, metadata: &Meta) {
     }
 }
 
-pub fn write_debug(text: &str, metadata: &Meta) {
+pub fn _write_debug(text: &str, metadata: &Meta) {
     if !metadata.silent && metadata.debug {
         if metadata.no_color {
             println!("{}: {}", "debug".bright_white().bold(), text.bright_white());

@@ -18,8 +18,6 @@
 
 use miette::Result;
 
-use std::sync::Arc;
-
 use async_trait::async_trait;
 
 use crate::cli::{VoltCommand, VoltConfig};
@@ -83,7 +81,7 @@ impl VoltCommand for Watch {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         // // Set current dir
         // let mut current_dir = std::env::current_dir().unwrap();
 

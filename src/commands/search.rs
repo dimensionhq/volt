@@ -20,7 +20,6 @@ use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
 use clap::Parser;
-use colored::Colorize;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement,
     Table,
@@ -28,7 +27,6 @@ use comfy_table::{
 use isahc::AsyncReadResponseExt;
 use miette::Result;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
 pub struct Objects {
@@ -76,7 +74,7 @@ impl VoltCommand for Search {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, app: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         let response = isahc::get_async(format!(
             "https://registry.npmjs.org/-/v1/search?text={}&popularity=1.0",
             self.query

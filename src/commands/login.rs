@@ -25,7 +25,6 @@ use async_trait::async_trait;
 use clap::Parser;
 use colored::Colorize;
 use miette::Result;
-use std::sync::Arc;
 use urlencoding::encode;
 
 /// Login to the npm registry
@@ -47,7 +46,7 @@ impl VoltCommand for Login {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         loop {
             let username_input = Input {
                 message: "Username".into(),

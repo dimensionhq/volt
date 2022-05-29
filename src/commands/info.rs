@@ -20,9 +20,7 @@ use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
 use clap::Parser;
-use colored::Colorize;
 use miette::Result;
-use std::sync::Arc;
 
 /// Display information about a package
 #[derive(Debug, Parser)]
@@ -43,7 +41,7 @@ impl VoltCommand for Info {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         // #[allow(unused_assignments)]
         // let mut name = String::new();
 

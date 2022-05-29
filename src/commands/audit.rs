@@ -20,7 +20,7 @@ use async_trait::async_trait;
 use miette::Result;
 use serde::{Deserialize, Serialize};
 
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use crate::cli::{VoltCommand, VoltConfig};
 
@@ -28,22 +28,22 @@ pub struct Audit {}
 
 #[derive(Debug)]
 pub struct AuditObject {
-    name: String,
-    version: String,
-    install: Vec<String>,
-    remove: Vec<String>,
-    metadata: HashMap<String, String>,
-    requires: HashMap<String, String>,
-    dependencies: HashMap<String, AuditDependency>,
+    _name: String,
+    _version: String,
+    _install: Vec<String>,
+    _remove: Vec<String>,
+    _metadata: HashMap<String, String>,
+    _requires: HashMap<String, String>,
+    _dependencies: HashMap<String, AuditDependency>,
 }
 
 #[derive(Debug)]
 pub struct AuditDependency {
-    version: String,
-    integrity: String,
-    requires: HashMap<String, String>,
-    dependencies: HashMap<String, AuditDependency>,
-    dev: bool,
+    _version: String,
+    _integrity: String,
+    _requires: HashMap<String, String>,
+    _dependencies: HashMap<String, AuditDependency>,
+    _dev: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -127,7 +127,7 @@ impl VoltCommand for Audit {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         // let package_json = PackageJson::from("package.json");
 
         // let mut requires = package_json.dependencies;

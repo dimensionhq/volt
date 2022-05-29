@@ -21,8 +21,6 @@ use crate::cli::{VoltCommand, VoltConfig};
 use async_trait::async_trait;
 use miette::Result;
 
-use std::sync::Arc;
-
 pub struct Tag {}
 
 #[async_trait]
@@ -40,7 +38,7 @@ impl VoltCommand for Tag {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         Ok(())
     }
 }

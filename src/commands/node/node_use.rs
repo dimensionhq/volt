@@ -81,10 +81,6 @@ impl VoltCommand for NodeUse {
     }
 }
 
-pub fn node_use() {
-    println!("Hello from node_use.rs!");
-}
-
 #[cfg(windows)]
 async fn use_windows(version: String) {
     let node_path = get_node_dir().join(&version).join("node.exe");

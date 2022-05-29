@@ -31,7 +31,7 @@ use crate::core::utils::voltapi::VoltPackage;
 #[derive(Error, Debug)]
 pub enum LockFileError {
     #[error("unable to read lock file")]
-    IO(io::Error),
+    _IO(io::Error),
     #[error("unable to deserialize lock file")]
     #[allow(dead_code)]
     Decode(serde_json::Error),
@@ -75,7 +75,7 @@ pub struct LockFile {
 impl LockFile {
     /// Creates a new instance of a lock file with a path it should be saved at.
     /// It can be saved to the file by calling [`Self::save()`].
-    pub fn new<P: AsRef<Path>>(path: P, global: bool) -> Self {
+    pub fn _new<P: AsRef<Path>>(path: P, global: bool) -> Self {
         Self {
             path: path.as_ref().to_str().unwrap().to_string(),
             global,
@@ -83,14 +83,14 @@ impl LockFile {
         }
     }
 
-    pub fn add(package: VoltPackage) {}
+    pub fn _add(_package: VoltPackage) {}
 
     /// Loads a lock file from the given path.
-    pub fn load<P: AsRef<Path>>(path: P, global: bool) -> Result<Self, LockFileError> {
+    pub fn _load<P: AsRef<Path>>(path: P, global: bool) -> Result<Self, LockFileError> {
         let path = path.as_ref();
 
         let dependencies = if path.exists() {
-            let f = File::open(path).map_err(LockFileError::IO)?;
+            let f = File::open(path).map_err(LockFileError::_IO)?;
             let reader = BufReader::new(f);
 
             if global {
@@ -117,7 +117,7 @@ impl LockFile {
     // }
 
     // Saves a lock file to the same path it was opened from.
-    pub fn save(&self) -> Result<()> {
+    pub fn _save(&self) -> Result<()> {
         let mut lock_file = File::create(&self.path).unwrap();
 
         lock_file

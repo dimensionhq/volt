@@ -155,12 +155,12 @@ pub async fn fetch_dep_tree(
     }
 }
 
-pub async fn ping() {
-    let ping = Instant::now();
+pub async fn _ping() {
+    let _ping = Instant::now();
 
     println!("PING! http://registry.voltpkg.com/");
 
-    let mut response = isahc::get_async("http://registry.voltpkg.com/ping")
+    let response = isahc::get_async("http://registry.voltpkg.com/ping")
         .await
         .unwrap();
 
@@ -178,11 +178,11 @@ pub async fn ping() {
         }
     }
 
-    let ping = Instant::now();
+    let _ping = Instant::now();
 
     println!("PING! https://registry.npmjs.org/");
 
-    let mut response = isahc::get_async("https://registry.npmjs.org/")
+    let response = isahc::get_async("https://registry.npmjs.org/")
         .await
         .unwrap();
 

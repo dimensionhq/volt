@@ -230,7 +230,7 @@ impl PackageJson {
     }
 
     pub fn get_from_dir(from: &Path) -> Result<(Self, PathBuf)> {
-        for parent in from.ancestors() {
+        for _parent in from.ancestors() {
             let pkg_path = from.join("package.json");
 
             if pkg_path.exists() {
@@ -247,7 +247,7 @@ impl PackageJson {
         miette::bail!("No package.json found!");
     }
 
-    pub fn save(&self) -> Result<()> {
+    pub fn _save(&self) -> Result<()> {
         let mut file = fs::File::create("package.json").into_diagnostic()?;
 
         file.write(
@@ -263,10 +263,10 @@ impl PackageJson {
         Ok(())
     }
 
-    pub fn add_dependency(&mut self, package: PackageSpec) {
+    pub fn _add_dependency(&mut self, package: PackageSpec) {
         if let PackageSpec::Npm {
             name,
-            scope,
+            scope: _,
             requested,
         } = package
         {

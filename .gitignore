@@ -21,3 +21,4 @@ package-lock.json
 example/
 /dev
 /target
+.vscode/

@@ -60,7 +60,7 @@ impl VoltCommand for Init {
     /// ## Returns
     /// * `Result<()>`
     async fn exec(self, config: VoltConfig) -> Result<()> {
-        let start = Instant::now();
+        let _start = Instant::now();
 
         // get name of cwd
         let cwd_name = config

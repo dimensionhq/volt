@@ -20,9 +20,7 @@ use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
 use clap::Parser;
-use colored::Colorize;
-use miette::Result;
-use std::{process, sync::Arc};
+use std::process;
 
 /// Clone a project and setup a project from a repository
 #[derive(Debug, Parser)]
@@ -46,7 +44,7 @@ impl VoltCommand for Clone {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, _: VoltConfig) -> miette::Result<()> {
+    async fn exec(self, _config: VoltConfig) -> miette::Result<()> {
         let exit_code = process::Command::new("cmd")
             .arg(format!("/C git clone {} --depth=1", self.repository).as_str())
             .status()

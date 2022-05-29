@@ -22,8 +22,6 @@ use async_trait::async_trait;
 use colored::Colorize;
 use miette::Result;
 
-use std::sync::Arc;
-
 /// Struct implementation for the `Deploy` command.
 pub struct Fix;
 
@@ -39,7 +37,7 @@ impl VoltCommand for Fix {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         println!("{}", "Scanning for errors".bright_cyan());
 
         Ok(())

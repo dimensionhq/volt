@@ -16,12 +16,8 @@ limitations under the License.
 
 use crate::core::utils::errors::VoltError;
 
-use clap::{ArgMatches, Parser};
-use dirs::home_dir;
-use package_spec::{parse_package_spec, PackageSpec};
-use sha1::Digest;
-use sha2::Sha512;
-use ssri::{Algorithm, Integrity};
+use clap::Parser;
+use ssri::Algorithm;
 use std::{env, path::PathBuf};
 
 #[derive(Debug, Clone, Parser)]
@@ -32,9 +28,9 @@ pub struct VoltConfig {
 }
 
 impl VoltConfig {
-    pub const OS: &'static str = env::consts::OS;
+    pub const _OS: &'static str = env::consts::OS;
     pub const VOLT_HOME: &'static str = ".volt";
-    pub const VOLT_LOCK: &'static str = "volt.lock";
+    pub const _VOLT_LOCK: &'static str = "volt.lock";
 
     pub fn home(&self) -> miette::Result<PathBuf> {
         Ok(dirs::home_dir().ok_or(VoltError::GetHomeDirError)?)
@@ -51,8 +47,8 @@ impl VoltConfig {
     }
 
     /// Path to the volt lockfile (defaults to `./volt.lock`)
-    pub fn lockfile(&self) -> miette::Result<PathBuf> {
-        Ok(self.cwd()?.join(Self::VOLT_LOCK))
+    pub fn _lockfile(&self) -> miette::Result<PathBuf> {
+        Ok(self.cwd()?.join(Self::_VOLT_LOCK))
     }
 
     /// Path to the `node_modules` directory (defaults to `./node_modules`)

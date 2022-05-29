@@ -117,7 +117,7 @@ impl VoltCommand for NodeInstall {
         };
 
         let mut validversions = vec![];
-        let mut download_url = format!("{}/", mirror);
+        let download_url = format!("{}/", mirror);
 
         // TODO: Maybe suggest the closest available version if not found?
         // Validate the list of requested versions to install
@@ -210,7 +210,6 @@ impl VoltCommand for NodeInstall {
 
                     pb.enable_steady_tick(10);
 
-                    let handle = tokio::runtime::Handle::current();
                     let response = reqwest::blocking::get(&download_url).unwrap();
                     let content = response.bytes().unwrap();
 
@@ -250,9 +249,10 @@ impl VoltCommand for NodeInstall {
                         let from = node_path.join(&p);
                         let to = node_path.join(&i.to_string());
 
+                        // TODO: Find a way to handle this error correctly?
                         // Rename the folder from the default set by the tarball
                         // to just the version number
-                        std::fs::rename(from, to);
+                        let _ = std::fs::rename(from, to);
                     }
 
                     pb.set_message(format!(
@@ -265,7 +265,7 @@ impl VoltCommand for NodeInstall {
             })
             .collect();
 
-        let result = futures::future::join_all(handles).await;
+        futures::future::join_all(handles).await;
 
         Ok(())
     }

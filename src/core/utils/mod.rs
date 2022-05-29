@@ -33,12 +33,11 @@ use futures::TryFutureExt;
 use git_config::file::GitConfig;
 use git_config::parser::parse_from_str;
 use miette::{IntoDiagnostic, Result};
-use rayon::iter::{IntoParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use reqwest::Client;
 use ssri::{Algorithm, Integrity};
 
-use self::voltapi::Bin;
-use std::{collections::HashMap, ffi::OsStr, fs::read_to_string, io::Write, path::PathBuf};
+use std::{collections::HashMap, fs::read_to_string, io::Write, path::PathBuf};
 
 pub struct State {
     pub http_client: Client,
@@ -289,7 +288,8 @@ pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
 }
 
 #[cfg(unix)]
-pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
+// TODO: Put config second like everywhere else
+pub fn generate_script(_config: &VoltConfig, _package: &VoltPackage) {
     // Create node_modules/scripts if it doesn't exist
     // if !Path::new("node_modules/scripts").exists() {
     //     std::fs::create_dir_all("node_modules/scripts").unwrap();
@@ -497,7 +497,7 @@ pub async fn install_package(config: VoltConfig, package: VoltPackage, state: St
                     });
             }
 
-            link_dependencies(&package, &config);
+            link_dependencies(&package, &config)?;
         }
         Err(_) => {
             // fetch the tarball from the registry

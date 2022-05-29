@@ -2,9 +2,7 @@ use crate::commands::{
     add, clean, clone, discord, info, init, list, login, node, outdated, run, search,
 }; // remove outdated later
 use async_trait::async_trait;
-use clap::{
-    crate_authors, crate_description, crate_name, crate_version, AppSettings, Parser, Subcommand,
-};
+use clap::{crate_authors, crate_description, crate_name, crate_version, Parser, Subcommand};
 
 use super::VoltConfig;
 
@@ -57,7 +55,7 @@ impl VoltCommand for VoltSubCmd {
     version = crate_version!(),
     about = crate_description!(),
     author = crate_authors!(),
-    global_setting = AppSettings::DisableColoredHelp
+    disable_colored_help = true,
 )]
 #[allow(clippy::module_name_repetitions)]
 pub struct VoltCli {

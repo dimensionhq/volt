@@ -38,7 +38,7 @@ impl VoltCommand for Script {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         // let package_json = PackageJson::from("package.json");
 
         // let args = app.args.clone();

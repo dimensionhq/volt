@@ -19,10 +19,7 @@
 use crate::cli::{VoltCommand, VoltConfig};
 
 use async_trait::async_trait;
-use colored::Colorize;
 use miette::Result;
-
-use std::sync::Arc;
 
 /// Struct implementation for the `Migrate` command.
 pub struct Migrate;
@@ -44,7 +41,7 @@ impl VoltCommand for Migrate {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         // let packagemanagers: Vec<String> = PackageManager::options();
         // let mut packagemanager: String = String::new();
         // if app.args.len() == 1 {

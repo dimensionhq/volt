@@ -14,8 +14,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
-#![allow(unused)]
 use mimalloc::MiMalloc;
 
 #[global_allocator]
@@ -25,7 +23,7 @@ mod cli;
 mod commands;
 mod core;
 
-use std::{io::stdin, str::FromStr, time::Instant};
+use std::{str::FromStr, time::Instant};
 
 use tracing::Level;
 use tracing_subscriber::EnvFilter;

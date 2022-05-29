@@ -28,7 +28,7 @@ pub enum VoltError {
 
     #[error("failed to parse package specification: `{spec}`")]
     #[diagnostic(code(volt::package_spec::parse))]
-    PackageSpecificationError { spec: String },
+    _PackageSpecificationError { spec: String },
 
     #[error("failed to detect your home directory")]
     #[diagnostic(code(volt::environment::home_dir))]
@@ -54,7 +54,7 @@ pub enum VoltError {
     // NetworkRecError(#[source] std::io::Error),
     #[error("failed to create directory")]
     #[diagnostic(code(volt::io::create_dir))]
-    CreateDirError(#[source] std::io::Error),
+    _CreateDirError(#[source] std::io::Error),
 
     #[error("GET {url} - 404 - {package_name} was not found in the volt registry, or you don't have the permission to request it.")]
     #[diagnostic(code(volt::registry::volt::package_not_found))]
@@ -78,39 +78,39 @@ pub enum VoltError {
 
     #[error("failed to parse {hash} integrity hash.")]
     #[diagnostic(code(volt::integrity::parse))]
-    HashParseError { hash: String },
+    _HashParseError { hash: String },
 
     #[error("failed to copy bytes to hasher.")]
     #[diagnostic(code(volt::hasher::copy))]
-    HasherCopyError(#[source] std::io::Error),
+    _HasherCopyError(#[source] std::io::Error),
 
     #[error("failed to verify tarball checksum")]
     #[diagnostic(code(volt::integrity::verify))]
-    ChecksumVerificationError,
+    _ChecksumVerificationError,
 
     #[error("failed to convert integrity into hex")]
     #[diagnostic(code(volt::integrity::convert))]
-    IntegrityConversionError,
+    _IntegrityConversionError,
 
     #[error("failed to deserialize slice to `SpeedyVoltResponse`")]
     #[diagnostic(code(volt::integrity::convert))]
-    DeserializeError,
+    _DeserializeError,
 
     #[error("failed to build request client")]
     #[diagnostic(code(volt::network::builder))]
-    RequestBuilderError(#[source] isahc::http::Error),
+    _RequestBuilderError(#[source] isahc::http::Error),
 
     #[error("failed to build recieve response text")]
     #[diagnostic(code(volt::io::rec::text))]
-    IoTextRecError(#[source] std::io::Error),
+    _IoTextRecError(#[source] std::io::Error),
 
     #[error("failed to find a hash that matches the specified version requirement: {version}")]
     #[diagnostic(code(volt::io::rec::text))]
-    HashLookupError { version: String },
+    _HashLookupError { version: String },
 
     #[error("failed to find a version that matches the specified version requirement for {name}")]
     #[diagnostic(code(volt::io::rec::text))]
-    VersionLookupError { name: String },
+    _VersionLookupError { name: String },
 
     #[error("failed to read `{name}`")]
     #[diagnostic(code(volt::io::file::read))]
@@ -134,5 +134,5 @@ pub enum VoltError {
 
     #[error("an unknown error occured.")]
     #[diagnostic(code(volt::unknown))]
-    UnknownError,
+    _UnknownError,
 }

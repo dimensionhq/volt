@@ -22,7 +22,6 @@ use colored::Colorize;
 use miette::Result;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::sync::Arc;
 
 /// Run a pre-defined package script
 #[derive(Debug, Parser)]
@@ -49,7 +48,7 @@ impl VoltCommand for Run {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         if cfg!(target_os = "windows") {
             Command::new("cmd").args(&["/C", "babel"]).spawn().unwrap();
         } else if cfg!(target_os = "linux") {

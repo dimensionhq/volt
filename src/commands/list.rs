@@ -15,19 +15,15 @@
 */
 
 //! Compress node_modules into node_modules.pack.
-use std::sync::Arc;
 
 use async_trait::async_trait;
-use clap::{ArgMatches, Parser, Subcommand};
+use clap::Parser;
 use colored::Colorize;
 use miette::Result;
 //use node_semver::Version;
-use serde::{Deserialize, Deserializer};
-use serde_json;
 
 use crate::{
     cli::{VoltCommand, VoltConfig},
-    core::utils::extensions::PathExtensions,
     core::utils::package::PackageJson,
 };
 
@@ -41,21 +37,21 @@ pub struct List {
 // Repo: cargo-tree (tree.rs)
 // ------------------------------------------------
 pub struct Symbols {
-    down: &'static str,
+    _down: &'static str,
     tee: &'static str,
     ell: &'static str,
     right: &'static str,
 }
 
 pub static UTF8_SYMBOLS: Symbols = Symbols {
-    down: "│",
+    _down: "│",
     tee: "├",
     ell: "└",
     right: "─",
 };
 
-pub static ASCII_SYMBOLS: Symbols = Symbols {
-    down: "|",
+pub static _ASCII_SYMBOLS: Symbols = Symbols {
+    _down: "|",
     tee: "|",
     ell: "`",
     right: "-",
@@ -77,7 +73,7 @@ impl VoltCommand for List {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         let symbols = &UTF8_SYMBOLS;
 
         // grab the project's package.json file to get primary dependencies
@@ -151,12 +147,12 @@ impl VoltCommand for List {
                 }
             } else {
                 // package.json exists without any packages
-                let output = format!("(No dependencies)");
+                let output = "(No dependencies)".to_string();
                 println!("{}{} {}\n", symbols.ell, symbols.right, output);
             }
         } else {
             // package.json just doesn't exist
-            let output = format!("Missing 'package.json' file!");
+            let output = "Missing 'package.json' file!".to_string();
             println!("{}", output);
         }
 

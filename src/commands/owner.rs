@@ -19,8 +19,6 @@
 use async_trait::async_trait;
 use miette::Result;
 
-use std::sync::Arc;
-
 use crate::cli::{VoltCommand, VoltConfig};
 
 pub struct Owner {}
@@ -40,7 +38,7 @@ impl VoltCommand for Owner {
     /// ```
     /// ## Returns
     /// * `Result<()>`
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         Ok(())
     }
 }

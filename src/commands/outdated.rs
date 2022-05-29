@@ -16,21 +16,16 @@
 
 //! Check for outdated packages.
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use async_trait::async_trait;
-use clap::{ArgMatches, Parser, Subcommand};
+use clap::Parser;
 use colored::Colorize;
 use miette::Result;
-use node_semver::{Range, Version};
-use serde::{Deserialize, Deserializer};
-use serde_json;
+use node_semver::Version;
+use serde::Deserialize;
 
-use crate::{
-    cli::{VoltCommand, VoltConfig},
-    core::utils::extensions::PathExtensions,
-    core::utils::package::PackageJson,
-};
+use crate::cli::{VoltCommand, VoltConfig};
+use crate::core::utils::package::PackageJson;
 
 // https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#version
 // abbreviated version uses "Accept: application/vnd.npm.install-v1+json" in header
@@ -48,15 +43,15 @@ pub struct PackageResponse {
     name: Option<String>, // string name of the package
     #[serde(alias = "dist-tags")]
     dist_tags: Option<HashMap<String, String>>, // will always contain at least one tag which is "latest", for latest version
-    versions: Option<HashMap<String, PackageVersion>>, // dictionary of versions with key: semver version string, value: PackageVersion struct
-    modified: Option<String>,                          // string date of package last modified date
-    error: Option<String>,                             // registry request string error
+    _versions: Option<HashMap<String, PackageVersion>>, // dictionary of versions with key: semver version string, value: PackageVersion struct
+    _modified: Option<String>,                          // string date of package last modified date
+    error: Option<String>,                              // registry request string error
 }
 
 #[derive(Deserialize, Debug)]
 struct PackageVersion {
-    name: String,    // package name
-    version: String, // semver version string
+    _name: String,    // package name
+    _version: String, // semver version string
 }
 
 #[derive(Debug, Parser)]
@@ -89,7 +84,7 @@ impl VoltCommand for Outdated {
         // TODO:
         // make this result optional entirely for when 'package.json' file doesn't exist!
         let primary_pkg = PackageJson::get().unwrap();
-        let mut primary_deps = primary_pkg.0.dependencies;
+        let primary_deps = primary_pkg.0.dependencies;
         let mut node_modules = primary_pkg.1;
         node_modules.pop();
         node_modules.push("node_modules");
@@ -121,7 +116,7 @@ impl VoltCommand for Outdated {
             // test to see if an argument was provided, if not run for all dependencies???
             if let Some(package_name) = self.package {
                 //&& !self.dependency.contains("!") {
-                if (!deps.contains_key(&package_name)) {
+                if !deps.contains_key(&package_name) {
                     let output = format!(
                         "{} is not an installed package!",
                         &package_name.truecolor(255, 000, 000)
@@ -205,7 +200,7 @@ impl VoltCommand for Outdated {
                                 "{} \t\t| {} \t\t| {}",
                                 package_info.name.unwrap().truecolor(255, 000, 000),
                                 "MISSING",
-                                latest.to_string().truecolor(055, 125, 235),
+                                latest.to_string().truecolor(55, 125, 235),
                             );
                             println!("{}", output);
                         } else {
@@ -217,7 +212,7 @@ impl VoltCommand for Outdated {
                                     "{} \t\t| {} \t\t| {}",
                                     package_info.name.unwrap().truecolor(255, 000, 000),
                                     current,
-                                    latest.to_string().truecolor(055, 125, 235),
+                                    latest.to_string().truecolor(55, 125, 235),
                                 );
                                 println!("{}", output);
                             } else {
@@ -225,7 +220,7 @@ impl VoltCommand for Outdated {
                                     "{} \t\t| {} \t\t| {}",
                                     package_info.name.unwrap().truecolor(000, 255, 000),
                                     current,
-                                    latest.to_string().truecolor(055, 125, 235),
+                                    latest.to_string().truecolor(55, 125, 235),
                                 );
                                 println!("{}", output);
                             }
@@ -242,7 +237,7 @@ impl VoltCommand for Outdated {
             } else {
                 //println!("No dependency provided, run for all????");
 
-                let mut multiple = node_modules.clone();
+                let multiple = node_modules.clone();
                 //println!("{:?}", &multiple);
 
                 let mut found_outdated = false;
@@ -286,7 +281,7 @@ impl VoltCommand for Outdated {
                         //println!("Current version: {:?}", current);
 
                         if !multiple.join(&dep_name).exists() {
-                            if (!found_outdated) {
+                            if !found_outdated {
                                 println!("Package \t\t| Current \t\t| Latest\n---------------------------------------------------------");
                                 found_outdated = true;
                             }
@@ -304,7 +299,7 @@ impl VoltCommand for Outdated {
                                 .0;
                             let current: Version = pkg_json.version.parse().unwrap();
                             if current < latest {
-                                if (!found_outdated) {
+                                if !found_outdated {
                                     println!("Package \t\t| Current \t\t| Latest\n---------------------------------------------------------");
                                     found_outdated = true;
                                 }
@@ -328,7 +323,7 @@ impl VoltCommand for Outdated {
                     }
                 }
 
-                if (!found_outdated) {
+                if !found_outdated {
                     println!("All packages are up to date!")
                 }
             }

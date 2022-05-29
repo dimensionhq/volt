@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 use clap::{CommandFactory, ErrorKind, Parser};
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 
 use crate::cli::{VoltCommand, VoltConfig};
 
@@ -62,14 +62,30 @@ impl VoltCommand for NodeRemove {
                 // Remove all the installed symlinks
                 for binary in current_bin {
                     let b = binary.unwrap();
-                    std::fs::remove_file(dirs::executable_dir().unwrap().join(b.file_name()));
+                    let result =
+                        std::fs::remove_file(dirs::executable_dir().unwrap().join(b.file_name()));
+
+                    match result {
+                        Ok(_) => {}
+                        Err(e) => return Err(e).into_diagnostic(),
+                    }
                 }
 
-                std::fs::remove_file(node_dir.join("current"));
+                let result = std::fs::remove_file(node_dir.join("current"));
+
+                match result {
+                    Ok(_) => {}
+                    Err(e) => return Err(e).into_diagnostic(),
+                }
             }
 
             // Always remove the version directory, regardless of current version status
-            std::fs::remove_dir_all(node_dir.join(v));
+            let result = std::fs::remove_dir_all(node_dir.join(v));
+
+            match result {
+                Ok(_) => {}
+                Err(e) => return Err(e).into_diagnostic(),
+            }
         }
         Ok(())
     }

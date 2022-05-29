@@ -51,7 +51,7 @@ impl Default for Template {
 }
 
 impl Template {
-    pub const OPTIONS: [&'static str; 4] = [
+    pub const _OPTIONS: [&'static str; 4] = [
         Self::ReactApp.as_str(),
         Self::ReactAppTS.as_str(),
         Self::NextApp.as_str(),
@@ -76,7 +76,7 @@ pub struct CreateTemplate {
 }
 
 impl CreateTemplate {
-    pub fn into_string(self) -> String {
+    pub fn _into_string(self) -> String {
         to_string_pretty(&self).expect("Valid serialization state")
     }
 }

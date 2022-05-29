@@ -11,7 +11,7 @@ pub struct NodeList {}
 #[async_trait]
 impl VoltCommand for NodeList {
     // On windows, versions install to C:\Users\[name]\AppData\Roaming\volt\node\[version]
-    async fn exec(self, config: VoltConfig) -> Result<()> {
+    async fn exec(self, _config: VoltConfig) -> Result<()> {
         let node_path = {
             let datadir = dirs::data_dir().unwrap().join("volt").join("node");
             if !datadir.exists() {
