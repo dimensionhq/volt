@@ -21,27 +21,22 @@ impl VoltCommand for NodeList {
             datadir
         };
 
-        let files = std::fs::read_dir(&node_path)
+        let mut versions = std::fs::read_dir(&node_path)
             .unwrap()
-            .map(|d| {
-                d.unwrap()
-                    .path()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_owned()
-            })
+            .map(|d| d.unwrap().file_name().to_str().unwrap().to_owned())
             .filter(|f| f != "current")
             .collect::<Vec<String>>();
 
-        if files.is_empty() {
+        if versions.is_empty() {
             eprintln!("No NodeJS versions installed!");
-            std::process::exit(1);
+            std::process::exit(0);
         }
 
-        for file in files {
-            println!("{file}");
+        // Sort in descending order
+        versions.sort_by(|a, b| b.cmp(a));
+
+        for version in versions {
+            println!("{version}");
         }
 
         Ok(())
