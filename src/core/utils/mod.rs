@@ -110,8 +110,9 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 pub fn enable_ansi_support() -> Result<(), u32> {
     // ref: https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#EXAMPLE_OF_ENABLING_VIRTUAL_TERMINAL_PROCESSING @@ https://archive.is/L7wRJ#76%
 
+    use std::ffi::OsStr;
     use std::iter::once;
-    use std::os::windows::ffi::OsStrExt;
+    use std::os::windows::prelude::OsStrExt;
     use std::ptr::null_mut;
     use winapi::um::consoleapi::{GetConsoleMode, SetConsoleMode};
     use winapi::um::errhandlingapi::GetLastError;
@@ -126,6 +127,7 @@ pub fn enable_ansi_support() -> Result<(), u32> {
         // Using `CreateFileW("CONOUT$", ...)` to retrieve the console handle works correctly even if STDOUT and/or STDERR are redirected
         let console_out_name: Vec<u16> =
             OsStr::new("CONOUT$").encode_wide().chain(once(0)).collect();
+
         let console_handle = CreateFileW(
             console_out_name.as_ptr(),
             GENERIC_READ | GENERIC_WRITE,
@@ -163,6 +165,8 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 #[cfg(windows)]
 /// Generates the binary and other required scripts for the package
 pub fn generate_script(config: &VoltConfig, package: &VoltPackage) {
+    use self::voltapi::Bin;
+
     let bin_path = config.node_modules().unwrap().join(".bin/");
 
     // // Create node_modules/scripts if it doesn't exist

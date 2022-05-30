@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 
+use crate::cli::{VoltCommand, VoltConfig};
 use async_trait::async_trait;
 use clap::{CommandFactory, ErrorKind, Parser};
 use miette::{IntoDiagnostic, Result};
-
-use crate::cli::{VoltCommand, VoltConfig};
 
 /// Uninstall a specified version of node
 #[derive(Debug, Parser)]
@@ -17,7 +16,7 @@ fn get_node_dir() -> PathBuf {
     dirs::data_dir().unwrap().join("volt").join("node")
 }
 
-#[cfg(unix)]
+// #[cfg(unix)]
 #[async_trait]
 impl VoltCommand for NodeRemove {
     async fn exec(self, _config: VoltConfig) -> Result<()> {

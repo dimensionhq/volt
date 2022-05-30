@@ -83,6 +83,9 @@ impl VoltCommand for NodeUse {
 
 #[cfg(windows)]
 async fn use_windows(version: String) {
+    use std::{env, path::Path, process::Command};
+    use tokio::fs;
+
     let node_path = get_node_dir().join(&version).join("node.exe");
     let path = Path::new(&node_path);
 
@@ -125,10 +128,12 @@ async fn use_windows(version: String) {
         let path = env::var("PATH").unwrap();
         if !path.contains(&link_dir) {
             let command = format!("[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + '{}', 'User')", &link_dir);
+
             Command::new("Powershell")
                 .args(&["-Command", &command])
                 .output()
                 .unwrap();
+
             println!("PATH environment variable updated.\nYou will need to restart your terminal for changes to apply.");
         }
     } else {
