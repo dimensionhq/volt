@@ -8,8 +8,8 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use miette::Result;
 use node_semver::{Range, Version};
 use std::fs::File;
-use tempfile::tempdir;
 use std::io::Write;
+use tempfile::tempdir;
 
 use crate::{
     cli::{VoltCommand, VoltConfig},
