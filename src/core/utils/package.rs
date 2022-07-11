@@ -30,6 +30,7 @@ use std::{
     },
 };
 
+// TODO: consolidate this code. will require extensive testing of other parts of the codebase
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NpmPackage {
@@ -177,29 +178,132 @@ pub struct NpmOperationalInternal {
     pub tmp: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum NewBugs {
+    Str(String),
+    BTreeMap(BTreeMap<String, String>),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum NewAuthor {
+    Str(String),
+    BTreeMap(BTreeMap<String, String>),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum NewContributor {
+    Str(String),
+    BTreeMap(BTreeMap<String, String>),
+}
+
+// TODO: support all forms of funding
+// https://docs.npmjs.com/cli/v8/configuring-npm/package-json#funding
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum NewFunding {
+    Str(String),
+    BTreeMap(BTreeMap<String, String>),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum NewManpages {
+    Str(String),
+    Vec(Vec<String>),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum NewRepository {
+    Str(String),
+    BTreeMap(BTreeMap<String, String>),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum NewBundledDeps {
+    Bool(bool),
+    Vec(Vec<String>),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum NewBin {
+    Str(String),
+    BTreeMap(BTreeMap<String, String>),
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(default, rename_all = "camelCase")]
 pub struct PackageJson {
     pub name: String,
     pub version: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub main: Option<String>,
+    pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub repository: Option<serde_json::Value>,
+    pub keywords: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub author: Option<String>,
+    pub homepage: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bugs: Option<NewBugs>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub license: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub licenses: Option<Vec<BTreeMap<String, String>>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub author: Option<NewAuthor>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub contributors: Option<Vec<NewContributor>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub funding: Option<NewFunding>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub files: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub main: Option<String>,
+    // TODO: browser
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bin: Option<NewBin>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub man: Option<NewManpages>,
+    // TODO: directories
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub repository: Option<NewRepository>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    //pub dependencies: Option<HashMap<String, String>>,
+    pub scripts: Option<BTreeMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub config: Option<BTreeMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub dependencies: Option<BTreeMap<String, String>>,
-    #[serde(rename = "devDependencies")]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub dev_dependencies: Option<HashMap<String, String>>,
+    pub dev_dependencies: Option<BTreeMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub scripts: Option<HashMap<String, String>>,
+    pub peer_dependencies: Option<BTreeMap<String, String>>,
+    // TODO: peerDependenciesMeta
+    #[serde(alias = "bundleDependencies")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub bundled_dependencies: Option<NewBundledDeps>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub opt_dependencies: Option<BTreeMap<String, String>>,
+    // TODO: overrides
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub engines: Option<BTreeMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub os: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cpu: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub private: Option<bool>,
+    // TODO: publishConfig
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workspaces: Option<Vec<String>>,
 }
 
 impl PackageJson {
