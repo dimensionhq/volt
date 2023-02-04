@@ -48,7 +48,7 @@ sha2 = "0.10.2"
 ssri = "7.0.0"
 tar = "0.4.37"
 thiserror = "1.0.30"
-tokio = { version = "1.17.0", features = ["fs", "macros", "rt-multi-thread"] }
+tokio = { version = "1.18.5", features = ["fs", "macros", "rt-multi-thread"] }
 minifier = "0.0.42"
 fs_extra = "1.2.0"
 webbrowser = "0.5.5"
