@@ -46,7 +46,7 @@ serde = { version = "1.0.130", features = ["derive"] }
 sha-1 = "0.10.0"
 sha2 = "0.10.2"
 ssri = "7.0.0"
-tar = "0.4.37"
+tar = "0.4.46"
 thiserror = "1.0.30"
 tokio = { version = "1.17.0", features = ["fs", "macros", "rt-multi-thread"] }
 minifier = "0.0.42"
